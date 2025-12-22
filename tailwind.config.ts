@@ -16,6 +16,10 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        graffiti: ["var(--font-graffiti)", "cursive"],
+        tag: ["var(--font-tag)", "cursive"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -49,6 +53,10 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        neon: {
+          pink: "hsl(var(--neon-pink))",
+          green: "hsl(var(--neon-green))",
         },
       },
       borderRadius: {
