@@ -1,18 +1,5 @@
 import type { Metadata } from "next";
-import { Permanent_Marker, Sedgwick_Ave } from "next/font/google";
 import "./globals.css";
-
-const permanentMarker = Permanent_Marker({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-graffiti",
-});
-
-const sedgwickAve = Sedgwick_Ave({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-tag",
-});
 
 export const metadata: Metadata = {
   title: "Piko Artist Portfolio",
@@ -26,7 +13,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${permanentMarker.variable} ${sedgwickAve.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Sedgwick+Ave&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         {children}
       </body>
     </html>

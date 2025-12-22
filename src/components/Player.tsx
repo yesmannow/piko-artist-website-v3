@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
-import { Play, Pause, Volume2, Sparkles } from "lucide-react";
+import { Play, Pause, Volume2 } from "lucide-react";
 import { DiceRoller } from "./DiceRoller";
 import { tracks, Track } from "@/lib/data";
 
 interface PlayerProps {
   audioUrl?: string;
-  title?: string;
 }
 
 const vibeColors = {
@@ -25,7 +24,7 @@ const vibeIcons = {
   freestyle: "✨",
 };
 
-export function Player({ audioUrl, title = "Audio Track" }: PlayerProps) {
+export function Player({ audioUrl }: PlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -47,14 +46,7 @@ export function Player({ audioUrl, title = "Audio Track" }: PlayerProps) {
     
     if (selectedTrack) {
       setCurrentTrack(selectedTrack);
-      loadTrack(selectedTrack);
-    }
-  };
-
-  const loadTrack = (track: Track) => {
-    if (wavesurferRef.current) {
-      setIsLoading(true);
-      // In production, this would load from track.src
+      // In production, this would load from selectedTrack.src
       // For now, we'll just update the UI
       setIsLoading(false);
       setDuration("3:45"); // Mock duration

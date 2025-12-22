@@ -17,8 +17,8 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        graffiti: ["var(--font-graffiti)", "cursive"],
-        tag: ["var(--font-tag)", "cursive"],
+        graffiti: ['"Permanent Marker"', "cursive"],
+        tag: ['"Sedgwick Ave"', "cursive"],
       },
       colors: {
         border: "hsl(var(--border))",
