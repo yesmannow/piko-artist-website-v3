@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+.env*.local
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vercel
+.turbo
+.wrangler/
+.dev.vars
+.worker-next/
+.open-next/
