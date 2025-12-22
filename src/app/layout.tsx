@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Piko Artist Portfolio",
@@ -22,7 +24,9 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <Navigation />
         {children}
+        <Footer />
       </body>
     </html>
   );

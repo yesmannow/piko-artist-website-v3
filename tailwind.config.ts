@@ -58,6 +58,8 @@ module.exports = {
           pink: "hsl(var(--neon-pink))",
           green: "hsl(var(--neon-green))",
         },
+        "neon-pink": "hsl(var(--neon-pink))",
+        "neon-green": "hsl(var(--neon-green))",
       },
       borderRadius: {
         lg: "var(--radius)",

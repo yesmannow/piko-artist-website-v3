@@ -1,55 +1,177 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { Play, Music, Video, User } from "lucide-react";
+import Image from "next/image";
+import { Player } from "@/components/Player";
+import { VideoGrid } from "@/components/VideoGrid";
+import { tracks } from "@/lib/data";
 
 export default function Home() {
+  // Filter videos from tracks
+  const videos = tracks
+    .filter((track) => track.type === "video")
+    .map((track) => ({
+      id: track.id,
+      title: track.title,
+    }));
+
+  const scrollToMusic = () => {
+    const musicSection = document.getElementById("music");
+    if (musicSection) {
+      musicSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-background to-secondary/20">
+      <section id="home" className="relative min-h-screen flex flex-col items-center justify-center p-8 overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/hero/hero-bw.jpg"
+            alt="Hero Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Black Overlay */}
+          <div className="absolute inset-0 bg-black/50 z-10" />
+        </div>
+
+        {/* Hero Content */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center max-w-4xl"
+          className="relative z-20 text-center max-w-4xl"
         >
-          <h1 className="text-7xl md:text-9xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Piko
-          </h1>
-          <p className="text-2xl md:text-3xl text-muted-foreground mb-12">
-            Music Artist & Producer
-          </p>
-          
-          <div className="flex flex-wrap gap-4 justify-center mb-16">
-            <Link
-              href="/music"
-              className="group flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all hover:scale-105"
-            >
-              <Music className="w-5 h-5" />
-              Listen to Music
-            </Link>
-            <Link
-              href="/videos"
-              className="group flex items-center gap-2 px-8 py-4 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90 transition-all hover:scale-105"
-            >
-              <Video className="w-5 h-5" />
-              Watch Videos
-            </Link>
-            <Link
-              href="/about"
-              className="group flex items-center gap-2 px-8 py-4 border-2 border-primary text-primary rounded-lg hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
-            >
-              <User className="w-5 h-5" />
-              About Me
-            </Link>
-          </div>
+          {/* Logo with Breathing Animation */}
+          <motion.div
+            className="relative inline-block mb-8"
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <Image
+              src="/images/branding/piko-logo.png"
+              alt="Piko Logo"
+              width={400}
+              height={160}
+              className="relative z-10"
+              style={{
+                filter: "drop-shadow(0 0 20px hsl(var(--neon-pink))) drop-shadow(0 0 40px hsl(var(--neon-pink))) drop-shadow(0 0 60px hsl(var(--neon-pink)))",
+              }}
+              priority
+            />
+          </motion.div>
+
+          {/* Listen Now Button with Torn Tape Edge */}
+          <motion.button
+            onClick={scrollToMusic}
+            className="relative px-8 py-4 bg-gradient-to-r from-neon-pink to-neon-green text-background font-tag text-xl font-bold hover:shadow-lg hover:shadow-neon-pink/50 transition-all"
+            style={{
+              clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Listen Now
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-neon-pink/30 to-neon-green/30 blur-md -z-10"
+              animate={{
+                opacity: [0.5, 0.8, 0.5],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.button>
         </motion.div>
       </section>
 
-      {/* Featured Audio Section */}
-      <section className="py-20 px-8 bg-card">
+      {/* Bio Section */}
+      <section id="bio" className="relative py-20 px-8 bg-card">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            {/* Text Content - Left Column */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              {/* Headline */}
+              <h2 className="text-6xl md:text-8xl font-graffiti mb-4 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+                PIKO FG
+              </h2>
+
+              {/* Subheadline */}
+              <p className="text-2xl md:text-3xl font-tag text-muted-foreground mb-6">
+                Versos Reales. Ritmo Urbano. Una Mas Music.
+              </p>
+
+              {/* Narrative */}
+              <p className="text-lg md:text-xl text-foreground/90 mb-8 leading-relaxed">
+                Representing the Una Mas Music movement, Piko blends the raw energy of the underground with the emotional complexity of real relationships. From the smoke-filled vibes of &apos;Entre Humos&apos; to the heartfelt promises of &apos;Te Prometo,&apos; his music is a mirror of the streets—beautiful, chaotic, and real.
+              </p>
+
+              {/* Featured Quote */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="relative p-6 bg-gradient-to-br from-neon-pink/10 to-neon-green/10 border-2 border-neon-pink/30 rounded-lg"
+              >
+                <p className="text-xl md:text-2xl font-tag text-foreground italic leading-relaxed">
+                  &quot;Ella se quedó porque lo amaba, él cambió para que no se fuera. Ella aprendió a amarlo otra vez, y él a mejorar por ella.&quot;
+                </p>
+              </motion.div>
+            </motion.div>
+
+            {/* Image - Right Column */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              {/* Gritty Border Effect using drip-frame.png */}
+              <div className="relative">
+                <div className="absolute inset-0 z-10 pointer-events-none">
+                  <Image
+                    src="/images/overlays/drip-frame.png"
+                    alt="Drip Frame"
+                    fill
+                    className="object-cover opacity-80"
+                  />
+                </div>
+                <div className="relative z-0">
+                  <Image
+                    src="/images/artist/bio-portrait.jpg"
+                    alt="Piko Bio Portrait"
+                    width={600}
+                    height={800}
+                    className="w-full h-auto rounded-lg object-cover"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Player Section */}
+      <section id="music" className="relative py-20 px-8 bg-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -57,39 +179,29 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-8 text-center">Featured Track</h2>
-            <div className="bg-background p-8 rounded-lg border shadow-lg">
-              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-4">
-                <Play className="w-16 h-16 text-muted-foreground" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Latest Release</h3>
-              <p className="text-muted-foreground">
-                Experience the newest sounds from Piko. High-quality audio streamed from Cloudflare R2.
-              </p>
+            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+              Roll The Dice
+            </h2>
+            <div className="max-w-3xl mx-auto">
+              <Player />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Featured Video Section */}
-      <section className="py-20 px-8">
-        <div className="max-w-6xl mx-auto">
+      {/* Video Gallery Section */}
+      <section id="videos" className="relative py-20 px-8 bg-card">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-8 text-center">Featured Video</h2>
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden shadow-xl">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="Featured Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+              Video Gallery
+            </h2>
+            <VideoGrid videos={videos} />
           </motion.div>
         </div>
       </section>

@@ -36,16 +36,21 @@ export function VideoGrid({ videos }: VideoGridProps) {
             viewport={{ once: true }}
             className="group flex-shrink-0 w-[400px] snap-center"
           >
-            {/* CRT Video Wrapper */}
-            <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg hover:shadow-neon-green/50 transition-shadow">
+            {/* CRT Video Wrapper with VCR Glitch Effect */}
+            <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg hover:shadow-neon-green/50 transition-shadow vcr-glitch">
               {/* Video iframe */}
               <iframe
-                className="w-full h-full relative z-10"
+                className="w-full h-full relative z-10 vcr-iframe"
                 src={`https://www.youtube.com/embed/${video.id}`}
                 title={video.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
+
+              {/* RGB Split Glitch Overlays using CSS filters */}
+              <div className="absolute inset-0 pointer-events-none z-[12] vcr-red-layer" />
+              <div className="absolute inset-0 pointer-events-none z-[13] vcr-green-layer" />
+              <div className="absolute inset-0 pointer-events-none z-[14] vcr-blue-layer" />
 
               {/* Drip Frame Overlay */}
               <div className="absolute inset-0 pointer-events-none z-[15]">
@@ -85,7 +90,7 @@ export function VideoGrid({ videos }: VideoGridProps) {
         ))}
       </div>
 
-      {/* CRT Styles */}
+      {/* CRT & VCR Glitch Styles */}
       <style jsx>{`
         .crt-scanlines {
           background: repeating-linear-gradient(
@@ -101,6 +106,38 @@ export function VideoGrid({ videos }: VideoGridProps) {
         .crt-flicker {
           background: rgba(255, 255, 255, 0.02);
           animation: flicker 0.15s infinite;
+        }
+
+        /* VCR Glitch Effect - RGB Split */
+        .vcr-glitch:hover .vcr-iframe {
+          animation: glitch-shift 0.3s infinite;
+        }
+
+        .vcr-red-layer {
+          background: linear-gradient(90deg, transparent 0%, rgba(255, 0, 0, 0.3) 50%, transparent 100%);
+          mix-blend-mode: screen;
+          opacity: 0;
+          animation: glitch-red 0.3s infinite;
+        }
+
+        .vcr-green-layer {
+          background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 0, 0.3) 50%, transparent 100%);
+          mix-blend-mode: screen;
+          opacity: 0;
+          animation: glitch-green 0.3s infinite;
+        }
+
+        .vcr-blue-layer {
+          background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 255, 0.3) 50%, transparent 100%);
+          mix-blend-mode: screen;
+          opacity: 0;
+          animation: glitch-blue 0.3s infinite;
+        }
+
+        .vcr-glitch:hover .vcr-red-layer,
+        .vcr-glitch:hover .vcr-green-layer,
+        .vcr-glitch:hover .vcr-blue-layer {
+          opacity: 1;
         }
 
         @keyframes scanlines {
@@ -121,6 +158,81 @@ export function VideoGrid({ videos }: VideoGridProps) {
           }
           100% {
             opacity: 0.98;
+          }
+        }
+
+        @keyframes glitch-shift {
+          0%, 100% {
+            transform: translateX(0);
+          }
+          20% {
+            transform: translateX(-2px);
+          }
+          40% {
+            transform: translateX(2px);
+          }
+          60% {
+            transform: translateX(-1px);
+          }
+          80% {
+            transform: translateX(1px);
+          }
+        }
+
+        @keyframes glitch-red {
+          0%, 100% {
+            transform: translateX(-2px) translateY(0) scaleY(1);
+            clip-path: inset(0 0 0 0);
+          }
+          25% {
+            transform: translateX(-4px) translateY(-1px) scaleY(1.02);
+            clip-path: inset(1% 0 0 0);
+          }
+          50% {
+            transform: translateX(-1px) translateY(1px) scaleY(0.98);
+            clip-path: inset(0 0 1% 0);
+          }
+          75% {
+            transform: translateX(-3px) translateY(0) scaleY(1.01);
+            clip-path: inset(0.5% 0 0.5% 0);
+          }
+        }
+
+        @keyframes glitch-green {
+          0%, 100% {
+            transform: translateX(2px) translateY(0) scaleY(1);
+            clip-path: inset(0 0 0 0);
+          }
+          25% {
+            transform: translateX(4px) translateY(1px) scaleY(0.98);
+            clip-path: inset(0 0 1% 0);
+          }
+          50% {
+            transform: translateX(1px) translateY(-1px) scaleY(1.02);
+            clip-path: inset(1% 0 0 0);
+          }
+          75% {
+            transform: translateX(3px) translateY(0) scaleY(1.01);
+            clip-path: inset(0.5% 0 0.5% 0);
+          }
+        }
+
+        @keyframes glitch-blue {
+          0%, 100% {
+            transform: translateX(0) translateY(0) scaleY(1);
+            clip-path: inset(0 0 0 0);
+          }
+          25% {
+            transform: translateX(1px) translateY(-1px) scaleY(1.01);
+            clip-path: inset(0.5% 0 0 0);
+          }
+          50% {
+            transform: translateX(-1px) translateY(1px) scaleY(0.99);
+            clip-path: inset(0 0 0.5% 0);
+          }
+          75% {
+            transform: translateX(0) translateY(0) scaleY(1);
+            clip-path: inset(0.25% 0 0.25% 0);
           }
         }
 

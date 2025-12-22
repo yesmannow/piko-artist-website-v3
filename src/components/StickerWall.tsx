@@ -24,13 +24,17 @@ const stickers = [
   },
 ];
 
+interface StickerWallProps {
+  fixed?: boolean;
+}
+
 /**
  * StickerWall component that scatters stickers randomly on the background
  * with slight rotation and low z-index to sit behind text but above noise texture
  */
-export function StickerWall() {
+export function StickerWall({ fixed = false }: StickerWallProps) {
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div className={`${fixed ? 'fixed' : 'absolute'} inset-0 pointer-events-none z-0 overflow-hidden`}>
       {stickers.map((sticker, index) => {
         // Generate random positions (avoiding center where text typically is)
         const positions = [
