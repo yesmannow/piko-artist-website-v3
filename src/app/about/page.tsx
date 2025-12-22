@@ -53,7 +53,7 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold mb-6">My Journey</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Welcome to my musical journey. I'm Piko, a music artist and producer passionate about creating
+                  Welcome to my musical journey. I&apos;m Piko, a music artist and producer passionate about creating
                   unique sounds and experiences that resonate with listeners around the world.
                 </p>
                 <p>
@@ -131,7 +131,7 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="mt-16 text-center bg-card p-12 rounded-lg border"
           >
-            <h2 className="text-3xl font-bold mb-4">Let's Connect</h2>
+            <h2 className="text-3xl font-bold mb-4">Let&apos;s Connect</h2>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
               Follow me on social media for the latest updates, behind-the-scenes content,
               and announcements about new releases and performances.
