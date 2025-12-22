@@ -102,7 +102,7 @@ export default function Home() {
       {/* Bio Section */}
       <section id="bio" className="relative py-20 px-8 bg-card">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
             {/* Text Content - Left Column */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -147,25 +147,16 @@ export default function Home() {
               viewport={{ once: true }}
               className="relative"
             >
-              {/* Gritty Border Effect using drip-frame.png */}
-              <div className="relative">
-                <div className="absolute inset-0 z-10 pointer-events-none">
-                  <Image
-                    src="/images/overlays/drip-frame.png"
-                    alt="Drip Frame"
-                    fill
-                    className="object-cover opacity-80"
-                  />
-                </div>
-                <div className="relative z-0">
-                  <Image
-                    src="/images/artist/bio-portrait.jpg"
-                    alt="Piko Bio Portrait"
-                    width={600}
-                    height={800}
-                    className="w-full h-auto rounded-lg object-cover"
-                  />
-                </div>
+              <div className="relative group">
+                <Image
+                  src="/images/artist/portrait-close.jpg"
+                  alt="Piko Portrait"
+                  width={600}
+                  height={800}
+                  priority
+                  quality={100}
+                  className="w-full h-auto rounded-2xl border-2 border-neon-pink/50 object-cover transition-all duration-300 group-hover:scale-105 shadow-[0_0_30px_rgba(255,0,255,0.3)] group-hover:shadow-[0_0_50px_rgba(255,0,255,0.5)]"
+                />
               </div>
             </motion.div>
           </div>
