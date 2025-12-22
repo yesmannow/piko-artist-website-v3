@@ -6,10 +6,6 @@ import { Play, Pause, Volume2 } from "lucide-react";
 import { DiceRoller } from "./DiceRoller";
 import { tracks, Track } from "@/lib/data";
 
-interface PlayerProps {
-  audioUrl?: string;
-}
-
 const vibeColors = {
   chill: "bg-neon-green/20 text-neon-green border-neon-green",
   hype: "bg-neon-pink/20 text-neon-pink border-neon-pink",
@@ -24,7 +20,7 @@ const vibeIcons = {
   freestyle: "✨",
 };
 
-export function Player({ audioUrl }: PlayerProps) {
+export function Player() {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,11 +67,6 @@ export function Player({ audioUrl }: PlayerProps) {
 
     wavesurferRef.current = wavesurfer;
 
-    // Load audio if URL is provided
-    if (audioUrl) {
-      wavesurfer.load(audioUrl);
-    }
-
     wavesurfer.on("ready", () => {
       setIsLoading(false);
       setDuration(formatTime(wavesurfer.getDuration()));
@@ -91,7 +82,7 @@ export function Player({ audioUrl }: PlayerProps) {
     return () => {
       wavesurfer.destroy();
     };
-  }, [audioUrl]);
+  }, []);
 
   const handlePlayPause = () => {
     if (wavesurferRef.current) {
