@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { VideoGrid } from "@/components/VideoGrid";
+import { VideoGallery } from "@/components/VideoGallery";
 import { StudioGallery } from "@/components/StudioGallery";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
@@ -10,12 +10,7 @@ import { tracks } from "@/lib/data";
 
 export default function Home() {
   // Filter videos from tracks
-  const videos = tracks
-    .filter((track) => track.type === "video")
-    .map((track) => ({
-      id: track.id,
-      title: track.title,
-    }));
+  const videos = tracks.filter((track) => track.type === "video");
 
   const scrollToMusic = () => {
     const musicSection = document.getElementById("music");
@@ -194,10 +189,31 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-              Video Gallery
-            </h2>
-            <VideoGrid videos={videos} />
+            {/* Flickering Neon Header */}
+            <motion.h2
+              className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent"
+              animate={{
+                opacity: [1, 0.7, 1, 0.8, 1],
+                filter: [
+                  "brightness(1)",
+                  "brightness(1.2)",
+                  "brightness(0.8)",
+                  "brightness(1.1)",
+                  "brightness(1)",
+                ],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              style={{
+                textShadow: "0 0 20px hsl(var(--neon-pink)), 0 0 40px hsl(var(--neon-green))",
+              }}
+            >
+              VISUALS
+            </motion.h2>
+            <VideoGallery videos={videos} />
           </motion.div>
         </div>
       </section>

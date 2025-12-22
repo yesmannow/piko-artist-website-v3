@@ -13,19 +13,11 @@ interface VideoGalleryProps {
 export function VideoGallery({ videos }: VideoGalleryProps) {
   const [selectedVideo, setSelectedVideo] = useState<MediaItem | null>(null);
 
-  // Create staggered heights for masonry effect
-  const getStaggeredHeight = (index: number) => {
-    const heights = [280, 320, 300, 340, 310, 290];
-    return heights[index % heights.length];
-  };
-
   return (
     <>
-      {/* TV Stack Masonry Layout */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 space-y-4 md:space-y-6">
+      {/* TV Stack Masonry Layout - Mobile: Single Column, Desktop: Masonry */}
+      <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
         {videos.map((video, index) => {
-          const height = getStaggeredHeight(index);
-          
           return (
             <motion.div
               key={video.id}
@@ -41,16 +33,22 @@ export function VideoGallery({ videos }: VideoGalleryProps) {
                 {/* TV Screen */}
                 <div className="relative aspect-video bg-black rounded overflow-hidden">
                   {/* Thumbnail - Standby Mode (B&W + Grain) */}
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-r ${video.coverArt} transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 grayscale contrast-125`}
-                    style={{
-                      backgroundImage: "url(https://img.youtube.com/vi/" + video.id + "/maxresdefault.jpg)",
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  >
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+                      alt={video.title}
+                      fill
+                      className={`object-cover transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 grayscale contrast-125`}
+                      unoptimized
+                    />
                     {/* Grain overlay - disappears on hover */}
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjkiIG51bU9jdGF2ZXM9IjQiLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjYSkiIG9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=')] opacity-100 group-hover:opacity-0 transition-opacity duration-500 pointer-events-none" />
+                    <div
+                      className="absolute inset-0 opacity-100 group-hover:opacity-0 transition-opacity duration-500 pointer-events-none"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E")`,
+                        mixBlendMode: "overlay",
+                      }}
+                    />
                   </div>
 
                   {/* Chromatic Aberration on Hover */}
@@ -58,11 +56,11 @@ export function VideoGallery({ videos }: VideoGalleryProps) {
                     <div
                       className="absolute inset-0 mix-blend-screen"
                       style={{
-                        background: `linear-gradient(90deg, 
-                          transparent 0%, 
-                          rgba(255, 0, 0, 0.3) 25%, 
-                          transparent 50%, 
-                          rgba(0, 255, 0, 0.3) 75%, 
+                        background: `linear-gradient(90deg,
+                          transparent 0%,
+                          rgba(255, 0, 0, 0.3) 25%,
+                          transparent 50%,
+                          rgba(0, 255, 0, 0.3) 75%,
                           transparent 100%)`,
                         transform: "translateX(-2px)",
                       }}
@@ -70,11 +68,11 @@ export function VideoGallery({ videos }: VideoGalleryProps) {
                     <div
                       className="absolute inset-0 mix-blend-screen"
                       style={{
-                        background: `linear-gradient(90deg, 
-                          transparent 0%, 
-                          rgba(0, 0, 255, 0.3) 25%, 
-                          transparent 50%, 
-                          rgba(255, 0, 255, 0.3) 75%, 
+                        background: `linear-gradient(90deg,
+                          transparent 0%,
+                          rgba(0, 0, 255, 0.3) 25%,
+                          transparent 50%,
+                          rgba(255, 0, 255, 0.3) 75%,
                           transparent 100%)`,
                         transform: "translateX(2px)",
                       }}
