@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
-import { tracks, MediaItem } from "@/lib/data";
+import { tracks } from "@/lib/data";
 import { Play } from "lucide-react";
 
 const vibeColors = {

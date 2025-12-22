@@ -5,6 +5,11 @@ import { useAudio } from "@/context/AudioContext";
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+// Type declaration for webkit prefixed AudioContext
+interface WindowWithWebkit extends Window {
+  webkitAudioContext?: typeof AudioContext;
+}
+
 export function PersistentPlayer() {
   const {
     currentTrack,
@@ -37,7 +42,8 @@ export function PersistentPlayer() {
     let source: MediaElementAudioSourceNode | null = null;
 
     try {
-      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const windowWithWebkit = window as WindowWithWebkit;
+      audioContext = new (window.AudioContext || windowWithWebkit.webkitAudioContext!)();
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 64;
 

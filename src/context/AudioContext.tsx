@@ -6,7 +6,7 @@ import { MediaItem, tracks } from "@/lib/data";
 interface AudioContextType {
   currentTrack: MediaItem | null;
   isPlaying: boolean;
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
   togglePlay: () => void;
   playTrack: (track: MediaItem) => void;
   skipNext: () => void;

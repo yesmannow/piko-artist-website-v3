@@ -12,16 +12,16 @@ interface CinemaModalProps {
 }
 
 export function CinemaModal({ video, onClose }: CinemaModalProps) {
-  const { isPlaying, togglePlay, audioRef } = useAudio();
+  const { isPlaying, audioRef } = useAudio();
 
   // Pause music when modal opens
   useEffect(() => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
-      // Don't call togglePlay() as it might toggle instead of just pausing
       // The audio element's onPause event will update the state
     }
-  }, []); // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - intentionally ignoring deps
 
   // Handle ESC key
   useEffect(() => {
