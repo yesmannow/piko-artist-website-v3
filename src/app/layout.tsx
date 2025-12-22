@@ -3,6 +3,8 @@ import { Permanent_Marker, Sedgwick_Ave } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { AudioProvider } from "@/context/AudioContext";
+import { PersistentPlayer } from "@/components/PersistentPlayer";
 
 const permanentMarker = Permanent_Marker({
   weight: "400",
@@ -31,9 +33,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${permanentMarker.variable} ${sedgwickAve.variable}`}>
-        <Navigation />
-        {children}
-        <Footer />
+        <AudioProvider>
+          <Navigation />
+          {children}
+          <Footer />
+          <PersistentPlayer />
+        </AudioProvider>
       </body>
     </html>
   );

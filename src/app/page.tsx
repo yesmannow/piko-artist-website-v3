@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Player } from "@/components/Player";
 import { VideoGrid } from "@/components/VideoGrid";
 import { StudioGallery } from "@/components/StudioGallery";
 import { Contact } from "@/components/Contact";
+import { TrackList } from "@/components/TrackList";
 import { tracks } from "@/lib/data";
 
 export default function Home() {
@@ -168,21 +168,19 @@ export default function Home() {
         <StudioGallery />
       </section>
 
-      {/* Player Section */}
+      {/* Discography Section */}
       <section id="music" className="relative py-20 px-8 bg-card">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-              Roll The Dice
+            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+              DISCOGRAPHY
             </h2>
-            <div className="max-w-3xl mx-auto">
-              <Player />
-            </div>
+            <TrackList />
           </motion.div>
         </div>
       </section>
