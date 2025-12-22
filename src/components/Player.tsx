@@ -32,7 +32,6 @@ const vibeTooltips = {
 export function Player() {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const visualizerRef = useRef<HTMLDivElement>(null);
@@ -87,7 +86,10 @@ export function Player() {
       setDuration(formatTime(wavesurfer.getDuration()));
 
       // Get the backend's audio context if available
-      const backend = (wavesurfer as any).backend;
+      interface WaveSurferBackend {
+        ac?: AudioContext;
+      }
+      const backend = (wavesurfer as unknown as { backend?: WaveSurferBackend }).backend;
       if (backend && backend.ac) {
         const audioContext = backend.ac;
         const analyser = audioContext.createAnalyser();
@@ -99,7 +101,7 @@ export function Player() {
           const source = audioContext.createMediaElementSource(wavesurfer.getMediaElement());
           source.connect(analyser);
           analyser.connect(audioContext.destination);
-        } catch (e) {
+        } catch {
           // If connection fails (already connected), use gain node
           const gainNode = audioContext.createGain();
           const source = audioContext.createMediaElementSource(wavesurfer.getMediaElement());
@@ -177,7 +179,7 @@ export function Player() {
   };
 
   return (
-    <div className="relative w-full p-8 rounded-lg border-2 border-neon-pink/30 shadow-lg shadow-neon-pink/20 overflow-hidden">
+    <div className="relative w-full p-4 md:p-8 rounded-lg border-2 border-neon-pink/30 shadow-lg shadow-neon-pink/20 overflow-hidden">
       {/* Graffiti Wall Background - Parallax Effect */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Image
@@ -192,7 +194,7 @@ export function Player() {
       {/* Content with relative positioning */}
       <div className="relative z-10">
         {/* Dice Roller Section */}
-        <div className="mb-8 flex justify-center">
+        <div className="mb-6 md:mb-8 flex justify-center">
           <DiceRoller onRollComplete={handleDiceRoll} />
         </div>
 
@@ -200,12 +202,12 @@ export function Player() {
       <div className="mb-4">
         {currentTrack ? (
           <>
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div>
-                <h3 className="font-semibold text-2xl mb-1 font-tag text-neon-green">
+            <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4 mb-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-xl md:text-2xl mb-1 font-tag text-neon-green truncate">
                   {currentTrack.title}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   by {currentTrack.artist}
                 </p>
               </div>
@@ -270,26 +272,26 @@ export function Player() {
         <div ref={containerRef} className="mb-4" />
 
         {/* Controls - Street Marker Style */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-0">
+          <div className="flex items-center gap-2 md:gap-3">
             {/* Street Marker style play button */}
             <button
               onClick={handlePlayPause}
               disabled={isLoading || !currentTrack}
-              className="relative px-6 py-3 bg-black/80 border-2 border-neon-green font-tag text-neon-green hover:bg-neon-green hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="relative px-4 md:px-6 py-2 md:py-3 bg-black/80 border-2 border-neon-green font-tag text-neon-green hover:bg-neon-green hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-sm md:text-base"
               style={{
                 clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
               }}
             >
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-              <span className="ml-2 font-bold">PLAY</span>
+              {isPlaying ? <Pause className="w-4 h-4 md:w-5 md:h-5" /> : <Play className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />}
+              <span className="ml-1 md:ml-2 font-bold">PLAY</span>
             </button>
-            <div className="px-4 py-2 bg-black/80 border-2 border-neon-pink font-tag text-neon-pink" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
-              <Volume2 className="w-5 h-5" />
+            <div className="px-3 md:px-4 py-2 bg-black/80 border-2 border-neon-pink font-tag text-neon-pink" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+              <Volume2 className="w-4 h-4 md:w-5 md:h-5" />
             </div>
           </div>
 
-          <div className="text-sm text-foreground font-tag font-bold px-4 py-2 bg-black/80 border border-neon-green/50">
+          <div className="text-xs md:text-sm text-foreground font-tag font-bold px-3 md:px-4 py-2 bg-black/80 border border-neon-green/50 text-center md:text-left">
             {currentTime} / {duration}
           </div>
         </div>

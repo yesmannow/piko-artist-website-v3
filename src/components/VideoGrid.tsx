@@ -21,7 +21,7 @@ export function VideoGrid({ videos }: VideoGridProps) {
       {/* Horizontal Scroll Container */}
       <div
         ref={scrollRef}
-        className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neon-pink scrollbar-track-muted"
+        className="flex gap-4 md:gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neon-pink scrollbar-track-muted px-4 md:px-0"
         style={{
           scrollbarWidth: "thin",
           scrollbarColor: "hsl(var(--neon-pink)) hsl(var(--muted))",
@@ -34,7 +34,7 @@ export function VideoGrid({ videos }: VideoGridProps) {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             viewport={{ once: true }}
-            className="group flex-shrink-0 w-[400px] snap-center"
+            className="group flex-shrink-0 w-[280px] md:w-[400px] snap-center"
           >
             {/* CRT Video Wrapper with VCR Glitch Effect */}
             <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg hover:shadow-neon-green/50 transition-shadow vcr-glitch">

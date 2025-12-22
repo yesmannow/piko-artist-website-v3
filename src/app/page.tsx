@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Player } from "@/components/Player";
 import { VideoGrid } from "@/components/VideoGrid";
+import { StudioGallery } from "@/components/StudioGallery";
+import { Contact } from "@/components/Contact";
 import { tracks } from "@/lib/data";
 
 export default function Home() {
@@ -170,8 +172,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Studio Life Gallery Section */}
+      <section className="relative py-20 px-8 bg-background">
+        <StudioGallery />
+      </section>
+
       {/* Player Section */}
-      <section id="music" className="relative py-20 px-8 bg-background">
+      <section id="music" className="relative py-20 px-8 bg-card">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -190,7 +197,7 @@ export default function Home() {
       </section>
 
       {/* Video Gallery Section */}
-      <section id="videos" className="relative py-20 px-8 bg-card">
+      <section id="videos" className="relative py-20 px-8 bg-background">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -205,6 +212,9 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Contact Section */}
+      <Contact />
     </div>
   );
 }
