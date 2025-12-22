@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
 import Image from "next/image";
 import { Play, Pause, Volume2 } from "lucide-react";
-import { DiceRoller } from "./DiceRoller";
 import { tracks, MediaItem } from "@/lib/data";
 
 const vibeColors = {
@@ -48,19 +47,18 @@ export function Player() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleDiceRoll = (result: number) => {
-    // Map dice result (1-6) to track index (0-5)
-    const trackIndex = result - 1;
-    const selectedTrack = tracks[trackIndex];
-
-    if (selectedTrack) {
-      setCurrentTrack(selectedTrack);
-      // In production, this would load from selectedTrack.src
-      // For now, we'll just update the UI
-      setIsLoading(false);
-      setDuration("3:45"); // Mock duration
+  // Select a random track on initialization
+  useEffect(() => {
+    if (!currentTrack && tracks.length > 0) {
+      const randomIndex = Math.floor(Math.random() * tracks.length);
+      const selectedTrack = tracks[randomIndex];
+      if (selectedTrack) {
+        setCurrentTrack(selectedTrack);
+        setIsLoading(false);
+        setDuration("3:45"); // Mock duration
+      }
     }
-  };
+  }, [currentTrack]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -193,12 +191,7 @@ export function Player() {
 
       {/* Content with relative positioning */}
       <div className="relative z-10">
-        {/* Dice Roller Section */}
-        <div className="mb-6 md:mb-8 flex justify-center">
-          <DiceRoller onRollComplete={handleDiceRoll} />
-        </div>
-
-      {/* Track Info */}
+        {/* Track Info */}
       <div className="mb-4">
         {currentTrack ? (
           <>
