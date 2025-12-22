@@ -4,20 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import { Play, Pause, Volume2 } from "lucide-react";
 import { DiceRoller } from "./DiceRoller";
-import { tracks, Track } from "@/lib/data";
+import { tracks, MediaItem } from "@/lib/data";
 
 const vibeColors = {
   chill: "bg-neon-green/20 text-neon-green border-neon-green",
   hype: "bg-neon-pink/20 text-neon-pink border-neon-pink",
   classic: "bg-amber-500/20 text-amber-400 border-amber-400",
-  freestyle: "bg-cyan-500/20 text-cyan-400 border-cyan-400",
+  storytelling: "bg-purple-500/20 text-purple-400 border-purple-400",
 };
 
 const vibeIcons = {
   chill: "🌊",
   hype: "🔥",
   classic: "👑",
-  freestyle: "✨",
+  storytelling: "📖",
 };
 
 export function Player() {
@@ -27,7 +27,7 @@ export function Player() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState("0:00");
   const [duration, setDuration] = useState("0:00");
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<MediaItem | null>(null);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -39,7 +39,7 @@ export function Player() {
     // Map dice result (1-6) to track index (0-5)
     const trackIndex = result - 1;
     const selectedTrack = tracks[trackIndex];
-    
+
     if (selectedTrack) {
       setCurrentTrack(selectedTrack);
       // In production, this would load from selectedTrack.src
@@ -74,7 +74,7 @@ export function Player() {
 
     wavesurfer.on("play", () => setIsPlaying(true));
     wavesurfer.on("pause", () => setIsPlaying(false));
-    
+
     wavesurfer.on("timeupdate", (time) => {
       setCurrentTime(formatTime(time));
     });
@@ -110,7 +110,7 @@ export function Player() {
                   by {currentTrack.artist}
                 </p>
               </div>
-              
+
               {/* Vibe Badge */}
               <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${vibeColors[currentTrack.vibe]} font-tag text-sm`}>
                 <span>{vibeIcons[currentTrack.vibe]}</span>
@@ -129,10 +129,10 @@ export function Player() {
           </div>
         )}
       </div>
-      
+
       {/* Waveform */}
       <div ref={containerRef} className="mb-4" />
-      
+
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -143,13 +143,13 @@ export function Player() {
             className="relative p-4 bg-gradient-to-br from-neon-pink to-neon-green text-background rounded-full hover:shadow-lg hover:shadow-neon-pink/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
-            
+
             {/* Spray effect */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-neon-pink/30 to-neon-green/30 blur-md group-hover:blur-lg transition-all" />
           </button>
           <Volume2 className="w-5 h-5 text-neon-green" />
         </div>
-        
+
         <div className="text-sm text-muted-foreground font-mono">
           {currentTime} / {duration}
         </div>

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRef } from "react";
+import Image from "next/image";
 
 interface Video {
   id: string;
@@ -18,7 +19,7 @@ export function VideoGrid({ videos }: VideoGridProps) {
   return (
     <div className="relative">
       {/* Horizontal Scroll Container */}
-      <div 
+      <div
         ref={scrollRef}
         className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neon-pink scrollbar-track-muted"
         style={{
@@ -45,17 +46,27 @@ export function VideoGrid({ videos }: VideoGridProps) {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
-              
+
+              {/* Drip Frame Overlay */}
+              <div className="absolute inset-0 pointer-events-none z-[15]">
+                <Image
+                  src="/images/overlays/drip-frame.png"
+                  alt="Drip Frame"
+                  fill
+                  className="object-cover opacity-80"
+                />
+              </div>
+
               {/* CRT Scanline Overlay */}
               <div className="crt-scanlines absolute inset-0 pointer-events-none z-20" />
-              
+
               {/* CRT Flicker Effect */}
               <div className="crt-flicker absolute inset-0 pointer-events-none z-20" />
-              
+
               {/* Retro border glow */}
               <div className="absolute inset-0 border-2 border-neon-green/30 rounded-lg pointer-events-none z-30 group-hover:border-neon-green/60 transition-colors" />
             </div>
-            
+
             {/* Title with graffiti font */}
             <h3 className="mt-4 font-tag text-xl text-neon-pink group-hover:text-neon-green transition-colors">
               {video.title}
