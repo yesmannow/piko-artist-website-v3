@@ -172,7 +172,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           <span className="text-black/40">•</span>
           <span
             className={[
-              "px-2 py-0.5 rounded-full border border-black text-[10px] font-tag tracking-[0.15em] uppercase",
+              "px-2 py-0.5 rounded-full border border-black text-[10px] font-industrial font-bold tracking-[0.15em] uppercase",
               vibeColors[track.vibe],
             ].join(" ")}
           >
@@ -216,7 +216,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 type="button"
                 onClick={() => setActiveFilter(opt.id)}
                 className={[
-                  "px-4 py-2 rounded-full border-2 border-black font-tag tracking-wider text-sm transition-all",
+                  "px-4 py-2 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all",
                   isActive
                     ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
                     : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
@@ -235,7 +235,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
           <div className="min-w-[760px] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden">
             {/* Sticky header */}
             <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
-              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-tag">
+              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-industrial font-bold">
                 <div>#</div>
                 <div>TITLE</div>
                 <div>ARTIST</div>
@@ -273,7 +273,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     <div className="relative flex items-center justify-center">
                       <span
                         className={[
-                          "text-sm font-tag",
+                          "text-sm font-industrial font-bold",
                           "group-hover:opacity-0 transition-opacity",
                           isActive ? "opacity-0" : "opacity-100 text-white/70",
                         ].join(" ")}
@@ -298,8 +298,8 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                       <div className="min-w-0">
                         <div
                           className={[
-                            "truncate font-tag text-sm md:text-base",
-                            isActive ? "text-toxic-lime" : "text-foreground font-bold",
+                            "truncate font-industrial font-bold uppercase tracking-wider text-sm md:text-base",
+                            isActive ? "text-toxic-lime" : "text-foreground",
                           ].join(" ")}
                         >
                           {track.title}
@@ -316,7 +316,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     <div className="flex items-center">
                       <span
                         className={[
-                          "px-3 py-1 rounded-full border text-[11px] font-tag tracking-[0.2em] uppercase",
+                          "px-3 py-1 rounded-full border text-[11px] font-industrial font-bold tracking-[0.2em] uppercase",
                           vibeColors[track.vibe],
                         ].join(" ")}
                       >
@@ -357,7 +357,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         <div className="mt-6 flex justify-center">
           <Link
             href="/music"
-            className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-tag tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
+            className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-industrial font-bold tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
           >
             View Full Discography
           </Link>

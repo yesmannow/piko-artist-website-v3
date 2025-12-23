@@ -110,7 +110,7 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
           )}
 
           {/* Duration Badge (Bottom-Right) */}
-          <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-tag text-white border border-black z-20">
+          <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-industrial font-bold text-white border border-black z-20">
             {getFakeDuration(index)}
           </div>
 
@@ -140,7 +140,7 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
               {video.artist}
             </p>
             <span className="text-foreground/40">•</span>
-            <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-tag uppercase bg-foreground/5 text-foreground/70 border border-black">
+            <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-industrial font-bold uppercase bg-foreground/5 text-foreground/70 border border-black">
               {video.vibe}
             </span>
           </div>
@@ -245,7 +245,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                         style={{ transform: "rotate(-2deg)" }}
                         whileHover={{ rotate: "-1deg", scale: 1.05 }}
                       >
-                        <p className="font-tag text-black text-sm md:text-base font-bold">
+                        <p className="font-industrial font-bold uppercase tracking-wider text-black text-sm md:text-base">
                           {video.title}
                         </p>
                       </motion.div>
@@ -259,7 +259,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
           <div className="mt-8 flex justify-center">
             <Link
               href="/videos"
-              className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-tag tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
+              className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-industrial font-bold tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
             >
               Watch All Visuals
             </Link>

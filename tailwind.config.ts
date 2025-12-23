@@ -17,9 +17,13 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        // Graffiti fonts (Keep for accents only)
         graffiti: ["var(--font-permanent-marker)", "cursive"],
         tag: ["var(--font-sedgwick-ave)", "cursive"],
-        header: ["Impact", "sans-serif"],
+        // NEW: "Flyer" style for big headers (Replaces Impact)
+        header: ["var(--font-anton)", "sans-serif"],
+        // NEW: "Industrial" style for lists, tracks, and dates
+        industrial: ["var(--font-barlow)", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

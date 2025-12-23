@@ -563,16 +563,16 @@ export function ProSequencer() {
     <div className="w-full max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h2 className="text-3xl md:text-4xl font-header mb-2 text-foreground">
+        <h2 className="text-3xl md:text-4xl font-header tracking-wide mb-2 text-foreground">
           {mode === "remix" ? "REMIX STATION" : "PRO SEQUENCER"}
         </h2>
-        <p className="text-foreground/60 font-tag text-sm md:text-base">
+        <p className="text-foreground/60 font-industrial font-bold uppercase tracking-wider text-sm md:text-base">
           {mode === "remix"
             ? "Click pads to toggle loops • Mix stems in real-time"
             : "Click steps to build your pattern • Crate digging enabled"}
         </p>
         {!buffersLoaded && mode === "sequencer" && (
-          <p className="text-safety-orange font-tag text-xs mt-2 animate-pulse">
+          <p className="text-safety-orange font-industrial font-bold uppercase tracking-wider text-xs mt-2 animate-pulse">
             Loading samples...
           </p>
         )}
@@ -580,14 +580,14 @@ export function ProSequencer() {
 
       {/* Mode Selector */}
       <div className="mb-6 flex items-center justify-center gap-4">
-        <label className="font-tag text-foreground text-sm md:text-base">Mode:</label>
+        <label className="font-industrial font-bold text-foreground text-sm md:text-base">Mode:</label>
         <div className="flex gap-2 border-2 border-black shadow-hard">
           <button
             type="button"
             onClick={() => setMode("sequencer")}
-            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+            className={`px-4 py-2 font-industrial font-bold text-sm md:text-base transition-all ${
               mode === "sequencer"
-                ? "bg-toxic-lime text-black font-bold"
+                ? "bg-toxic-lime text-black"
                 : "bg-concrete text-foreground/60 hover:text-foreground"
             }`}
           >
@@ -596,9 +596,9 @@ export function ProSequencer() {
           <button
             type="button"
             onClick={() => setMode("remix")}
-            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+            className={`px-4 py-2 font-industrial font-bold text-sm md:text-base transition-all ${
               mode === "remix"
-                ? "bg-toxic-lime text-black font-bold"
+                ? "bg-toxic-lime text-black"
                 : "bg-concrete text-foreground/60 hover:text-foreground"
             }`}
           >
@@ -609,14 +609,14 @@ export function ProSequencer() {
 
       {/* Kit Selector */}
       <div className="mb-6 flex items-center justify-center gap-4">
-        <label className="font-tag text-foreground text-sm md:text-base">Kit:</label>
+        <label className="font-industrial font-bold text-foreground text-sm md:text-base">Kit:</label>
         <div className="flex gap-2 border-2 border-black shadow-hard flex-wrap justify-center">
           <button
             type="button"
             onClick={() => setSelectedKit("street")}
-            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+            className={`px-4 py-2 font-industrial font-bold text-sm md:text-base transition-all ${
               selectedKit === "street"
-                ? "bg-toxic-lime text-black font-bold"
+                ? "bg-toxic-lime text-black"
                 : "bg-concrete text-foreground/60 hover:text-foreground"
             }`}
           >
@@ -625,9 +625,9 @@ export function ProSequencer() {
           <button
             type="button"
             onClick={() => setSelectedKit("lofi")}
-            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+            className={`px-4 py-2 font-industrial font-bold text-sm md:text-base transition-all ${
               selectedKit === "lofi"
-                ? "bg-toxic-lime text-black font-bold"
+                ? "bg-toxic-lime text-black"
                 : "bg-concrete text-foreground/60 hover:text-foreground"
             }`}
           >
@@ -637,9 +637,9 @@ export function ProSequencer() {
             type="button"
             onClick={() => setSelectedKit("jardin")}
             disabled={mode === "sequencer"}
-            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+            className={`px-4 py-2 font-industrial font-bold text-sm md:text-base transition-all ${
               selectedKit === "jardin"
-                ? "bg-toxic-lime text-black font-bold"
+                ? "bg-toxic-lime text-black"
                 : "bg-concrete text-foreground/60 hover:text-foreground"
             } ${mode === "sequencer" ? "opacity-50 cursor-not-allowed" : ""}`}
           >
@@ -649,9 +649,9 @@ export function ProSequencer() {
             type="button"
             onClick={() => setSelectedKit("amor")}
             disabled={mode === "sequencer"}
-            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+            className={`px-4 py-2 font-industrial font-bold text-sm md:text-base transition-all ${
               selectedKit === "amor"
-                ? "bg-toxic-lime text-black font-bold"
+                ? "bg-toxic-lime text-black"
                 : "bg-concrete text-foreground/60 hover:text-foreground"
             } ${mode === "sequencer" ? "opacity-50 cursor-not-allowed" : ""}`}
           >
@@ -672,7 +672,7 @@ export function ProSequencer() {
         </div>
         {/* Speed Fader (Vertical Slider) */}
         <div className="flex flex-col items-center gap-2 pt-4">
-          <label className="font-tag text-foreground text-xs md:text-sm font-bold">
+          <label className="font-industrial font-bold text-foreground text-xs md:text-sm">
             SPEED
           </label>
           <div className="relative h-48 md:h-64 w-12 flex items-center justify-center">
@@ -732,13 +732,13 @@ export function ProSequencer() {
           <>
             {/* Step Numbers Header */}
             <div className="grid grid-cols-[120px_repeat(16,1fr)] gap-2 mb-4">
-              <div className="text-xs md:text-sm font-tag text-foreground/40 text-center">
+              <div className="text-xs md:text-sm font-industrial font-bold text-foreground/40 text-center">
                 Pad
               </div>
               {Array.from({ length: STEPS }, (_, i) => (
                 <div
                   key={i}
-                  className="text-xs md:text-sm font-tag text-foreground/40 text-center"
+                  className="text-xs md:text-sm font-industrial font-bold text-foreground/40 text-center"
                 >
                   {i + 1}
                 </div>
@@ -760,7 +760,7 @@ export function ProSequencer() {
                     <motion.button
                       type="button"
                       onClick={() => playPadNow(pad)}
-                      className="font-header text-sm md:text-base font-bold text-center px-2 py-2 rounded border-2 border-black bg-concrete cursor-pointer"
+                      className="font-industrial font-bold uppercase tracking-wider text-sm md:text-base text-center px-2 py-2 rounded border-2 border-black bg-concrete cursor-pointer"
                       style={{ color: streetColor }}
                       whileHover={{ scale: 1.05, backgroundColor: streetColor, color: "#000" }}
                       whileTap={{ scale: 0.95 }}
@@ -838,7 +838,7 @@ export function ProSequencer() {
                     className={`
                       px-3 py-2 rounded-lg
                       border-2 border-black
-                      font-tag text-xs md:text-sm font-bold
+                      font-industrial font-bold text-xs md:text-sm
                       transition-all
                     `}
                     style={{
@@ -886,7 +886,7 @@ export function ProSequencer() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <div
-                      className="font-header text-lg md:text-xl font-bold"
+                      className="font-industrial font-bold uppercase tracking-wider text-lg md:text-xl"
                       style={{
                         color: isActive ? "#000" : streetColor,
                       }}
@@ -923,7 +923,7 @@ export function ProSequencer() {
             <motion.button
               onClick={handlePlayToggle}
               disabled={!buffersLoaded && mode === "sequencer"}
-              className={`px-6 md:px-8 py-3 bg-toxic-lime/20 border-2 border-black text-toxic-lime font-tag rounded-lg flex items-center gap-2 shadow-hard ${
+              className={`px-6 md:px-8 py-3 bg-toxic-lime/20 border-2 border-black text-toxic-lime font-industrial font-bold rounded-lg flex items-center gap-2 shadow-hard ${
                 !buffersLoaded && mode === "sequencer" ? "opacity-50 cursor-not-allowed" : ""
               }`}
               whileHover={buffersLoaded || mode !== "sequencer" ? { scale: 1.05 } : {}}
@@ -952,7 +952,7 @@ export function ProSequencer() {
               <motion.button
                 onClick={startRecording}
                 disabled={isRecording || !buffersLoaded}
-                className={`px-6 md:px-8 py-3 border-2 border-black font-tag rounded-lg flex items-center gap-2 shadow-hard ${
+                className={`px-6 md:px-8 py-3 border-2 border-black font-industrial font-bold rounded-lg flex items-center gap-2 shadow-hard ${
                   isRecording
                     ? "bg-red-500 text-white"
                     : "bg-concrete text-red-500 hover:bg-red-500/10"
@@ -972,7 +972,7 @@ export function ProSequencer() {
 
             {/* Tempo/BPM Slider */}
             <div className="flex items-center gap-4">
-              <label className="font-tag text-foreground text-sm md:text-base">
+              <label className="font-industrial font-bold text-foreground text-sm md:text-base">
                 BPM:
               </label>
               <div className="flex items-center gap-3">
@@ -996,7 +996,7 @@ export function ProSequencer() {
 
             {/* GRIT Knob (Master FX) */}
             <div className="flex flex-col items-center gap-2">
-              <label className="font-tag text-foreground text-xs md:text-sm">
+              <label className="font-industrial font-bold text-foreground text-xs md:text-sm">
                 GRIT
               </label>
               <div className="flex items-center gap-2">
@@ -1020,7 +1020,7 @@ export function ProSequencer() {
 
             {/* FILTER Knob */}
             <div className="flex flex-col items-center gap-2">
-              <label className="font-tag text-foreground text-xs md:text-sm">
+              <label className="font-industrial font-bold text-foreground text-xs md:text-sm">
                 FILTER
               </label>
               <div className="flex items-center gap-2">
@@ -1045,7 +1045,7 @@ export function ProSequencer() {
             {/* Share Button (only in sequencer mode) */}
             {mode === "sequencer" && (
               <motion.button
-                className="px-6 py-3 bg-safety-orange/20 border-2 border-black text-safety-orange font-tag rounded-lg flex items-center gap-2 shadow-hard"
+                className="px-6 py-3 bg-safety-orange/20 border-2 border-black text-safety-orange font-industrial font-bold rounded-lg flex items-center gap-2 shadow-hard"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleShare}
@@ -1057,7 +1057,7 @@ export function ProSequencer() {
 
             {/* Clear All Button */}
             <motion.button
-              className="px-6 py-3 bg-spray-magenta/20 border-2 border-black text-spray-magenta font-tag rounded-lg shadow-hard"
+              className="px-6 py-3 bg-spray-magenta/20 border-2 border-black text-spray-magenta font-industrial font-bold rounded-lg shadow-hard"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleClearAll}
@@ -1078,7 +1078,7 @@ export function ProSequencer() {
             className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-concrete border-2 border-black rounded-lg px-6 py-4 flex items-center gap-3 shadow-hard"
           >
             <Check className="w-5 h-5 text-toxic-lime" />
-            <span className="font-tag text-toxic-lime">Link Copied!</span>
+            <span className="font-industrial font-bold uppercase tracking-wider text-toxic-lime">Link Copied!</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1103,7 +1103,7 @@ export function ProSequencer() {
               <h3 className="font-header text-2xl md:text-3xl text-foreground mb-4 text-center">
                 Beat Captured!
               </h3>
-              <p className="font-tag text-foreground/80 text-center mb-6">
+              <p className="font-industrial font-bold uppercase tracking-wider text-foreground/80 text-center mb-6">
                 Share this pattern?
               </p>
               <div className="flex gap-4 justify-center">
@@ -1112,7 +1112,7 @@ export function ProSequencer() {
                     setShowRecordModal(false);
                     handleShare();
                   }}
-                  className="px-6 py-3 bg-toxic-lime border-2 border-black text-black font-tag rounded-lg shadow-hard"
+                  className="px-6 py-3 bg-toxic-lime border-2 border-black text-black font-industrial font-bold rounded-lg shadow-hard"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -1120,7 +1120,7 @@ export function ProSequencer() {
                 </motion.button>
                 <motion.button
                   onClick={() => setShowRecordModal(false)}
-                  className="px-6 py-3 bg-concrete border-2 border-black text-foreground font-tag rounded-lg shadow-hard"
+                  className="px-6 py-3 bg-concrete border-2 border-black text-foreground font-industrial font-bold rounded-lg shadow-hard"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -32,7 +32,7 @@ export function InstallApp() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // Check if iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     if (isIOS) {
       setShowIOSPrompt(true);
     }

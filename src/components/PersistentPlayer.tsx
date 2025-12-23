@@ -172,7 +172,7 @@ export function PersistentPlayer() {
 
                       {/* Scrolling marquee text */}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="font-tag text-sm md:text-base text-foreground truncate">
+                        <div className="font-industrial font-bold uppercase tracking-wider text-sm md:text-base text-foreground truncate">
                           <span>{currentTrack.title}</span>
                           <span className="text-foreground/60 text-xs md:text-sm">
                             {" "}• {currentTrack.artist}

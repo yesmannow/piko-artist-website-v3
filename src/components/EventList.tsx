@@ -95,13 +95,13 @@ function EventCard({ event, index }: { event: Event; index: number }) {
             {/* Location */}
             <div className="flex items-center gap-2 text-foreground/60">
               <MapPin className="w-4 h-4" />
-              <span className="font-tag">{event.location}</span>
+              <span className="font-industrial font-bold uppercase tracking-wider">{event.location}</span>
             </div>
 
             {/* Type */}
             <div className="flex items-center gap-2">
               <span
-                className={`px-2 py-0.5 rounded text-xs font-tag uppercase border-2 border-black ${
+                className={`px-2 py-0.5 rounded text-xs font-industrial font-bold uppercase border-2 border-black ${
                   event.type === "festival"
                     ? "bg-spray-magenta/20 text-spray-magenta"
                     : "bg-toxic-lime/20 text-toxic-lime"
@@ -157,7 +157,7 @@ export function EventList({ limit }: EventListProps) {
       {/* INCOMING TRANSMISSIONS - Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <section>
-          <h2 className="text-3xl md:text-4xl font-header mb-6 md:mb-8 text-foreground">
+          <h2 className="text-3xl md:text-4xl font-header tracking-wide mb-6 md:mb-8 text-foreground">
             INCOMING TRANSMISSIONS
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2 md:px-0">
@@ -171,7 +171,7 @@ export function EventList({ limit }: EventListProps) {
       {/* ARCHIVED FOOTAGE - Past Events */}
       {pastEvents.length > 0 && (
         <section>
-          <h2 className="text-3xl md:text-4xl font-header mb-6 md:mb-8 text-foreground">
+          <h2 className="text-3xl md:text-4xl font-header tracking-wide mb-6 md:mb-8 text-foreground">
             ARCHIVED FOOTAGE
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2 md:px-0">
