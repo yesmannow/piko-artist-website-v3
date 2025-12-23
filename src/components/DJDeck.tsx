@@ -22,6 +22,8 @@ interface DJDeckProps {
   isSynced?: boolean;
   audioContext?: AudioContext;
   outputNode?: AudioNode;
+  title?: string; // Track title to display
+  coverArt?: string; // Cover art image URL for vinyl label
 }
 
 export interface DJDeckRef {
@@ -50,6 +52,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       isSynced = false,
       audioContext,
       outputNode,
+      title,
+      coverArt,
     },
     ref
   ) => {
@@ -155,6 +159,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
     // Handle play/pause
     const handlePlayPause = () => {
+      // CRITICAL: Unlock audio context on first user interaction
+      if (audioContext && audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+
       if (wavesurferRef.current) {
         if (wavesurferRef.current.isPlaying()) {
           wavesurferRef.current.pause();
@@ -338,6 +347,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             onDragEnd={handleDragEnd}
             bpm={120} // Default BPM - can be made configurable in the future
             playbackRate={speed}
+            coverArt={coverArt}
           />
         </div>
 
@@ -462,6 +472,15 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             </div>
           </div>
         </div>
+
+        {/* Track Title */}
+        {title && (
+          <div className="w-full text-center">
+            <h4 className="text-xl md:text-2xl font-bold text-[#ccff00] uppercase tracking-wider truncate px-4">
+              {title}
+            </h4>
+          </div>
+        )}
 
         {/* Waveform with Dark Grid Background */}
         <div

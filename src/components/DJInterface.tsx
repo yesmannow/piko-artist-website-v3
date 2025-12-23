@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
-import { tracks } from "@/lib/data";
+import { tracks, MediaItem } from "@/lib/data";
 import { X, HelpCircle } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
@@ -13,7 +13,7 @@ export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
 
   // Deck A state
-  const [deckATrack, setDeckATrack] = useState<string | null>(null);
+  const [deckAData, setDeckAData] = useState<typeof tracks[0] | null>(null);
   const [deckAPlaying, setDeckAPlaying] = useState(false);
   const [deckAVolume, setDeckAVolume] = useState(0.7);
   const [deckASpeed, setDeckASpeed] = useState(1.0); // 1.0 = 0%, range 0.92-1.08 for +/- 8%
@@ -22,7 +22,7 @@ export function DJInterface() {
   const [deckALow, setDeckALow] = useState(0);
 
   // Deck B state
-  const [deckBTrack, setDeckBTrack] = useState<string | null>(null);
+  const [deckBData, setDeckBData] = useState<typeof tracks[0] | null>(null);
   const [deckBPlaying, setDeckBPlaying] = useState(false);
   const [deckBVolume, setDeckBVolume] = useState(0.7);
   const [deckBSpeed, setDeckBSpeed] = useState(1.0); // 1.0 = 0%, range 0.92-1.08 for +/- 8%
@@ -295,14 +295,14 @@ export function DJInterface() {
 
   const loadTrackToDeckA = (track: typeof tracks[0]) => {
     if (track.type === "audio") {
-      setDeckATrack(track.src);
+      setDeckAData(track);
       setDeckAPlaying(false);
     }
   };
 
   const loadTrackToDeckB = (track: typeof tracks[0]) => {
     if (track.type === "audio") {
-      setDeckBTrack(track.src);
+      setDeckBData(track);
       setDeckBPlaying(false);
     }
   };
@@ -526,7 +526,7 @@ export function DJInterface() {
           >
             <DJDeck
               ref={deckARef}
-              trackUrl={deckATrack}
+              trackUrl={deckAData?.src || null}
               isPlaying={deckAPlaying}
               speed={deckASpeed}
               deckColor="#4a90e2"
@@ -537,6 +537,8 @@ export function DJInterface() {
               isSynced={deckASynced}
               audioContext={audioContextRef.current || undefined}
               outputNode={deckAFiltersRef.current?.low || undefined}
+              title={deckAData?.title}
+              coverArt={deckAData?.coverArt}
             />
             {/* Drop indicator */}
             <div className="absolute inset-0 border-2 border-dashed border-[#4a90e2] rounded-lg pointer-events-none opacity-0 transition-opacity" id="deck-a-drop-zone" />
@@ -613,7 +615,7 @@ export function DJInterface() {
           >
             <DJDeck
               ref={deckBRef}
-              trackUrl={deckBTrack}
+              trackUrl={deckBData?.src || null}
               isPlaying={deckBPlaying}
               speed={deckBSpeed}
               deckColor="#e24a4a"
@@ -624,6 +626,8 @@ export function DJInterface() {
               isSynced={deckBSynced}
               audioContext={audioContextRef.current || undefined}
               outputNode={deckBFiltersRef.current?.low || undefined}
+              title={deckBData?.title}
+              coverArt={deckBData?.coverArt}
             />
             {/* Drop indicator */}
             <div className="absolute inset-0 border-2 border-dashed border-[#e24a4a] rounded-lg pointer-events-none opacity-0 transition-opacity" id="deck-b-drop-zone" />

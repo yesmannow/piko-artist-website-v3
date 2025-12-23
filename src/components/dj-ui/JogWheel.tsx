@@ -14,6 +14,7 @@ interface JogWheelProps {
   onDragEnd?: () => void;
   bpm?: number; // Track BPM (default 120)
   playbackRate?: number; // Playback rate/pitch (default 1.0)
+  coverArt?: string; // Cover art image URL for vinyl label
 }
 
 export function JogWheel({
@@ -25,6 +26,7 @@ export function JogWheel({
   onDragEnd,
   bpm = 120,
   playbackRate = 1.0,
+  coverArt,
 }: JogWheelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragRotation, setDragRotation] = useState(0);
@@ -151,6 +153,24 @@ export function JogWheel({
         }
       }}
     >
+      {/* Vinyl Label Overlay */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden border-2 border-zinc-900 z-10 pointer-events-none"
+        style={{
+          width: "35%",
+          height: "35%",
+          transform: `translate(-50%, -50%) rotate(${displayRotation}deg)`,
+        }}
+      >
+        {coverArt ? (
+          <img src={coverArt} alt="Label" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-[#111] flex items-center justify-center">
+            <span className="text-[6px] text-zinc-500 font-bold tracking-widest">PIKO</span>
+          </div>
+        )}
+      </div>
+
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 0, 8], fov: 50 }}
