@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { Event } from "@/lib/events";
+import { Move3D, Lock } from "lucide-react";
 
 // Convert lat/lng to 3D coordinates on a sphere
 function latLngToVector3(lat: number, lng: number, radius: number): [number, number, number] {
@@ -133,17 +134,79 @@ interface EventGlobeProps {
 }
 
 export function EventGlobe({ events }: EventGlobeProps) {
+  const [interactionEnabled, setInteractionEnabled] = useState(false);
+
+  const toggleInteraction = useCallback(() => {
+    setInteractionEnabled((prev) => !prev);
+  }, []);
+
   return (
-    <div className="w-full h-full">
-      <Canvas
-        camera={{ position: [0, 0, 6], fov: 50 }}
-        style={{ width: "100%", height: "100%" }}
+    <div className="w-full h-full relative">
+      {/* Mobile interaction toggle button */}
+      <button
+        type="button"
+        onClick={toggleInteraction}
+        className={`
+          absolute top-4 right-4 z-10
+          px-3 py-2 rounded-lg
+          border-2 border-black
+          font-tag text-xs font-bold
+          flex items-center gap-2
+          transition-all
+          md:hidden
+        `}
+        style={{
+          backgroundColor: interactionEnabled ? "#ccff00" : "#2a2a2a",
+          color: interactionEnabled ? "#000" : "#ccff00",
+          boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)",
+        }}
       >
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
-        <GlobeScene events={events} />
-      </Canvas>
+        {interactionEnabled ? (
+          <>
+            <Move3D className="w-4 h-4" />
+            DRAG TO SPIN
+          </>
+        ) : (
+          <>
+            <Lock className="w-4 h-4" />
+            TAP TO UNLOCK
+          </>
+        )}
+      </button>
+
+      <div
+        className="w-full h-full"
+        style={{
+          // Block touch events on mobile unless explicitly enabled
+          pointerEvents: interactionEnabled ? "auto" : "none",
+        }}
+      >
+        {/* Re-enable on desktop */}
+        <div className="w-full h-full hidden md:block" style={{ pointerEvents: "auto" }}>
+          <Canvas
+            camera={{ position: [0, 0, 6], fov: 50 }}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} intensity={1} />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} />
+            <GlobeScene events={events} />
+          </Canvas>
+        </div>
+
+        {/* Mobile version - conditionally interactive */}
+        <div className="w-full h-full md:hidden">
+          <Canvas
+            camera={{ position: [0, 0, 6], fov: 50 }}
+            style={{ width: "100%", height: "100%", pointerEvents: interactionEnabled ? "auto" : "none" }}
+          >
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} intensity={1} />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} />
+            <GlobeScene events={events} />
+          </Canvas>
+        </div>
+      </div>
     </div>
   );
 }

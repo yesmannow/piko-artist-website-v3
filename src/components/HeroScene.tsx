@@ -101,7 +101,7 @@ export function HeroScene() {
   ];
 
   return (
-    <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 z-0" style={{ pointerEvents: "none" }}>
       <Canvas
         camera={{ position: [0, 0, 5], fov: 75 }}
         style={{ width: "100%", height: "100%" }}
