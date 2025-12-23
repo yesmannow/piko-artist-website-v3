@@ -10,7 +10,7 @@ import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 
 export function DJInterface() {
-  const { isHelpMode, toggleHelp } = useHelp();
+  const { isHelpMode, toggleHelp, triggerTour } = useHelp();
 
   // Deck A state
   const [deckATrack, setDeckATrack] = useState<string | null>(null);
@@ -397,18 +397,28 @@ export function DJInterface() {
               <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
                 TRACK LIBRARY
               </h2>
-              <button
-                onClick={toggleHelp}
-                className={`p-2 rounded border-2 transition-all ${
-                  isHelpMode
-                    ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
-                    : "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
-                }`}
-                title={isHelpMode ? "Exit Help Mode" : "Enable Help Mode"}
-                aria-label="Toggle help mode"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleHelp}
+                  className={`p-2 rounded border-2 transition-all ${
+                    isHelpMode
+                      ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
+                      : "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
+                  }`}
+                  title={isHelpMode ? "Exit Help Mode" : "Enable Help Mode"}
+                  aria-label="Toggle help mode"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={triggerTour}
+                  className="px-3 py-2 text-xs font-barlow uppercase tracking-wider rounded border-2 border-gray-700 text-gray-400 hover:border-[#00ff00] hover:text-[#00ff00] transition-all"
+                  title="Replay Onboarding Tour"
+                  aria-label="Replay tour"
+                >
+                  Replay Tour
+                </button>
+              </div>
             </div>
             {/* Search Bar */}
             <input

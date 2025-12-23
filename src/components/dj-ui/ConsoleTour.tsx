@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { useHelp } from "@/context/HelpContext";
 
 interface TourStep {
   target: string;
@@ -61,6 +62,7 @@ export function ConsoleTour() {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const { tourTrigger } = useHelp();
 
   // 1. Initial Load Check
   useEffect(() => {
@@ -74,6 +76,17 @@ export function ConsoleTour() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Listen for manual tour trigger
+  useEffect(() => {
+    if (tourTrigger > 0) {
+      setIsActive(true);
+      setCurrentStep(0);
+      setIsReady(true);
+      // Clear the "tour complete" flag so it can run again
+      localStorage.removeItem("piko_tour_complete");
+    }
+  }, [tourTrigger]);
 
   // 2. Lock Body Scroll when active
   useEffect(() => {
