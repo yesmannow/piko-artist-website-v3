@@ -97,7 +97,6 @@ export function ProSequencer() {
   });
 
   // Remix mode: Track which loops are playing
-  const [activeLoops, setActiveLoops] = useState<Set<string>>(new Set());
   const loopSourcesRef = useRef<Record<string, AudioBufferSourceNode | null>>({});
   const loopGainRefs = useRef<Record<string, GainNode>>({});
 
@@ -201,7 +200,6 @@ export function ProSequencer() {
       delete loopSourcesRef.current[padId];
       delete loopGainRefs.current[padId];
     });
-    setActiveLoops(new Set());
   }, []);
 
   // Load audio buffers for current kit
@@ -439,27 +437,24 @@ export function ProSequencer() {
       loopGainRefs.current[padId] = gainNode;
     };
 
-    setActiveLoops((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(padId)) {
-        const existing = loopSourcesRef.current[padId];
-        try {
-          existing?.stop();
-        } catch {
-          /* noop */
-        }
-        existing?.disconnect();
-        const gainNode = loopGainRefs.current[padId];
-        gainNode?.disconnect();
-        delete loopSourcesRef.current[padId];
-        delete loopGainRefs.current[padId];
-        newSet.delete(padId);
-      } else {
-        startLoop();
-        newSet.add(padId);
+    // Check if loop is already playing
+    if (loopSourcesRef.current[padId]) {
+      // Stop existing loop
+      const existing = loopSourcesRef.current[padId];
+      try {
+        existing?.stop();
+      } catch {
+        /* noop */
       }
-      return newSet;
-    });
+      existing?.disconnect();
+      const gainNode = loopGainRefs.current[padId];
+      gainNode?.disconnect();
+      delete loopSourcesRef.current[padId];
+      delete loopGainRefs.current[padId];
+    } else {
+      // Start new loop
+      startLoop();
+    }
   }, [mode, selectedKit, pads, currentKit, speed, mutedPads, resumeAudioContext, triggerHaptic]);
 
   // Toggle mute for a pad in remix mode
@@ -871,9 +866,6 @@ export function ProSequencer() {
                   const isMuted = mutedPads.has(pad.id);
                   const isSoloed = soloedPads.has(pad.id);
                   const hasSolo = soloedPads.size > 0;
-
-                  // Apply solo logic: if any pad is soloed, only show soloed pads as active
-                  const shouldPlay = hasSolo ? isSoloed && !isMuted : !isMuted;
 
                   return (
                     <RemixDeck

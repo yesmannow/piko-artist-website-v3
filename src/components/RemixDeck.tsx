@@ -63,7 +63,6 @@ export const RemixDeck = forwardRef<RemixDeckRef, RemixDeckProps>(
         cursorColor: "#ccff00",
         barWidth: 2,
         barRadius: 1,
-        responsive: true,
         height: 60, // Reduced height for mobile
         normalize: true,
         backend: "MediaElement",

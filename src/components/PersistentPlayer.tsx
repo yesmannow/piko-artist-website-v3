@@ -66,7 +66,7 @@ export function PersistentPlayer() {
       setIsMuted(true);
     }
     triggerHaptic();
-  }, [isMuted, volume, setVolume, triggerHaptic]);
+  }, [isMuted, volume, setVolume, triggerHaptic, audioRef]);
 
   // Keyboard shortcuts
   useEffect(() => {
