@@ -39,7 +39,7 @@ function FeaturedVideoThumbnail({ video, index, onPlay }: FeaturedVideoThumbnail
           {/* Thumbnail - Standby Mode (B&W + Grain) */}
           <div className="relative w-full h-full">
             <Image
-              src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+              src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`}
               alt={video.title}
               fill
               className="object-cover transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 grayscale contrast-125"
@@ -179,7 +179,7 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
           {!isHovered && (
             <>
               <Image
-                src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+                src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`}
                 alt={video.title}
                 fill
                 className="object-cover transition-transform duration-300"

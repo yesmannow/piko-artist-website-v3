@@ -10,70 +10,148 @@ export interface MediaItem {
 
 export const tracks: MediaItem[] = [
   // --- YOUTUBE VIDEOS (Curated) ---
-  // HYPE
   {
-    id: "LHcO1jwYi7U",
-    title: "Hype Flow 1",
+    id: "xyJ0oCagkkQ",
+    title: "Piko - Session 1",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/LHcO1jwYi7U",
+    src: "https://www.youtube.com/embed/xyJ0oCagkkQ",
     coverArt: "from-orange-500 to-red-600",
     vibe: "hype"
   },
   {
-    id: "Ow1Ae9j8Va4",
-    title: "Hype Flow 2",
+    id: "FMr4jEVE9LE",
+    title: "Piko - Session 2",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/Ow1Ae9j8Va4",
+    src: "https://www.youtube.com/embed/FMr4jEVE9LE",
     coverArt: "from-red-600 to-rose-600",
     vibe: "hype"
   },
   {
-    id: "9OMBVY3hB-w",
-    title: "Hype Flow 3",
+    id: "_s-jxMyH2eM",
+    title: "Piko - Session 3",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/9OMBVY3hB-w",
+    src: "https://www.youtube.com/embed/_s-jxMyH2eM",
     coverArt: "from-amber-500 to-orange-500",
     vibe: "hype"
   },
-  // CHILL
   {
-    id: "TdvnheJZrtk",
-    title: "Chill Session 1",
+    id: "UK3iPsiRPf8",
+    title: "Piko - Session 4",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/TdvnheJZrtk",
+    src: "https://www.youtube.com/embed/UK3iPsiRPf8",
     coverArt: "from-blue-400 to-cyan-500",
     vibe: "chill"
   },
   {
-    id: "qeeePtLecTo",
-    title: "Chill Session 2",
+    id: "vvCc8_NeTDs",
+    title: "Piko - Session 5",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/qeeePtLecTo",
+    src: "https://www.youtube.com/embed/vvCc8_NeTDs",
     coverArt: "from-indigo-400 to-blue-600",
     vibe: "chill"
   },
-  // STORYTELLING
   {
-    id: "kFDQOy8k5Oo",
-    title: "Story Arc 1",
+    id: "SoC8OPSVAQ4",
+    title: "Piko - Session 6",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/kFDQOy8k5Oo",
+    src: "https://www.youtube.com/embed/SoC8OPSVAQ4",
     coverArt: "from-emerald-500 to-green-600",
     vibe: "storytelling"
   },
   {
-    id: "4vBe5cSsW08",
-    title: "Story Arc 2",
+    id: "teeTq5Buums",
+    title: "Piko - Session 7",
     artist: "Piko",
     type: 'video',
-    src: "https://www.youtube.com/embed/4vBe5cSsW08",
+    src: "https://www.youtube.com/embed/teeTq5Buums",
     coverArt: "from-teal-500 to-emerald-600",
+    vibe: "storytelling"
+  },
+  {
+    id: "Lm1xNXF-atU",
+    title: "Piko - Session 8",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/Lm1xNXF-atU",
+    coverArt: "from-purple-500 to-pink-600",
+    vibe: "classic"
+  },
+  {
+    id: "SrewrwYMIfQ",
+    title: "Piko - Session 9",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/SrewrwYMIfQ",
+    coverArt: "from-pink-500 to-rose-600",
+    vibe: "classic"
+  },
+  {
+    id: "rJJmXdPr-VQ",
+    title: "Piko - Session 10",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/rJJmXdPr-VQ",
+    coverArt: "from-yellow-500 to-amber-600",
+    vibe: "hype"
+  },
+  {
+    id: "TL52Cl9k0FA",
+    title: "Piko - Session 11",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/TL52Cl9k0FA",
+    coverArt: "from-cyan-500 to-blue-600",
+    vibe: "chill"
+  },
+  {
+    id: "Ow1Ae9j8Va4",
+    title: "Piko - Session 12",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/Ow1Ae9j8Va4",
+    coverArt: "from-green-500 to-emerald-600",
+    vibe: "storytelling"
+  },
+  {
+    id: "9OMBVY3hB-w",
+    title: "Piko - Session 13",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/9OMBVY3hB-w",
+    coverArt: "from-indigo-500 to-purple-600",
+    vibe: "hype"
+  },
+  {
+    id: "2kX9cYjIBWs",
+    title: "Piko - Session 14",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/2kX9cYjIBWs",
+    coverArt: "from-rose-500 to-red-600",
+    vibe: "classic"
+  },
+  {
+    id: "fs6bL8EHa1s",
+    title: "Piko - Session 15",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/fs6bL8EHa1s",
+    coverArt: "from-teal-400 to-cyan-500",
+    vibe: "chill"
+  },
+  {
+    id: "Sex-P009rWg",
+    title: "Piko - Session 16",
+    artist: "Piko",
+    type: 'video',
+    src: "https://www.youtube.com/embed/Sex-P009rWg",
+    coverArt: "from-blue-500 to-indigo-600",
     vibe: "storytelling"
   },
 
