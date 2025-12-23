@@ -6,7 +6,7 @@ import WaveSurfer from "wavesurfer.js";
 interface WaveformProps {
   audioUrl: string;
   progress: number; // 0-100
-  isPlaying: boolean;
+  isPlaying: boolean; // Kept for potential future use
   onSeek: (time: number) => void;
   height?: number;
 }
@@ -14,7 +14,7 @@ interface WaveformProps {
 export function Waveform({
   audioUrl,
   progress,
-  isPlaying,
+  isPlaying: _isPlaying, // eslint-disable-line @typescript-eslint/no-unused-vars
   onSeek,
   height = 60,
 }: WaveformProps) {
@@ -54,7 +54,8 @@ export function Waveform({
     });
 
     // Handle seek - sync with audio element
-    wavesurfer.on("seek", (seekProgress) => {
+    // @ts-expect-error - wavesurfer.js types may not include all event names
+    wavesurfer.on("seek", (seekProgress: number) => {
       if (!wavesurferRef.current) return;
       isSeekingRef.current = true;
 
@@ -82,13 +83,17 @@ export function Waveform({
 
   // Sync progress from audio element to waveform (but not when user is seeking)
   useEffect(() => {
+    // Sync progress only if not dragging
     if (!wavesurferRef.current || !isReady || isSeekingRef.current) return;
 
-    // Sync progress only if not dragging
     const duration = wavesurferRef.current.getDuration();
-    if (duration) {
+    if (duration > 0) {
       const time = (progress / 100) * duration;
-      wavesurferRef.current.setTime(time);
+      // Prevent feedback loop: only seek if difference is significant
+      const currentTime = wavesurferRef.current.getCurrentTime();
+      if (Math.abs(currentTime - time) > 0.2) {
+        wavesurferRef.current.setTime(time);
+      }
     }
   }, [progress, isReady]);
 

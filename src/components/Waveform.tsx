@@ -7,14 +7,13 @@ import { useAudio } from "@/context/AudioContext";
 interface WaveformProps {
   audioUrl: string;
   onReady?: () => void;
-  onFinish?: () => void;
 }
 
-export function Waveform({ audioUrl, onReady, onFinish }: WaveformProps) {
+export function Waveform({ audioUrl, onReady }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const { isPlaying, audioRef, seek, progress } = useAudio();
+  const { isPlaying, audioRef, seek } = useAudio();
   const isSeekingRef = useRef(false);
   const progressUpdateRef = useRef<number | null>(null);
 
@@ -30,7 +29,6 @@ export function Waveform({ audioUrl, onReady, onFinish }: WaveformProps) {
       barWidth: 2, // Bars look more "hip hop" than smooth line
       barRadius: 1,
       height: 40,
-      responsive: true,
       normalize: true,
       interact: true, // Allow clicking to seek
       dragToSeek: true,
@@ -48,7 +46,8 @@ export function Waveform({ audioUrl, onReady, onFinish }: WaveformProps) {
     });
 
     // Handle seek - sync with audio element
-    wavesurfer.on("seek", (seekProgress) => {
+    // @ts-expect-error - wavesurfer.js types may not include all event names
+    wavesurfer.on("seek", (seekProgress: number) => {
       if (!audioRef.current || !audioRef.current.duration) return;
       isSeekingRef.current = true;
       const time = seekProgress * audioRef.current.duration;
@@ -78,7 +77,7 @@ export function Waveform({ audioUrl, onReady, onFinish }: WaveformProps) {
         return;
       }
 
-      if (audioRef.current && audioRef.current.duration && !audioRef.current.paused) {
+      if (audioRef.current && audioRef.current.duration && !audioRef.current.paused && wavesurferRef.current) {
         const currentProgress = audioRef.current.currentTime / audioRef.current.duration;
         wavesurferRef.current.seekTo(currentProgress);
       }

@@ -1,24 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { TourDate, tourDates } from "@/lib/data";
 
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
-interface GlobeMethods {
-  pointOfView: (pov: { lat?: number; lng?: number; altitude: number }, duration?: number) => void;
-}
-
 export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => void }) {
-  // @ts-ignore - react-globe.gl doesn't export proper types
-  const globeEl = useRef<GlobeMethods | undefined>(undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globeEl = useRef<any>(null);
 
-  // Auto-rotate
+  // Initialize view
   useEffect(() => {
     if (globeEl.current) {
       globeEl.current.pointOfView({ altitude: 2.5 });
+      // Enable auto-rotate if available
+      if (typeof globeEl.current.controls === 'function') {
+        const controls = globeEl.current.controls();
+        if (controls) {
+          controls.autoRotate = true;
+          controls.autoRotateSpeed = 0.5;
+        }
+      }
     }
   }, []);
 
@@ -66,9 +70,6 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
         arcDashGap={0.2}
         arcDashAnimateTime={1500}
         arcStroke={0.5}
-        // Auto-rotate
-        autoRotate={true}
-        autoRotateSpeed={0.5}
         // Interaction
         onPointClick={(point: object) => {
           const p = point as TourDate;

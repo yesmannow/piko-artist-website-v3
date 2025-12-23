@@ -22,7 +22,6 @@ export function PersistentPlayer() {
     audioRef,
     progress,
     seek,
-    duration,
   } = useAudio();
 
   const [isMobile, setIsMobile] = useState(false);

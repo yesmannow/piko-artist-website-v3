@@ -1,7 +1,7 @@
 "use client";
 
 import { useAudio } from "@/context/AudioContext";
-import { tracks, MediaItem } from "@/lib/data";
+import { tracks } from "@/lib/data";
 import { Play } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
