@@ -24,20 +24,27 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
-    /* NEW: Neon Accents for the Graffiti Theme */
-    --neon-pink: 318 100% 50%;
-    --neon-green: 120 100% 50%;
+    /* Urban Grit Palette */
+    --spray-magenta: 318 100% 42%;
+    --toxic-lime: 75 100% 45%;
+    --safety-orange: 25 100% 50%;
     --radius: 0.5rem;
   }
 
   body {
     @apply bg-background text-foreground;
-    /* The "Grit" Overlay */
+    /* The "Grit" Overlay - Dark Concrete Texture */
     background-image:
-      linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+      linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)),
       url("https://www.transparenttextures.com/patterns/concrete-wall.png");
     background-blend-mode: overlay;
     background-attachment: fixed;
+    cursor: crosshair;
+  }
+
+  /* Cursor styles */
+  a, button, [role="button"], input[type="submit"], input[type="button"] {
+    cursor: pointer;
   }
 
   /* "Torn Paper" Effect for Cards */

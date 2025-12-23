@@ -160,7 +160,20 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                   </div>
 
                   {/* Poster Card */}
-                  <div className="bg-concrete overflow-hidden border-2 border-black shadow-hard transition-all hover:scale-[1.02]">
+                  <div
+                    className="bg-concrete overflow-hidden border-2 border-black transition-all hover:scale-[1.02] relative"
+                    style={{
+                      boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                    }}
+                  >
+                    {/* Wrinkled Paper Texture Overlay */}
+                    <div
+                      className="absolute inset-0 pointer-events-none z-10 opacity-10"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+                        mixBlendMode: "multiply",
+                      }}
+                    />
                     {/* Thumbnail Container */}
                     <div className="relative aspect-video bg-black overflow-hidden">
                       <Image

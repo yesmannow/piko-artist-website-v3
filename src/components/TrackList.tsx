@@ -217,15 +217,17 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
                 viewport={{ once: true }}
                 onClick={() => playTrack(track)}
-                style={{ transform: `rotate(${rotation}deg)` }}
                 className={[
                   "group relative w-full text-left",
-                  "bg-concrete overflow-hidden",
+                  "bg-[#e5e5e5] overflow-hidden",
                   "border-2 border-black",
-                  "shadow-hard",
                   "transition-all hover:scale-[1.02]",
                   isActive ? "ring-2 ring-toxic-lime" : "",
                 ].join(" ")}
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                }}
               >
                 {/* Cover Art Image */}
                 <div className="relative aspect-square w-full overflow-hidden">
@@ -264,20 +266,20 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 </div>
 
                 {/* Metadata Below Image */}
-                <div className="p-4">
+                <div className="p-4 bg-[#e5e5e5]">
                   <div
                     className={[
-                      "font-header text-base md:text-lg mb-1 line-clamp-2",
-                      isActive ? "text-toxic-lime" : "text-foreground font-bold",
+                      "font-header text-base md:text-lg mb-1 line-clamp-2 font-bold",
+                      isActive ? "text-toxic-lime" : "text-black",
                     ].join(" ")}
                   >
                     {track.title}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={["text-sm", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
+                    <span className={["text-sm", isActive ? "text-toxic-lime/80" : "text-black/70"].join(" ")}>
                       {track.artist}
                     </span>
-                    <span className="text-foreground/40">•</span>
+                    <span className="text-black/40">•</span>
                     <span
                       className={[
                         "px-2 py-0.5 rounded-full border border-black text-[10px] font-tag tracking-[0.15em] uppercase",

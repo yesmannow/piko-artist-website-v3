@@ -7,7 +7,6 @@ import { AudioProvider } from "@/context/AudioContext";
 import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
-import { SprayCursor } from "@/components/SprayCursor";
 
 const permanentMarker = Permanent_Marker({
   weight: "400",
@@ -38,7 +37,6 @@ export default function RootLayout({
       <body className={`${permanentMarker.variable} ${sedgwickAve.variable}`}>
         <AudioProvider>
           <VideoProvider>
-            <SprayCursor />
             <Navigation />
             {children}
             <Footer />

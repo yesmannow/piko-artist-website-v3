@@ -55,19 +55,19 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // The New "Street" Palette
-        "spray-magenta": "#ff0099",
-        "toxic-lime": "#ccff00",
-        "safety-orange": "#ff6600",
+        // The New "Street" Palette - Using HSL values from CSS variables
+        "spray-magenta": "hsl(var(--spray-magenta))",
+        "toxic-lime": "hsl(var(--toxic-lime))",
+        "safety-orange": "hsl(var(--safety-orange))",
         "concrete": "#2a2a2a",
         "tape-gray": "#888888",
-        // Legacy neon colors (kept for backward compatibility)
+        // Legacy neon colors (kept for backward compatibility, mapped to new palette)
         neon: {
-          pink: "#ff0099",
-          green: "#ccff00",
+          pink: "hsl(var(--spray-magenta))",
+          green: "hsl(var(--toxic-lime))",
         },
-        "neon-pink": "#ff0099",
-        "neon-green": "#ccff00",
+        "neon-pink": "hsl(var(--spray-magenta))",
+        "neon-green": "hsl(var(--toxic-lime))",
       },
       borderRadius: {
         lg: "var(--radius)",
