@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { Play, Square } from "lucide-react";
 
 interface Instrument {
   id: string;
@@ -15,11 +16,14 @@ const instruments: Instrument[] = [
   { id: "snare", name: "Snare", audioFile: "/audio/samples/tr909-snare-drum-241413.mp3", color: "pink" },
   { id: "hihat", name: "Hi-Hat", audioFile: "/audio/samples/090241_chimbal-aberto-39488.mp3", color: "cyan" },
   { id: "bass", name: "Bass", audioFile: "/audio/samples/deep-808-230752.mp3", color: "green" },
-  { id: "shaker", name: "Shaker", audioFile: "/audio/samples/shaker-drum-434902.mp3", color: "pink" },
+  { id: "perc", name: "Perc", audioFile: "/audio/samples/shaker-drum-434902.mp3", color: "pink" },
   { id: "fx", name: "FX", audioFile: "/audio/samples/reverse-cymbal-riser-451412.mp3", color: "cyan" },
 ];
 
 const STEPS = 16;
+const DEFAULT_BPM = 120;
+const MIN_BPM = 60;
+const MAX_BPM = 200;
 
 export function ProSequencer() {
   // State: [instrumentId][stepIndex] = boolean
@@ -30,6 +34,87 @@ export function ProSequencer() {
     });
     return initial;
   });
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [bpm, setBpm] = useState(DEFAULT_BPM);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRefs = useRef<Record<string, HTMLAudioElement[]>>({});
+
+  // Preload audio files (create multiple instances for overlapping sounds)
+  useEffect(() => {
+    instruments.forEach((instrument) => {
+      audioRefs.current[instrument.id] = [];
+      // Create 4 instances per instrument for overlapping playback
+      for (let i = 0; i < 4; i++) {
+        const audio = new Audio(instrument.audioFile);
+        audio.preload = "auto";
+        audioRefs.current[instrument.id].push(audio);
+      }
+    });
+
+    return () => {
+      // Cleanup
+      Object.values(audioRefs.current).forEach((audioArray) => {
+        audioArray.forEach((audio) => {
+          audio.pause();
+          audio.src = "";
+        });
+      });
+    };
+  }, []);
+
+  // Sequencer loop
+  useEffect(() => {
+    if (!isPlaying) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    // Calculate interval based on BPM (16th notes)
+    // BPM = beats per minute, so each step = 60 / (BPM * 4) seconds
+    const stepDuration = (60 / (bpm * 4)) * 1000;
+
+    intervalRef.current = setInterval(() => {
+      // Play sounds for current step
+      instruments.forEach((instrument) => {
+        const instrumentSteps = steps[instrument.id] || [];
+        if (instrumentSteps[currentStep]) {
+          // Find an available audio instance
+          const audioInstances = audioRefs.current[instrument.id];
+          const availableAudio = audioInstances.find(
+            (audio) => audio.paused || audio.currentTime === 0
+          ) || audioInstances[0]; // Fallback to first if all playing
+
+          // Reset and play
+          availableAudio.currentTime = 0;
+          availableAudio.play().catch((err) => {
+            console.error(`Error playing ${instrument.name}:`, err);
+          });
+        }
+      });
+
+      // Move to next step
+      setCurrentStep((prev) => (prev + 1) % STEPS);
+    }, stepDuration);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isPlaying, currentStep, bpm, steps]);
+
+  // Reset current step when stopping
+  useEffect(() => {
+    if (!isPlaying) {
+      setCurrentStep(0);
+    }
+  }, [isPlaying]);
 
   const toggleStep = (instrumentId: string, stepIndex: number) => {
     setSteps((prev) => {
@@ -104,72 +189,129 @@ export function ProSequencer() {
                 </div>
 
                 {/* Step Buttons */}
-                {instrumentSteps.map((isActive, stepIndex) => (
-                  <motion.button
-                    key={stepIndex}
-                    type="button"
-                    onClick={() => toggleStep(instrument.id, stepIndex)}
-                    className={`
-                      aspect-square rounded
-                      border-2 transition-all
-                      ${isActive ? "scale-95" : "scale-100"}
-                    `}
-                    style={{
-                      borderColor: isActive ? neonColor : "rgba(255, 255, 255, 0.2)",
-                      backgroundColor: isActive ? `${neonColor}40` : "rgba(255, 255, 255, 0.05)",
-                      boxShadow: isActive
-                        ? `0 0 10px ${neonColor}, inset 0 0 10px ${neonColor}20`
-                        : "none",
-                    }}
-                    whileHover={{
-                      scale: 1.1,
-                      borderColor: neonColor,
-                    }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    {isActive && (
-                      <motion.div
-                        className="w-full h-full rounded"
-                        style={{
-                          backgroundColor: neonColor,
-                          opacity: 0.6,
-                        }}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      />
-                    )}
-                  </motion.button>
-                ))}
+                {instrumentSteps.map((isActive, stepIndex) => {
+                  const isCurrentStep = isPlaying && currentStep === stepIndex;
+                  return (
+                    <motion.button
+                      key={stepIndex}
+                      type="button"
+                      onClick={() => toggleStep(instrument.id, stepIndex)}
+                      className={`
+                        aspect-square rounded
+                        border-2 transition-all
+                        ${isActive ? "scale-95" : "scale-100"}
+                        ${isCurrentStep ? "ring-2 ring-offset-2 ring-offset-black" : ""}
+                      `}
+                      style={{
+                        borderColor: isActive ? neonColor : "rgba(255, 255, 255, 0.2)",
+                        backgroundColor: isActive ? `${neonColor}40` : "rgba(255, 255, 255, 0.05)",
+                        boxShadow: isActive
+                          ? `0 0 10px ${neonColor}, inset 0 0 10px ${neonColor}20`
+                          : "none",
+                        ringColor: isCurrentStep ? neonColor : "transparent",
+                      }}
+                      animate={isCurrentStep ? {
+                        scale: [1, 1.15, 1],
+                      } : {}}
+                      transition={isCurrentStep ? {
+                        duration: 0.1,
+                        repeat: Infinity,
+                      } : {}}
+                      whileHover={{
+                        scale: 1.1,
+                        borderColor: neonColor,
+                      }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {isActive && (
+                        <motion.div
+                          className="w-full h-full rounded"
+                          style={{
+                            backgroundColor: neonColor,
+                            opacity: isCurrentStep ? 1 : 0.6,
+                          }}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        />
+                      )}
+                    </motion.button>
+                  );
+                })}
               </div>
             );
           })}
         </div>
 
-        {/* Controls Placeholder */}
-        <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-4">
-          <motion.button
-            className="px-6 py-3 bg-neon-green/20 border-2 border-neon-green/50 text-neon-green font-tag rounded-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled
-          >
-            ▶ Play
-          </motion.button>
-          <motion.button
-            className="px-6 py-3 bg-neon-pink/20 border-2 border-neon-pink/50 text-neon-pink font-tag rounded-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              const cleared: Record<string, boolean[]> = {};
-              instruments.forEach((inst) => {
-                cleared[inst.id] = new Array(STEPS).fill(false);
-              });
-              setSteps(cleared);
-            }}
-          >
-            Clear All
-          </motion.button>
+        {/* Controls */}
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {/* Play/Stop Button */}
+            <motion.button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="px-8 py-3 bg-neon-green/20 border-2 border-neon-green/50 text-neon-green font-tag rounded-lg flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                boxShadow: isPlaying
+                  ? "0 0 20px hsl(var(--neon-green))"
+                  : "none",
+              }}
+            >
+              {isPlaying ? (
+                <>
+                  <Square className="w-5 h-5" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5" />
+                  Play
+                </>
+              )}
+            </motion.button>
+
+            {/* Tempo/BPM Slider */}
+            <div className="flex items-center gap-4">
+              <label className="font-tag text-white/80 text-sm md:text-base">
+                BPM:
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={MIN_BPM}
+                  max={MAX_BPM}
+                  value={bpm}
+                  onChange={(e) => setBpm(Number(e.target.value))}
+                  className="w-32 md:w-40 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-green"
+                  style={{
+                    background: `linear-gradient(to right, hsl(var(--neon-green)) 0%, hsl(var(--neon-green)) ${((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100}%, rgba(255, 255, 255, 0.1) ${((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100}%, rgba(255, 255, 255, 0.1) 100%)`,
+                  }}
+                />
+                <span className="font-tag text-neon-green text-lg md:text-xl font-bold min-w-[3rem] text-center">
+                  {bpm}
+                </span>
+              </div>
+            </div>
+
+            {/* Clear All Button */}
+            <motion.button
+              className="px-6 py-3 bg-neon-pink/20 border-2 border-neon-pink/50 text-neon-pink font-tag rounded-lg"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                const cleared: Record<string, boolean[]> = {};
+                instruments.forEach((inst) => {
+                  cleared[inst.id] = new Array(STEPS).fill(false);
+                });
+                setSteps(cleared);
+                setIsPlaying(false);
+                setCurrentStep(0);
+              }}
+            >
+              Clear All
+            </motion.button>
+          </div>
         </div>
       </div>
     </div>

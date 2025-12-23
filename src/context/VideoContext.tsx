@@ -16,12 +16,12 @@ const VideoContext = createContext<VideoContextType | undefined>(undefined);
 export function VideoProvider({ children }: { children: ReactNode }) {
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
-  const { isPlaying, audioRef } = useAudio();
+  const { isPlaying, togglePlay } = useAudio();
 
   const playVideo = (id: string) => {
     // Pause any currently playing music
-    if (isPlaying && audioRef.current) {
-      audioRef.current.pause();
+    if (isPlaying) {
+      togglePlay(); // This will pause if currently playing
     }
 
     setCurrentVideoId(id);

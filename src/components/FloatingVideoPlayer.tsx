@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useVideo } from "@/context/VideoContext";
 import { tracks } from "@/lib/data";
-import { X, Minimize2, Maximize2 } from "lucide-react";
+import { X, ChevronDown, Maximize2 } from "lucide-react";
 import Image from "next/image";
 
 export function FloatingVideoPlayer() {
@@ -63,7 +63,7 @@ export function FloatingVideoPlayer() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <Minimize2 className="w-5 h-5 text-white" />
+                <ChevronDown className="w-5 h-5 text-white" />
               </motion.button>
               <motion.button
                 onClick={closeVideo}
