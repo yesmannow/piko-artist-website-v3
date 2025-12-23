@@ -208,7 +208,16 @@ export function DJInterface() {
     analyser.connect(ctx.destination);
 
     return () => {
-      ctx.close();
+      // Cleanup function - prevent zombie audio
+      if (audioContextRef.current) {
+        try {
+          audioContextRef.current.suspend();
+          audioContextRef.current.close();
+        } catch (error) {
+          // Ignore errors if context is already closed
+          console.warn("Error closing audio context:", error);
+        }
+      }
     };
   }, [deckAVolume, deckBVolume, delayFeedback, delayTime, filterFreq, filterType, reverbDryWet]);
 
@@ -346,7 +355,7 @@ export function DJInterface() {
     <>
       {/* Mobile Landscape Hint */}
       {showLandscapeHint && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1a1a1a] border-2 border-gray-700 rounded-lg px-4 py-3 shadow-lg max-w-sm mx-4 flex items-center gap-3">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-[#1a1a1a] border-2 border-gray-700 rounded-lg px-4 py-3 shadow-lg max-w-sm mx-4 flex items-center gap-3">
           <div className="flex-1">
             <p className="text-sm font-barlow text-gray-300">
               For the best DJ experience, rotate your phone to Landscape.
@@ -509,7 +518,6 @@ export function DJInterface() {
               ref={deckARef}
               trackUrl={deckATrack}
               isPlaying={deckAPlaying}
-              volume={deckAVolume}
               speed={deckASpeed}
               deckColor="#4a90e2"
               deckLabel="DECK A"
@@ -597,7 +605,6 @@ export function DJInterface() {
               ref={deckBRef}
               trackUrl={deckBTrack}
               isPlaying={deckBPlaying}
-              volume={deckBVolume}
               speed={deckBSpeed}
               deckColor="#e24a4a"
               deckLabel="DECK B"

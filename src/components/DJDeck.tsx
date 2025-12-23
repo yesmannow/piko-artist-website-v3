@@ -11,7 +11,6 @@ import { Play, Pause, RotateCcw, Link2, Repeat } from "lucide-react";
 interface DJDeckProps {
   trackUrl: string | null;
   isPlaying: boolean;
-  volume: number;
   speed: number; // Playback rate (1.0 = 0%, range 0.92 to 1.08 for +/- 8%)
   onLoaded?: () => void;
   deckColor: string; // Color for waveform (e.g., "#4a90e2" or "#e24a4a")
@@ -36,11 +35,10 @@ export interface DJDeckRef {
 }
 
 export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
-  (
+    (
     {
       trackUrl,
       isPlaying,
-      volume,
       speed,
       onLoaded,
       deckColor,
@@ -84,7 +82,6 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         backend: "MediaElement",
         mediaControls: false,
         interact: true,
-        backgroundColor: "#0a0a0a", // Dark background
       });
 
       wavesurferRef.current = ws;
