@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
-import { Navigation } from "@/components/Navigation";
+import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AudioProvider } from "@/context/AudioContext";
 import { VideoProvider } from "@/context/VideoContext";
@@ -74,7 +74,7 @@ export default function RootLayout({
       >
         <AudioProvider>
           <VideoProvider>
-            <Navigation />
+            <Navbar />
             <SmoothScroll>
               <PageTransition>{children}</PageTransition>
             </SmoothScroll>

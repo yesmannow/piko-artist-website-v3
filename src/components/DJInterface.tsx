@@ -5,7 +5,7 @@ import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
 import { tracks } from "@/lib/data";
-import { X, HelpCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 
@@ -283,7 +283,6 @@ export function DJInterface() {
 
   // Mobile landscape hint state
   const [showLandscapeHint, setShowLandscapeHint] = useState(false);
-  const [landscapeHintDismissed, setLandscapeHintDismissed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   // Ensure component is mounted before accessing window
@@ -293,7 +292,7 @@ export function DJInterface() {
 
   // Check for mobile portrait orientation
   useEffect(() => {
-    if (!isMounted || landscapeHintDismissed) return;
+    if (!isMounted) return;
 
     const checkOrientation = () => {
       const isMobile = window.innerWidth < 768;
@@ -309,7 +308,7 @@ export function DJInterface() {
       window.removeEventListener("resize", checkOrientation);
       window.removeEventListener("orientationchange", checkOrientation);
     };
-  }, [isMounted, landscapeHintDismissed]);
+  }, [isMounted]);
 
   // Get audio tracks only and filter by search
   const audioTracks = tracks
@@ -380,24 +379,15 @@ export function DJInterface() {
 
   return (
     <>
-      {/* Mobile Landscape Hint */}
       {showLandscapeHint && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-[#1a1a1a] border-2 border-gray-700 rounded-lg px-4 py-3 shadow-lg max-w-sm mx-4 flex items-center gap-3">
-          <div className="flex-1">
-            <p className="text-sm font-barlow text-gray-300">
-              For the best DJ experience, rotate your phone to Landscape.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setShowLandscapeHint(false);
-              setLandscapeHintDismissed(true);
-            }}
-            className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
-            aria-label="Dismiss"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center p-8 text-center">
+          <div className="w-16 h-16 mb-6 border-2 border-[#ccff00] rounded-lg animate-spin" />
+          <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-widest">
+            Rotate Device
+          </h2>
+          <p className="text-zinc-400 max-w-xs mx-auto">
+            The Studio requires landscape mode for the full mixing console experience.
+          </p>
         </div>
       )}
       <ConsoleTour />
