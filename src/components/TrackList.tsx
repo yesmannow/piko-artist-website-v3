@@ -4,7 +4,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Play, Music2 } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -162,10 +162,27 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           </div>
         </div>
 
-        {/* Active Indicator */}
+        {/* Active Indicator - Animated Equalizer */}
         {isActive && (
-          <div className="absolute top-2 right-2">
-            <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse" />
+          <div className="absolute top-2 right-2 flex items-end gap-0.5 h-4">
+            {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, idx) => (
+              <motion.div
+                key={idx}
+                className="w-0.5 bg-toxic-lime rounded-t"
+                animate={{
+                  height: `${height * 100}%`,
+                }}
+                transition={{
+                  duration: 0.5,
+                  repeat: Infinity,
+                  delay: idx * 0.1,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  boxShadow: "0 0 4px #ccff00",
+                }}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -287,27 +304,51 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                         isActive ? "text-toxic-lime" : "text-foreground",
                       ].join(" ")}
                     >
-                    {/* Col 1: Index / Play icon */}
+                    {/* Col 1: Index / Play icon / Active Equalizer */}
                     <div className="relative flex items-center justify-center">
-                      <span
-                        className={[
-                          "text-sm font-industrial font-bold",
-                          "group-hover:opacity-0 transition-opacity",
-                          isActive ? "opacity-0" : "opacity-100 text-white/70",
-                        ].join(" ")}
-                      >
-                        {idx + 1}
-                      </span>
-                      <span
-                        className={[
-                          "absolute",
-                          "opacity-0 group-hover:opacity-100 transition-opacity",
-                          isActive ? "opacity-100" : "",
-                        ].join(" ")}
-                        aria-hidden="true"
-                      >
-                        <Play className="w-4 h-4" fill="currentColor" />
-                      </span>
+                      {isActive ? (
+                        <div className="flex items-end gap-0.5 h-4">
+                          {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, eqIdx) => (
+                            <motion.div
+                              key={eqIdx}
+                              className="w-0.5 bg-toxic-lime rounded-t"
+                              animate={{
+                                height: `${height * 100}%`,
+                              }}
+                              transition={{
+                                duration: 0.5,
+                                repeat: Infinity,
+                                delay: eqIdx * 0.1,
+                                ease: "easeInOut",
+                              }}
+                              style={{
+                                boxShadow: "0 0 4px #ccff00",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <span
+                            className={[
+                              "text-sm font-industrial font-bold",
+                              "group-hover:opacity-0 transition-opacity",
+                              "opacity-100 text-white/70",
+                            ].join(" ")}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span
+                            className={[
+                              "absolute",
+                              "opacity-0 group-hover:opacity-100 transition-opacity",
+                            ].join(" ")}
+                            aria-hidden="true"
+                          >
+                            <Play className="w-4 h-4" fill="currentColor" />
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     {/* Col 2: Cover + Title */}

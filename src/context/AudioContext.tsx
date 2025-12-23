@@ -15,6 +15,8 @@ interface AudioContextType {
   setVolume: (volume: number) => void;
   progress: number;
   setProgress: (progress: number) => void;
+  seek: (time: number) => void;
+  duration: number;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const togglePlay = () => {
@@ -74,12 +77,75 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     playTrack(audioTracks[prevIndex]);
   };
 
+  const seek = (time: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = time;
+    if (audioRef.current.duration) {
+      setProgress((time / audioRef.current.duration) * 100);
+    }
+  };
+
+  // Helper to check if coverArt is an image path
+  const isImagePath = (coverArt: string): boolean => {
+    return coverArt.startsWith("/");
+  };
+
   // Sync volume with audio element
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
+
+  // MediaSession API integration for lock screen controls
+  useEffect(() => {
+    if (!currentTrack || !("mediaSession" in navigator)) return;
+
+    const mediaSession = navigator.mediaSession;
+
+    // Set metadata for lock screen
+    mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.title,
+      artist: currentTrack.artist,
+      album: "Piko",
+      artwork: isImagePath(currentTrack.coverArt)
+        ? [{ src: currentTrack.coverArt, sizes: "512x512", type: "image/png" }]
+        : [],
+    });
+
+    // Set action handlers
+    mediaSession.setActionHandler("play", () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    });
+
+    mediaSession.setActionHandler("pause", () => {
+      if (audioRef.current && isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    });
+
+    mediaSession.setActionHandler("previoustrack", () => {
+      skipPrevious();
+    });
+
+    mediaSession.setActionHandler("nexttrack", () => {
+      skipNext();
+    });
+
+    // Update playback state
+    mediaSession.playbackState = isPlaying ? "playing" : "paused";
+
+    return () => {
+      // Cleanup
+      if (mediaSession.metadata) {
+        mediaSession.metadata = null;
+      }
+    };
+  }, [currentTrack, isPlaying, skipNext, skipPrevious]);
 
   return (
     <AudioContext.Provider
@@ -95,6 +161,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setVolume,
         progress,
         setProgress,
+        seek,
+        duration,
       }}
     >
       {children}
@@ -108,6 +176,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           const audio = e.currentTarget;
           if (audio.duration) {
             setProgress((audio.currentTime / audio.duration) * 100);
+            setDuration(audio.duration);
+          }
+        }}
+        onLoadedMetadata={(e) => {
+          const audio = e.currentTarget;
+          if (audio.duration) {
+            setDuration(audio.duration);
           }
         }}
         onVolumeChange={(e) => {

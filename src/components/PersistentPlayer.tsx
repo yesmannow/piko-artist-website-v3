@@ -7,6 +7,7 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-rea
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useHaptic } from "@/hooks/useHaptic";
 import Image from "next/image";
+import { Waveform } from "@/components/Waveform";
 
 // Type declaration for webkit prefixed AudioContext
 interface WindowWithWebkit extends Window {
@@ -192,7 +193,7 @@ export function PersistentPlayer() {
             isMobile ? "bottom-[64px] pb-[env(safe-area-inset-bottom)]" : "bottom-0"
           }`}
         >
-          {/* Progress bar at top */}
+          {/* Progress bar at top (backup for when waveform isn't ready) */}
           <div className="h-1 bg-black/50 w-full">
             <motion.div
               className="h-full bg-toxic-lime"
@@ -263,44 +264,54 @@ export function PersistentPlayer() {
                   )}
                 </div>
 
-                {/* Center: Play/Pause/Skip Controls */}
-                <div className="flex items-center gap-2 md:gap-4">
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      skipPrevious();
-                    }}
-                    className="p-2 hover:bg-foreground/10 rounded transition-colors"
-                    aria-label="Previous track"
-                  >
-                    <SkipBack className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
-                  </button>
+                {/* Center: Play/Pause/Skip Controls + Waveform */}
+                <div className="flex flex-col items-center gap-2 flex-1 max-w-2xl mx-4">
+                  {/* Controls */}
+                  <div className="flex items-center gap-2 md:gap-4">
+                    <button
+                      onClick={() => {
+                        triggerHaptic();
+                        skipPrevious();
+                      }}
+                      className="p-2 hover:bg-foreground/10 rounded transition-colors"
+                      aria-label="Previous track"
+                    >
+                      <SkipBack className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      togglePlay();
-                    }}
-                    className="p-2 md:p-3 bg-toxic-lime/20 hover:bg-toxic-lime/30 border-2 border-black rounded-full transition-colors shadow-hard"
-                    aria-label={isPlaying ? "Pause" : "Play"}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-5 h-5 md:w-6 md:h-6 text-toxic-lime" />
-                    ) : (
-                      <Play className="w-5 h-5 md:w-6 md:h-6 text-toxic-lime ml-0.5" />
-                    )}
-                  </button>
+                    <button
+                      onClick={() => {
+                        triggerHaptic();
+                        togglePlay();
+                      }}
+                      className="p-2 md:p-3 bg-toxic-lime/20 hover:bg-toxic-lime/30 border-2 border-black rounded-full transition-colors shadow-hard"
+                      aria-label={isPlaying ? "Pause" : "Play"}
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-5 h-5 md:w-6 md:h-6 text-toxic-lime" />
+                      ) : (
+                        <Play className="w-5 h-5 md:w-6 md:h-6 text-toxic-lime ml-0.5" />
+                      )}
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      skipNext();
-                    }}
-                    className="p-2 hover:bg-foreground/10 rounded transition-colors"
-                    aria-label="Next track"
-                  >
-                    <SkipForward className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
-                  </button>
+                    <button
+                      onClick={() => {
+                        triggerHaptic();
+                        skipNext();
+                      }}
+                      className="p-2 hover:bg-foreground/10 rounded transition-colors"
+                      aria-label="Next track"
+                    >
+                      <SkipForward className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
+                    </button>
+                  </div>
+
+                  {/* Waveform Visualization */}
+                  {currentTrack && currentTrack.type === "audio" && (
+                    <div className="w-full px-2">
+                      <Waveform audioUrl={currentTrack.src} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Right: Volume + Mini Visualizer */}
