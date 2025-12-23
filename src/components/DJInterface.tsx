@@ -518,8 +518,7 @@ export function DJInterface() {
               onSpeedChange={handleDeckASpeedChange}
               isSynced={deckASynced}
               audioContext={audioContextRef.current || undefined}
-              gainNode={deckAGainRef.current || undefined}
-              filterNodes={deckAFiltersRef.current || undefined}
+              outputNode={deckAFiltersRef.current?.low || undefined}
             />
             {/* Drop indicator */}
             <div className="absolute inset-0 border-2 border-dashed border-[#4a90e2] rounded-lg pointer-events-none opacity-0 transition-opacity" id="deck-a-drop-zone" />
@@ -607,8 +606,7 @@ export function DJInterface() {
               onSpeedChange={handleDeckBSpeedChange}
               isSynced={deckBSynced}
               audioContext={audioContextRef.current || undefined}
-              gainNode={deckBGainRef.current || undefined}
-              filterNodes={deckBFiltersRef.current || undefined}
+              outputNode={deckBFiltersRef.current?.low || undefined}
             />
             {/* Drop indicator */}
             <div className="absolute inset-0 border-2 border-dashed border-[#e24a4a] rounded-lg pointer-events-none opacity-0 transition-opacity" id="deck-b-drop-zone" />

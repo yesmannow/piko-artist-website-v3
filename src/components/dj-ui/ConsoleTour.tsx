@@ -70,6 +70,17 @@ export function ConsoleTour() {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  const updateTargetPosition = useCallback(() => {
+    const step = tourSteps[currentStep];
+    if (!step) return;
+
+    const targetElement = document.querySelector(step.targetSelector);
+    if (targetElement) {
+      const rect = targetElement.getBoundingClientRect();
+      setTargetRect(rect);
+    }
+  }, [currentStep]);
+
   useEffect(() => {
     // Check if tour was already completed
     const tourComplete = localStorage.getItem("piko_tour_complete");
@@ -84,7 +95,7 @@ export function ConsoleTour() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [updateTargetPosition]);
 
   useEffect(() => {
     if (isVisible) {
@@ -98,17 +109,6 @@ export function ConsoleTour() {
       };
     }
   }, [isVisible, currentStep, updateTargetPosition]);
-
-  const updateTargetPosition = useCallback(() => {
-    const step = tourSteps[currentStep];
-    if (!step) return;
-
-    const targetElement = document.querySelector(step.targetSelector);
-    if (targetElement) {
-      const rect = targetElement.getBoundingClientRect();
-      setTargetRect(rect);
-    }
-  }, [currentStep]);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {

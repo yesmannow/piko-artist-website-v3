@@ -22,12 +22,7 @@ interface DJDeckProps {
   onSpeedChange?: (speed: number) => void;
   isSynced?: boolean;
   audioContext?: AudioContext;
-  gainNode?: GainNode;
-  filterNodes?: {
-    high: BiquadFilterNode;
-    mid: BiquadFilterNode;
-    low: BiquadFilterNode;
-  };
+  outputNode?: AudioNode;
 }
 
 export interface DJDeckRef {
@@ -56,8 +51,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       onSpeedChange,
       isSynced = false,
       audioContext,
-      gainNode,
-      filterNodes,
+      outputNode,
     },
     ref
   ) => {
@@ -100,7 +94,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         onLoaded?.();
 
         // Connect to Web Audio API if provided
-        if (audioContext && gainNode && filterNodes) {
+        if (audioContext && outputNode) {
           try {
             const mediaElement = ws.getMediaElement();
             if (!mediaElement) return;
@@ -108,11 +102,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             const mediaSource = audioContext.createMediaElementSource(mediaElement);
             mediaSourceRef.current = mediaSource;
 
-            // Connect: MediaElement -> Filter Chain (Low -> Mid -> High -> Gain -> Master)
-            // The filter chain and gain are already connected in DJInterface
-            // We connect the media source to the input of the filter chain
-            mediaSource.connect(filterNodes.low);
-            // Filter chain: low -> mid -> high -> gain -> master (all connected in DJInterface)
+            // Connect: MediaElement -> Mixer Input (outputNode)
+            // The mixer handles EQ, volume, crossfader, and master output
+            mediaSource.connect(outputNode);
+            // Note: Do NOT connect to destination here, the Mixer handles that.
           } catch (error) {
             console.warn("Could not connect media element to Web Audio:", error);
           }
@@ -144,7 +137,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         }
         ws.destroy();
       };
-    }, [trackUrl, deckColor, audioContext, gainNode, filterNodes, onLoaded, isPlaying, duration]);
+    }, [trackUrl, deckColor, audioContext, outputNode, onLoaded, isPlaying, duration]);
 
     // Load track when URL changes
     useEffect(() => {
@@ -160,25 +153,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       }
     }, [speed]);
 
-    // Update volume via gain node
-    useEffect(() => {
-      if (gainNode) {
-        gainNode.gain.value = volume;
-      }
-    }, [volume, gainNode]);
-
-    // Mute audio during scratching for clean "cut" effect
-    useEffect(() => {
-      if (gainNode) {
-        if (isScrubbing) {
-          // Mute audio when scratching
-          gainNode.gain.value = 0;
-        } else {
-          // Restore volume when not scratching
-          gainNode.gain.value = volume;
-        }
-      }
-    }, [isScrubbing, volume, gainNode]);
+    // Volume is now controlled by the mixer chain in DJInterface
+    // No need to update gain node here
 
     // Handle play/pause
     const handlePlayPause = () => {

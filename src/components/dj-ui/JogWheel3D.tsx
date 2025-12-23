@@ -55,11 +55,9 @@ export function JogWheel3D({
       const rotationRad = (rotation * Math.PI) / 180;
       meshRef.current.rotation.y = rotationRad;
     } else if (isPlaying) {
-      // Auto-rotate when playing - sync to BPM and pitch
-      // rotationSpeed = (bpm / 60) * playbackRate in radians per second
-      // Convert to radians: (bpm / 60) gives rotations per second, multiply by 2π for radians
-      const rotationSpeed = (bpm / 60) * playbackRate * 2 * Math.PI;
-      meshRef.current.rotation.y += delta * rotationSpeed;
+      // Auto-rotate when playing - 33 1/3 RPM base speed modified by playback rate
+      const baseSpeed = 3.5; // 33 1/3 RPM in radians per second
+      meshRef.current.rotation.y += delta * baseSpeed * playbackRate;
       baseRotationRef.current = meshRef.current.rotation.y;
     } else {
       // When not playing and not scratching, keep current rotation
