@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { VideoGallery } from "@/components/VideoGallery";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
@@ -11,7 +12,7 @@ import { HeroScene } from "@/components/HeroScene";
 
 export default function Home() {
   const scrollToMusic = () => {
-    const musicSection = document.getElementById("music");
+    const musicSection = document.getElementById("latest-drops");
     if (musicSection) {
       musicSection.scrollIntoView({ behavior: "smooth" });
     }
@@ -46,59 +47,126 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="relative z-20 text-center max-w-4xl"
         >
-          {/* Logo with Breathing Animation */}
-          <motion.div
-            className="relative inline-block mb-8"
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <Image
-              src="/images/branding/piko-logo.png"
-              alt="Piko Logo"
-              width={400}
-              height={160}
-              className="relative z-10"
-              style={{
-                filter: "drop-shadow(0 0 20px hsl(var(--neon-pink))) drop-shadow(0 0 40px hsl(var(--neon-pink))) drop-shadow(0 0 60px hsl(var(--neon-pink)))",
-              }}
-              priority
-            />
-          </motion.div>
+          {/* Huge PIKO FG Text */}
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-header mb-8 text-foreground">
+            <GlitchText text="PIKO FG" />
+          </h1>
 
-          {/* Listen Now Button with Torn Tape Edge */}
+          {/* Listen Now Button - Sticker Style */}
           <motion.button
             onClick={scrollToMusic}
-            className="relative px-8 py-4 bg-gradient-to-r from-neon-pink to-neon-green text-background font-tag text-xl font-bold hover:shadow-lg hover:shadow-neon-pink/50 transition-all"
+            className="px-8 py-4 bg-white text-black font-header text-xl font-bold transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black"
             style={{
-              clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
+              boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
             }}
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.98 }}
           >
-            Listen Now
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-neon-pink/30 to-neon-green/30 blur-md -z-10"
-              animate={{
-                opacity: [0.5, 0.8, 0.5],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
+            LISTEN NOW
           </motion.button>
         </motion.div>
       </section>
 
-      {/* Bio Section */}
-      <section id="bio" className="relative py-20 px-8 bg-card">
+      {/* Section 1: LATEST DROPS (Music) */}
+      <section id="latest-drops" className="relative py-20 px-8 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            {/* Backstage Pass Container */}
+            <div className="border-l-4 border-toxic-lime bg-concrete/50 p-6 md:p-8 mb-8">
+              <h2 className="text-4xl md:text-5xl font-header mb-8 text-foreground">
+                LATEST DROPS
+              </h2>
+              <TrackList featuredOnly={true} />
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href="/music"
+                  className="px-6 py-3 bg-white text-black font-header font-bold transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black"
+                  style={{
+                    boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                  }}
+                >
+                  VIEW FULL DISCOGRAPHY
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Section 2: RECENT SIGHTINGS (Videos) */}
+      <section id="recent-sightings" className="relative py-20 px-8 bg-card">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            {/* Header with REC dot */}
+            <div className="relative mb-8 md:mb-12">
+              <h2 className="text-4xl md:text-5xl font-header text-center text-foreground">
+                RECENT SIGHTINGS
+              </h2>
+              {/* REC Red Dot Animation */}
+              <motion.div
+                className="absolute top-0 right-0 md:right-8 w-4 h-4 bg-red-600 rounded-full border-2 border-black"
+                animate={{
+                  opacity: [1, 0.5, 1],
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  boxShadow: "0 0 10px #dc2626",
+                }}
+              />
+            </div>
+            <VideoGallery featuredOnly={true} />
+            <div className="mt-8 flex justify-center">
+              <Link
+                href="/videos"
+                className="px-6 py-3 bg-white text-black font-header font-bold transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black"
+                style={{
+                  boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                }}
+              >
+                WATCH ALL VISUALS
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Section 3: THE LAB (Beat Maker) */}
+      <section id="the-lab" className="relative py-20 px-8 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            {/* Desk Mat Background */}
+            <div className="bg-zinc-800 p-8 md:p-12 border-2 border-black shadow-hard">
+              <h2 className="text-4xl md:text-5xl font-header mb-8 md:mb-12 text-center text-foreground">
+                THE LAB
+              </h2>
+              <BeatMakerTeaser />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Section 4: RAP SHEET (Bio) */}
+      <section id="rap-sheet" className="relative py-20 px-8 bg-card">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
             {/* Text Content - Left Column */}
@@ -109,12 +177,12 @@ export default function Home() {
               viewport={{ once: true }}
             >
               {/* Headline */}
-              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-graffiti mb-4 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-header mb-4 text-foreground">
                 <GlitchText text="PIKO FG" />
               </h2>
 
               {/* Subheadline */}
-              <p className="text-2xl md:text-3xl font-tag text-muted-foreground mb-6">
+              <p className="text-2xl md:text-3xl font-tag text-foreground/70 mb-6">
                 Versos Reales. Ritmo Urbano. Una Mas Music.
               </p>
 
@@ -182,7 +250,10 @@ export default function Home() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="relative p-6 bg-gradient-to-br from-neon-pink/10 to-neon-green/10 border-2 border-neon-pink/30 rounded-lg"
+                className="relative p-6 bg-concrete/50 border-2 border-black"
+                style={{
+                  boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                }}
               >
                 <p className="text-xl md:text-2xl font-tag text-foreground italic leading-relaxed">
                   &quot;Ella se quedó porque lo amaba, él cambió para que no se fuera. Ella aprendió a amarlo otra vez, y él a mejorar por ella.&quot;
@@ -206,83 +277,14 @@ export default function Home() {
                   height={800}
                   priority
                   quality={100}
-                  className="w-full h-auto rounded-2xl border-2 border-neon-pink/50 object-cover transition-all duration-300 group-hover:scale-105 shadow-[0_0_30px_rgba(255,0,255,0.3)] group-hover:shadow-[0_0_50px_rgba(255,0,255,0.5)]"
+                  className="w-full h-auto border-2 border-black object-cover transition-all duration-300 group-hover:scale-105 shadow-hard"
+                  style={{
+                    boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                  }}
                 />
               </div>
             </motion.div>
           </div>
-        </div>
-      </section>
-
-      {/* MPC Beat Maker Section */}
-      <section id="beat-maker" className="relative py-20 px-8 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-              <GlitchText text="MAKE A BEAT" />
-            </h2>
-            <BeatMakerTeaser />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Discography Section */}
-      <section id="music" className="relative py-20 px-8 bg-card">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-              <GlitchText text="DISCOGRAPHY" />
-            </h2>
-            <TrackList featuredOnly={true} />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Video Gallery Section */}
-      <section id="videos" className="relative py-20 px-8 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            {/* Flickering Neon Header */}
-            <motion.h2
-              className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent"
-              animate={{
-                opacity: [1, 0.7, 1, 0.8, 1],
-                filter: [
-                  "brightness(1)",
-                  "brightness(1.2)",
-                  "brightness(0.8)",
-                  "brightness(1.1)",
-                  "brightness(1)",
-                ],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              style={{
-                textShadow: "0 0 20px hsl(var(--neon-pink)), 0 0 40px hsl(var(--neon-green))",
-              }}
-            >
-              <GlitchText text="VISUALS" />
-            </motion.h2>
-            <VideoGallery featuredOnly={true} />
-          </motion.div>
         </div>
       </section>
 

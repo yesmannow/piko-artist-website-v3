@@ -47,6 +47,16 @@
     cursor: pointer;
   }
 
+  /* Hydraulic Button Press Effect */
+  button:active,
+  [role="button"]:active,
+  input[type="submit"]:active,
+  input[type="button"]:active {
+    transform: scale(0.98) translateY(2px) !important;
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,1) !important;
+    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+  }
+
   /* "Torn Paper" Effect for Cards */
   .torn-edge {
     clip-path: polygon(

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { tracks } from "@/lib/data";
 import { useVideo } from "@/context/VideoContext";
+import { useState } from "react";
 
 interface VideoGalleryProps {
   featuredOnly?: boolean;
@@ -139,6 +140,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
               // Random rotation for pasted-on-wall effect
               const rotation = (Math.random() * 2 - 1).toFixed(2);
               const tapeRotation = (Math.random() * 8 - 4).toFixed(2);
+              const [isHovered, setIsHovered] = useState(false);
 
               return (
                 <motion.div
@@ -149,6 +151,8 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                   viewport={{ once: true }}
                   className="group cursor-pointer relative overflow-visible"
                   onClick={() => playVideo(video.id)}
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
                   style={{ transform: `rotate(${rotation}deg)` }}
                 >
                   {/* Duct Tape Element - Top Center */}
@@ -174,33 +178,69 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                         mixBlendMode: "multiply",
                       }}
                     />
-                    {/* Thumbnail Container */}
+                    {/* Thumbnail Container / CCTV Video */}
                     <div className="relative aspect-video bg-black overflow-hidden">
-                      <Image
-                        src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
-                        alt={video.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        unoptimized
-                      />
+                      {/* Static Thumbnail (default) */}
+                      {!isHovered && (
+                        <Image
+                          src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+                          alt={video.title}
+                          fill
+                          className="object-cover transition-transform duration-300"
+                          unoptimized
+                        />
+                      )}
+
+                      {/* CCTV Video (on hover) */}
+                      {isHovered && (
+                        <div className="relative w-full h-full">
+                          <iframe
+                            title={`${video.title} - CCTV Preview`}
+                            src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&start=10&controls=0&modestbranding=1&rel=0&loop=1&playlist=${video.id}`}
+                            className="absolute inset-0 w-full h-full"
+                            allow="autoplay; encrypted-media"
+                            allowFullScreen
+                            style={{
+                              filter: "grayscale(100%) sepia(100%) hue-rotate(80deg) contrast(150%)",
+                              border: "none",
+                            }}
+                          />
+                          {/* Scanline Overlay */}
+                          <div
+                            className="absolute inset-0 pointer-events-none z-10 opacity-30"
+                            style={{
+                              backgroundImage: `repeating-linear-gradient(
+                                0deg,
+                                transparent,
+                                transparent 2px,
+                                rgba(0, 255, 0, 0.1) 2px,
+                                rgba(0, 255, 0, 0.1) 4px
+                              )`,
+                              mixBlendMode: "screen",
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {/* Duration Badge (Bottom-Right) */}
-                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-tag text-white border border-black">
+                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-tag text-white border border-black z-20">
                         {getFakeDuration(index)}
                       </div>
 
-                      {/* Play Button Overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
-                        <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border-2 border-black">
-                          <svg
-                            className="w-7 h-7 text-black ml-1"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
+                      {/* Play Button Overlay (only when not hovering) */}
+                      {!isHovered && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                          <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border-2 border-black">
+                            <svg
+                              className="w-7 h-7 text-black ml-1"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Card Info */}

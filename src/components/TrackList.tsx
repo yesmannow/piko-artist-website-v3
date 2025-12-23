@@ -1,11 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
 import Link from "next/link";
 import { Play } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 
 const vibeColors = {
@@ -201,15 +201,40 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
           </div>
         </div>
       ) : (
-        // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look with 3D Tilt
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" style={{ perspective: "1000px" }}>
           {visibleTracks.map((track, idx) => {
             const isActive = currentTrack?.id === track.id && isPlaying;
             // Random rotation between -1deg and 1deg for pasted-on-wall effect
             const rotation = (Math.random() * 2 - 1).toFixed(2);
 
+            // 3D Tilt Physics
+            const cardRef = useRef<HTMLButtonElement>(null);
+            const x = useMotionValue(0);
+            const y = useMotionValue(0);
+
+            const rotateX = useTransform(y, [-0.5, 0.5], [5, -5]);
+            const rotateY = useTransform(x, [-0.5, 0.5], [-5, 5]);
+
+            const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!cardRef.current) return;
+              const rect = cardRef.current.getBoundingClientRect();
+              const centerX = rect.left + rect.width / 2;
+              const centerY = rect.top + rect.height / 2;
+              const mouseX = (e.clientX - centerX) / rect.width;
+              const mouseY = (e.clientY - centerY) / rect.height;
+              x.set(mouseX);
+              y.set(mouseY);
+            };
+
+            const handleMouseLeave = () => {
+              x.set(0);
+              y.set(0);
+            };
+
             return (
               <motion.button
+                ref={cardRef}
                 key={track.id}
                 type="button"
                 initial={{ opacity: 0, y: 10 }}
@@ -217,15 +242,18 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
                 viewport={{ once: true }}
                 onClick={() => playTrack(track)}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
                 className={[
                   "group relative w-full text-left",
                   "bg-[#e5e5e5] overflow-hidden",
                   "border-2 border-black",
-                  "transition-all hover:scale-[1.02]",
+                  "transition-all",
                   isActive ? "ring-2 ring-toxic-lime" : "",
                 ].join(" ")}
                 style={{
-                  transform: `rotate(${rotation}deg)`,
+                  transform: `rotate(${rotation}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+                  transformStyle: "preserve-3d",
                   boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
                 }}
               >

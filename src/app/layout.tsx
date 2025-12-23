@@ -7,6 +7,7 @@ import { AudioProvider } from "@/context/AudioContext";
 import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
+import { PageTransition } from "@/components/PageTransition";
 
 const permanentMarker = Permanent_Marker({
   weight: "400",
@@ -38,7 +39,9 @@ export default function RootLayout({
         <AudioProvider>
           <VideoProvider>
             <Navigation />
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
             <Footer />
             <FloatingVideoPlayer />
             <PersistentPlayer />
