@@ -11,8 +11,7 @@ const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => void }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeEl = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [hoveredPoint, setHoveredPoint] = useState<any | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<TourDate | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 }); // Init to 0 to prevent mismatch
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
           arcDashGap={0.2}
           arcDashAnimateTime={1500}
           onPointHover={setHoveredPoint}
-          onPointClick={(point: any) => {
+          onPointClick={(point: TourDate) => {
             globeEl.current.pointOfView({ lat: point.lat, lng: point.lng, altitude: 1.5 }, 1000);
             if(onCityClick) onCityClick(point.city);
           }}
