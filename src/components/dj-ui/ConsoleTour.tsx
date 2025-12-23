@@ -1,283 +1,256 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronRight, ChevronLeft } from "lucide-react";
 
 interface TourStep {
-  id: string;
+  target: string;
   title: string;
-  description: string;
-  targetSelector: string; // CSS selector for the element to highlight
+  content: string;
   position?: "top" | "bottom" | "left" | "right";
 }
 
 const tourSteps: TourStep[] = [
   {
-    id: "library",
+    target: '[data-tour="library"]',
     title: "CRATE DIGGING",
-    description: "Drag tracks from here onto a Deck.",
-    targetSelector: '[data-tour="library"]',
+    content: "This is your record crate. Drag and drop any track from here onto Deck A or Deck B to load it.",
     position: "bottom",
   },
   {
-    id: "decks",
+    target: '[data-tour="deck-a"]',
     title: "VIRTUAL VINYL",
-    description: "This is your player. Use the Jog Wheel to scratch.",
-    targetSelector: '[data-tour="deck-a"]',
+    content: "Interactive 3D Decks. Click Play to start. Click and drag the record to Scratch.",
+    position: "right",
+  },
+  {
+    target: '[data-tour="sync-pitch"]',
+    title: "BEAT MATCHING",
+    content: "Use the Pitch Slider to manually adjust tempo, or hit SYNC to lock the BPM instantly.",
+    position: "right",
+  },
+  {
+    target: '[data-tour="mixer"]',
+    title: "THE MIXER",
+    content: "Sculpt your sound. Use the 3-Band EQ to cut frequencies and the Kill Switches (K) for instant drops.",
+    position: "left",
+  },
+  {
+    target: '[data-tour="performance-pads"]',
+    title: "PERFORMANCE PADS",
+    content: "Remix live. Set Hot Cues to jump around the track, or trigger Loops for extended mixes.",
+    position: "top",
+  },
+  {
+    target: '[data-tour="fx-unit"]',
+    title: "FX RACK",
+    content: "Add texture. Apply Filters, Reverb, and Delay to the master output for creative transitions.",
     position: "bottom",
   },
   {
-    id: "sync-pitch",
-    title: "BEAT MATCHING",
-    description: "Use Sync to lock BPMs, or the slider for manual control.",
-    targetSelector: '[data-tour="sync-pitch"]',
-    position: "top",
-  },
-  {
-    id: "mixer",
-    title: "FREQUENCY CONTROL",
-    description: "EQ knobs shape the sound. Use Kill switches to cut bands instantly.",
-    targetSelector: '[data-tour="mixer"]',
-    position: "top",
-  },
-  {
-    id: "performance-pads",
-    title: "REMIX LIVE",
-    description: "Set Hot Cues or trigger Loops on the fly.",
-    targetSelector: '[data-tour="performance-pads"]',
-    position: "top",
-  },
-  {
-    id: "fx-unit",
-    title: "TEXTURE",
-    description: "Add Reverb, Delay, and Filters to the master output.",
-    targetSelector: '[data-tour="fx-unit"]',
-    position: "top",
-  },
-  {
-    id: "master-out",
-    title: "LEVELS",
-    description: "Watch the visualizer. Don't redline.",
-    targetSelector: '[data-tour="master-out"]',
+    target: '[data-tour="master-out"]',
+    title: "MASTER & CROSSFADER",
+    content: "Blend between decks using the Crossfader. Watch the Spectrum Analyzer to keep levels in check.",
     position: "top",
   },
 ];
 
 export function ConsoleTour() {
+  const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const [isReady, setIsReady] = useState(false);
 
+  // 1. Initial Load Check
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("piko_tour_complete");
+    if (!hasSeenTour) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        setIsActive(true);
+        setIsReady(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // 2. Lock Body Scroll when active
+  useEffect(() => {
+    if (isActive) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isActive]);
+
+  // 3. Find Target Element
   const updateTargetPosition = useCallback(() => {
+    if (!isActive) return;
+
     const step = tourSteps[currentStep];
-    if (!step) return;
+    const element = document.querySelector(step.target);
 
-    const targetElement = document.querySelector(step.targetSelector);
-    if (targetElement) {
-      const rect = targetElement.getBoundingClientRect();
+    if (element) {
+      // Get rect relative to VIEWPORT (fixed), not document
+      const rect = element.getBoundingClientRect();
       setTargetRect(rect);
-    }
-  }, [currentStep]);
 
+      // Scroll element into view if needed (smoothly)
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      // Skip step if target is missing (e.g. mobile hidden elements)
+      console.warn(`Tour target missing: ${step.target}`);
+    }
+  }, [isActive, currentStep]);
+
+  // Update position on step change or resize
   useEffect(() => {
-    // Check if tour was already completed
-    const tourComplete = localStorage.getItem("piko_tour_complete");
-    if (tourComplete === "true") {
-      return;
-    }
-
-    // Auto-start tour after a short delay
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-      updateTargetPosition();
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    updateTargetPosition();
+    window.addEventListener("resize", updateTargetPosition);
+    return () => window.removeEventListener("resize", updateTargetPosition);
   }, [updateTargetPosition]);
-
-  useEffect(() => {
-    if (isVisible) {
-      updateTargetPosition();
-      window.addEventListener("resize", updateTargetPosition);
-      window.addEventListener("scroll", updateTargetPosition, true);
-
-      return () => {
-        window.removeEventListener("resize", updateTargetPosition);
-        window.removeEventListener("scroll", updateTargetPosition, true);
-      };
-    }
-  }, [isVisible, currentStep, updateTargetPosition]);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep((prev) => prev + 1);
     } else {
-      handleEndTour();
+      endTour();
     }
   };
 
-  const handleBack = () => {
+  const handlePrev = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   };
 
-  const handleEndTour = () => {
-    setIsVisible(false);
+  const endTour = () => {
+    setIsActive(false);
     localStorage.setItem("piko_tour_complete", "true");
   };
 
-  if (!isVisible || !targetRect) return null;
+  if (!isActive || !targetRect || !isReady) return null;
 
   const step = tourSteps[currentStep];
-  if (!step) return null;
 
-  const positionClasses = {
-    top: "bottom-full left-1/2 -translate-x-1/2 mb-4",
-    bottom: "top-full left-1/2 -translate-x-1/2 mt-4",
-    left: "right-full top-1/2 -translate-y-1/2 mr-4",
-    right: "left-full top-1/2 -translate-y-1/2 ml-4",
+  // Calculate Tooltip Position based on fixed coords
+  const getTooltipStyle = () => {
+    const gap = 20;
+    const tooltipWidth = 320; // approximate
+    // Default to bottom center
+    let top = targetRect.bottom + gap;
+    let left = targetRect.left + targetRect.width / 2 - tooltipWidth / 2;
+
+    // Adjust based on preference
+    if (step.position === "top") {
+      top = targetRect.top - gap - 200; // approximate height
+    } else if (step.position === "right") {
+      left = targetRect.right + gap;
+      top = targetRect.top;
+    } else if (step.position === "left") {
+      left = targetRect.left - tooltipWidth - gap;
+      top = targetRect.top;
+    }
+
+    // Safety bounds (keep onscreen)
+    if (left < 20) left = 20;
+    if (left + tooltipWidth > window.innerWidth) left = window.innerWidth - tooltipWidth - 20;
+    if (top < 20) top = targetRect.bottom + gap; // Fallback to bottom if top is cropped
+
+    return { top, left };
   };
+
+  const tooltipPos = getTooltipStyle();
 
   return (
     <AnimatePresence>
-      <div
-        ref={overlayRef}
-        className="fixed inset-0 z-[9999] pointer-events-none"
-      >
-        {/* Dark backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/50"
-        />
-
-        {/* Spotlight (cutout around target) */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <defs>
-            <mask id="spotlight-mask">
-              <rect width="100%" height="100%" fill="black" />
-              <rect
-                x={targetRect.left}
-                y={targetRect.top}
-                width={targetRect.width}
-                height={targetRect.height}
-                fill="white"
-                rx="8"
-              />
-            </mask>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="rgba(0, 0, 0, 0.7)"
-            mask="url(#spotlight-mask)"
+      {isActive && (
+        <>
+          {/* 1. Dark Backdrop (Fixed) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-[9990]"
+            onClick={endTour} // Click outside to exit
           />
-        </svg>
 
-        {/* Highlight border around target */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="absolute border-4 border-[#00ff00] rounded-lg pointer-events-none"
-          style={{
-            left: targetRect.left - 4,
-            top: targetRect.top - 4,
-            width: targetRect.width + 8,
-            height: targetRect.height + 8,
-            boxShadow: "0 0 30px rgba(0, 255, 0, 0.5)",
-          }}
-        />
+          {/* 2. Global Exit Button (Safety Valve) */}
+          <button
+            onClick={endTour}
+            className="fixed top-4 right-4 z-[10001] p-2 bg-zinc-900 text-zinc-400 hover:text-white rounded-full border border-zinc-700"
+            title="Close Tour"
+          >
+            <X className="w-6 h-6" />
+          </button>
 
-        {/* Tooltip */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          className={`absolute ${positionClasses[step.position || "bottom"]} pointer-events-auto`}
-          style={{
-            left: targetRect.left + targetRect.width / 2,
-            top: step.position === "top" ? targetRect.top : undefined,
-            bottom: step.position === "bottom" ? window.innerHeight - targetRect.bottom : undefined,
-          }}
-        >
-          <div className="bg-black/95 border-2 border-[#00ff00] rounded-lg px-6 py-4 shadow-2xl max-w-sm">
+          {/* 3. The Spotlight (Hole in the dark) - Fixed */}
+          <motion.div
+            layoutId="tour-spotlight"
+            className="fixed rounded-lg border-2 border-toxic-lime shadow-[0_0_50px_rgba(204,255,0,0.2)] z-[9999] pointer-events-none"
+            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            style={{
+              top: targetRect.top - 5,
+              left: targetRect.left - 5,
+              width: targetRect.width + 10,
+              height: targetRect.height + 10,
+            }}
+          />
+
+          {/* 4. The Tooltip Card - Fixed */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            key={currentStep}
+            className="fixed z-[10000] w-[320px] bg-zinc-950 border border-zinc-800 rounded-xl p-5 shadow-2xl"
+            style={{
+              top: tooltipPos.top,
+              left: tooltipPos.left,
+            }}
+          >
             <div className="flex items-start justify-between gap-4 mb-3">
               <div>
-                <h3 className="text-lg font-barlow uppercase text-[#00ff00] tracking-wider mb-1">
-                  {step.title}
-                </h3>
-                <p className="text-sm font-barlow text-gray-300">
-                  {step.description}
-                </p>
+                <span className="text-[10px] font-industrial text-toxic-lime tracking-widest uppercase mb-1 block">
+                  STEP {currentStep + 1} / {tourSteps.length}
+                </span>
+                <h3 className="text-lg font-header text-white leading-none">{step.title}</h3>
               </div>
+            </div>
+
+            <p className="text-sm text-zinc-400 mb-6 font-sans leading-relaxed">{step.content}</p>
+
+            <div className="flex items-center justify-between">
               <button
-                onClick={handleEndTour}
-                className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
-                aria-label="Close tour"
+                onClick={endTour}
+                className="text-xs font-bold text-zinc-500 hover:text-white uppercase tracking-wider"
               >
-                <X className="w-5 h-5" />
+                Skip
               </button>
-            </div>
 
-            {/* Progress indicator */}
-            <div className="mb-4">
-              <div className="flex gap-1">
-                {tourSteps.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`h-1 flex-1 rounded ${
-                      index === currentStep
-                        ? "bg-[#00ff00]"
-                        : index < currentStep
-                        ? "bg-[#00ff00]/50"
-                        : "bg-gray-700"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="text-xs font-barlow text-gray-500 mt-1 text-center">
-                {currentStep + 1} / {tourSteps.length}
-              </div>
-            </div>
-
-            {/* Navigation buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleBack}
-                disabled={currentStep === 0}
-                className={`flex-1 px-4 py-2 rounded border-2 font-barlow uppercase text-sm transition-all ${
-                  currentStep === 0
-                    ? "border-gray-700 text-gray-600 cursor-not-allowed"
-                    : "border-gray-600 text-gray-300 hover:border-[#00ff00] hover:text-[#00ff00]"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentStep === 0}
+                  className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
                   <ChevronLeft className="w-4 h-4" />
-                  Back
-                </div>
-              </button>
-              <button
-                onClick={handleNext}
-                className="flex-1 px-4 py-2 rounded border-2 border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00] font-barlow uppercase text-sm hover:bg-[#00ff00]/20 transition-all"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  {currentStep === tourSteps.length - 1 ? "End Tour" : "Next"}
-                  {currentStep < tourSteps.length - 1 && (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </div>
-              </button>
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-toxic-lime text-black font-bold text-xs uppercase tracking-wider hover:bg-[#b3ff00] transition-colors shadow-[0_0_15px_rgba(204,255,0,0.3)]"
+                >
+                  {currentStep === tourSteps.length - 1 ? "Finish" : "Next"}
+                  {currentStep !== tourSteps.length - 1 && <ChevronRight className="w-3 h-3" />}
+                </button>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      </div>
+          </motion.div>
+        </>
+      )}
     </AnimatePresence>
   );
 }
-
