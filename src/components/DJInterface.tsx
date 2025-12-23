@@ -263,10 +263,16 @@ export function DJInterface() {
   // Mobile landscape hint state
   const [showLandscapeHint, setShowLandscapeHint] = useState(false);
   const [landscapeHintDismissed, setLandscapeHintDismissed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure component is mounted before accessing window
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Check for mobile portrait orientation
   useEffect(() => {
-    if (landscapeHintDismissed) return;
+    if (!isMounted || landscapeHintDismissed) return;
 
     const checkOrientation = () => {
       const isMobile = window.innerWidth < 768;
@@ -282,7 +288,7 @@ export function DJInterface() {
       window.removeEventListener("resize", checkOrientation);
       window.removeEventListener("orientationchange", checkOrientation);
     };
-  }, [landscapeHintDismissed]);
+  }, [isMounted, landscapeHintDismissed]);
 
   // Get audio tracks only and filter by search
   const audioTracks = tracks

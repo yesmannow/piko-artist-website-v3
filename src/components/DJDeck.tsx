@@ -74,6 +74,12 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     useEffect(() => {
       if (!waveformRef.current) return;
 
+      // 1. Create Audio Element with CORS (Crucial for Web Audio API)
+      const audio = document.createElement("audio");
+      audio.crossOrigin = "anonymous";
+      audio.controls = false;
+
+      // 2. Initialize WaveSurfer with this element
       const ws = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#2a2a2a",
@@ -83,7 +89,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         barRadius: 1,
         height: 100,
         normalize: true,
-        backend: "MediaElement",
+        backend: "MediaElement", // Use the element we created
+        media: audio,            // Pass the element explicitly
         mediaControls: false,
         interact: true,
       });
@@ -94,21 +101,26 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         setDuration(ws.getDuration());
         onLoaded?.();
 
-        // Connect to Web Audio API if provided
+        // 3. Connect to Web Audio Mixer
         if (audioContext && outputNode) {
           try {
-            const mediaElement = ws.getMediaElement();
-            if (!mediaElement) return;
+            // Disconnect old source if exists
+            if (mediaSourceRef.current) {
+              try {
+                mediaSourceRef.current.disconnect();
+              } catch (e) {
+                // Ignore disconnect errors
+              }
+            }
 
+            const mediaElement = ws.getMediaElement();
             const mediaSource = audioContext.createMediaElementSource(mediaElement);
             mediaSourceRef.current = mediaSource;
 
-            // Connect: MediaElement -> Mixer Input (outputNode)
-            // The mixer handles EQ, volume, crossfader, and master output
+            // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
             mediaSource.connect(outputNode);
-            // Note: Do NOT connect to destination here, the Mixer handles that.
           } catch (error) {
-            console.warn("Could not connect media element to Web Audio:", error);
+            console.warn("Audio Routing Error:", error);
           }
         }
       });
@@ -122,23 +134,22 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       });
 
       ws.on("timeupdate", (time: number) => {
-        if (ws.isPlaying() && duration > 0) {
-          const rotationValue = (time / duration) * 360;
-          setRotation(rotationValue);
-        }
+        const d = ws.getDuration();
+        if (d > 0) setRotation((time / d) * 360);
       });
 
       return () => {
+        // Clean up carefully to prevent context loss
         if (mediaSourceRef.current) {
           try {
             mediaSourceRef.current.disconnect();
-          } catch {
+          } catch (e) {
             // Ignore disconnect errors
           }
         }
         ws.destroy();
       };
-    }, [trackUrl, deckColor, audioContext, outputNode, onLoaded, isPlaying, duration]);
+    }, [trackUrl, deckColor, audioContext, outputNode, onLoaded]);
 
     // Load track when URL changes
     useEffect(() => {
