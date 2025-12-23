@@ -5,6 +5,7 @@ import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { AudioProvider } from "@/context/AudioContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
+import { SprayCursor } from "@/components/SprayCursor";
 
 const permanentMarker = Permanent_Marker({
   weight: "400",
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${permanentMarker.variable} ${sedgwickAve.variable}`}>
         <AudioProvider>
+          <SprayCursor />
           <Navigation />
           {children}
           <Footer />

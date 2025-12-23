@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
@@ -214,6 +215,7 @@ export function PersistentPlayer() {
                           audioRef.current.volume = newVolume;
                         }
                       }}
+                      aria-label="Volume control"
                       className="w-20 md:w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-neon-green"
                     />
                   </div>

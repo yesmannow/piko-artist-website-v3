@@ -6,9 +6,10 @@ import Link from "next/link";
 export function Navigation() {
   const navLinks = [
     { href: "#home", label: "Home" },
-    { href: "#bio", label: "Bio" },
+    { href: "#bio", label: "About" },
     { href: "#music", label: "Music" },
     { href: "#videos", label: "Videos" },
+    { href: "#contact", label: "Contact" },
   ];
 
   return (

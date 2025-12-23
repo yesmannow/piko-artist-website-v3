@@ -6,6 +6,7 @@ import { VideoGallery } from "@/components/VideoGallery";
 import { StudioGallery } from "@/components/StudioGallery";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
+import { GlitchText } from "@/components/GlitchText";
 import { tracks } from "@/lib/data";
 
 export default function Home() {
@@ -107,7 +108,7 @@ export default function Home() {
             >
               {/* Headline */}
               <h2 className="text-6xl md:text-8xl font-graffiti mb-4 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-                PIKO FG
+                <GlitchText text="PIKO FG" />
               </h2>
 
               {/* Subheadline */}
@@ -173,7 +174,7 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-              DISCOGRAPHY
+              <GlitchText text="DISCOGRAPHY" />
             </h2>
             <TrackList />
           </motion.div>
@@ -211,7 +212,7 @@ export default function Home() {
                 textShadow: "0 0 20px hsl(var(--neon-pink)), 0 0 40px hsl(var(--neon-green))",
               }}
             >
-              VISUALS
+              <GlitchText text="VISUALS" />
             </motion.h2>
             <VideoGallery videos={videos} />
           </motion.div>
