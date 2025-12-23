@@ -666,7 +666,7 @@ export function ProSequencer() {
           <MPCScreen
             kitName={currentKit.name}
             bpm={bpm}
-            audioContext={audioContextRef.current}
+            audioContext={audioContextRef.current || undefined}
             masterGainNode={masterGainRef.current ?? undefined}
           />
         </div>

@@ -14,3 +14,4 @@ yarn-error.log*
 .dev.vars
 .worker-next/
 .open-next/
+tsconfig.tsbuildinfo
