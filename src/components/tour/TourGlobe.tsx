@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { TourDate, tourDates } from "@/lib/data";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
@@ -10,75 +11,95 @@ const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => void }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeEl = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [hoveredPoint, setHoveredPoint] = useState<any | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 }); // Init to 0 to prevent mismatch
 
-  // Initialize view
+  useEffect(() => {
+    // Force client-side dimension calculation
+    const updateSize = () => {
+      const container = document.getElementById("globe-container");
+      if (container) {
+        setDimensions({ width: container.clientWidth, height: container.clientHeight });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   useEffect(() => {
     if (globeEl.current) {
+      globeEl.current.controls().autoRotate = true;
+      globeEl.current.controls().autoRotateSpeed = 0.5;
       globeEl.current.pointOfView({ altitude: 2.5 });
-      // Enable auto-rotate if available
-      if (typeof globeEl.current.controls === 'function') {
-        const controls = globeEl.current.controls();
-        if (controls) {
-          controls.autoRotate = true;
-          controls.autoRotateSpeed = 0.5;
-        }
-      }
     }
   }, []);
 
-  // Generate arcs (flight paths)
   const arcsData = useMemo(() => {
     return tourDates.slice(0, -1).map((stop, i) => ({
-      startLat: stop.lat,
-      startLng: stop.lng,
-      endLat: tourDates[i + 1].lat,
-      endLng: tourDates[i + 1].lng,
-      color: "#ccff00",
+      startLat: stop.lat, startLng: stop.lng,
+      endLat: tourDates[i + 1].lat, endLng: tourDates[i + 1].lng,
+      color: "#ccff00"
     }));
   }, []);
 
   return (
-    <div className="w-full h-full">
-      <Globe
-        ref={globeEl}
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-        backgroundColor="rgba(0,0,0,0)"
-        // Atmosphere
-        atmosphereColor="#ccff00"
-        atmosphereAltitude={0.15}
-        // Points (Cities)
-        pointsData={tourDates}
-        pointLat="lat"
-        pointLng="lng"
-        pointColor={() => "#ccff00"}
-        pointAltitude={0.02}
-        pointRadius={0.5}
-        pointsMerge={true}
-        // Labels (City Names on Hover)
-        labelsData={tourDates}
-        labelLat="lat"
-        labelLng="lng"
-        labelText="city"
-        labelSize={1.5}
-        labelDotRadius={0.5}
-        labelColor={() => "#ffffff"}
-        labelResolution={2}
-        // Arcs (Flight Paths)
-        arcsData={arcsData}
-        arcColor="color"
-        arcDashLength={0.4}
-        arcDashGap={0.2}
-        arcDashAnimateTime={1500}
-        arcStroke={0.5}
-        // Interaction
-        onPointClick={(point: object) => {
-          const p = point as TourDate;
-          if (globeEl.current) {
-            globeEl.current.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.5 }, 1000);
-          }
-          if (onCityClick) onCityClick(p.city);
-        }}
-      />
+    <div id="globe-container" className="w-full h-full relative group cursor-move">
+      {dimensions.width > 0 && (
+        <Globe
+          ref={globeEl}
+          width={dimensions.width}
+          height={dimensions.height}
+          globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+          bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+          backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+          atmosphereColor="#ccff00"
+          atmosphereAltitude={0.15}
+          pointsData={tourDates}
+          pointLat="lat"
+          pointLng="lng"
+          pointColor={() => "#ccff00"}
+          pointAltitude={0.1} // Make pins taller
+          pointRadius={0.5}
+          pointsMerge={true}
+          arcsData={arcsData}
+          arcColor="color"
+          arcDashLength={0.4}
+          arcDashGap={0.2}
+          arcDashAnimateTime={1500}
+          onPointHover={setHoveredPoint}
+          onPointClick={(point: any) => {
+            globeEl.current.pointOfView({ lat: point.lat, lng: point.lng, altitude: 1.5 }, 1000);
+            if(onCityClick) onCityClick(point.city);
+          }}
+        />
+      )}
+
+      {/* Rich Tooltip Overlay */}
+      <AnimatePresence>
+        {hoveredPoint && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute top-4 right-4 md:top-8 md:right-8 w-72 bg-black/80 backdrop-blur-md border border-[#ccff00] rounded-xl overflow-hidden shadow-[0_0_30px_rgba(204,255,0,0.2)] pointer-events-none z-10"
+          >
+            {hoveredPoint.image && (
+              <div className="h-32 w-full relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={hoveredPoint.image} alt={hoveredPoint.city} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+              </div>
+            )}
+            <div className="p-4">
+              <h3 className="text-xl font-black text-white uppercase">{hoveredPoint.city}</h3>
+              <p className="text-[#ccff00] font-mono text-xs mb-2">{hoveredPoint.date} • {hoveredPoint.venue}</p>
+              <p className="text-zinc-400 text-sm leading-tight">{hoveredPoint.description}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -7,61 +7,56 @@ import { MapPin } from "lucide-react";
 
 export default function TourPage() {
   return (
-    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-[#121212]">
-      {/* Left Panel: Tour Dates List */}
-      <div className="w-full md:w-1/2 h-screen overflow-y-auto p-6 md:p-12 z-10 bg-[#121212]/80 backdrop-blur-sm border-r border-zinc-800">
-        <h1 className="text-4xl md:text-6xl font-header text-white mb-8 tracking-tight">
-          WORLD <span className="text-toxic-lime">TOUR</span>
-        </h1>
+    <div className="min-h-screen bg-[#121212]">
 
-        <div className="space-y-4">
-          {tourDates.map((stop, i) => (
-            <motion.div
-              key={stop.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="group relative p-6 border border-zinc-800 hover:border-toxic-lime bg-zinc-900/50 rounded-xl transition-all duration-300 hover:bg-zinc-900/80"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center justify-center w-16 h-16 bg-zinc-950 rounded-lg border border-zinc-800 group-hover:border-toxic-lime/50 transition-colors">
-                    <span className="text-xs text-zinc-500 font-bold uppercase">
-                      {stop.date.split(" ")[0]}
-                    </span>
-                    <span className="text-xl text-white font-bold">
-                      {stop.date.split(" ")[1]}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-white group-hover:text-toxic-lime transition-colors">
-                      {stop.city}
-                    </h3>
-                    <p className="text-zinc-400 flex items-center gap-2 mt-1">
-                      <MapPin className="w-4 h-4" /> {stop.venue}
-                    </p>
-                  </div>
-                </div>
+      {/* HERO: Interactive Globe */}
+      <div className="relative w-full h-[60vh] md:h-[70vh] border-b border-zinc-800">
+        <div className="absolute inset-0 bg-black">
+          <TourGlobe />
+        </div>
 
-                <a
-                  href={stop.ticketUrl}
-                  className="px-6 py-3 bg-toxic-lime text-black font-bold uppercase text-sm rounded-lg hover:bg-white hover:scale-105 transition-all shadow-[0_0_20px_rgba(204,255,0,0.2)]"
-                >
-                  Tickets
-                </a>
-              </div>
-            </motion.div>
-          ))}
+        {/* Title Overlay */}
+        <div className="absolute top-0 left-0 p-8 md:p-12 pointer-events-none">
+          <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter opacity-80">
+            WORLD <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">TOUR</span>
+          </h1>
+          <p className="text-zinc-400 font-mono mt-2">Spin the globe to explore locations.</p>
         </div>
       </div>
 
-      {/* Right Panel: 3D Globe - FIXED HEIGHT */}
-      <div className="w-full md:w-1/2 h-[60vh] md:h-screen relative bg-black">
-        <div className="absolute inset-0">
-          <TourGlobe />
+      {/* LIST: Incoming Transmissions */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
+        <h2 className="text-2xl font-bold text-white mb-8 border-l-4 border-[#ccff00] pl-4 uppercase">
+          Incoming Transmissions
+        </h2>
+        <div className="grid gap-4">
+          {tourDates.map((stop, i) => (
+            <motion.div
+              key={stop.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="group flex flex-col md:flex-row items-center justify-between p-6 bg-zinc-900/50 border border-zinc-800 hover:border-[#ccff00] rounded-xl transition-all"
+            >
+              <div className="flex items-center gap-6 w-full md:w-auto">
+                <div className="flex flex-col items-center justify-center w-20 h-20 bg-black rounded-lg border border-zinc-800 group-hover:border-[#ccff00] transition-colors">
+                  <span className="text-xs text-zinc-500 font-bold uppercase">{stop.date.split(' ')[0]}</span>
+                  <span className="text-2xl text-white font-black">{stop.date.split(' ')[1]}</span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white group-hover:text-[#ccff00] transition-colors">{stop.city}</h3>
+                  <p className="text-zinc-400 flex items-center gap-2 mt-1">
+                    <MapPin className="w-4 h-4" /> {stop.venue}
+                  </p>
+                </div>
+              </div>
+
+              <a href={stop.ticketUrl} className="mt-4 md:mt-0 w-full md:w-auto px-8 py-4 bg-[#ccff00] text-black font-bold uppercase tracking-wider rounded-lg hover:bg-white transition-colors text-center">
+                Get Tickets
+              </a>
+            </motion.div>
+          ))}
         </div>
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#121212] via-transparent to-transparent md:bg-gradient-to-l" />
       </div>
     </div>
   );
