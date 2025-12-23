@@ -1,42 +1,39 @@
 "use client";
 
-import { useRef, useMemo, useState, useCallback } from "react";
+import { useRef, useState, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text } from "@react-three/drei";
+import { OrbitControls, Html, Sphere } from "@react-three/drei";
 import * as THREE from "three";
 import { Event } from "@/lib/events";
 import { Move3D, Lock } from "lucide-react";
 
-// Convert lat/lng to 3D coordinates on a sphere
-function latLngToVector3(lat: number, lng: number, radius: number): [number, number, number] {
+// Helper: Convert Lat/Lon to 3D Position
+function latLonToVector3(lat: number, lng: number, radius: number): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
-
   const x = -(radius * Math.sin(phi) * Math.cos(theta));
   const z = radius * Math.sin(phi) * Math.sin(theta);
   const y = radius * Math.cos(phi);
-
-  return [x, y, z];
+  return new THREE.Vector3(x, y, z);
 }
 
-interface EventMarkerProps {
+// Component: Individual Event Marker
+function EventMarker({
+  event,
+  radius,
+  isSelected,
+  onSelect,
+}: {
   event: Event;
-  position: [number, number, number];
-}
+  radius: number;
+  isSelected: boolean;
+  onSelect: (e: Event) => void;
+}) {
+  const position = useMemo(() => {
+    return latLonToVector3(event.coordinates[0], event.coordinates[1], radius);
+  }, [event, radius]);
 
-function EventMarker({ event, position }: EventMarkerProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const [hovered, setHovered] = useState(false);
-
-  // Pulsing animation
-  useFrame(({ clock }) => {
-    if (meshRef.current) {
-      const scale = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.2;
-      meshRef.current.scale.set(scale, scale, scale);
-    }
-  });
-
-  const color = event.status === "upcoming" ? "#ff6600" : "#888888"; // safety-orange or tape-gray
+  const color = event.status === "upcoming" ? "#ccff00" : "#888888"; // toxic-lime vs tape-gray
   const dateStr = event.date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -44,87 +41,121 @@ function EventMarker({ event, position }: EventMarkerProps) {
   });
 
   return (
-    <group position={position}>
-      {/* Marker Sphere */}
+    <group position={[position.x, position.y, position.z]}>
+      {/* The Pin Mesh */}
       <mesh
-        ref={meshRef}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(event);
+        }}
       >
-        <sphereGeometry args={[0.15, 16, 16]} />
+        <sphereGeometry args={[0.08, 16, 16]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={0.5}
-          transparent
-          opacity={0.8}
+          emissiveIntensity={isSelected ? 2 : 0.5}
+          toneMapped={false}
         />
       </mesh>
 
-      {/* Hover Tooltip */}
-      {hovered && (
-        <Text
-          position={[0, 0.5, 0]}
-          fontSize={0.12}
-          color="#ccff00"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.02}
-          outlineColor="#000"
-        >
-          {event.title}
-          {"\n"}
-          {dateStr}
-        </Text>
+      {/* Pulse Effect for Upcoming */}
+      {event.status === "upcoming" && (
+        <mesh>
+          <sphereGeometry args={[0.12, 16, 16]} />
+          <meshBasicMaterial color={color} transparent opacity={0.2} />
+        </mesh>
+      )}
+
+      {/* The Pop-up Card (HTML Overlay) */}
+      {isSelected && (
+        <Html distanceFactor={10} zIndexRange={[100, 0]}>
+          <div className="w-48 bg-concrete border-2 border-toxic-lime p-3 shadow-hard transform -translate-x-1/2 -translate-y-full mt-[-10px] relative">
+            <h3 className="font-header text-lg text-white leading-none mb-1">
+              {event.title}
+            </h3>
+            <p className="font-industrial font-bold text-toxic-lime text-xs uppercase mb-1">
+              {dateStr}
+            </p>
+            <p className="font-industrial text-gray-400 text-xs">
+              {event.location}
+            </p>
+            {/* Little Triangle Pointer */}
+            <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-toxic-lime rotate-45 border-b-2 border-r-2 border-black" />
+          </div>
+        </Html>
       )}
     </group>
   );
 }
 
+// Component: The Main Globe Scene
 function GlobeScene({ events }: { events: Event[] }) {
-  const globeRef = useRef<THREE.Mesh>(null);
+  const globeRef = useRef<THREE.Group>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const GLOBE_RADIUS = 2.5;
 
-  // Auto-rotate
+  // Auto-rotation logic
   useFrame(() => {
-    if (globeRef.current) {
-      globeRef.current.rotation.y += 0.005;
+    if (globeRef.current && !selectedId) {
+      globeRef.current.rotation.y += 0.002;
     }
   });
 
-  // Convert events to 3D positions
-  const eventPositions = useMemo(() => {
-    return events.map((event) => ({
-      event,
-      position: latLngToVector3(event.coordinates[0], event.coordinates[1], 2.5),
-    }));
-  }, [events]);
-
   return (
     <>
-      {/* Wireframe Globe */}
-      <mesh ref={globeRef}>
-        <sphereGeometry args={[2.5, 32, 32]} />
-        <meshBasicMaterial
-          color="#ccff00"
-          wireframe
-          transparent
-          opacity={0.2}
-        />
-      </mesh>
+      <group ref={globeRef} onClick={() => setSelectedId(null)}>
+        {/* Base Sphere (The Earth) - Solid Dark */}
+        <Sphere args={[GLOBE_RADIUS, 64, 64]}>
+          <meshStandardMaterial
+            color="#2a2a2a"
+            roughness={0.8}
+            metalness={0.2}
+          />
+        </Sphere>
 
-      {/* Event Markers */}
-      {eventPositions.map(({ event, position }) => (
-        <EventMarker key={event.id} event={event} position={position} />
-      ))}
+        {/* Atmosphere Glow */}
+        <Sphere args={[GLOBE_RADIUS + 0.05, 64, 64]}>
+          <meshBasicMaterial
+            color="#ccff00"
+            transparent
+            opacity={0.1}
+            side={THREE.BackSide}
+          />
+        </Sphere>
 
-      {/* Orbit Controls */}
+        {/* Wireframe Grid Overlay (Tactile Feel) */}
+        <Sphere args={[GLOBE_RADIUS + 0.01, 32, 32]}>
+          <meshBasicMaterial
+            color="#333"
+            wireframe
+            transparent
+            opacity={0.1}
+          />
+        </Sphere>
+
+        {/* Render Markers */}
+        {events.map((event) => (
+          <EventMarker
+            key={event.id}
+            event={event}
+            radius={GLOBE_RADIUS}
+            isSelected={selectedId === event.id}
+            onSelect={() => setSelectedId(event.id)}
+          />
+        ))}
+      </group>
+
       <OrbitControls
-        enableZoom={true}
         enablePan={false}
-        minDistance={4}
-        maxDistance={8}
-        autoRotate={false}
+        enableZoom={false}
+        minPolarAngle={Math.PI / 3}
+        maxPolarAngle={Math.PI / 1.5}
+        rotateSpeed={0.5}
       />
+
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
+      <pointLight position={[-10, -5, -10]} intensity={0.5} color="#ccff00" />
     </>
   );
 }
@@ -136,9 +167,9 @@ interface EventGlobeProps {
 export function EventGlobe({ events }: EventGlobeProps) {
   const [interactionEnabled, setInteractionEnabled] = useState(false);
 
-  const toggleInteraction = useCallback(() => {
+  const toggleInteraction = () => {
     setInteractionEnabled((prev) => !prev);
-  }, []);
+  };
 
   return (
     <div className="w-full h-full relative">
@@ -150,7 +181,7 @@ export function EventGlobe({ events }: EventGlobeProps) {
           absolute top-4 right-4 z-10
           px-3 py-2 rounded-lg
           border-2 border-black
-          font-tag text-xs font-bold
+          font-industrial font-bold text-xs
           flex items-center gap-2
           transition-all
           md:hidden
@@ -174,6 +205,13 @@ export function EventGlobe({ events }: EventGlobeProps) {
         )}
       </button>
 
+      {/* Instruction Overlay */}
+      <div className="absolute bottom-4 left-4 pointer-events-none z-10">
+        <p className="font-industrial font-bold text-xs text-foreground/50 bg-black/50 px-2 py-1 rounded">
+          DRAG TO ROTATE • TAP PINS FOR INFO
+        </p>
+      </div>
+
       <div
         className="w-full h-full"
         style={{
@@ -187,9 +225,6 @@ export function EventGlobe({ events }: EventGlobeProps) {
             camera={{ position: [0, 0, 6], fov: 50 }}
             style={{ width: "100%", height: "100%" }}
           >
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} />
             <GlobeScene events={events} />
           </Canvas>
         </div>
@@ -200,9 +235,6 @@ export function EventGlobe({ events }: EventGlobeProps) {
             camera={{ position: [0, 0, 6], fov: 50 }}
             style={{ width: "100%", height: "100%", pointerEvents: interactionEnabled ? "auto" : "none" }}
           >
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} />
             <GlobeScene events={events} />
           </Canvas>
         </div>
@@ -210,4 +242,3 @@ export function EventGlobe({ events }: EventGlobeProps) {
     </div>
   );
 }
-

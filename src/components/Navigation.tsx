@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
 
 export function Navigation() {
@@ -25,42 +26,58 @@ export function Navigation() {
         backgroundBlendMode: "overlay",
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center flex-wrap gap-2 sm:gap-4 md:gap-6 lg:space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => triggerHaptic()}
-                className="group relative font-header tracking-wide text-sm sm:text-base md:text-lg text-foreground transition-colors"
-              >
-                <motion.span
-                  className="inline-block"
-                  whileHover={{
-                    rotate: -3,
-                  }}
-                  transition={{ type: "spring", stiffness: 300 }}
+      {/* Mobile Header - Logo Only */}
+      <div className="md:hidden flex items-center justify-center h-16 px-4">
+        <Link href="/" onClick={() => triggerHaptic()}>
+          <Image
+            src="/images/branding/piko-logo.png"
+            alt="Piko Logo"
+            width={120}
+            height={48}
+            className="h-10 w-auto"
+          />
+        </Link>
+      </div>
+
+      {/* Desktop Navigation - Hidden on Mobile */}
+      <div className="hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-4 md:gap-6 lg:space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => triggerHaptic()}
+                  className="group relative font-header tracking-wide text-sm sm:text-base md:text-lg text-foreground transition-colors"
                 >
                   <motion.span
                     className="inline-block"
                     whileHover={{
-                      textShadow: "0 0 10px #ccff00, 0 0 20px #ccff00",
-                      color: "#ccff00",
+                      rotate: -3,
                     }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ type: "spring", stiffness: 300 }}
                   >
-                    {link.label}
+                    <motion.span
+                      className="inline-block"
+                      whileHover={{
+                        textShadow: "0 0 10px #ccff00, 0 0 20px #ccff00",
+                        color: "#ccff00",
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {link.label}
+                    </motion.span>
                   </motion.span>
-                </motion.span>
-                {/* Underline effect on hover */}
-                <motion.div
-                  className="absolute bottom-0 left-0 w-0 h-0.5 bg-toxic-lime"
-                  whileHover={{ width: "100%" }}
-                  transition={{ duration: 0.3 }}
-                />
-              </Link>
-            ))}
+                  {/* Underline effect on hover */}
+                  <motion.div
+                    className="absolute bottom-0 left-0 w-0 h-0.5 bg-toxic-lime"
+                    whileHover={{ width: "100%" }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

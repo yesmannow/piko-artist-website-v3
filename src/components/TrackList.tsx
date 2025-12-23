@@ -8,6 +8,7 @@ import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const vibeColors = {
   chill: "bg-toxic-lime/20 text-toxic-lime border-toxic-lime border-black",
@@ -37,6 +38,8 @@ const isImagePath = (coverArt: string): boolean => {
 
 // Helper component to render cover art
 const CoverArt = ({ coverArt, className }: { coverArt: string; className?: string }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
   if (isImagePath(coverArt)) {
     return (
       <div className={`relative overflow-hidden rounded-md border border-white/10 flex-shrink-0 ${className || ""}`}>
@@ -46,7 +49,11 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
           fill
           className="object-cover"
           sizes="(max-width: 768px) 40px, 40px"
+          onLoadingComplete={() => setIsLoaded(true)}
         />
+        {!isLoaded && (
+          <Skeleton className="absolute inset-0" />
+        )}
       </div>
     );
   }
@@ -65,6 +72,7 @@ interface TrackCardProps {
 
 function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
   const triggerHaptic = useHaptic();
+  const [isLoaded, setIsLoaded] = useState(false);
   // Random rotation between -1deg and 1deg for pasted-on-wall effect
   const rotation = (Math.random() * 2 - 1).toFixed(2);
 
@@ -122,13 +130,19 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
       {/* Cover Art Image */}
       <div className="relative aspect-square w-full overflow-hidden">
         {isImagePath(track.coverArt) ? (
-          <Image
-            src={track.coverArt}
-            alt={track.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
+          <>
+            <Image
+              src={track.coverArt}
+              alt={track.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              onLoadingComplete={() => setIsLoaded(true)}
+            />
+            {!isLoaded && (
+              <Skeleton className="absolute inset-0" />
+            )}
+          </>
         ) : (
           <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
         )}

@@ -42,6 +42,11 @@
     cursor: crosshair;
     /* Add padding-bottom on mobile for bottom navigation */
     padding-bottom: env(safe-area-inset-bottom, 0);
+    /* App Physics - Stop rubber band effect */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent; /* Removes blue flash on tap */
+    /* Hide horizontal scrollbar during transitions */
+    overflow-x: hidden;
   }
 
   /* Mobile bottom nav spacing */
@@ -86,6 +91,26 @@
       border-color: #dc2626;
       box-shadow: 4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px rgba(239, 68, 68, 0.8);
     }
+  }
+
+  /* Loading bar animation */
+  @keyframes loading-bar {
+    0% {
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    50% {
+      transform: scaleX(0.7);
+      transform-origin: left;
+    }
+    100% {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+
+  .animate-loading-bar {
+    animation: loading-bar 1.5s ease-in-out infinite;
   }
 }
 

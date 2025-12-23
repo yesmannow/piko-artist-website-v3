@@ -22,8 +22,8 @@ export function MobileNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-zinc-900 border-t-2 border-toxic-lime shadow-[0_-4px_0_0_rgba(0,0,0,1)]">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-zinc-900/95 backdrop-blur-md border-t border-toxic-lime shadow-[0_-4px_0_0_rgba(0,0,0,1)] pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around h-16 px-2 min-h-[44px]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href === "/" && pathname === "/");
@@ -33,7 +33,7 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               onClick={handleClick}
-              className="flex flex-col items-center justify-center flex-1 h-full relative"
+              className="flex flex-col items-center justify-center flex-1 h-full relative min-h-[44px]"
             >
               <motion.div
                 whileTap={{ scale: 0.9 }}
