@@ -84,9 +84,12 @@ export function Waveform({
   useEffect(() => {
     if (!wavesurferRef.current || !isReady || isSeekingRef.current) return;
 
-    // Convert progress (0-100) to seek position (0-1)
-    const seekPosition = progress / 100;
-    wavesurferRef.current.seekTo(seekPosition);
+    // Sync progress only if not dragging
+    const duration = wavesurferRef.current.getDuration();
+    if (duration) {
+      const time = (progress / 100) * duration;
+      wavesurferRef.current.setTime(time);
+    }
   }, [progress, isReady]);
 
   return (

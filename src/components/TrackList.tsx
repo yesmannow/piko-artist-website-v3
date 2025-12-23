@@ -4,7 +4,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
 import Link from "next/link";
-import { Play, Music2 } from "lucide-react";
+import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";

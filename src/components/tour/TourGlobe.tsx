@@ -7,22 +7,13 @@ import { TourDate, tourDates } from "@/lib/data";
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
-export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => void }) {
-  const globeEl = useRef<any>(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
+interface GlobeMethods {
+  pointOfView: (pov: { lat?: number; lng?: number; altitude: number }, duration?: number) => void;
+}
 
-  // Responsive resize
-  useEffect(() => {
-    const handleResize = () => {
-      setDimensions({
-        width: window.innerWidth > 768 ? window.innerWidth / 2 : window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => void }) {
+  // @ts-ignore - react-globe.gl doesn't export proper types
+  const globeEl = useRef<GlobeMethods | undefined>(undefined);
 
   // Auto-rotate
   useEffect(() => {
@@ -79,7 +70,7 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
         autoRotate={true}
         autoRotateSpeed={0.5}
         // Interaction
-        onPointClick={(point: any) => {
+        onPointClick={(point: object) => {
           const p = point as TourDate;
           if (globeEl.current) {
             globeEl.current.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.5 }, 1000);

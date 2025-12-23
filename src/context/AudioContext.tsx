@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
 import { MediaItem, tracks } from "@/lib/data";
 
 interface AudioContextType {
@@ -44,7 +44,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setIsPlaying(!isPlaying);
   };
 
-  const playTrack = (track: MediaItem) => {
+  const playTrack = useCallback((track: MediaItem) => {
     setCurrentTrack(track);
     setIsPlaying(true);
 
@@ -63,23 +63,23 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
       }
     }
-  };
+  }, []);
 
-  const skipNext = () => {
+  const skipNext = useCallback(() => {
     if (!currentTrack) return;
     const audioTracks = tracks.filter((t) => t.type === "audio");
     const currentIndex = audioTracks.findIndex((t) => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % audioTracks.length;
     playTrack(audioTracks[nextIndex]);
-  };
+  }, [currentTrack, playTrack]);
 
-  const skipPrevious = () => {
+  const skipPrevious = useCallback(() => {
     if (!currentTrack) return;
     const audioTracks = tracks.filter((t) => t.type === "audio");
     const currentIndex = audioTracks.findIndex((t) => t.id === currentTrack.id);
     const prevIndex = currentIndex === 0 ? audioTracks.length - 1 : currentIndex - 1;
     playTrack(audioTracks[prevIndex]);
-  };
+  }, [currentTrack, playTrack]);
 
   const seek = (time: number) => {
     if (!audioRef.current) return;
