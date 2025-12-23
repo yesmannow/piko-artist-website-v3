@@ -36,7 +36,6 @@
     "wavesurfer.js": "^7.12.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.14.7",
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
