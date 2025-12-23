@@ -21,7 +21,7 @@ export function latLngToVector3(lat: number, lng: number, radius: number): THREE
  * @param speed - Animation speed multiplier (default: 2)
  * @returns Function to trigger camera fly-to
  */
-export function useGlobeCameraFlyTo(speed: number = 2) {
+export function useGlobeCameraFlyTo() {
   const { camera } = useThree();
 
   const flyTo = useCallback(
@@ -58,7 +58,7 @@ export function useGlobeCameraFlyTo(speed: number = 2) {
 
       requestAnimationFrame(animate);
     },
-    [camera, speed]
+    [camera]
   );
 
   return flyTo;

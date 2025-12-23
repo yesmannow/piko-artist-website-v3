@@ -1,20 +1,17 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { motion } from "framer-motion";
 import { MapPin, Calendar, ExternalLink, Maximize2 } from "lucide-react";
 import { Event } from "@/lib/events";
 import Image from "next/image";
-import { BackdropFX } from "./BackdropFX";
 import { PosterModal } from "./PosterModal";
 
 interface EventModalContentProps {
   event: Event;
-  onClose: () => void;
   onVideoElementReady?: (element: HTMLVideoElement | null) => void;
 }
 
-export function EventModalContent({ event, onClose, onVideoElementReady }: EventModalContentProps) {
+export function EventModalContent({ event, onVideoElementReady }: EventModalContentProps) {
   const [isPosterFullscreen, setIsPosterFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 

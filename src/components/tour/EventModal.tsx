@@ -19,7 +19,6 @@ export function EventModalWrapper({ events }: EventModalWrapperProps) {
   const selectedEvent = useEventStore((state) => state.selectedEvent);
   const setSelectedEvent = useEventStore((state) => state.setSelectedEvent);
   const modalRef = useScrollVisibility(100);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
   // Close on Escape key
@@ -159,7 +158,6 @@ export function EventModalWrapper({ events }: EventModalWrapperProps) {
                 {/* Event Modal Content */}
                 <EventModalContent
                   event={selectedEvent}
-                  onClose={() => setSelectedEvent(null)}
                   onVideoElementReady={setVideoElement}
                 />
               </div>

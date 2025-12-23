@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { EventGlobe } from "@/components/tour/EventGlobe";
 import { EventList } from "@/components/tour/EventList";
@@ -122,7 +122,7 @@ export default function TourPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <EventList
-              onEventClick={(event) => {
+              onEventClick={() => {
                 // Globe fly-to is handled by Zustand store
                 // The EventGlobe component listens to selectedEvent changes
               }}

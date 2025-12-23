@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Ring } from "@react-three/drei";
+import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { Event } from "@/lib/events";
 import { useEventStore } from "@/stores/useEventStore";
@@ -51,8 +51,7 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
     }
   });
 
-  const handleClick = (e: any) => {
-    e.stopPropagation();
+  const handleClick = () => {
     // First fly to location, then set selected event
     flyTo(event.lat, event.lng, 2.5);
     setTimeout(() => {
@@ -79,7 +78,10 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
 
       <mesh
         ref={meshRef}
-        onClick={handleClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClick();
+        }}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHoverEvent(event);
