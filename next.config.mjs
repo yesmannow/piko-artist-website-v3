@@ -19,7 +19,7 @@ const nextConfig = {
     ],
   },
   experimental: {
-    // Disable experimental flags not supported by Cloudflare Workers
+    // Vercel deployment configuration
   },
 };
 

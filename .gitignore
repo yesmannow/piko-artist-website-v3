@@ -14,4 +14,8 @@ yarn-error.log*
 .dev.vars
 .worker-next/
 .open-next/
+open-next.config.ts
+wrangler.toml
+wrangler.json
+wrangler.jsonc
 tsconfig.tsbuildinfo
