@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import AudioMotionAnalyzer from "audiomotion-analyzer";
 import { Knob } from "./dj-ui/Knob";
 import { Fader } from "./dj-ui/Fader";
 import { Crossfader } from "./dj-ui/Crossfader";
+import { AudioReactiveVisualizer } from "./dj-ui/AudioReactiveVisualizer";
 
 interface DJMixerProps {
   // Deck A controls
@@ -82,86 +81,16 @@ export function DJMixer({
   audioContext,
   masterGainNode,
 }: DJMixerProps) {
-  const analyzerRef = useRef<HTMLDivElement>(null);
-  const audioMotionRef = useRef<AudioMotionAnalyzer | null>(null);
-
-  // Setup Spectrum Analyzer
-  useEffect(() => {
-    if (!audioContext || !masterGainNode || !analyzerRef.current) return;
-
-    let analyzer: AudioMotionAnalyzer | null = null;
-
-    try {
-      // Register the Custom "Piko" Gradient first
-      // (We'll register it before initialization to use it directly)
-      const pikoGradient = {
-        bgColor: "#00000000", // Transparent
-        dir: "h", // Horizontal gradient
-        colorStops: [
-          { pos: 0, color: "#4a90e2" }, // Cyan (Deck A)
-          { pos: 1, color: "#e24a4a" }, // Red (Deck B)
-        ],
-      };
-
-      // Initialize AudioMotionAnalyzer with Reflex Mode
-      analyzer = new AudioMotionAnalyzer(analyzerRef.current, {
-        audioCtx: audioContext,
-        source: masterGainNode,
-        connectSpeakers: false,
-        mode: 5, // 1/3 octave bands
-        barSpace: 0.6,
-        ledBars: true,
-        showScaleX: false,
-        showScaleY: false,
-        showPeaks: false,
-        bgAlpha: 0, // Transparent background
-        overlay: true,
-        ansiBands: false,
-        channelLayout: "dual-combined",
-        smoothing: 0.7,
-        height: 150,
-        lineWidth: 2,
-        radial: false,
-        gradient: "classic", // Start with safe default
-        reflexRatio: 0.3,
-        reflexAlpha: 0.25,
-        reflexBright: 1,
-      });
-
-      // Register and apply the custom gradient
-      analyzer.registerGradient("piko-custom", pikoGradient);
-      analyzer.setOptions({
-        gradient: "piko-custom",
-        reflexRatio: 0.3,
-        reflexAlpha: 0.25,
-        reflexBright: 1,
-      });
-
-      audioMotionRef.current = analyzer;
-    } catch (err) {
-      console.error("Visualizer failed to initialize:", err);
-    }
-
-    return () => {
-      if (analyzer) {
-        try {
-          analyzer.destroy();
-        } catch (e) {
-          console.error("Error cleaning up analyzer:", e);
-        }
-      }
-    };
-  }, [audioContext, masterGainNode]);
 
   return (
-    <div className="flex flex-col gap-6 p-6 bg-[#0a0a0a] rounded-lg border border-gray-800">
+    <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800">
       <div className="text-center">
-        <h3 className="text-lg font-barlow uppercase tracking-wider text-gray-300 mb-2">
+        <h3 className="text-base md:text-lg font-barlow uppercase tracking-wider text-gray-300 mb-2">
           MIXER
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left Strip - Deck A */}
         <div className="flex flex-col items-center gap-3">
           <div className="text-sm font-barlow uppercase text-gray-400 mb-1">
@@ -173,76 +102,82 @@ export function DJMixer({
             value={deckAVolume}
             onChange={onDeckAVolumeChange}
             label="VOL"
-            height={180}
+            height={typeof window !== "undefined" && window.innerWidth < 768 ? 140 : 180}
           />
 
           {/* EQ Knobs */}
           <div className="flex gap-2 md:gap-3 justify-center flex-wrap">
             <div className="flex flex-col items-center gap-1">
+              <div className="text-[10px] md:text-xs font-barlow uppercase text-red-500 font-bold mb-1">HIGH</div>
               <Knob
                 value={deckAHigh}
                 onChange={onDeckAHighChange}
-                label="HIGH"
+                label=""
                 min={-12}
                 max={12}
                 color="high"
-                size={50}
+                size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
                 helpText="Adjusts high frequencies (treble). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckAKillHighChange(!deckAKillHigh)}
-                className={`w-8 h-6 text-xs font-barlow uppercase rounded border transition-colors ${
+                className={`w-10 h-8 md:w-8 md:h-6 text-xs font-barlow uppercase rounded border transition-colors touch-manipulation ${
                   deckAKillHigh
                     ? "bg-red-600 border-red-500 text-white"
-                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "bg-[#1a1a1a] border-red-500/50 text-gray-400 hover:border-red-500 active:bg-red-600/50"
                 }`}
                 title="Kill High"
+                aria-label="Kill High frequencies"
               >
                 K
               </button>
             </div>
             <div className="flex flex-col items-center gap-1">
+              <div className="text-[10px] md:text-xs font-barlow uppercase text-green-500 font-bold mb-1">MID</div>
               <Knob
                 value={deckAMid}
                 onChange={onDeckAMidChange}
-                label="MID"
+                label=""
                 min={-12}
                 max={12}
                 color="mid"
-                size={50}
+                size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
                 helpText="Adjusts mid frequencies. Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckAKillMidChange(!deckAKillMid)}
-                className={`w-8 h-6 text-xs font-barlow uppercase rounded border transition-colors ${
+                className={`w-10 h-8 md:w-8 md:h-6 text-xs font-barlow uppercase rounded border transition-colors touch-manipulation ${
                   deckAKillMid
                     ? "bg-red-600 border-red-500 text-white"
-                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "bg-[#1a1a1a] border-green-500/50 text-gray-400 hover:border-green-500 active:bg-red-600/50"
                 }`}
                 title="Kill Mid"
+                aria-label="Kill Mid frequencies"
               >
                 K
               </button>
             </div>
             <div className="flex flex-col items-center gap-1">
+              <div className="text-[10px] md:text-xs font-barlow uppercase text-blue-500 font-bold mb-1">LOW</div>
               <Knob
                 value={deckALow}
                 onChange={onDeckALowChange}
-                label="LOW"
+                label=""
                 min={-12}
                 max={12}
                 color="low"
-                size={50}
+                size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
                 helpText="Adjusts low frequencies (bass). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckAKillLowChange(!deckAKillLow)}
-                className={`w-8 h-6 text-xs font-barlow uppercase rounded border transition-colors ${
+                className={`w-10 h-8 md:w-8 md:h-6 text-xs font-barlow uppercase rounded border transition-colors touch-manipulation ${
                   deckAKillLow
                     ? "bg-red-600 border-red-500 text-white"
-                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "bg-[#1a1a1a] border-blue-500/50 text-gray-400 hover:border-blue-500 active:bg-red-600/50"
                 }`}
                 title="Kill Low"
+                aria-label="Kill Low frequencies"
               >
                 K
               </button>
@@ -252,15 +187,16 @@ export function DJMixer({
 
         {/* Center - Spectrum Analyzer & Crossfader */}
         <div className="flex flex-col items-center gap-4">
-          {/* Spectrum Analyzer */}
+          {/* Enhanced Audio Reactive Visualizer */}
           <div className="w-full">
             <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center">
               SPECTRUM
             </div>
-            <div
-              ref={analyzerRef}
-              className="w-full bg-[#0a0a0a] rounded border border-gray-800"
-              style={{ minHeight: 150 }}
+            <AudioReactiveVisualizer
+              audioContext={audioContext}
+              masterGainNode={masterGainNode}
+              deckAColor="#00d9ff"
+              deckBColor="#ff00d9"
             />
           </div>
 
@@ -269,7 +205,7 @@ export function DJMixer({
             <Crossfader
               value={crossfader}
               onChange={onCrossfaderChange}
-              width={200}
+              width={typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200}
               helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
             />
           </div>
@@ -286,77 +222,83 @@ export function DJMixer({
             value={deckBVolume}
             onChange={onDeckBVolumeChange}
             label="VOL"
-            height={180}
+            height={typeof window !== "undefined" && window.innerWidth < 768 ? 140 : 180}
             helpText="Adjusts the volume level for Deck B"
           />
 
           {/* EQ Knobs */}
           <div className="flex gap-2 md:gap-3 justify-center flex-wrap">
             <div className="flex flex-col items-center gap-1">
+              <div className="text-[10px] md:text-xs font-barlow uppercase text-red-500 font-bold mb-1">HIGH</div>
               <Knob
                 value={deckBHigh}
                 onChange={onDeckBHighChange}
-                label="HIGH"
+                label=""
                 min={-12}
                 max={12}
                 color="high"
-                size={50}
+                size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
                 helpText="Adjusts high frequencies (treble). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckBKillHighChange(!deckBKillHigh)}
-                className={`w-8 h-6 text-xs font-barlow uppercase rounded border transition-colors ${
+                className={`w-10 h-8 md:w-8 md:h-6 text-xs font-barlow uppercase rounded border transition-colors touch-manipulation ${
                   deckBKillHigh
                     ? "bg-red-600 border-red-500 text-white"
-                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "bg-[#1a1a1a] border-red-500/50 text-gray-400 hover:border-red-500 active:bg-red-600/50"
                 }`}
                 title="Kill High"
+                aria-label="Kill High frequencies"
               >
                 K
               </button>
             </div>
             <div className="flex flex-col items-center gap-1">
+              <div className="text-[10px] md:text-xs font-barlow uppercase text-green-500 font-bold mb-1">MID</div>
               <Knob
                 value={deckBMid}
                 onChange={onDeckBMidChange}
-                label="MID"
+                label=""
                 min={-12}
                 max={12}
                 color="mid"
-                size={50}
+                size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
                 helpText="Adjusts mid frequencies. Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckBKillMidChange(!deckBKillMid)}
-                className={`w-8 h-6 text-xs font-barlow uppercase rounded border transition-colors ${
+                className={`w-10 h-8 md:w-8 md:h-6 text-xs font-barlow uppercase rounded border transition-colors touch-manipulation ${
                   deckBKillMid
                     ? "bg-red-600 border-red-500 text-white"
-                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "bg-[#1a1a1a] border-green-500/50 text-gray-400 hover:border-green-500 active:bg-red-600/50"
                 }`}
                 title="Kill Mid"
+                aria-label="Kill Mid frequencies"
               >
                 K
               </button>
             </div>
             <div className="flex flex-col items-center gap-1">
+              <div className="text-[10px] md:text-xs font-barlow uppercase text-blue-500 font-bold mb-1">LOW</div>
               <Knob
                 value={deckBLow}
                 onChange={onDeckBLowChange}
-                label="LOW"
+                label=""
                 min={-12}
                 max={12}
                 color="low"
-                size={50}
+                size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
                 helpText="Adjusts low frequencies (bass). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckBKillLowChange(!deckBKillLow)}
-                className={`w-8 h-6 text-xs font-barlow uppercase rounded border transition-colors ${
+                className={`w-10 h-8 md:w-8 md:h-6 text-xs font-barlow uppercase rounded border transition-colors touch-manipulation ${
                   deckBKillLow
                     ? "bg-red-600 border-red-500 text-white"
-                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "bg-[#1a1a1a] border-blue-500/50 text-gray-400 hover:border-blue-500 active:bg-red-600/50"
                 }`}
                 title="Kill Low"
+                aria-label="Kill Low frequencies"
               >
                 K
               </button>

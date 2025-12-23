@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import { motion } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
 import { JogWheel } from "./dj-ui/JogWheel";
 import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
+import { TrackTransition } from "./dj-ui/TrackTransition";
 import { Play, Pause, RotateCcw, Link2, Repeat } from "lucide-react";
 
 interface DJDeckProps {
@@ -13,7 +15,7 @@ interface DJDeckProps {
   isPlaying: boolean;
   speed: number; // Playback rate (1.0 = 0%, range 0.92 to 1.08 for +/- 8%)
   onLoaded?: () => void;
-  deckColor: string; // Color for waveform (e.g., "#4a90e2" or "#e24a4a")
+  deckColor: string; // Color for waveform (e.g., "#00d9ff" for cyan Deck A or "#ff00d9" for magenta Deck B)
   deckLabel: string; // "DECK A" or "DECK B"
   onPlayPause: () => void;
   onCue?: () => void;
@@ -69,6 +71,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [loopStart, setLoopStart] = useState<number | null>(null);
     const [loopBeats, setLoopBeats] = useState<number | null>(null);
     const loopIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const [previousTrackUrl, setPreviousTrackUrl] = useState<string | null>(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Initialize WaveSurfer
     useEffect(() => {
@@ -80,19 +84,30 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       audio.controls = false;
 
       // 2. Initialize WaveSurfer with this element
+      // Determine waveform colors based on deck color (cyan for A, magenta for B)
+      const isCyan = deckColor === "#00d9ff" || deckColor.includes("00d9ff") || deckColor.includes("00ffff");
+      const waveColor = isCyan ? "#004d66" : "#66004d"; // Darker version of deck color for unplayed waveform
+      const progressColor = deckColor; // Bright deck color for played portion
+      const cursorColor = deckColor; // Deck color for cursor
+
+      // Make height responsive for mobile devices
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      const waveformHeight = isMobile ? 80 : 100;
+
       const ws = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: "#2a2a2a",
-        progressColor: deckColor,
-        cursorColor: deckColor,
+        waveColor: waveColor,
+        progressColor: progressColor,
+        cursorColor: cursorColor,
         barWidth: 2,
         barRadius: 1,
-        height: 100,
+        height: waveformHeight,
         normalize: true,
         backend: "MediaElement", // Use the element we created
         media: audio,            // Pass the element explicitly
         mediaControls: false,
-        interact: true,
+        interact: true, // Enable clicking on waveform for scrubbing
+        dragToSeek: true, // Enable dragging on waveform for scrubbing
       });
 
       wavesurferRef.current = ws;
@@ -120,7 +135,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
             mediaSource.connect(outputNode);
           } catch (error) {
-            console.warn("Audio Routing Error:", error);
+            if (process.env.NODE_ENV === "development") {
+              // eslint-disable-next-line no-console
+              console.warn("Audio Routing Error:", error);
+            }
           }
         }
       });
@@ -151,12 +169,18 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       };
     }, [trackUrl, deckColor, audioContext, outputNode, onLoaded]);
 
-    // Load track when URL changes
+    // Load track when URL changes with transition effect
     useEffect(() => {
       if (wavesurferRef.current && trackUrl) {
+        // Trigger transition if track changed
+        if (previousTrackUrl && previousTrackUrl !== trackUrl) {
+          setIsTransitioning(true);
+          setTimeout(() => setIsTransitioning(false), 1000);
+        }
+        setPreviousTrackUrl(trackUrl);
         wavesurferRef.current.load(trackUrl);
       }
-    }, [trackUrl]);
+    }, [trackUrl, previousTrackUrl]);
 
     // Update playback rate
     useEffect(() => {
@@ -201,7 +225,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               mediaSource.connect(outputNode);
             }
           } catch (error) {
-            console.warn("Could not connect media element to Web Audio:", error);
+            if (process.env.NODE_ENV === "development") {
+              // eslint-disable-next-line no-console
+              console.warn("Could not connect media element to Web Audio:", error);
+            }
           }
         }
       };
@@ -255,10 +282,6 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
     const handleDragEnd = () => {
       setIsScrubbing(false);
-      // Optionally resume playback if it was playing before
-      // if (wasPlayingBeforeScrubRef.current && wavesurferRef.current) {
-      //   wavesurferRef.current.play();
-      // }
     };
 
     // Handle performance pad cues
@@ -360,7 +383,18 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     }));
 
     return (
-      <div className="flex flex-col items-center gap-4 md:gap-6 p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800 w-full">
+      <motion.div
+        className="flex flex-col items-center gap-4 md:gap-6 p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800 w-full relative"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Track Transition Effect */}
+        <TrackTransition
+          isTransitioning={isTransitioning}
+          fromTrack={previousTrackUrl ? title || undefined : undefined}
+          toTrack={trackUrl ? title || undefined : undefined}
+        />
         {/* Deck Label */}
         <h3 className="text-lg font-barlow uppercase tracking-wider text-gray-300">
           {deckLabel}
@@ -386,7 +420,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           {/* Cue Button */}
           <button
             onClick={handleCue}
-            className={`relative w-16 h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 ${
+            aria-label={cuePoint !== null ? `Cue point set at ${cuePoint.toFixed(1)} seconds. Click to jump to cue.` : "Set cue point"}
+            className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500 touch-manipulation ${
               cuePoint !== null ? "border-orange-500" : "border-gray-700"
             }`}
             style={{
@@ -402,12 +437,14 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           {/* Play/Pause Button */}
           <button
             onClick={handlePlayPause}
-            className="relative w-20 h-20 rounded-full bg-[#1a1a1a] border-2 border-gray-700 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95"
+            aria-label={isPlaying ? `Pause ${title || "track"} on ${deckLabel}` : `Play ${title || "track"} on ${deckLabel}`}
+            className="relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#1a1a1a] border-2 border-gray-700 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation"
             style={{
               boxShadow: isPlaying
                 ? `0 0 20px ${deckColor}40, inset 0 0 10px ${deckColor}20`
                 : "inset 0 2px 4px rgba(0,0,0,0.5)",
-            }}
+              "--focus-ring-color": deckColor,
+            } as React.CSSProperties & { "--focus-ring-color": string }}
           >
             {isPlaying ? (
               <Pause className="w-8 h-8" style={{ color: deckColor }} />
@@ -420,7 +457,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           <Tooltip content="Automatically matches this deck's BPM to the other deck">
             <button
               onClick={onSync}
-              className={`relative w-16 h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 ${
+              aria-label={isSynced ? `${deckLabel} is synced. Click to unsync.` : `Sync ${deckLabel} BPM to other deck`}
+              className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 touch-manipulation ${
                 isSynced ? "border-green-500" : "border-gray-700"
               }`}
               style={{
@@ -436,7 +474,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         </div>
 
         {/* Pitch Fader (Vertical, +/- 8%) */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
           <div className="flex flex-col items-center gap-2">
             <div className="text-xs font-barlow uppercase text-gray-400 tracking-wider">
               PITCH
@@ -448,7 +486,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 const newSpeed = 0.92 + value * 0.16;
                 onSpeedChange?.(newSpeed);
               }}
-              height={150}
+              height={typeof window !== "undefined" && window.innerWidth < 768 ? 120 : 150}
               helpText="Adjusts playback speed (pitch). Range: -8% to +8%"
             />
             <div className="flex flex-col items-center gap-1 text-xs text-gray-500 font-barlow">
@@ -471,7 +509,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 <button
                   key={beats}
                   onClick={() => handleLoop(beats)}
-                  className={`relative w-12 h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 ${
+                  aria-label={isLooping && loopBeats === beats ? `${beats} beat loop active. Click to disable.` : `Enable ${beats} beat loop`}
+                  className={`relative w-14 h-12 md:w-12 md:h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#ccff00] touch-manipulation ${
                     isLooping && loopBeats === beats
                       ? "bg-[#1a1a1a] border-[#ccff00]"
                       : "bg-[#0a0a0a] border-gray-700"
@@ -515,9 +554,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         {/* Waveform with Dark Grid Background */}
         <div
           ref={waveformRef}
-          className="w-full rounded border border-gray-800 p-2"
+          className="w-full rounded border border-gray-800 p-2 cursor-pointer"
           style={{
-            minHeight: 100,
+            minHeight: typeof window !== "undefined" && window.innerWidth < 768 ? 80 : 100,
             background: `
               linear-gradient(to right, rgba(42, 42, 42, 0.1) 1px, transparent 1px),
               linear-gradient(to bottom, rgba(42, 42, 42, 0.1) 1px, transparent 1px),
@@ -525,6 +564,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             `,
             backgroundSize: "20px 20px",
           }}
+          title="Click or drag to scrub through the track"
         />
 
         {/* Performance Pads */}
@@ -544,7 +584,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             {trackUrl.split("/").pop()?.replace(".mp3", "") || "No Track"}
           </div>
         )}
-      </div>
+      </motion.div>
     );
   }
 );

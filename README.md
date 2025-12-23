@@ -10,6 +10,7 @@ A modern artist portfolio website built with Next.js 15 and optimized for Cloudf
 - 🎵 Wavesurfer.js audio player with R2 storage
 - 📺 YouTube video embeds
 - ☁️ Cloudflare Pages deployment with R2 bindings
+- 🧭 Modern navigation with smooth scrolling and scroll effects
 
 ## Tech Stack
 
@@ -73,6 +74,8 @@ src/
 │   ├── layout.tsx        # Root layout
 │   └── globals.css       # Global styles
 ├── components/
+│   ├── Navbar.tsx        # Top navigation with scroll effects
+│   ├── MobileNav.tsx     # Bottom mobile navigation
 │   ├── Player.tsx        # Wavesurfer audio player
 │   ├── VideoGrid.tsx     # YouTube video grid
 │   ├── SectionHeader.tsx # Reusable section header

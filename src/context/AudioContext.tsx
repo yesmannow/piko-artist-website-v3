@@ -54,7 +54,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         audioRef.current.src = track.src;
         audioRef.current.load();
         audioRef.current.play().catch((error) => {
-          console.error("Error playing audio:", error);
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.error("Error playing audio:", error);
+          }
           setIsPlaying(false);
         });
       } else {

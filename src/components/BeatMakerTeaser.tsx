@@ -76,7 +76,10 @@ export function BeatMakerTeaser() {
       // Reset to start for instant playback
       audio.currentTime = 0;
       audio.play().catch((err) => {
-        console.error("Error playing sound:", err);
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.error("Error playing sound:", err);
+        }
       });
 
       // Flash effect

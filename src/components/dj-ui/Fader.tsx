@@ -21,28 +21,50 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
     e.preventDefault();
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const updateValue = (clientY: number) => {
       if (!faderRef.current) return;
-
       const rect = faderRef.current.getBoundingClientRect();
-      const y = e.clientY - rect.top;
+      const y = clientY - rect.top;
       const newValue = 1 - Math.max(0, Math.min(1, y / rect.height));
       onChange(newValue);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      updateValue(e.clientY);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        updateValue(e.touches[0].clientY);
+      }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
     };
 
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+    };
+
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     };
   }, [isDragging, onChange]);
 
@@ -57,9 +79,10 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
       )}
       <div
         ref={faderRef}
-        className="relative cursor-pointer select-none"
-        style={{ height, width: 40 }}
+        className="relative cursor-pointer select-none touch-manipulation"
+        style={{ height, width: typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40 }}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
         {/* Track groove */}
         <div className="absolute inset-0 bg-[#0a0a0a] rounded-sm border border-gray-800">
@@ -71,9 +94,11 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
 
         {/* Fader cap */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-8 h-6 bg-[#2a2a2a] border border-gray-600 rounded-sm shadow-lg cursor-grab active:cursor-grabbing"
+          className="absolute left-1/2 -translate-x-1/2 bg-[#2a2a2a] border border-gray-600 rounded-sm shadow-lg cursor-grab active:cursor-grabbing touch-manipulation"
           style={{
             top: position - 12,
+            width: typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 32,
+            height: typeof window !== "undefined" && window.innerWidth < 768 ? 20 : 24,
           }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

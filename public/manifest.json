@@ -1,10 +1,12 @@
 {
   "name": "PIKO | Pro DJ Console",
   "short_name": "PIKO",
+  "description": "Music artist portfolio and DJ console",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#ccff00",
+  "orientation": "any",
   "icons": [
     {
       "src": "/favicon.ico",

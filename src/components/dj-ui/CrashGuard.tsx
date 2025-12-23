@@ -23,7 +23,12 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("DJ Console Error:", error, errorInfo);
+    // Error boundaries should log errors for monitoring
+    // In production, consider sending to error tracking service
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("DJ Console Error:", error, errorInfo);
+    }
   }
 
   render() {
@@ -52,7 +57,8 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
                   this.setState({ hasError: false, error: null });
                   window.location.reload();
                 }}
-                className="mt-4 w-full px-4 py-2 bg-[#ccff00] text-black font-industrial font-bold uppercase tracking-wider rounded border-2 border-black shadow-hard hover:bg-[#b8e600] transition-colors"
+                aria-label="Retry loading the DJ console"
+                className="mt-4 w-full px-4 py-2 bg-[#ccff00] text-black font-industrial font-bold uppercase tracking-wider rounded border-2 border-black shadow-hard hover:bg-[#b8e600] transition-colors focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2"
               >
                 Retry
               </button>

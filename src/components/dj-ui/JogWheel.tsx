@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
 import { JogWheel3D } from "./JogWheel3D";
 import { DeskProps } from "./DeskProps";
+import { Expand, Music } from "lucide-react";
 
 interface JogWheelProps {
   rotation: number; // Rotation in degrees
@@ -30,8 +32,18 @@ export function JogWheel({
 }: JogWheelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragRotation, setDragRotation] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [previousCoverArt, setPreviousCoverArt] = useState<string | undefined>(coverArt);
   const wheelRef = useRef<HTMLDivElement>(null);
   const lastAngleRef = useRef<number | null>(null);
+
+  // Handle smooth cover art transitions
+  useEffect(() => {
+    if (coverArt !== previousCoverArt) {
+      // Trigger transition animation
+      setPreviousCoverArt(coverArt);
+    }
+  }, [coverArt, previousCoverArt]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -153,24 +165,89 @@ export function JogWheel({
         }
       }}
     >
-      {/* Vinyl Label Overlay */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden border-2 border-zinc-900 z-10 pointer-events-none"
-        style={{
-          width: "35%",
-          height: "35%",
-          transform: `translate(-50%, -50%) rotate(${displayRotation}deg)`,
-        }}
-      >
-        {coverArt ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverArt} alt="Label" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-[#111] flex items-center justify-center">
-            <span className="text-[6px] text-zinc-500 font-bold tracking-widest">PIKO</span>
-          </div>
+      {/* Vinyl Label Overlay with Smooth Transitions */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={coverArt || "default"}
+          initial={{ opacity: 0, scale: 0.8, rotate: -180 }}
+          animate={{ opacity: 1, scale: 1, rotate: displayRotation }}
+          exit={{ opacity: 0, scale: 0.8, rotate: 180 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden border-2 border-zinc-900 z-10 pointer-events-none"
+          style={{
+            width: "35%",
+            height: "35%",
+          }}
+        >
+          {coverArt ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverArt}
+              alt="Vinyl Label"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback if image fails to load
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-[#111] flex items-center justify-center">
+              <Music className="w-1/3 h-1/3 text-zinc-500" />
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Interactive Vinyl Artwork Button */}
+      {coverArt && (
+        <motion.button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center z-20 hover:bg-black/80 transition-colors touch-manipulation"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          aria-label="Expand vinyl artwork"
+          title="Click to view full artwork"
+        >
+          <Expand className="w-4 h-4 text-white" />
+        </motion.button>
+      )}
+
+      {/* Expanded Vinyl Artwork Modal */}
+      <AnimatePresence>
+        {isExpanded && coverArt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setIsExpanded(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0.8, rotate: 180 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              className="relative max-w-md w-full aspect-square rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverArt}
+                alt="Album Artwork"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/30" />
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 transition-colors"
+                aria-label="Close artwork"
+              >
+                <span className="text-white text-xl">×</span>
+              </button>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       <Canvas
         dpr={[1, 2]}

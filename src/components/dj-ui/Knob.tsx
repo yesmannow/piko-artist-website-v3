@@ -32,14 +32,15 @@ export function Knob({
   const rotation = normalizedValue * 270 - 135; // -135 to 135 degrees
 
   // Color coding for EQ bands
+  // Low = Blue, Mid = Green, High = Red
   const getRingColor = () => {
     switch (color) {
       case "low":
-        return "#22c55e"; // Green
-      case "mid":
         return "#3b82f6"; // Blue
+      case "mid":
+        return "#22c55e"; // Green
       case "high":
-        return "#ffffff"; // White
+        return "#ef4444"; // Red
       default:
         return "#2a2a2a"; // Default grey
     }

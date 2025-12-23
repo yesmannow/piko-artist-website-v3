@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
 import { tracks } from "@/lib/data";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ArrowUpDown, Filter, X } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 
@@ -48,7 +48,7 @@ export function DJInterface() {
 
   // FX state for Deck A
   const [filterFreqA, setFilterFreqA] = useState(1000);
-  const [filterTypeA, setFilterTypeA] = useState<"lowpass" | "highpass">("lowpass");
+  const [filterTypeA, setFilterTypeA] = useState<"lowpass" | "highpass" | "bandpass">("lowpass");
   const [reverbDryWetA, setReverbDryWetA] = useState(0);
   const [delayTimeA, setDelayTimeA] = useState(0);
   const [delayFeedbackA, setDelayFeedbackA] = useState(0);
@@ -56,11 +56,30 @@ export function DJInterface() {
 
   // FX state for Deck B
   const [filterFreqB, setFilterFreqB] = useState(1000);
-  const [filterTypeB, setFilterTypeB] = useState<"lowpass" | "highpass">("lowpass");
+  const [filterTypeB, setFilterTypeB] = useState<"lowpass" | "highpass" | "bandpass">("lowpass");
   const [reverbDryWetB, setReverbDryWetB] = useState(0);
   const [delayTimeB, setDelayTimeB] = useState(0);
   const [delayFeedbackB, setDelayFeedbackB] = useState(0);
   const [distortionAmountB, setDistortionAmountB] = useState(0);
+
+  // Clear All FX handlers
+  const handleClearAllFXA = () => {
+    setFilterFreqA(1000);
+    setFilterTypeA("lowpass");
+    setReverbDryWetA(0);
+    setDelayTimeA(0);
+    setDelayFeedbackA(0);
+    setDistortionAmountA(0);
+  };
+
+  const handleClearAllFXB = () => {
+    setFilterFreqB(1000);
+    setFilterTypeB("lowpass");
+    setReverbDryWetB(0);
+    setDelayTimeB(0);
+    setDelayFeedbackB(0);
+    setDistortionAmountB(0);
+  };
 
   const clampDelayFeedback = (value: number) => Math.min(Math.max(value, 0), FX_DELAY_FEEDBACK_MAX);
   const clampDistortionAmount = (value: number) => Math.min(Math.max(value, 0), 1);
@@ -365,7 +384,10 @@ export function DJInterface() {
           audioContextRef.current.close();
         } catch (error) {
           // Ignore errors if context is already closed
-          console.warn("Error closing audio context:", error);
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.warn("Error closing audio context:", error);
+          }
         }
       }
     };
@@ -444,27 +466,35 @@ export function DJInterface() {
     }
   }, [distortionAmountB]);
 
-  // 4. EQ FILTER UPDATES
+  // 4. EQ FILTER UPDATES (with kill switches)
   useEffect(() => {
     if (deckAFiltersRef.current) {
-      deckAFiltersRef.current.high.gain.value = deckAHigh;
-      deckAFiltersRef.current.mid.gain.value = deckAMid;
-      deckAFiltersRef.current.low.gain.value = deckALow;
+      // Apply kill switches: if kill is enabled, set gain to -100dB (effectively silent)
+      deckAFiltersRef.current.high.gain.value = deckAKillHigh ? -100 : deckAHigh;
+      deckAFiltersRef.current.mid.gain.value = deckAKillMid ? -100 : deckAMid;
+      deckAFiltersRef.current.low.gain.value = deckAKillLow ? -100 : deckALow;
     }
-  }, [deckAHigh, deckAMid, deckALow]);
+  }, [deckAHigh, deckAMid, deckALow, deckAKillHigh, deckAKillMid, deckAKillLow]);
 
   useEffect(() => {
     if (deckBFiltersRef.current) {
-      deckBFiltersRef.current.high.gain.value = deckBHigh;
-      deckBFiltersRef.current.mid.gain.value = deckBMid;
-      deckBFiltersRef.current.low.gain.value = deckBLow;
+      // Apply kill switches: if kill is enabled, set gain to -100dB (effectively silent)
+      deckBFiltersRef.current.high.gain.value = deckBKillHigh ? -100 : deckBHigh;
+      deckBFiltersRef.current.mid.gain.value = deckBKillMid ? -100 : deckBMid;
+      deckBFiltersRef.current.low.gain.value = deckBKillLow ? -100 : deckBLow;
     }
-  }, [deckBHigh, deckBMid, deckBLow]);
+  }, [deckBHigh, deckBMid, deckBLow, deckBKillHigh, deckBKillMid, deckBKillLow]);
 
-  // Remove old master level meter (now using spectrum analyzer)
+  // Drag and drop state
+  const [draggedTrack, setDraggedTrack] = useState<typeof tracks[0] | null>(null);
+  const [dragOverDeck, setDragOverDeck] = useState<"A" | "B" | null>(null);
 
-  // Search state
+  // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"title" | "artist" | "vibe">("title");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [vibeFilter, setVibeFilter] = useState<"all" | "chill" | "hype" | "storytelling" | "classic">("all");
 
   // Mobile landscape hint state
   const [showLandscapeHint, setShowLandscapeHint] = useState(false);
@@ -474,6 +504,15 @@ export function DJInterface() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Debounce search query for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Check for mobile portrait orientation
   useEffect(() => {
@@ -495,31 +534,50 @@ export function DJInterface() {
     };
   }, [isMounted]);
 
-  // Get audio tracks only and filter by search
-  const audioTracks = tracks
-    .filter((t) => t.type === "audio")
-    .filter((t) =>
-      searchQuery === "" ||
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.artist.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  // Memoize audio tracks filtering and sorting for performance
+  const audioTracks = useMemo(() => {
+    return tracks
+      .filter((t) => t.type === "audio")
+      .filter((t) =>
+        debouncedSearchQuery === "" ||
+        t.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        t.artist.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      )
+      .filter((t) => vibeFilter === "all" || t.vibe === vibeFilter)
+      .sort((a, b) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case "title":
+            comparison = a.title.localeCompare(b.title);
+            break;
+          case "artist":
+            comparison = a.artist.localeCompare(b.artist);
+            break;
+          case "vibe":
+            comparison = a.vibe.localeCompare(b.vibe);
+            break;
+        }
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+  }, [debouncedSearchQuery, vibeFilter, sortBy, sortOrder]);
 
-  const loadTrackToDeckA = (track: typeof tracks[0]) => {
+  // Memoize track loading handlers to prevent unnecessary re-renders
+  const loadTrackToDeckA = useCallback((track: typeof tracks[0]) => {
     if (track.type === "audio") {
       setDeckAData(track);
       setDeckAPlaying(false);
     }
-  };
+  }, []);
 
-  const loadTrackToDeckB = (track: typeof tracks[0]) => {
+  const loadTrackToDeckB = useCallback((track: typeof tracks[0]) => {
     if (track.type === "audio") {
       setDeckBData(track);
       setDeckBPlaying(false);
     }
-  };
+  }, []);
 
   // Handle sync - syncs the other deck to this deck's speed
-  const handleDeckASync = () => {
+  const handleDeckASync = useCallback(() => {
     if (deckARef.current && deckBRef.current) {
       const deckARate = deckARef.current.getPlaybackRate();
       deckBRef.current.setPlaybackRate(deckARate);
@@ -527,9 +585,9 @@ export function DJInterface() {
       setDeckBSynced(true);
       setDeckASynced(false);
     }
-  };
+  }, []);
 
-  const handleDeckBSync = () => {
+  const handleDeckBSync = useCallback(() => {
     if (deckARef.current && deckBRef.current) {
       const deckBRate = deckBRef.current.getPlaybackRate();
       deckARef.current.setPlaybackRate(deckBRate);
@@ -537,10 +595,10 @@ export function DJInterface() {
       setDeckASynced(true);
       setDeckBSynced(false);
     }
-  };
+  }, []);
 
   // Handle speed changes
-  const handleDeckASpeedChange = (speed: number) => {
+  const handleDeckASpeedChange = useCallback((speed: number) => {
     setDeckASpeed(speed);
     if (deckASynced && deckBRef.current) {
       deckBRef.current.setPlaybackRate(speed);
@@ -549,9 +607,9 @@ export function DJInterface() {
     if (deckBSynced) {
       setDeckBSynced(false);
     }
-  };
+  }, [deckASynced, deckBSynced]);
 
-  const handleDeckBSpeedChange = (speed: number) => {
+  const handleDeckBSpeedChange = useCallback((speed: number) => {
     setDeckBSpeed(speed);
     if (deckBSynced && deckARef.current) {
       deckARef.current.setPlaybackRate(speed);
@@ -560,7 +618,107 @@ export function DJInterface() {
     if (deckASynced) {
       setDeckASynced(false);
     }
-  };
+  }, [deckBSynced, deckASynced]);
+
+  // Memoize drag handlers for better performance
+  const handleDragStart = useCallback((track: typeof tracks[0]) => (e: React.DragEvent) => {
+    if (!isMounted) return;
+    setDraggedTrack(track);
+    e.dataTransfer.setData("track", JSON.stringify(track));
+    e.dataTransfer.effectAllowed = "move";
+    // Create a custom drag image
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.opacity = "0.8";
+    dragImage.style.transform = "rotate(5deg)";
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, e.clientX - e.currentTarget.getBoundingClientRect().left, e.clientY - e.currentTarget.getBoundingClientRect().top);
+    setTimeout(() => {
+      if (document.body.contains(dragImage)) {
+        document.body.removeChild(dragImage);
+      }
+    }, 0);
+  }, [isMounted]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTrack(null);
+    setDragOverDeck(null);
+  }, []);
+
+  const handleDeckADragOver = useCallback((e: React.DragEvent) => {
+    if (!isMounted) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverDeck("A");
+    const dropZone = document.getElementById("deck-a-drop-zone");
+    if (dropZone) dropZone.style.opacity = "1";
+  }, [isMounted]);
+
+  const handleDeckADragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverDeck(null);
+      const dropZone = document.getElementById("deck-a-drop-zone");
+      if (dropZone) dropZone.style.opacity = "0";
+    }
+  }, []);
+
+  const handleDeckADrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverDeck(null);
+    setDraggedTrack(null);
+    const dropZone = document.getElementById("deck-a-drop-zone");
+    if (dropZone) dropZone.style.opacity = "0";
+    try {
+      const trackData = e.dataTransfer.getData("track");
+      if (trackData) {
+        const track = JSON.parse(trackData);
+        loadTrackToDeckA(track);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Error loading track:", error);
+      }
+    }
+  }, [loadTrackToDeckA]);
+
+  const handleDeckBDragOver = useCallback((e: React.DragEvent) => {
+    if (!isMounted) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverDeck("B");
+    const dropZone = document.getElementById("deck-b-drop-zone");
+    if (dropZone) dropZone.style.opacity = "1";
+  }, [isMounted]);
+
+  const handleDeckBDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverDeck(null);
+      const dropZone = document.getElementById("deck-b-drop-zone");
+      if (dropZone) dropZone.style.opacity = "0";
+    }
+  }, []);
+
+  const handleDeckBDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverDeck(null);
+    setDraggedTrack(null);
+    const dropZone = document.getElementById("deck-b-drop-zone");
+    if (dropZone) dropZone.style.opacity = "0";
+    try {
+      const trackData = e.dataTransfer.getData("track");
+      if (trackData) {
+        const track = JSON.parse(trackData);
+        loadTrackToDeckB(track);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Error loading track:", error);
+      }
+    }
+  }, [loadTrackToDeckB]);
 
   return (
     <>
@@ -622,16 +780,71 @@ export function DJInterface() {
                 </button>
               </div>
             </div>
-            {/* Search Bar */}
-            <input
-              type="text"
-              placeholder="Search tracks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white placeholder-gray-500 font-barlow text-sm focus:outline-none focus:border-gray-600 transition-colors"
-            />
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search tracks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search tracks"
+                  className="w-full px-4 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white placeholder-gray-500 font-barlow text-sm focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-[#00ff00] transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-700 transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
+              </div>
+
+              {/* Vibe Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={vibeFilter}
+                  onChange={(e) => setVibeFilter(e.target.value as typeof vibeFilter)}
+                  className="px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-[#00ff00] transition-colors"
+                  aria-label="Filter by vibe"
+                >
+                  <option value="all">All Vibes</option>
+                  <option value="chill">Chill</option>
+                  <option value="hype">Hype</option>
+                  <option value="storytelling">Storytelling</option>
+                  <option value="classic">Classic</option>
+                </select>
+              </div>
+
+              {/* Sort Controls */}
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-[#00ff00] transition-colors"
+                  aria-label="Sort by"
+                >
+                  <option value="title">Title</option>
+                  <option value="artist">Artist</option>
+                  <option value="vibe">Vibe</option>
+                </select>
+                <button
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  className="px-2 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs hover:border-gray-600 transition-colors"
+                  aria-label={`Sort ${sortOrder === "asc" ? "descending" : "ascending"}`}
+                  title={sortOrder === "asc" ? "Sort Descending" : "Sort Ascending"}
+                >
+                  {sortOrder === "asc" ? "↑" : "↓"}
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-60 md:max-h-80 overflow-y-auto scrollbar-hide">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 max-h-60 md:max-h-80 overflow-y-auto scrollbar-hide">
             {audioTracks.length === 0 ? (
               <div className="col-span-full text-center text-gray-500 font-barlow py-8">
                 No tracks found
@@ -640,12 +853,14 @@ export function DJInterface() {
               audioTracks.map((track) => (
                 <div
                   key={track.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData("track", JSON.stringify(track));
-                    e.dataTransfer.effectAllowed = "move";
-                  }}
-                  className="flex flex-col gap-2 p-2 bg-[#1a1a1a] rounded border border-gray-800 hover:border-gray-600 transition-colors cursor-grab active:cursor-grabbing"
+                  draggable={isMounted}
+                  onDragStart={handleDragStart(track)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex flex-col gap-2 p-2 bg-[#1a1a1a] rounded border transition-all cursor-grab active:cursor-grabbing ${
+                    draggedTrack?.id === track.id
+                      ? "opacity-50 scale-95 border-[#00ff00]"
+                      : "border-gray-800 hover:border-gray-600"
+                  }`}
                 >
                   <div className="text-xs font-barlow uppercase text-gray-400 truncate" title={track.title}>
                     {track.title}
@@ -656,13 +871,15 @@ export function DJInterface() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => loadTrackToDeckA(track)}
-                      className="flex-1 px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#4a90e2] text-gray-400 hover:text-white rounded transition-colors"
+                      aria-label={`Load ${track.title} to Deck A`}
+                      className="flex-1 px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#00d9ff] text-gray-400 hover:text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#00d9ff]"
                     >
                       A
                     </button>
                     <button
                       onClick={() => loadTrackToDeckB(track)}
-                      className="flex-1 px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#e24a4a] text-gray-400 hover:text-white rounded transition-colors"
+                      aria-label={`Load ${track.title} to Deck B`}
+                      className="flex-1 px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#ff00d9] text-gray-400 hover:text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#ff00d9]"
                     >
                       B
                     </button>
@@ -672,7 +889,10 @@ export function DJInterface() {
             )}
           </div>
           <div className="mt-2 text-xs font-barlow text-gray-500 text-center">
-            {audioTracks.length} track{audioTracks.length !== 1 ? "s" : ""} • Drag tracks to decks or click A/B buttons
+            {audioTracks.length} track{audioTracks.length !== 1 ? "s" : ""}
+            {vibeFilter !== "all" && ` • Filtered: ${vibeFilter}`}
+            {debouncedSearchQuery && ` • Searching: "${debouncedSearchQuery}"`}
+            {" • Drag tracks to decks or click A/B buttons"}
           </div>
         </div>
 
@@ -708,49 +928,30 @@ export function DJInterface() {
           // Active deck toggle
           activeDeck={activeDeck}
           onActiveDeckChange={setActiveDeck}
+          // Clear All handlers
+          onClearAllA={handleClearAllFXA}
+          onClearAllB={handleClearAllFXB}
         />
         </div>
 
         {/* Main Console */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Deck A */}
           <div
             data-tour="deck-a"
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              const dropZone = document.getElementById("deck-a-drop-zone");
-              if (dropZone) dropZone.style.opacity = "1";
-            }}
-            onDragLeave={(e) => {
-              const dropZone = document.getElementById("deck-a-drop-zone");
-              if (dropZone && !e.currentTarget.contains(e.relatedTarget as Node)) {
-                dropZone.style.opacity = "0";
-              }
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const dropZone = document.getElementById("deck-a-drop-zone");
-              if (dropZone) dropZone.style.opacity = "0";
-              try {
-                const trackData = e.dataTransfer.getData("track");
-                if (trackData) {
-                  const track = JSON.parse(trackData);
-                  loadTrackToDeckA(track);
-                }
-              } catch (error) {
-                console.error("Error loading track:", error);
-              }
-            }}
-            className="relative"
+            onDragOver={handleDeckADragOver}
+            onDragLeave={handleDeckADragLeave}
+            onDrop={handleDeckADrop}
+            className={`relative transition-all ${
+              dragOverDeck === "A" ? "scale-105" : ""
+            }`}
           >
             <DJDeck
               ref={deckARef}
               trackUrl={deckAData?.src || null}
               isPlaying={deckAPlaying}
               speed={deckASpeed}
-              deckColor="#4a90e2"
+              deckColor="#00d9ff"
               deckLabel="DECK A"
               onPlayPause={() => setDeckAPlaying(!deckAPlaying)}
               onSync={handleDeckASync}
@@ -761,8 +962,20 @@ export function DJInterface() {
               title={deckAData?.title}
               coverArt={deckAData?.coverArt}
             />
-            {/* Drop indicator */}
-            <div className="absolute inset-0 border-2 border-dashed border-[#4a90e2] rounded-lg pointer-events-none opacity-0 transition-opacity" id="deck-a-drop-zone" />
+            {/* Enhanced Drop indicator */}
+            <div
+              className="absolute inset-0 border-2 border-dashed border-[#00d9ff] rounded-lg pointer-events-none opacity-0 transition-all bg-[#00d9ff]/10 backdrop-blur-sm"
+              id="deck-a-drop-zone"
+              style={{
+                boxShadow: dragOverDeck === "A" ? "0 0 20px rgba(0, 217, 255, 0.5)" : "none",
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-[#00d9ff] font-barlow uppercase text-sm font-bold">
+                  DROP TO DECK A
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Mixer */}
@@ -805,41 +1018,19 @@ export function DJInterface() {
 
           {/* Deck B */}
           <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              const dropZone = document.getElementById("deck-b-drop-zone");
-              if (dropZone) dropZone.style.opacity = "1";
-            }}
-            onDragLeave={(e) => {
-              const dropZone = document.getElementById("deck-b-drop-zone");
-              if (dropZone && !e.currentTarget.contains(e.relatedTarget as Node)) {
-                dropZone.style.opacity = "0";
-              }
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const dropZone = document.getElementById("deck-b-drop-zone");
-              if (dropZone) dropZone.style.opacity = "0";
-              try {
-                const trackData = e.dataTransfer.getData("track");
-                if (trackData) {
-                  const track = JSON.parse(trackData);
-                  loadTrackToDeckB(track);
-                }
-              } catch (error) {
-                console.error("Error loading track:", error);
-              }
-            }}
-            className="relative"
+            onDragOver={handleDeckBDragOver}
+            onDragLeave={handleDeckBDragLeave}
+            onDrop={handleDeckBDrop}
+            className={`relative transition-all ${
+              dragOverDeck === "B" ? "scale-105" : ""
+            }`}
           >
             <DJDeck
               ref={deckBRef}
               trackUrl={deckBData?.src || null}
               isPlaying={deckBPlaying}
               speed={deckBSpeed}
-              deckColor="#e24a4a"
+              deckColor="#ff00d9"
               deckLabel="DECK B"
               onPlayPause={() => setDeckBPlaying(!deckBPlaying)}
               onSync={handleDeckBSync}
@@ -850,8 +1041,20 @@ export function DJInterface() {
               title={deckBData?.title}
               coverArt={deckBData?.coverArt}
             />
-            {/* Drop indicator */}
-            <div className="absolute inset-0 border-2 border-dashed border-[#e24a4a] rounded-lg pointer-events-none opacity-0 transition-opacity" id="deck-b-drop-zone" />
+            {/* Enhanced Drop indicator */}
+            <div
+              className="absolute inset-0 border-2 border-dashed border-[#ff00d9] rounded-lg pointer-events-none opacity-0 transition-all bg-[#ff00d9]/10 backdrop-blur-sm"
+              id="deck-b-drop-zone"
+              style={{
+                boxShadow: dragOverDeck === "B" ? "0 0 20px rgba(255, 0, 217, 0.5)" : "none",
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-[#ff00d9] font-barlow uppercase text-sm font-bold">
+                  DROP TO DECK B
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

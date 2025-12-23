@@ -14,7 +14,10 @@ export function useHaptic() {
         navigator.vibrate(vibrationPattern);
       } catch (error) {
         // Silently fail if vibration is not supported or blocked
-        console.debug("Haptic feedback not available:", error);
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.debug("Haptic feedback not available:", error);
+        }
       }
     }
   }, []);

@@ -15,6 +15,7 @@ export function BookingForm() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,6 +34,13 @@ export function BookingForm() {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to submit form" }));
+        setSubmitStatus("error");
+        setErrorMessage(errorData.error || "Failed to submit form. Please try again.");
+        return;
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -45,12 +53,18 @@ export function BookingForm() {
           venueCapacity: "",
           budget: "",
         });
+        setErrorMessage("");
       } else {
         setSubmitStatus("error");
+        setErrorMessage(result.error || "Failed to submit form. Please try again.");
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
       setSubmitStatus("error");
+      setErrorMessage("Network error. Please check your connection and try again.");
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Error submitting form:", error);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -110,7 +124,11 @@ export function BookingForm() {
               value={formData.promoter}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              minLength={2}
+              maxLength={100}
+              aria-label="Promoter or entity name"
+              aria-required="true"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -133,7 +151,10 @@ export function BookingForm() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              maxLength={254}
+              aria-label="Email address"
+              aria-required="true"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -155,7 +176,9 @@ export function BookingForm() {
               value={formData.eventType}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all border-2 border-black"
+              aria-label="Event type"
+              aria-required="true"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all border-2 border-black"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -182,7 +205,9 @@ export function BookingForm() {
               value={formData.targetDate}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              aria-label="Target event date"
+              aria-required="true"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -205,7 +230,10 @@ export function BookingForm() {
               onChange={handleChange}
               required
               min="1"
-              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              max="1000000"
+              aria-label="Venue capacity"
+              aria-required="true"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -228,7 +256,10 @@ export function BookingForm() {
               value={formData.budget}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              maxLength={100}
+              aria-label="Budget or offer amount"
+              aria-required="true"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -242,12 +273,14 @@ export function BookingForm() {
         <motion.button
           type="submit"
           disabled={isSubmitting}
-          className="w-full px-8 py-4 bg-white text-black font-header text-xl font-bold border-2 border-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-hard"
+          aria-label={isSubmitting ? "Submitting booking form" : "Submit booking form"}
+          aria-busy={isSubmitting}
+          className="w-full px-8 py-4 bg-white text-black font-header text-xl font-bold border-2 border-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-hard focus:outline-none focus:ring-2 focus:ring-safety-orange focus:ring-offset-2"
           style={{
             boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
           }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+          whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
         >
           {isSubmitting ? "TRANSMITTING..." : "TRANSMIT OFFER"}
         </motion.button>
@@ -258,18 +291,29 @@ export function BookingForm() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center font-header text-toxic-lime text-lg font-bold"
+            role="status"
+            aria-live="polite"
           >
             ✓ TRANSMISSION SECURE
           </motion.p>
         )}
         {submitStatus === "error" && (
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center font-header text-red-500 text-lg font-bold"
+            className="text-center space-y-2"
+            role="alert"
+            aria-live="polite"
           >
-            ✗ SIGNAL LOST - Please try again
-          </motion.p>
+            <p className="font-header text-red-500 text-lg font-bold">
+              ✗ SIGNAL LOST
+            </p>
+            {errorMessage && (
+              <p className="text-sm text-red-400 font-barlow">
+                {errorMessage}
+              </p>
+            )}
+          </motion.div>
         )}
       </form>
     </motion.div>
