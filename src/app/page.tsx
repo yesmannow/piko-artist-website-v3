@@ -231,7 +231,7 @@ export default function Home() {
               </h2>
 
               {/* Subheadline */}
-              <p className="text-2xl md:text-3xl font-tag text-foreground/70 mb-6">
+              <p className="text-2xl md:text-3xl font-industrial font-bold uppercase tracking-wider text-foreground/70 mb-6">
                 Versos Reales. Ritmo Urbano. Una Mas Music.
               </p>
 
@@ -272,7 +272,7 @@ export default function Home() {
                 </div>
 
                 {/* Typewriter-style text with highlights */}
-                <p className="text-base md:text-lg font-mono leading-relaxed">
+                <p className="text-base md:text-lg font-industrial font-medium leading-relaxed">
                   Representing the{" "}
                   <span className="relative inline-block px-1 bg-yellow-300" style={{ clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)" }}>
                     Una Mas Music
@@ -304,7 +304,7 @@ export default function Home() {
                   boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
                 }}
               >
-                <p className="text-xl md:text-2xl font-tag text-foreground italic leading-relaxed">
+                <p className="text-xl md:text-2xl font-industrial font-medium text-foreground italic leading-relaxed">
                   &quot;Ella se quedó porque lo amaba, él cambió para que no se fuera. Ella aprendió a amarlo otra vez, y él a mejorar por ella.&quot;
                 </p>
               </motion.div>

@@ -90,7 +90,7 @@ export function BookingForm() {
         <h2 className="text-3xl md:text-4xl font-header mb-2 text-foreground">
           <GlitchText text="SECURE THE ASSET" />
         </h2>
-        <p className="text-sm md:text-base font-tag text-foreground/70">
+        <p className="text-sm md:text-base font-industrial font-bold uppercase tracking-wider text-foreground/70">
           Booking Inquiry / Performance Contract
         </p>
       </div>
@@ -99,7 +99,7 @@ export function BookingForm() {
       <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
         {/* Promoter / Entity */}
         <div>
-          <label htmlFor="promoter" className="block mb-2 font-tag text-safety-orange text-lg">
+          <label htmlFor="promoter" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-safety-orange text-lg">
             Promoter / Entity
           </label>
           <div className="relative">
@@ -110,7 +110,7 @@ export function BookingForm() {
               value={formData.promoter}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -122,7 +122,7 @@ export function BookingForm() {
 
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block mb-2 font-tag text-safety-orange text-lg">
+          <label htmlFor="email" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-safety-orange text-lg">
             Email
           </label>
           <div className="relative">
@@ -133,7 +133,7 @@ export function BookingForm() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -145,7 +145,7 @@ export function BookingForm() {
 
         {/* Event Type */}
         <div>
-          <label htmlFor="eventType" className="block mb-2 font-tag text-safety-orange text-lg">
+          <label htmlFor="eventType" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-safety-orange text-lg">
             Event Type
           </label>
           <div className="relative">
@@ -155,7 +155,7 @@ export function BookingForm() {
               value={formData.eventType}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all border-2 border-black"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all border-2 border-black"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -171,7 +171,7 @@ export function BookingForm() {
 
         {/* Target Date */}
         <div>
-          <label htmlFor="targetDate" className="block mb-2 font-tag text-safety-orange text-lg">
+          <label htmlFor="targetDate" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-safety-orange text-lg">
             Target Date
           </label>
           <div className="relative">
@@ -182,7 +182,7 @@ export function BookingForm() {
               value={formData.targetDate}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -193,7 +193,7 @@ export function BookingForm() {
 
         {/* Venue Capacity */}
         <div>
-          <label htmlFor="venueCapacity" className="block mb-2 font-tag text-safety-orange text-lg">
+          <label htmlFor="venueCapacity" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-safety-orange text-lg">
             Venue Capacity
           </label>
           <div className="relative">
@@ -205,7 +205,7 @@ export function BookingForm() {
               onChange={handleChange}
               required
               min="1"
-              className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -217,7 +217,7 @@ export function BookingForm() {
 
         {/* Budget / Offer */}
         <div>
-          <label htmlFor="budget" className="block mb-2 font-tag text-safety-orange text-lg">
+          <label htmlFor="budget" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-safety-orange text-lg">
             Budget / Offer
           </label>
           <div className="relative">
@@ -228,7 +228,7 @@ export function BookingForm() {
               value={formData.budget}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+              className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
               style={{
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                 boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",

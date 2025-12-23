@@ -83,7 +83,7 @@ export function Contact() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Input - Duct Tape Style */}
             <div>
-              <label htmlFor="name" className="block mb-2 font-tag text-toxic-lime text-lg">
+              <label htmlFor="name" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
                 Name
               </label>
               <div className="relative">
@@ -94,7 +94,7 @@ export function Contact() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+                  className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
                   style={{
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                     boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -106,7 +106,7 @@ export function Contact() {
 
             {/* Email Input - Duct Tape Style */}
             <div>
-              <label htmlFor="email" className="block mb-2 font-tag text-toxic-lime text-lg">
+              <label htmlFor="email" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
                 Email
               </label>
               <div className="relative">
@@ -117,7 +117,7 @@ export function Contact() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600"
+                  className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600"
                   style={{
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                     boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -129,7 +129,7 @@ export function Contact() {
 
             {/* Message Input - Duct Tape Style */}
             <div>
-              <label htmlFor="message" className="block mb-2 font-tag text-toxic-lime text-lg">
+              <label htmlFor="message" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
                 Message
               </label>
               <div className="relative">
@@ -140,7 +140,7 @@ export function Contact() {
                   onChange={handleChange}
                   required
                   rows={6}
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-tag text-lg focus:outline-none transition-all placeholder:text-gray-600 resize-none"
+                  className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none transition-all placeholder:text-gray-600 resize-none"
                   style={{
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                     boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",

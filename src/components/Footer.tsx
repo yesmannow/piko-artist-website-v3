@@ -65,7 +65,7 @@ export function Footer() {
           </div>
 
           {/* Copyright */}
-          <div className="text-sm text-foreground font-tag">
+          <div className="text-sm text-foreground font-industrial font-bold">
             © 2025 Una Mas Music.
           </div>
         </div>

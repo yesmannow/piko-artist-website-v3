@@ -33,7 +33,7 @@ export function Navigation() {
                 key={link.href}
                 href={link.href}
                 onClick={() => triggerHaptic()}
-                className="group relative font-tag text-sm sm:text-base md:text-lg text-foreground transition-colors"
+                className="group relative font-header tracking-wide text-sm sm:text-base md:text-lg text-foreground transition-colors"
               >
                 <motion.span
                   className="inline-block"
