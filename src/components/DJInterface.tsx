@@ -79,7 +79,7 @@ export function DJInterface() {
   const fxDelayGainRef = useRef<GainNode | null>(null);
   const fxDelayFeedbackRef = useRef<GainNode | null>(null);
 
-  // Initialize Web Audio API
+  // 1. INITIALIZATION (Run ONCE - Empty dependency array)
   useEffect(() => {
     const AudioContextClass =
       window.AudioContext ||
@@ -144,27 +144,27 @@ export function DJInterface() {
       low: deckBLowFilter,
     };
 
-    // Deck A gain
+    // Deck A gain (initial value will be set by volume update useEffect)
     const deckAGain = ctx.createGain();
-    deckAGain.gain.value = deckAVolume;
+    deckAGain.gain.value = 0.7; // Initial default
     deckAGainRef.current = deckAGain;
 
-    // Deck B gain
+    // Deck B gain (initial value will be set by volume update useEffect)
     const deckBGain = ctx.createGain();
-    deckBGain.gain.value = deckBVolume;
+    deckBGain.gain.value = 0.7; // Initial default
     deckBGainRef.current = deckBGain;
 
-    // Create FX nodes
+    // Create FX nodes (initial values will be set by FX update useEffects)
     // Filter
     const fxFilter = ctx.createBiquadFilter();
-    fxFilter.type = filterType;
-    fxFilter.frequency.value = filterFreq;
+    fxFilter.type = "lowpass"; // Initial default
+    fxFilter.frequency.value = 1000; // Initial default
     fxFilter.Q.value = 1;
     fxFilterRef.current = fxFilter;
 
     // Reverb (using ConvolverNode with impulse response)
     const reverbGain = ctx.createGain();
-    reverbGain.gain.value = reverbDryWet;
+    reverbGain.gain.value = 0; // Initial default
     fxReverbGainRef.current = reverbGain;
 
     // Create a simple reverb impulse (we'll use a delay-based approach for simplicity)
@@ -174,7 +174,7 @@ export function DJInterface() {
 
     // Delay
     const delay = ctx.createDelay(1.0); // Max 1 second delay
-    delay.delayTime.value = delayTime;
+    delay.delayTime.value = 0; // Initial default
     fxDelayRef.current = delay;
 
     const delayGain = ctx.createGain();
@@ -182,7 +182,7 @@ export function DJInterface() {
     fxDelayGainRef.current = delayGain;
 
     const delayFeedbackGain = ctx.createGain();
-    delayFeedbackGain.gain.value = delayFeedback;
+    delayFeedbackGain.gain.value = 0; // Initial default
     fxDelayFeedbackRef.current = delayFeedbackGain;
 
     // Connect delay feedback loop
@@ -208,7 +208,7 @@ export function DJInterface() {
     analyser.connect(ctx.destination);
 
     return () => {
-      // Cleanup function - prevent zombie audio
+      // Cleanup ONLY on unmount
       if (audioContextRef.current) {
         try {
           audioContextRef.current.suspend();
@@ -219,26 +219,9 @@ export function DJInterface() {
         }
       }
     };
-  }, [deckAVolume, deckBVolume, delayFeedback, delayTime, filterFreq, filterType, reverbDryWet]);
+  }, []); // <--- EMPTY DEPENDENCY ARRAY (Crucial!)
 
-  // Update EQ filters
-  useEffect(() => {
-    if (deckAFiltersRef.current) {
-      deckAFiltersRef.current.high.gain.value = deckAHigh;
-      deckAFiltersRef.current.mid.gain.value = deckAMid;
-      deckAFiltersRef.current.low.gain.value = deckALow;
-    }
-  }, [deckAHigh, deckAMid, deckALow]);
-
-  useEffect(() => {
-    if (deckBFiltersRef.current) {
-      deckBFiltersRef.current.high.gain.value = deckBHigh;
-      deckBFiltersRef.current.mid.gain.value = deckBMid;
-      deckBFiltersRef.current.low.gain.value = deckBLow;
-    }
-  }, [deckBHigh, deckBMid, deckBLow]);
-
-  // Update volume gains with Equal Power Crossfading
+  // 2. VOLUME UPDATES
   useEffect(() => {
     if (deckAGainRef.current) {
       // Equal Power Crossfading: Gain A = cos(crossfaderValue * 0.5 * π)
@@ -254,6 +237,44 @@ export function DJInterface() {
       deckBGainRef.current.gain.value = deckBVolume * equalPowerGainB;
     }
   }, [deckBVolume, crossfader]);
+
+  // 3. FX UPDATES (Real-time, no reboot)
+  useEffect(() => {
+    if (fxFilterRef.current) {
+      fxFilterRef.current.type = filterType;
+      fxFilterRef.current.frequency.value = filterFreq;
+    }
+  }, [filterFreq, filterType]);
+
+  useEffect(() => {
+    if (fxReverbGainRef.current) {
+      fxReverbGainRef.current.gain.value = reverbDryWet;
+    }
+  }, [reverbDryWet]);
+
+  useEffect(() => {
+    if (fxDelayRef.current && fxDelayFeedbackRef.current) {
+      fxDelayRef.current.delayTime.value = delayTime;
+      fxDelayFeedbackRef.current.gain.value = delayFeedback;
+    }
+  }, [delayTime, delayFeedback]);
+
+  // 4. EQ FILTER UPDATES
+  useEffect(() => {
+    if (deckAFiltersRef.current) {
+      deckAFiltersRef.current.high.gain.value = deckAHigh;
+      deckAFiltersRef.current.mid.gain.value = deckAMid;
+      deckAFiltersRef.current.low.gain.value = deckALow;
+    }
+  }, [deckAHigh, deckAMid, deckALow]);
+
+  useEffect(() => {
+    if (deckBFiltersRef.current) {
+      deckBFiltersRef.current.high.gain.value = deckBHigh;
+      deckBFiltersRef.current.mid.gain.value = deckBMid;
+      deckBFiltersRef.current.low.gain.value = deckBLow;
+    }
+  }, [deckBHigh, deckBMid, deckBLow]);
 
   // Remove old master level meter (now using spectrum analyzer)
 
