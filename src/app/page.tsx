@@ -10,7 +10,6 @@ import { GlitchText } from "@/components/GlitchText";
 import { BeatMakerTeaser } from "@/components/BeatMakerTeaser";
 import { HeroScene } from "@/components/HeroScene";
 import { EventList } from "@/components/EventList";
-import Link from "next/link";
 
 export default function Home() {
   const scrollToMusic = () => {
