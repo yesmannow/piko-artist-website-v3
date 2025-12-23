@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Permanent_Marker, Sedgwick_Ave } from "next/font/google";
+import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
@@ -11,6 +11,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallApp } from "@/components/InstallApp";
 
+// 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
   weight: "400",
   subsets: ["latin"],
@@ -18,10 +19,27 @@ const permanentMarker = Permanent_Marker({
   display: "swap",
 });
 
+// 2. Tag Font (Subtitles & Artistic Elements)
 const sedgwickAve = Sedgwick_Ave({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-sedgwick-ave",
+  display: "swap",
+});
+
+// 3. Header Font (The "Flyer" Style - Replaces Impact)
+const anton = Anton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-anton",
+  display: "swap",
+});
+
+// 4. Industrial Font (Lists, Dates, Tracks - Readable Data)
+const barlowCondensed = Barlow_Condensed({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-barlow",
   display: "swap",
 });
 
@@ -50,13 +68,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${permanentMarker.variable} ${sedgwickAve.variable}`}>
+      <body
+        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} bg-background text-foreground antialiased`}
+      >
         <AudioProvider>
           <VideoProvider>
             <Navigation />
-            <PageTransition>
-              {children}
-            </PageTransition>
+            <PageTransition>{children}</PageTransition>
             <Footer />
             <FloatingVideoPlayer />
             <PersistentPlayer />
