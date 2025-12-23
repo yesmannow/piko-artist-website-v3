@@ -8,7 +8,6 @@ import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { GlitchText } from "@/components/GlitchText";
 import { BeatMakerTeaser } from "@/components/BeatMakerTeaser";
-import { HeroScene } from "@/components/HeroScene";
 import { EventList } from "@/components/EventList";
 
 export default function Home() {
@@ -22,38 +21,48 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section id="home" className="relative min-h-screen flex flex-col items-center justify-center p-8 overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/hero/hero-bw.jpg"
-            alt="Hero Background"
-            fill
-            className="object-cover"
-            priority
+      <section
+        id="home"
+        className="relative h-screen flex items-center justify-center overflow-hidden"
+      >
+        <Image
+          src="/images/hero/hero-white.jpg"
+          alt="Piko hero background"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/40 z-10" />
+
+        <div className="relative z-20 flex flex-col items-center gap-8 text-center px-6">
+          <motion.img
+            src="/images/branding/piko-logo.png"
+            alt="Piko FG logo"
+            className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+            initial={{ opacity: 0, scale: 1.2, filter: "blur(10px)" }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              filter: "blur(0px)",
+              y: [0, -10, 0],
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 20,
+              opacity: { duration: 0.6 },
+              scale: { duration: 0.6 },
+              filter: { duration: 0.6 },
+              y: {
+                duration: 7,
+                repeat: Infinity,
+                repeatType: "mirror",
+                ease: "easeInOut",
+                delay: 0.6,
+              },
+            }}
           />
-          {/* Black Overlay */}
-          <div className="absolute inset-0 bg-black/50 z-10" />
-        </div>
 
-        {/* 3D Scene */}
-        <div className="absolute inset-0 z-[5]">
-          <HeroScene />
-        </div>
-
-        {/* Hero Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-20 text-center max-w-4xl"
-        >
-          {/* Huge PIKO FG Text */}
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-header mb-8 text-foreground">
-            <GlitchText text="PIKO FG" />
-          </h1>
-
-          {/* Listen Now Button - Sticker Style */}
           <motion.button
             onClick={scrollToMusic}
             className="px-8 py-4 bg-white text-black font-header text-xl font-bold transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black"
@@ -65,7 +74,7 @@ export default function Home() {
           >
             LISTEN NOW
           </motion.button>
-        </motion.div>
+        </div>
       </section>
 
       {/* Section 1: LATEST DROPS (Music) */}
