@@ -9,6 +9,16 @@ import { HelpCircle } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 
+// Distortion scaling controls for WaveShaper intensity
+const DISTORTION_SCALE = 400;
+const DISTORTION_DEFAULT_K = 0; // Clean fallback when drive is invalid
+// WaveShaper curve shape (matches common MDN example)
+const DISTORTION_CURVE_BASE = 3;
+const DISTORTION_CURVE_MULTIPLIER = 20;
+const DISTORTION_CURVE_SAMPLES = 44100;
+// Safety cap for feedback loop stability
+const FX_DELAY_FEEDBACK_MAX = 0.9;
+
 export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
 
@@ -40,6 +50,8 @@ export function DJInterface() {
   const [delayTime, setDelayTime] = useState(0);
   const [delayFeedback, setDelayFeedback] = useState(0);
   const [distortionAmount, setDistortionAmount] = useState(0);
+  const clampDelayFeedback = (value: number) => Math.min(Math.max(value, 0), FX_DELAY_FEEDBACK_MAX);
+  const clampDistortionAmount = (value: number) => Math.min(Math.max(value, 0), 1);
 
   // Kill switches
   const [deckAKillHigh, setDeckAKillHigh] = useState(false);
@@ -197,7 +209,7 @@ export function DJInterface() {
     delayFeedbackGain.gain.value = 0; // Initial default
     fxDelayFeedbackRef.current = delayFeedbackGain;
 
-    // Connect delay feedback loop
+    // Connect delay feedback loop (gain limited in FX updates)
     delay.connect(delayFeedbackGain);
     delayFeedbackGain.connect(delay);
 
@@ -285,7 +297,8 @@ export function DJInterface() {
 
   useEffect(() => {
     if (fxDistortionRef.current) {
-      fxDistortionRef.current.curve = makeDistortionCurve(distortionAmount * 400);
+      const drive = clampDistortionAmount(distortionAmount);
+      fxDistortionRef.current.curve = makeDistortionCurve(drive * DISTORTION_SCALE);
     }
   }, [distortionAmount]);
 
@@ -533,9 +546,9 @@ export function DJInterface() {
           delayTime={delayTime}
           delayFeedback={delayFeedback}
           onDelayTimeChange={setDelayTime}
-          onDelayFeedbackChange={setDelayFeedback}
+          onDelayFeedbackChange={(val) => setDelayFeedback(clampDelayFeedback(val))}
           distortionAmount={distortionAmount}
-          onDistortionChange={setDistortionAmount}
+          onDistortionChange={(val) => setDistortionAmount(clampDistortionAmount(val))}
         />
         </div>
 
@@ -689,14 +702,22 @@ export function DJInterface() {
   );
 }
 
+/**
+ * Generate a symmetrical soft-clipping curve for WaveShaperNode.
+ * Based on the classic arctangent-inspired formula from MDN:
+ *   y = ((a + k) * x * b * deg) / (π + k * |x|)
+ * where k is drive amount, a/b tune the curve shape, and x spans -1..1.
+ * @param amount Drive amount (0..DISTORTION_SCALE) controlling curve intensity.
+ */
 function makeDistortionCurve(amount: number) {
-  const k = typeof amount === "number" ? amount : 50;
-  const n_samples = 44100;
-  const curve = new Float32Array(n_samples);
+  const k = Number.isFinite(amount) ? amount : DISTORTION_DEFAULT_K;
+  const curve = new Float32Array(DISTORTION_CURVE_SAMPLES);
   const deg = Math.PI / 180;
-  for (let i = 0; i < n_samples; ++i) {
-    const x = (i * 2) / n_samples - 1;
-    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+  for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
+    const x = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
+    curve[i] =
+      ((DISTORTION_CURVE_BASE + k) * x * DISTORTION_CURVE_MULTIPLIER * deg) /
+      (Math.PI + k * Math.abs(x));
   }
   return curve;
 }

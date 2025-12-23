@@ -2,6 +2,30 @@
 
 import { Knob } from "./dj-ui/Knob";
 
+// Map 20Hz-20kHz range to a 0-1 logarithmic knob travel
+const FILTER_LOG_OFFSET = 1.3;
+const FILTER_LOG_RANGE = 3;
+// Cap feedback to prevent runaway echoes
+const DELAY_FEEDBACK_MAX = 0.9;
+
+/**
+ * Convert a cutoff frequency in Hz to a 0-1 logarithmic knob value.
+ * Frequencies are clamped to 20Hz minimum to avoid invalid log inputs.
+ * @returns Normalized knob position between 0 and 1.
+ */
+function normalizeFilterFreq(freq: number) {
+  const safeFreq = Math.max(freq, 20);
+  return (Math.log10(safeFreq) - FILTER_LOG_OFFSET) / FILTER_LOG_RANGE;
+}
+
+/**
+ * Convert a normalized knob value back to a cutoff frequency in Hz.
+ * @returns Frequency in Hz mapped from a 0-1 knob value.
+ */
+function denormalizeFilterFreq(value: number) {
+  return Math.pow(10, value * FILTER_LOG_RANGE + FILTER_LOG_OFFSET);
+}
+
 interface FXUnitProps {
   filterFreq: number;
   filterType: "lowpass" | "highpass";
@@ -24,6 +48,11 @@ export function FXUnit({
   delayTime, delayFeedback, onDelayTimeChange, onDelayFeedbackChange,
   distortionAmount, onDistortionChange
 }: FXUnitProps) {
+  const filterButtonClasses = (type: "lowpass" | "highpass") =>
+    `px-2 py-1 text-[10px] rounded border ${
+      filterType === type ? "bg-blue-500 text-white border-blue-500" : "border-gray-700 text-gray-500"
+    }`;
+
   return (
     <div className="p-6 bg-[#0a0a0a] rounded-lg border border-gray-800">
       <div className="text-center mb-4">
@@ -34,10 +63,18 @@ export function FXUnit({
         <div className="flex flex-col items-center gap-3">
           <span className="text-xs text-gray-400 uppercase tracking-widest">FILTER</span>
           <div className="flex gap-2 mb-2">
-            <button onClick={() => onFilterTypeChange("lowpass")} className={`px-2 py-1 text-[10px] rounded border ${filterType === "lowpass" ? "bg-blue-500 text-white border-blue-500" : "border-gray-700 text-gray-500"}`}>LPF</button>
-            <button onClick={() => onFilterTypeChange("highpass")} className={`px-2 py-1 text-[10px] rounded border ${filterType === "highpass" ? "bg-blue-500 text-white border-blue-500" : "border-gray-700 text-gray-500"}`}>HPF</button>
+            <button onClick={() => onFilterTypeChange("lowpass")} className={filterButtonClasses("lowpass")}>LPF</button>
+            <button onClick={() => onFilterTypeChange("highpass")} className={filterButtonClasses("highpass")}>HPF</button>
           </div>
-          <Knob value={(Math.log10(filterFreq) - 1.3) / 3} onChange={(v) => onFilterFreqChange(Math.pow(10, v * 3 + 1.3))} label="FREQ" min={0} max={1} size={60} color="mid" />
+          <Knob
+            value={normalizeFilterFreq(filterFreq)}
+            onChange={(v) => onFilterFreqChange(denormalizeFilterFreq(v))}
+            label="FREQ"
+            min={0}
+            max={1}
+            size={60}
+            color="mid"
+          />
         </div>
 
         {/* NEW: DISTORTION (GRIT) */}
@@ -59,8 +96,8 @@ export function FXUnit({
           <span className="text-xs text-gray-400 uppercase tracking-widest">DELAY</span>
           <div className="h-[26px]"></div>
           <div className="flex gap-4">
-             <Knob value={delayTime} onChange={onDelayTimeChange} label="TIME" min={0} max={1} size={40} />
-             <Knob value={delayFeedback} onChange={onDelayFeedbackChange} label="FDBK" min={0} max={0.9} size={40} />
+            <Knob value={delayTime} onChange={onDelayTimeChange} label="TIME" min={0} max={1} size={40} />
+            <Knob value={delayFeedback} onChange={onDelayFeedbackChange} label="FDBK" min={0} max={DELAY_FEEDBACK_MAX} size={40} />
           </div>
         </div>
       </div>
