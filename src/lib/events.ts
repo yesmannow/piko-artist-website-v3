@@ -3,11 +3,20 @@ export interface Event {
   title: string;
   date: Date;
   location: string;
-  coordinates: [number, number]; // [lat, lng]
+  coordinates: [number, number]; // [lat, lng] - kept for backward compatibility
+  lat: number; // Latitude
+  lng: number; // Longitude
+  timezone?: string; // Timezone (e.g., "America/Chicago", "Europe/Lisbon")
   type: "festival" | "club";
   status: "upcoming" | "past";
   image: string;
   ticketLink?: string;
+  vhsVideo?: string; // YouTube video ID or local video URL
+  pressLinks?: Array<{ name: string; url: string; logo?: string }>; // Press coverage links
+  recapClips?: Array<{ id: string; title: string; thumbnail?: string }>; // Recap video clips
+  poster?: string; // Full-screen poster image URL
+  posterDL?: string; // High-resolution download URL for poster
+  audioViz?: boolean; // Enable audio-reactive visualizations
 }
 
 export const events: Event[] = [
@@ -18,6 +27,9 @@ export const events: Event[] = [
     date: new Date("2025-05-02"),
     location: "Memphis, TN",
     coordinates: [35.14, -90.04],
+    lat: 35.14,
+    lng: -90.04,
+    timezone: "America/Chicago",
     type: "festival",
     status: "upcoming",
     image: "/images/events/event-festival-7.jpg",
@@ -29,6 +41,9 @@ export const events: Event[] = [
     date: new Date("2025-07-05"),
     location: "Portugal",
     coordinates: [37.13, -8.53],
+    lat: 37.13,
+    lng: -8.53,
+    timezone: "Europe/Lisbon",
     type: "festival",
     status: "upcoming",
     image: "/images/events/event-6-festival.webp",
@@ -40,6 +55,9 @@ export const events: Event[] = [
     date: new Date("2025-08-12"),
     location: "Berlin",
     coordinates: [52.52, 13.4],
+    lat: 52.52,
+    lng: 13.4,
+    timezone: "Europe/Berlin",
     type: "festival",
     status: "upcoming",
     image: "/images/events/event-5.jpg",
@@ -52,6 +70,9 @@ export const events: Event[] = [
     date: new Date("2024-09-19"),
     location: "Chicago",
     coordinates: [41.87, -87.62],
+    lat: 41.87,
+    lng: -87.62,
+    timezone: "America/Chicago",
     type: "festival",
     status: "past",
     image: "/images/events/event-festival-3.jpg",
@@ -62,6 +83,9 @@ export const events: Event[] = [
     date: new Date("2020-07-08"),
     location: "Portugal",
     coordinates: [37.13, -8.53],
+    lat: 37.13,
+    lng: -8.53,
+    timezone: "Europe/Lisbon",
     type: "festival",
     status: "past",
     image: "/images/events/event-festival-4.jpg",
@@ -72,6 +96,9 @@ export const events: Event[] = [
     date: new Date("2023-12-10"),
     location: "NYC",
     coordinates: [40.71, -74.0],
+    lat: 40.71,
+    lng: -74.0,
+    timezone: "America/New_York",
     type: "club",
     status: "past",
     image: "/images/events/event-1.jpg",
@@ -82,6 +109,9 @@ export const events: Event[] = [
     date: new Date("2023-11-05"),
     location: "London",
     coordinates: [51.5, -0.12],
+    lat: 51.5,
+    lng: -0.12,
+    timezone: "Europe/London",
     type: "club",
     status: "past",
     image: "/images/events/event-4.jpg",

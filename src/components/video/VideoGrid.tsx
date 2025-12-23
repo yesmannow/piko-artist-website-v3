@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play } from "lucide-react";
-import { tracks } from "@/lib/data";
+import { MediaItem } from "@/lib/data";
 
 const categories = ["ALL", "HYPE", "CHILL", "STORYTELLING", "CLASSIC"];
 
-export function VideoGrid({ onPlay }: { onPlay: (id: string) => void }) {
+export function VideoGrid({ videos, onPlay }: { videos: MediaItem[], onPlay: (id: string) => void }) {
   const [filter, setFilter] = useState("ALL");
-  // Get all videos except the newest one (which is in Hero)
-  const allVideos = tracks.filter(t => t.type === 'video').slice(0, -1);
   const filteredVideos = filter === "ALL"
-    ? allVideos
-    : allVideos.filter(v => v.vibe?.toUpperCase() === filter);
+    ? videos
+    : videos.filter(v => v.vibe?.toUpperCase() === filter);
 
   return (
     <div>

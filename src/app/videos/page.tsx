@@ -9,22 +9,54 @@ import { X } from "lucide-react";
 export default function VideosPage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const videos = tracks.filter(t => t.type === 'video');
-  const featuredVideo = videos[videos.length - 1]; // Newest video
+  const featuredVideo = videos.length > 0 ? videos[videos.length - 1] : null;
+  const gridVideos = videos.length > 1 ? videos.slice(0, -1) : [];
+
+  // Optional: Early return for empty state
+  if (!videos.length) {
+    return (
+      <div className="min-h-screen bg-[#121212] pt-24 pb-20 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12">
+            <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter mb-2">
+              VISUAL{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">
+                ARCHIVE
+              </span>
+            </h1>
+            <p className="text-zinc-400 font-mono">
+              Exploring the visual landscape of sound.
+            </p>
+          </div>
+          <div className="text-center text-white py-12">No videos available.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#121212] pt-24 pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-12">
           <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter mb-2">
-            VISUAL <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">ARCHIVE</span>
+            VISUAL{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">
+              ARCHIVE
+            </span>
           </h1>
-          <p className="text-zinc-400 font-mono">Exploring the visual landscape of sound.</p>
+          <p className="text-zinc-400 font-mono">
+            Exploring the visual landscape of sound.
+          </p>
         </div>
 
-        <VideoHero featuredVideo={featuredVideo} onPlay={setSelectedVideoId} />
-        <VideoGrid onPlay={setSelectedVideoId} />
+        {featuredVideo ? (
+          <VideoHero featuredVideo={featuredVideo} onPlay={setSelectedVideoId} />
+        ) : (
+          <p className="text-center text-white">No featured video available.</p>
+        )}
 
-        {/* Video Modal */}
+        <VideoGrid videos={gridVideos} onPlay={setSelectedVideoId} />
+
         {selectedVideoId && (
           <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12">
             <button
@@ -33,11 +65,13 @@ export default function VideosPage() {
             >
               <X className="w-6 h-6" />
             </button>
+
             <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-zinc-800">
               <iframe
                 src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1&rel=0`}
                 className="w-full h-full"
-                allow="autoplay; encrypted-media; fullscreen"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                allowFullScreen
               />
             </div>
           </div>

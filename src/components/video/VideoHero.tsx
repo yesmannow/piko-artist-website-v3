@@ -5,6 +5,8 @@ import { Play } from "lucide-react";
 import { MediaItem } from "@/lib/data";
 
 export function VideoHero({ featuredVideo, onPlay }: { featuredVideo: MediaItem, onPlay: (id: string) => void }) {
+  if (!featuredVideo?.id) return null;
+
   return (
     <div className="relative w-full h-[60vh] md:h-[70vh] mb-12 rounded-3xl overflow-hidden border border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] group cursor-pointer" onClick={() => onPlay(featuredVideo.id)}>
       {/* Background Image */}

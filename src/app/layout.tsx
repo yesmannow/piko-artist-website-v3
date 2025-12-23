@@ -70,7 +70,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} bg-background text-foreground antialiased`}
+        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >
         <AudioProvider>
           <VideoProvider>

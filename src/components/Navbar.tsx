@@ -117,6 +117,7 @@ export function Navbar() {
   const triggerHaptic = useHaptic();
 
   // Track scroll position for navbar background effect with framer-motion
+  // Smooth transition at 50px threshold
   useMotionValueEvent(scrollY, "change", (latest) => {
     const scrolled = latest > 50;
     setIsScrolled(scrolled);
@@ -173,15 +174,22 @@ export function Navbar() {
       const element = document.getElementById(item.anchor);
       if (element) {
         // Use Lenis smooth scroll if available (preferred method)
+        // Offset accounts for navbar height (80px mobile, 96px desktop)
+        const navHeight = window.innerWidth >= 768 ? 96 : 80;
         if (lenis) {
           lenis.scrollTo(element, {
-            offset: -80,
+            offset: -navHeight,
             duration: 1.5,
             easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
           });
         } else {
-          // Fallback to native smooth scroll
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Fallback to native smooth scroll with offset
+          const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+          const offsetPosition = elementPosition - navHeight;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+          });
         }
         setIsOpen(false);
       } else {
@@ -190,10 +198,16 @@ export function Navbar() {
         setTimeout(() => {
           const el = document.getElementById(item.anchor!);
           if (el) {
+            const navHeight = window.innerWidth >= 768 ? 96 : 80;
             if (lenis) {
-              lenis.scrollTo(el, { offset: -80, duration: 1.5 });
+              lenis.scrollTo(el, { offset: -navHeight, duration: 1.5 });
             } else {
-              el.scrollIntoView({ behavior: "smooth", block: "start" });
+              const elementPosition = el.getBoundingClientRect().top + window.scrollY;
+              const offsetPosition = elementPosition - navHeight;
+              window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth"
+              });
             }
           }
         }, 100);
@@ -207,10 +221,11 @@ export function Navbar() {
     }
   }, [pathname, router, lenis]);
 
-  // Check if nav item is active (considering anchors on home page)
+  // Check if nav item is active (considering anchors on home page and route matching)
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
+    // For non-home pages, check if we're on the current route
     if (pathname !== "/") {
       setActiveSection(null);
       return;
@@ -225,40 +240,65 @@ export function Navbar() {
         }))
         .filter(s => s.element !== null);
 
-      if (sections.length === 0) return;
+      if (sections.length === 0) {
+        // If at top of page, set home as active
+        if (window.scrollY < 100) {
+          setActiveSection("home");
+        }
+        return;
+      }
 
       // Find the section currently in view
-      const scrollPosition = window.scrollY + 100; // Offset for navbar
+      // Use navbar height offset (80px for desktop, 64px for mobile)
+      const navHeight = window.innerWidth >= 768 ? 96 : 80;
+      const scrollPosition = window.scrollY + navHeight;
 
+      let activeId: string | null = null;
+
+      // Check sections from bottom to top to find the active one
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = sections[i];
         if (section.element) {
           const rect = section.element.getBoundingClientRect();
           const elementTop = rect.top + window.scrollY;
 
-          if (scrollPosition >= elementTop - 100) {
-            setActiveSection(section.id);
-            return;
+          if (scrollPosition >= elementTop - navHeight) {
+            activeId = section.id;
+            break;
           }
         }
       }
 
       // If at top, set home as active
       if (window.scrollY < 200) {
-        setActiveSection("home");
+        activeId = "home";
       }
+
+      setActiveSection(activeId);
     };
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname]);
+    // Use Lenis scroll event if available, otherwise use native scroll
+    if (lenis) {
+      lenis.on("scroll", handleScroll);
+      handleScroll(); // Initial check
+      return () => {
+        lenis.off("scroll", handleScroll);
+      };
+    } else {
+      handleScroll(); // Initial check
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, [pathname, lenis]);
 
   const isActive = (item: typeof navItems[0]) => {
-    if (item.path !== pathname) return false;
+    // For pages with anchors (home page sections)
     if (pathname === "/" && item.anchor) {
       return activeSection === item.anchor;
     }
+    // For regular pages, check if we're on that route
+    if (item.path !== pathname) return false;
+    // If it's a regular page route without anchor, it's active
     return pathname === item.path && !item.anchor;
   };
 
@@ -266,21 +306,23 @@ export function Navbar() {
     <>
       <motion.nav
         ref={navRef}
-        className="fixed top-0 left-0 right-0 z-[100] flex justify-between md:justify-center items-center px-4 md:px-6 py-4 md:py-6 pointer-events-none transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-[100] flex justify-between md:justify-center items-center px-4 md:px-8 py-3 md:py-4 pointer-events-none transition-all duration-300"
         initial={false}
         animate={{
           backgroundColor: isScrolled
-            ? `rgba(0, 0, 0, ${0.85 + scrollProgress * 0.1})`
+            ? `rgba(0, 0, 0, ${0.9})`
             : "rgba(0, 0, 0, 0)",
-          backdropFilter: isScrolled ? `blur(${10 + scrollProgress * 5}px)` : "blur(0px)",
+          backdropFilter: isScrolled ? "blur(12px)" : "blur(0px)",
           borderBottom: isScrolled
-            ? `1px solid rgba(255, 255, 255, ${0.05 + scrollProgress * 0.05})`
+            ? "1px solid rgba(255, 255, 255, 0.1)"
             : "1px solid transparent",
           boxShadow: isScrolled
-            ? `0 4px 20px rgba(0, 0, 0, ${0.3 + scrollProgress * 0.2})`
+            ? "0 4px 24px rgba(0, 0, 0, 0.5)"
             : "0 0 0 rgba(0, 0, 0, 0)",
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
+        role="navigation"
+        aria-label="Main navigation"
       >
         {/* Logo - Left side (Mobile & Desktop) */}
         <Link
@@ -297,26 +339,35 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-6 lg:gap-8 pointer-events-auto bg-black/50 backdrop-blur-md px-6 lg:px-8 py-3 rounded-full border border-white/10 shadow-lg">
+        <ul className="hidden md:flex items-center gap-6 lg:gap-8 pointer-events-auto bg-black/50 backdrop-blur-md px-6 lg:px-8 py-3 rounded-full border border-white/10 shadow-lg" role="menubar">
           {navItems.map((item) => {
             const active = isActive(item);
             return (
-              <li key={`${item.path}-${item.anchor || ""}`} className="relative">
+              <li key={`${item.path}-${item.anchor || ""}`} className="relative" role="none">
                 <Link
                   href={item.anchor ? `${item.path}#${item.anchor}` : item.path}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`text-xs font-bold uppercase tracking-widest transition-all duration-300 min-h-[44px] flex items-center px-3 py-2 rounded-md touch-manipulation ${
+                  className={`text-xs font-bold uppercase tracking-widest transition-all duration-300 min-h-[44px] flex items-center px-3 py-2 rounded-md touch-manipulation relative group focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2 focus:ring-offset-black ${
                     active
                       ? "text-[#ccff00]"
                       : "text-zinc-400 hover:text-white hover:bg-white/5"
                   }`}
+                  role="menuitem"
+                  aria-current={active ? "page" : undefined}
+                  aria-label={`Navigate to ${item.name}${item.anchor ? ` section` : ""}`}
                 >
                   {item.name}
+                  {/* Hover gradient underline effect */}
+                  <motion.div
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#ccff00] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                    initial={false}
+                  />
                 </Link>
+                {/* Active section indicator with animated underline */}
                 {active && (
                   <motion.div
-                    layoutId="nav-dot"
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#ccff00] shadow-[0_0_10px_#ccff00]"
+                    layoutId="nav-active-indicator"
+                    className="absolute -bottom-2 left-0 right-0 h-1 bg-[#ccff00] rounded-full shadow-[0_0_12px_#ccff00]"
                     initial={false}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
@@ -352,8 +403,13 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 z-[95] bg-black/70 backdrop-blur-md"
+              className="fixed inset-0 z-[98] bg-black/80 backdrop-blur-xl"
               onClick={handleMenuToggle}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setIsOpen(false);
+                }
+              }}
               aria-hidden="true"
             />
 
@@ -369,7 +425,14 @@ export function Navbar() {
                 stiffness: 300,
                 mass: 0.8
               }}
-              className="fixed inset-0 z-[90] bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col items-center justify-center overflow-y-auto"
+              className="fixed inset-0 z-[99] bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col items-center justify-center overflow-y-auto backdrop-blur-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="mobile-menu-title"
+              onClick={(e) => {
+                // Prevent closing when clicking inside the menu
+                e.stopPropagation();
+              }}
             >
               {/* Mobile Logo */}
               <motion.div
@@ -385,6 +448,9 @@ export function Navbar() {
               >
                 <AnimatedLogo isScrolled={false} />
               </motion.div>
+
+              {/* Mobile Menu Title (hidden but for accessibility) */}
+              <h2 id="mobile-menu-title" className="sr-only">Mobile Navigation Menu</h2>
 
               {/* Mobile Menu Items */}
               <nav className="flex flex-col gap-3 text-center w-full max-w-sm px-6" aria-label="Mobile navigation">
@@ -412,21 +478,30 @@ export function Navbar() {
                             triggerHaptic();
                             handleNavClick(e, item);
                           }}
-                          className={`block text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group ${
+                          className={`block text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2 focus:ring-offset-transparent ${
                             active
                               ? "text-[#ccff00] bg-[#ccff00]/15 shadow-[0_0_20px_rgba(204,255,0,0.3)]"
                               : "text-zinc-400 hover:text-white hover:bg-white/10"
                           }`}
                           aria-current={active ? "page" : undefined}
+                          aria-label={`Navigate to ${item.name}${item.anchor ? ` section` : ""}`}
                         >
-                          {/* Active indicator background */}
+                          {/* Active indicator background with animated underline */}
                           {active && (
-                            <motion.div
-                              layoutId="mobile-menu-active"
-                              className="absolute inset-0 bg-[#ccff00]/10 rounded-xl"
-                              initial={false}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            />
+                            <>
+                              <motion.div
+                                layoutId="mobile-menu-active-bg"
+                                className="absolute inset-0 bg-[#ccff00]/10 rounded-xl"
+                                initial={false}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                              <motion.div
+                                layoutId="mobile-menu-active-underline"
+                                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-[#ccff00] rounded-full shadow-[0_0_12px_#ccff00]"
+                                initial={false}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                            </>
                           )}
 
                           {/* Hover effect */}

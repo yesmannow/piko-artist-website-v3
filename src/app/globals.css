@@ -132,6 +132,38 @@
   .bg-gradient-radial {
     background: radial-gradient(circle, var(--tw-gradient-stops));
   }
+
+  /* CRT Flicker Animation */
+  @keyframes crt-flicker {
+    0%, 100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.02;
+    }
+  }
+
+  .crt-flicker {
+    animation: crt-flicker 0.1s infinite;
+    animation-delay: calc(var(--flicker-delay, 0) * 1s);
+  }
+
+  /* VHS Noise Animation */
+  @keyframes vhs-noise {
+    0% {
+      opacity: 0.08;
+    }
+    50% {
+      opacity: 0.12;
+    }
+    100% {
+      opacity: 0.08;
+    }
+  }
+
+  .vhs-noise {
+    animation: vhs-noise 0.15s infinite;
+  }
 }
 
 @layer utilities {
