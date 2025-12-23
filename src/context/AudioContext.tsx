@@ -13,6 +13,8 @@ interface AudioContextType {
   skipPrevious: () => void;
   volume: number;
   setVolume: (volume: number) => void;
+  isMuted: boolean;
+  toggleMute: () => void;
   progress: number;
   setProgress: (progress: number) => void;
   seek: (time: number) => void;
@@ -25,9 +27,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<MediaItem | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const previousVolumeRef = useRef<number>(1);
 
   const togglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
@@ -90,12 +94,30 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     return coverArt.startsWith("/");
   };
 
+  // Toggle mute
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+
+    if (isMuted) {
+      // Unmute: restore previous volume
+      setVolume(previousVolumeRef.current);
+      audioRef.current.volume = previousVolumeRef.current;
+      setIsMuted(false);
+    } else {
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = volume;
+      setVolume(0);
+      audioRef.current.volume = 0;
+      setIsMuted(true);
+    }
+  };
+
   // Sync volume with audio element
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && !isMuted) {
       audioRef.current.volume = volume;
     }
-  }, [volume]);
+  }, [volume, isMuted]);
 
   // MediaSession API integration for lock screen controls
   useEffect(() => {
@@ -159,6 +181,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         skipPrevious,
         volume,
         setVolume,
+        isMuted,
+        toggleMute,
         progress,
         setProgress,
         seek,

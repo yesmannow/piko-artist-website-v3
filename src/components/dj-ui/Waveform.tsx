@@ -1,0 +1,103 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import WaveSurfer from "wavesurfer.js";
+
+interface WaveformProps {
+  audioUrl: string;
+  progress: number; // 0-100
+  isPlaying: boolean;
+  onSeek: (time: number) => void;
+  height?: number;
+}
+
+export function Waveform({
+  audioUrl,
+  progress,
+  isPlaying,
+  onSeek,
+  height = 60,
+}: WaveformProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const isSeekingRef = useRef(false);
+
+  // Initialize WaveSurfer
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const wavesurfer = WaveSurfer.create({
+      container: containerRef.current,
+      waveColor: "#3f3f46", // Zinc 700 - unplayed
+      progressColor: "#ccff00", // Toxic Lime - played
+      cursorColor: "rgba(255, 255, 255, 0.3)", // Thin white cursor
+      barWidth: 2,
+      barGap: 1,
+      barRadius: 2,
+      height: height,
+      normalize: true,
+      interact: true,
+      dragToSeek: true,
+      backend: "WebAudio",
+      mediaControls: false,
+    });
+
+    wavesurferRef.current = wavesurfer;
+
+    // Load audio
+    wavesurfer.load(audioUrl);
+
+    // Handle ready state
+    wavesurfer.on("ready", () => {
+      setIsReady(true);
+    });
+
+    // Handle seek - sync with audio element
+    wavesurfer.on("seek", (seekProgress) => {
+      if (!wavesurferRef.current) return;
+      isSeekingRef.current = true;
+
+      // Get duration from wavesurfer and calculate time
+      const duration = wavesurferRef.current.getDuration();
+      if (duration) {
+        const time = seekProgress * duration;
+        onSeek(time);
+      }
+
+      // Reset flag after a short delay
+      setTimeout(() => {
+        isSeekingRef.current = false;
+      }, 200);
+    });
+
+    // Cleanup
+    return () => {
+      wavesurfer.destroy();
+    };
+  }, [audioUrl, onSeek, height]);
+
+  // Note: WaveSurfer is visualization-only, actual playback is handled by AudioContext
+  // We just sync the progress visualization
+
+  // Sync progress from audio element to waveform (but not when user is seeking)
+  useEffect(() => {
+    if (!wavesurferRef.current || !isReady || isSeekingRef.current) return;
+
+    // Convert progress (0-100) to seek position (0-1)
+    const seekPosition = progress / 100;
+    wavesurferRef.current.seekTo(seekPosition);
+  }, [progress, isReady]);
+
+  return (
+    <div
+      className="w-full"
+      style={{
+        boxShadow: "0 0 15px rgba(204, 255, 0, 0.1)",
+      }}
+    >
+      <div ref={containerRef} className="w-full" />
+    </div>
+  );
+}
+

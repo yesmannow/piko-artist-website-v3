@@ -33,7 +33,7 @@
     "tailwind-merge": "^2.6.0",
     "three": "^0.182.0",
     "vaul": "^1.1.2",
-    "wavesurfer.js": "^7.8.10"
+    "wavesurfer.js": "^7.12.1"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.14.7",
