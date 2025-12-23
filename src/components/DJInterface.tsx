@@ -5,9 +5,15 @@ import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
 import { tracks } from "@/lib/data";
-import { HelpCircle, ArrowUpDown, Filter, X } from "lucide-react";
+import { HelpCircle, ArrowUpDown, Filter, X, ExternalLink } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { Drawer } from "vaul";
+import { useHaptic } from "@/hooks/useHaptic";
+import { Knob } from "./dj-ui/Knob";
+import { DrawerAudioMeters } from "./dj-ui/DrawerAudioMeters";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -19,8 +25,25 @@ const DISTORTION_CURVE_SAMPLES = 44100;
 // Safety cap for feedback loop stability
 const FX_DELAY_FEEDBACK_MAX = 0.9;
 
+// Helper function to check if coverArt is an image path
+const isImagePath = (coverArt: string): boolean => {
+  return coverArt.startsWith("/");
+};
+
+// Track-specific settings interface
+interface TrackSettings {
+  volume: number; // 0-100, default 100
+  loop: boolean; // default false
+  fxPreset: {
+    filter: number; // 0-1
+    delay: number; // 0-1
+    reverb: number; // 0-1
+  };
+}
+
 export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
+  const triggerHaptic = useHaptic();
 
   // Deck A state
   const [deckAData, setDeckAData] = useState<typeof tracks[0] | null>(null);
@@ -489,6 +512,59 @@ export function DJInterface() {
   const [draggedTrack, setDraggedTrack] = useState<typeof tracks[0] | null>(null);
   const [dragOverDeck, setDragOverDeck] = useState<"A" | "B" | null>(null);
 
+  // Track drawer state
+  const [selectedTrack, setSelectedTrack] = useState<typeof tracks[0] | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Track-specific settings (per-track UI state)
+  const [trackSettings, setTrackSettings] = useState<Map<string, TrackSettings>>(new Map());
+
+  // Get or create default settings for a track
+  const getTrackSettings = useCallback((trackId: string): TrackSettings => {
+    if (!trackSettings.has(trackId)) {
+      const defaultSettings: TrackSettings = {
+        volume: 100,
+        loop: false,
+        fxPreset: {
+          filter: 0,
+          delay: 0,
+          reverb: 0,
+        },
+      };
+      setTrackSettings((prev) => new Map(prev).set(trackId, defaultSettings));
+      return defaultSettings;
+    }
+    return trackSettings.get(trackId)!;
+  }, [trackSettings]);
+
+  // Update track settings
+  const updateTrackSettings = useCallback((trackId: string, updates: Partial<TrackSettings>) => {
+    setTrackSettings((prev) => {
+      const newMap = new Map(prev);
+      const current = newMap.get(trackId) || {
+        volume: 100,
+        loop: false,
+        fxPreset: { filter: 0, delay: 0, reverb: 0 },
+      };
+      newMap.set(trackId, { ...current, ...updates });
+      return newMap;
+    });
+  }, []);
+
+  // Artwork lightbox state
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Handle ESC key to close lightbox
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isLightboxOpen) {
+        setIsLightboxOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isLightboxOpen]);
+
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -626,12 +702,64 @@ export function DJInterface() {
     setDraggedTrack(track);
     e.dataTransfer.setData("track", JSON.stringify(track));
     e.dataTransfer.effectAllowed = "move";
-    // Create a custom drag image
-    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
-    dragImage.style.opacity = "0.8";
+    // Create a custom drag image with cover art
+    const dragImage = document.createElement("div");
+    dragImage.style.width = "120px";
+    dragImage.style.height = "120px";
+    dragImage.style.borderRadius = "8px";
+    dragImage.style.overflow = "hidden";
+    dragImage.style.border = "2px solid #00ff00";
     dragImage.style.transform = "rotate(5deg)";
+    dragImage.style.opacity = "0.9";
+    dragImage.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.5)";
+    dragImage.style.background = "#1a1a1a";
+    dragImage.style.position = "absolute";
+    dragImage.style.top = "-1000px";
+
+    // Add cover art to drag image
+    if (isImagePath(track.coverArt)) {
+      const img = document.createElement("img");
+      img.src = track.coverArt;
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+      dragImage.appendChild(img);
+    } else {
+      // Gradient fallback
+      const gradientParts = track.coverArt.replace("from-", "").replace("to-", "").split("-to-");
+      if (gradientParts.length === 2) {
+        dragImage.style.background = `linear-gradient(to right, var(--tw-gradient-stops))`;
+      } else {
+        dragImage.style.background = "#1a1a1a";
+      }
+    }
+
+    // Add track title overlay
+    const titleOverlay = document.createElement("div");
+    titleOverlay.style.position = "absolute";
+    titleOverlay.style.bottom = "0";
+    titleOverlay.style.left = "0";
+    titleOverlay.style.right = "0";
+    titleOverlay.style.background = "linear-gradient(to top, rgba(0,0,0,0.8), transparent)";
+    titleOverlay.style.padding = "8px";
+    titleOverlay.style.fontSize = "10px";
+    titleOverlay.style.fontWeight = "bold";
+    titleOverlay.style.color = "#fff";
+    titleOverlay.style.textTransform = "uppercase";
+    titleOverlay.style.textAlign = "center";
+    titleOverlay.style.whiteSpace = "nowrap";
+    titleOverlay.style.overflow = "hidden";
+    titleOverlay.style.textOverflow = "ellipsis";
+    titleOverlay.textContent = track.title;
+    dragImage.appendChild(titleOverlay);
+
     document.body.appendChild(dragImage);
-    e.dataTransfer.setDragImage(dragImage, e.clientX - e.currentTarget.getBoundingClientRect().left, e.clientY - e.currentTarget.getBoundingClientRect().top);
+
+    // Set drag image offset to center
+    const offsetX = 60; // Half of drag image width
+    const offsetY = 60; // Half of drag image height
+    e.dataTransfer.setDragImage(dragImage, offsetX, offsetY);
+
     setTimeout(() => {
       if (document.body.contains(dragImage)) {
         document.body.removeChild(dragImage);
@@ -795,7 +923,7 @@ export function DJInterface() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-700 transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-gray-700 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff00] focus-visible:ring-offset-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     aria-label="Clear search"
                   >
                     <X className="w-4 h-4 text-gray-400" />
@@ -835,7 +963,7 @@ export function DJInterface() {
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  className="px-2 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs hover:border-gray-600 transition-colors"
+                  className="px-2 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs hover:border-gray-600 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff00] focus-visible:ring-offset-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label={`Sort ${sortOrder === "asc" ? "descending" : "ascending"}`}
                   title={sortOrder === "asc" ? "Sort Descending" : "Sort Ascending"}
                 >
@@ -851,40 +979,112 @@ export function DJInterface() {
               </div>
             ) : (
               audioTracks.map((track) => (
-                <div
+                <motion.div
                   key={track.id}
                   draggable={isMounted}
-                  onDragStart={handleDragStart(track)}
-                  onDragEnd={handleDragEnd}
-                  className={`flex flex-col gap-2 p-2 bg-[#1a1a1a] rounded border transition-all cursor-grab active:cursor-grabbing ${
+                  onDragStart={(e) => {
+                    const dragEvent = e as unknown as React.DragEvent;
+                    handleDragStart(track)(dragEvent);
+                  }}
+                  onDragEnd={() => {
+                    handleDragEnd();
+                  }}
+                  onClick={(e) => {
+                    // Only open drawer if clicking the card body, not A/B buttons
+                    if ((e.target as HTMLElement).closest('button') === null) {
+                      triggerHaptic();
+                      setSelectedTrack(track);
+                      setIsDrawerOpen(true);
+                    }
+                  }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileFocus={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className={`group relative flex flex-col gap-2.5 p-2.5 bg-[#1a1a1a] rounded-lg border transition-all cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-[#00ff00] focus-within:ring-offset-2 focus-within:ring-offset-[#0a0a0a] ${
                     draggedTrack?.id === track.id
-                      ? "opacity-50 scale-95 border-[#00ff00]"
-                      : "border-gray-800 hover:border-gray-600"
+                      ? "opacity-50 scale-95 border-[#00ff00] cursor-grabbing"
+                      : "border-gray-800 hover:border-gray-600 hover:shadow-[0_0_12px_rgba(0,255,0,0.15)]"
                   }`}
+                  style={{ cursor: draggedTrack?.id === track.id ? 'grabbing' : 'pointer' }}
+                  tabIndex={0}
                 >
-                  <div className="text-xs font-barlow uppercase text-gray-400 truncate" title={track.title}>
+                  {/* Cover Art Thumbnail */}
+                  <div className="relative aspect-square w-full overflow-hidden rounded bg-[#0a0a0a]">
+                    {isImagePath(track.coverArt) ? (
+                      <Image
+                        src={track.coverArt}
+                        alt={track.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                      />
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+                    )}
+                  </div>
+
+                  {/* Track Title */}
+                  <div className="text-xs font-barlow uppercase text-gray-400 truncate px-0.5" title={track.title}>
                     {track.title}
                   </div>
-                  <div className="text-[10px] font-barlow text-gray-500 truncate" title={track.artist}>
-                    {track.artist}
+
+                  {/* Hover/Focus Reveal Panel */}
+                  <div className="absolute inset-0 bg-[#1a1a1a]/95 backdrop-blur-sm rounded-lg border border-gray-700 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-2.5 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                    <div className="flex flex-col gap-1">
+                      {/* Artist Name */}
+                      <div className="text-[10px] font-barlow text-gray-300 truncate" title={track.artist}>
+                        {track.artist}
+                      </div>
+
+                      {/* Track Length (placeholder - not in data) */}
+                      <div className="text-[9px] font-barlow text-gray-500">
+                        —
+                      </div>
+                    </div>
+
+                    {/* External Link Button */}
+                    <a
+                      href={`https://open.spotify.com/search/${encodeURIComponent(track.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic();
+                      }}
+                      className="self-end p-2 rounded bg-[#2a2a2a] hover:bg-[#00ff00] text-gray-400 hover:text-black transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff00] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
+                      aria-label={`Open external link for ${track.title}`}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   </div>
-                  <div className="flex gap-2">
+
+                  {/* A/B Load Buttons */}
+                  <div className="flex gap-2 z-10">
                     <button
-                      onClick={() => loadTrackToDeckA(track)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic();
+                        loadTrackToDeckA(track);
+                      }}
                       aria-label={`Load ${track.title} to Deck A`}
-                      className="flex-1 px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#00d9ff] text-gray-400 hover:text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#00d9ff]"
+                      className="flex-1 px-2 py-1.5 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#00d9ff] text-gray-400 hover:text-white rounded transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d9ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] min-h-[44px] active:scale-95"
                     >
                       A
                     </button>
                     <button
-                      onClick={() => loadTrackToDeckB(track)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic();
+                        loadTrackToDeckB(track);
+                      }}
                       aria-label={`Load ${track.title} to Deck B`}
-                      className="flex-1 px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#ff00d9] text-gray-400 hover:text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#ff00d9]"
+                      className="flex-1 px-2 py-1.5 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#ff00d9] text-gray-400 hover:text-white rounded transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff00d9] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] min-h-[44px] active:scale-95"
                     >
                       B
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))
             )}
           </div>
@@ -895,6 +1095,350 @@ export function DJInterface() {
             {" • Drag tracks to decks or click A/B buttons"}
           </div>
         </div>
+
+        {/* Track Drawer */}
+        <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 transition-opacity duration-300" />
+            <Drawer.Content
+              className="border-t-2 border-[#00ff00] flex flex-col rounded-t-[10px] h-[85vh] md:h-[70vh] mt-24 fixed bottom-0 left-0 right-0 z-50 focus:outline-none bg-[#0a0a0a] transition-transform duration-300 ease-out"
+              style={{
+                backgroundImage: `
+                  repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.03) 2px,
+                    rgba(0, 0, 0, 0.03) 4px
+                  )
+                `,
+              }}
+            >
+              {/* Drag Handle */}
+              <div className="relative w-12 h-1.5 mx-auto mb-6 mt-4">
+                <div
+                  className="w-full h-full rounded-full"
+                  style={{
+                    background: "linear-gradient(90deg, #00ff00 0%, #00ff00 25%, #000 25%, #000 50%, #00ff00 50%, #00ff00 75%, #000 75%, #000 100%)",
+                    boxShadow: "0 0 8px rgba(0, 255, 0, 0.5)",
+                  }}
+                />
+              </div>
+
+              {selectedTrack && (() => {
+                const settings = getTrackSettings(selectedTrack.id);
+                return (
+                  <div className="flex-1 overflow-y-auto px-6 pb-8">
+                    {/* Draggable Track Header (Cover + Title + Artist) */}
+                    <div
+                      draggable={isMounted && selectedTrack.type === "audio"}
+                      onDragStart={(e) => {
+                        if (selectedTrack.type === "audio") {
+                          handleDragStart(selectedTrack)(e as unknown as React.DragEvent);
+                        }
+                      }}
+                      onDragEnd={handleDragEnd}
+                      className={`mb-6 cursor-grab active:cursor-grabbing transition-all ${
+                        draggedTrack?.id === selectedTrack.id ? "opacity-50" : ""
+                      }`}
+                    >
+                      {/* Large Cover Art - Clickable for Lightbox */}
+                      <div
+                        className="relative aspect-square w-full max-w-sm mx-auto mb-4 rounded-lg overflow-hidden border-2 border-gray-800 cursor-pointer hover:border-[#00ff00] transition-colors"
+                        onClick={() => {
+                          // Only open lightbox if not dragging
+                          if (!draggedTrack && isImagePath(selectedTrack.coverArt)) {
+                            triggerHaptic();
+                            setIsLightboxOpen(true);
+                          }
+                        }}
+                        role={isImagePath(selectedTrack.coverArt) ? "button" : undefined}
+                        tabIndex={isImagePath(selectedTrack.coverArt) ? 0 : undefined}
+                        onKeyDown={(e) => {
+                          if (isImagePath(selectedTrack.coverArt) && (e.key === "Enter" || e.key === " ")) {
+                            e.preventDefault();
+                            triggerHaptic();
+                            setIsLightboxOpen(true);
+                          }
+                        }}
+                        aria-label={isImagePath(selectedTrack.coverArt) ? "Click to view full-size artwork" : undefined}
+                      >
+                        {isImagePath(selectedTrack.coverArt) ? (
+                          <>
+                            <Image
+                              src={selectedTrack.coverArt}
+                              alt={selectedTrack.title}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 400px"
+                            />
+                            <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <div className="opacity-0 hover:opacity-100 transition-opacity text-white text-sm font-barlow uppercase tracking-wider">
+                                Click to Zoom
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className={`w-full h-full bg-gradient-to-r ${selectedTrack.coverArt}`} />
+                        )}
+                      </div>
+
+                      {/* Track Title */}
+                      <h2 className="font-barlow text-2xl md:text-3xl font-bold text-white mb-2 text-center uppercase tracking-wider px-4">
+                        {selectedTrack.title}
+                      </h2>
+
+                      {/* Artist */}
+                      <p className="font-barlow uppercase tracking-wider text-base md:text-lg text-gray-400 mb-8 text-center px-4">
+                        {selectedTrack.artist}
+                      </p>
+
+                      {/* Drag Hint */}
+                      {isMounted && selectedTrack.type === "audio" && (
+                        <p className="text-xs font-barlow text-gray-500 text-center mt-2">
+                          Drag to Deck A or B
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Track-Specific Controls */}
+                    <div className="max-w-2xl mx-auto space-y-4 mb-8">
+                      {/* Track Volume */}
+                      <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-barlow uppercase text-gray-300 tracking-wider">
+                            Track Volume
+                          </label>
+                          <span className="text-sm font-barlow text-[#00ff00] font-bold">
+                            {Math.round(settings.volume)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={settings.volume}
+                              onChange={(e) => {
+                                updateTrackSettings(selectedTrack.id, {
+                                  volume: parseInt(e.target.value, 10),
+                                });
+                              }}
+                              className="w-full h-2 bg-[#0a0a0a] rounded-lg appearance-none cursor-pointer accent-[#00ff00]"
+                              style={{
+                                background: `linear-gradient(to right, #00ff00 0%, #00ff00 ${settings.volume}%, #0a0a0a ${settings.volume}%, #0a0a0a 100%)`,
+                              }}
+                              aria-label="Track volume"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Loop Toggle */}
+                      <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 p-4">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-barlow uppercase text-gray-300 tracking-wider">
+                            Loop
+                          </label>
+                          <button
+                            onClick={() => {
+                              triggerHaptic();
+                              updateTrackSettings(selectedTrack.id, {
+                                loop: !settings.loop,
+                              });
+                            }}
+                            className={`relative w-14 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00ff00] focus:ring-offset-2 focus:ring-offset-[#1a1a1a] ${
+                              settings.loop ? "bg-[#00ff00]" : "bg-gray-700"
+                            }`}
+                            aria-label={settings.loop ? "Disable loop" : "Enable loop"}
+                          >
+                            <motion.div
+                              className="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md"
+                              animate={{
+                                x: settings.loop ? 28 : 0,
+                              }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Audio Levels */}
+                      <DrawerAudioMeters analyser={analyserRef.current} />
+
+                      {/* Track FX Preset */}
+                      <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 p-4">
+                        <div className="mb-3">
+                          <label className="text-sm font-barlow uppercase text-gray-300 tracking-wider">
+                            Track FX Preset
+                          </label>
+                          <p className="text-xs font-barlow text-gray-500 mt-1">
+                            Applies when loaded to a deck
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="flex flex-col items-center gap-2">
+                            <Knob
+                              value={settings.fxPreset.filter}
+                              onChange={(value) => {
+                                updateTrackSettings(selectedTrack.id, {
+                                  fxPreset: {
+                                    ...settings.fxPreset,
+                                    filter: value,
+                                  },
+                                });
+                              }}
+                              label="FILTER"
+                              min={0}
+                              max={1}
+                              size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
+                            />
+                          </div>
+                          <div className="flex flex-col items-center gap-2">
+                            <Knob
+                              value={settings.fxPreset.delay}
+                              onChange={(value) => {
+                                updateTrackSettings(selectedTrack.id, {
+                                  fxPreset: {
+                                    ...settings.fxPreset,
+                                    delay: value,
+                                  },
+                                });
+                              }}
+                              label="DELAY"
+                              min={0}
+                              max={1}
+                              size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
+                            />
+                          </div>
+                          <div className="flex flex-col items-center gap-2">
+                            <Knob
+                              value={settings.fxPreset.reverb}
+                              onChange={(value) => {
+                                updateTrackSettings(selectedTrack.id, {
+                                  fxPreset: {
+                                    ...settings.fxPreset,
+                                    reverb: value,
+                                  },
+                                });
+                              }}
+                              label="REVERB"
+                              min={0}
+                              max={1}
+                              size={typeof window !== "undefined" && window.innerWidth < 768 ? 60 : 50}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-4 max-w-md mx-auto">
+                    {/* Load to Deck A Button */}
+                    <Drawer.Close asChild>
+                      <button
+                        onClick={() => {
+                          triggerHaptic();
+                          loadTrackToDeckA(selectedTrack);
+                        }}
+                        className="w-full px-6 py-4 bg-[#00d9ff] text-black font-barlow font-bold text-lg uppercase tracking-wider rounded-lg border-2 border-[#00d9ff] shadow-[0_0_20px_rgba(0,217,255,0.3)] flex items-center justify-center gap-3 hover:bg-[#00d9ff]/90 hover:shadow-[0_0_25px_rgba(0,217,255,0.4)] transition-all duration-200 min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d9ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a] active:scale-95"
+                        aria-label={`Load ${selectedTrack.title} to Deck A`}
+                      >
+                        Load to Deck A
+                      </button>
+                    </Drawer.Close>
+
+                    {/* Load to Deck B Button */}
+                    <Drawer.Close asChild>
+                      <button
+                        onClick={() => {
+                          triggerHaptic();
+                          loadTrackToDeckB(selectedTrack);
+                        }}
+                        className="w-full px-6 py-4 bg-[#ff00d9] text-black font-barlow font-bold text-lg uppercase tracking-wider rounded-lg border-2 border-[#ff00d9] shadow-[0_0_20px_rgba(255,0,217,0.3)] flex items-center justify-center gap-3 hover:bg-[#ff00d9]/90 hover:shadow-[0_0_25px_rgba(255,0,217,0.4)] transition-all duration-200 min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff00d9] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a] active:scale-95"
+                        aria-label={`Load ${selectedTrack.title} to Deck B`}
+                      >
+                        Load to Deck B
+                      </button>
+                    </Drawer.Close>
+
+                    {/* External Link Button */}
+                    <a
+                      href={`https://open.spotify.com/search/${encodeURIComponent(selectedTrack.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => triggerHaptic()}
+                      className="w-full px-6 py-4 bg-[#2a2a2a] text-white font-barlow font-bold text-lg uppercase tracking-wider rounded-lg border-2 border-gray-700 flex items-center justify-center gap-3 hover:bg-[#1a1a1a] hover:border-gray-600 transition-all duration-200 min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff00] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a] active:scale-95"
+                      aria-label={`Open external link for ${selectedTrack.title}`}
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                      Stream on Spotify
+                    </a>
+                  </div>
+                  </div>
+                );
+              })()}
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+
+        {/* Artwork Lightbox */}
+        <AnimatePresence>
+          {isLightboxOpen && selectedTrack && isImagePath(selectedTrack.coverArt) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              onClick={() => setIsLightboxOpen(false)}
+            >
+              {/* Backdrop */}
+              <motion.div
+                initial={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(0, 0, 0, 0)" }}
+                animate={{ backdropFilter: "blur(8px)", backgroundColor: "rgba(0, 0, 0, 0.8)" }}
+                exit={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(0, 0, 0, 0)" }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0"
+              />
+
+              {/* Close Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic();
+                  setIsLightboxOpen(false);
+                }}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#00ff00] min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Close lightbox"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Image Container */}
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="relative max-w-[90vw] max-h-[90vh] w-full h-full flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative w-full h-full max-w-4xl max-h-[90vh]">
+                  <Image
+                    src={selectedTrack.coverArt}
+                    alt={selectedTrack.title}
+                    fill
+                    className="object-contain"
+                    sizes="90vw"
+                    priority
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* FX Rack */}
         <div data-tour="fx-unit">
