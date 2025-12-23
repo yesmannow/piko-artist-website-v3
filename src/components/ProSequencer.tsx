@@ -6,18 +6,15 @@ import { Play, Square, Share2, Check, Circle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getKit, type KitType, type Pad } from "@/lib/audio-kits";
 import { MPCScreen } from "@/components/MPCScreen";
-import {
-  AudioEngine,
-  LookaheadScheduler,
-  getAudioEngine,
-  disposeAudioEngine,
-} from "@/lib/audio-engine";
+import { createDistortionCurve } from "@/lib/audio-engine";
 
 const STEPS = 16;
 const DEFAULT_BPM = 120;
 const MIN_BPM = 60;
 const MAX_BPM = 200;
 const BARS_TO_RECORD = 4; // 4 bars = 64 steps (16 steps per bar)
+const LOOKAHEAD_TIME = 0.1; // seconds
+const INITIAL_OFFSET = 0.05; // seconds to nudge first scheduled note
 
 type Mode = "sequencer" | "remix";
 
@@ -67,6 +64,8 @@ export function ProSequencer() {
   const [mutedPads, setMutedPads] = useState<Set<string>>(new Set()); // Muted pads in remix mode
   const [buffersLoaded, setBuffersLoaded] = useState(false);
   const recordingStepCountRef = useRef(0);
+  const nextNoteTimeRef = useRef(0);
+  const rafIdRef = useRef<number | null>(null);
 
   // Get current kit and pads
   const currentKit = getKit(selectedKit);
@@ -92,7 +91,7 @@ export function ProSequencer() {
 
   // Remix mode: Track which loops are playing
   const [activeLoops, setActiveLoops] = useState<Set<string>>(new Set());
-  const loopAudioRefs = useRef<Record<string, HTMLAudioElement>>({});
+  const loopSourcesRef = useRef<Record<string, AudioBufferSourceNode | null>>({});
   const loopGainRefs = useRef<Record<string, GainNode>>({});
 
   // Refs for accessing state values in scheduler callbacks without triggering re-renders
@@ -117,85 +116,109 @@ export function ProSequencer() {
   const [currentStep, setCurrentStep] = useState(0);
   const [bpm, setBpm] = useState(DEFAULT_BPM);
 
-  // Audio Engine refs
-  const audioEngineRef = useRef<AudioEngine | null>(null);
-  const schedulerRef = useRef<LookaheadScheduler | null>(null);
+  // Web Audio refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const filterNodeRef = useRef<BiquadFilterNode | null>(null);
+  const waveShaperRef = useRef<WaveShaperNode | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const buffersRef = useRef<Record<string, AudioBuffer>>({});
 
-  // Initialize Audio Engine
+  // Initialize Web Audio graph
   useEffect(() => {
-    const engine = getAudioEngine();
-    audioEngineRef.current = engine;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
 
-    // Create scheduler with callbacks
-    const scheduler = engine.createScheduler({
-      // Called when a step should be played (with precise audio timing)
-      onStep: (stepIndex, time) => {
-        const currentSteps = stepsRef.current;
-        const currentSpeed = speedRef.current;
-        const kit = getKit(selectedKit);
-        const baseRate = kit.playbackRate || 1.0;
+    const ctx = audioContextRef.current ?? new AudioContextClass();
+    audioContextRef.current = ctx;
 
-        // Play sounds for this step
-        kit.pads.forEach((pad) => {
-          const padSteps = currentSteps[pad.id] || [];
-          if (padSteps[stepIndex]) {
-            const buffer = engine.bufferManager.getBuffer(pad.audioFile);
-            if (buffer) {
-              engine.playBuffer(buffer, {
-                time,
-                playbackRate: baseRate * currentSpeed,
-              });
-            }
-          }
-        });
+    const filterNode = ctx.createBiquadFilter();
+    filterNode.type = "lowpass";
+    filterNode.frequency.value = 22050;
 
-        // Recording logic
-        if (isRecordingRef.current) {
-          recordingStepCountRef.current += 1;
-          if (recordingStepCountRef.current >= BARS_TO_RECORD * STEPS) {
-            setIsRecording(false);
-            setShowRecordModal(true);
-            recordingStepCountRef.current = 0;
-          }
-        }
-      },
-      // Called for visual updates (synced with audio but runs on main thread)
-      onStepVisual: (stepIndex) => {
-        setCurrentStep(stepIndex);
-      },
-    });
+    const waveShaper = ctx.createWaveShaper();
+    waveShaper.curve = createDistortionCurve(grit) as Float32Array<ArrayBuffer>;
+    waveShaper.oversample = "4x";
 
-    schedulerRef.current = scheduler;
-    scheduler.setBpm(bpm);
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = 1.0;
+
+    // Source -> Gain -> Filter -> WaveShaper -> Master -> Destination
+    filterNode.connect(waveShaper);
+    waveShaper.connect(masterGain);
+    masterGain.connect(ctx.destination);
+
+    filterNodeRef.current = filterNode;
+    waveShaperRef.current = waveShaper;
+    masterGainRef.current = masterGain;
 
     return () => {
-      scheduler.stop();
-      disposeAudioEngine();
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      Object.values(loopSourcesRef.current).forEach((src) => {
+        try {
+          src?.stop();
+        } catch {
+          /* noop */
+        }
+      });
+      loopSourcesRef.current = {};
+      loopGainRefs.current = {};
+      ctx.close();
     };
-    // Only run on mount/unmount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update scheduler BPM when it changes
-  useEffect(() => {
-    if (schedulerRef.current) {
-      schedulerRef.current.setBpm(bpm);
+  const resumeAudioContext = useCallback(async () => {
+    const ctx = audioContextRef.current;
+    if (!ctx) return null;
+    if (ctx.state === "suspended") {
+      await ctx.resume();
     }
-  }, [bpm]);
+    return ctx;
+  }, []);
+
+  const stopAllLoops = useCallback(() => {
+    Object.entries(loopSourcesRef.current).forEach(([padId, source]) => {
+      if (source) {
+        try {
+          source.stop();
+        } catch {
+          /* noop */
+        }
+        source.disconnect();
+      }
+      const gainNode = loopGainRefs.current[padId];
+      gainNode?.disconnect();
+      delete loopSourcesRef.current[padId];
+      delete loopGainRefs.current[padId];
+    });
+    setActiveLoops(new Set());
+  }, []);
 
   // Load audio buffers for current kit
   useEffect(() => {
     const loadBuffers = async () => {
-      const engine = audioEngineRef.current;
-      if (!engine) return;
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
 
       setBuffersLoaded(false);
-
-      // Get all audio URLs for current kit
       const urls = pads.map((pad) => pad.audioFile);
 
       try {
-        await engine.bufferManager.preloadBuffers(urls);
+        await Promise.all(
+          urls.map(async (url) => {
+            if (buffersRef.current[url]) return;
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch audio: ${url}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            const decoded = await ctx.decodeAudioData(arrayBuffer);
+            buffersRef.current[url] = decoded;
+          })
+        );
         setBuffersLoaded(true);
       } catch (error) {
         console.error("Error loading audio buffers:", error);
@@ -207,110 +230,133 @@ export function ProSequencer() {
 
   // Update effects when parameters change
   useEffect(() => {
-    const engine = audioEngineRef.current;
-    if (engine) {
-      engine.setGrit(grit);
+    const waveShaper = waveShaperRef.current;
+    if (waveShaper) {
+      waveShaper.curve = createDistortionCurve(grit) as Float32Array<ArrayBuffer>;
     }
   }, [grit]);
 
   useEffect(() => {
-    const engine = audioEngineRef.current;
-    if (engine) {
-      engine.setFilter(filter);
+    const filterNode = filterNodeRef.current;
+    if (filterNode) {
+      const minFreq = 200;
+      const maxFreq = 22000;
+      const normalized = filter / 100;
+      const frequency = minFreq * Math.pow(maxFreq / minFreq, normalized);
+      filterNode.frequency.value = frequency;
     }
   }, [filter]);
 
-  // Handle play/stop
-  useEffect(() => {
-    const scheduler = schedulerRef.current;
-    const engine = audioEngineRef.current;
+  const scheduleStep = useCallback(
+    (stepIndex: number, time: number) => {
+      const ctx = audioContextRef.current;
+      const filterNode = filterNodeRef.current;
+      if (!ctx || !filterNode) return;
 
-    if (!scheduler || !engine) return;
+      const currentSteps = stepsRef.current;
+      const currentSpeed = speedRef.current;
+      const baseRate = currentKit.playbackRate || 1.0;
 
-    if (isPlaying && mode === "sequencer") {
-      // Resume audio context if needed
-      engine.resume().then(() => {
-        scheduler.start();
+      pads.forEach((pad) => {
+        const padSteps = currentSteps[pad.id] || [];
+        if (!padSteps[stepIndex]) return;
+
+        const buffer = buffersRef.current[pad.audioFile];
+        if (!buffer) return;
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = baseRate * currentSpeed;
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 1.0;
+
+        source.connect(gainNode);
+        gainNode.connect(filterNode);
+        source.start(time);
       });
-    } else {
-      scheduler.stop();
-      scheduler.reset();
-      setCurrentStep(0);
 
+      if (isRecordingRef.current) {
+        recordingStepCountRef.current += 1;
+        if (recordingStepCountRef.current >= BARS_TO_RECORD * STEPS) {
+          setIsRecording(false);
+          setShowRecordModal(true);
+          recordingStepCountRef.current = 0;
+        }
+      }
+    },
+    [currentKit, pads]
+  );
+
+  // Lookahead scheduler using requestAnimationFrame
+  useEffect(() => {
+    const ctx = audioContextRef.current;
+    if (!ctx || !filterNodeRef.current) return;
+
+    if (!(isPlaying && mode === "sequencer")) {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      nextNoteTimeRef.current = ctx.currentTime + INITIAL_OFFSET;
+      currentStepRef.current = 0;
+      setCurrentStep(0);
       if (isRecording) {
         setIsRecording(false);
         recordingStepCountRef.current = 0;
       }
+      return;
+    }
 
-      // Stop all loops in remix mode
-      if (mode === "remix") {
-        activeLoops.forEach((padId) => {
-          const audio = loopAudioRefs.current[padId];
-          if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
+    let isMounted = true;
+    const secondsPerStep = 60 / (bpm * 4);
+
+    const schedulerLoop = () => {
+      if (!isMounted) return;
+      const currentTime = ctx.currentTime;
+
+      while (nextNoteTimeRef.current < currentTime + LOOKAHEAD_TIME) {
+        const stepIndex = currentStepRef.current;
+        scheduleStep(stepIndex, nextNoteTimeRef.current);
+
+        const timeUntilStep = Math.max(0, (nextNoteTimeRef.current - currentTime) * 1000);
+        const visualStep = stepIndex;
+        setTimeout(() => {
+          if (isMounted && mode === "sequencer") {
+            setCurrentStep(visualStep);
           }
-        });
-        setActiveLoops(new Set());
+        }, timeUntilStep);
+
+        nextNoteTimeRef.current += secondsPerStep;
+        currentStepRef.current = (currentStepRef.current + 1) % STEPS;
       }
-    }
-  }, [isPlaying, mode, isRecording, activeLoops]);
 
-  // Load remix mode audio (uses HTMLAudioElement for looping)
-  useEffect(() => {
-    const engine = audioEngineRef.current;
-    if (!engine || mode !== "remix") return;
+      rafIdRef.current = requestAnimationFrame(schedulerLoop);
+    };
 
-    const currentLoopRefs = loopAudioRefs.current;
-
-    // Cleanup old refs
-    Object.values(currentLoopRefs).forEach((audio) => {
-      audio.pause();
-      audio.src = "";
-    });
-    Object.keys(currentLoopRefs).forEach((key) => delete currentLoopRefs[key]);
-    Object.keys(loopGainRefs.current).forEach((key) => delete loopGainRefs.current[key]);
-
-    // Only load for remix-compatible kits
-    if (selectedKit === "jardin" || selectedKit === "amor") {
-      pads.forEach((pad) => {
-        const audio = new Audio(pad.audioFile);
-        audio.loop = true;
-        audio.preload = "auto";
-        audio.playbackRate = (currentKit.playbackRate || 1.0) * speed;
-
-        try {
-          const source = engine.audioContext.createMediaElementSource(audio);
-          const gainNode = engine.audioContext.createGain();
-          gainNode.gain.value = mutedPads.has(pad.id) ? 0 : 1.0;
-
-          source.connect(gainNode);
-          gainNode.connect(engine.getInputNode());
-
-          loopGainRefs.current[pad.id] = gainNode;
-        } catch (error) {
-          console.error(`Error connecting loop audio for ${pad.name}:`, error);
-        }
-
-        currentLoopRefs[pad.id] = audio;
-      });
-    }
+    nextNoteTimeRef.current = ctx.currentTime + INITIAL_OFFSET;
+    currentStepRef.current = 0;
+    setCurrentStep(0);
+    rafIdRef.current = requestAnimationFrame(schedulerLoop);
 
     return () => {
-      Object.values(currentLoopRefs).forEach((audio) => {
-        audio.pause();
-        audio.src = "";
-      });
+      isMounted = false;
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
-  }, [selectedKit, mode, currentKit, pads, speed, mutedPads]);
+  }, [isPlaying, mode, bpm, scheduleStep, isRecording]);
 
   // Update loop playback rate when speed changes
   useEffect(() => {
     const baseRate = currentKit.playbackRate || 1.0;
     const targetRate = baseRate * speed;
 
-    Object.values(loopAudioRefs.current).forEach((audio) => {
-      audio.playbackRate = targetRate;
+    Object.values(loopSourcesRef.current).forEach((source) => {
+      if (source) {
+        source.playbackRate.value = targetRate;
+      }
     });
   }, [speed, currentKit]);
 
@@ -329,43 +375,75 @@ export function ProSequencer() {
     if (mode === "remix") {
       setCurrentStep(0);
       setIsRecording(false);
-      schedulerRef.current?.stop();
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     } else {
-      // Stop all loops when switching to sequencer mode
-      Object.values(loopAudioRefs.current).forEach((audio) => {
-        audio.pause();
-        audio.currentTime = 0;
-      });
-      setActiveLoops(new Set());
+      stopAllLoops();
     }
-  }, [mode]);
+  }, [mode, stopAllLoops]);
+
+  // Stop remix loops when transport stops
+  useEffect(() => {
+    if (!isPlaying && mode === "remix") {
+      stopAllLoops();
+    }
+  }, [isPlaying, mode, stopAllLoops]);
 
   // Remix mode: Toggle loop playback
   const toggleLoop = useCallback(async (padId: string) => {
-    const audio = loopAudioRefs.current[padId];
-    if (!audio) return;
+    if (mode !== "remix") return;
+    if (selectedKit !== "jardin" && selectedKit !== "amor") return;
 
-    const engine = audioEngineRef.current;
-    if (engine) {
-      await engine.resume();
-    }
+    const ctx = await resumeAudioContext();
+    if (!ctx || !filterNodeRef.current) return;
+
+    const pad = pads.find((p) => p.id === padId);
+    if (!pad) return;
+    const buffer = buffersRef.current[pad.audioFile];
+    if (!buffer) return;
+
+    const baseRate = currentKit.playbackRate || 1.0;
+    const startLoop = () => {
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      source.playbackRate.value = baseRate * speed;
+
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = mutedPads.has(padId) ? 0 : 1.0;
+
+      source.connect(gainNode);
+      gainNode.connect(filterNodeRef.current as BiquadFilterNode);
+      source.start(ctx.currentTime + 0.01);
+
+      loopSourcesRef.current[padId] = source;
+      loopGainRefs.current[padId] = gainNode;
+    };
 
     setActiveLoops((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(padId)) {
-        audio.pause();
-        audio.currentTime = 0;
+        const existing = loopSourcesRef.current[padId];
+        try {
+          existing?.stop();
+        } catch {
+          /* noop */
+        }
+        existing?.disconnect();
+        const gainNode = loopGainRefs.current[padId];
+        gainNode?.disconnect();
+        delete loopSourcesRef.current[padId];
+        delete loopGainRefs.current[padId];
         newSet.delete(padId);
       } else {
-        audio.currentTime = 0;
-        audio.play().catch((err) => {
-          console.error(`Error playing loop ${padId}:`, err);
-        });
+        startLoop();
         newSet.add(padId);
       }
       return newSet;
     });
-  }, []);
+  }, [mode, selectedKit, pads, currentKit, speed, mutedPads, resumeAudioContext]);
 
   // Toggle mute for a pad in remix mode
   const toggleMute = useCallback((padId: string) => {
@@ -381,29 +459,35 @@ export function ProSequencer() {
   }, []);
 
   // Start recording
-  const startRecording = useCallback(() => {
+  const startRecording = useCallback(async () => {
+    await resumeAudioContext();
     if (!isPlaying) {
       setIsPlaying(true);
     }
     setIsRecording(true);
     recordingStepCountRef.current = 0;
-  }, [isPlaying]);
+  }, [isPlaying, resumeAudioContext]);
 
   // Play a single pad immediately (for manual pad tapping)
   const playPadNow = useCallback(async (pad: Pad) => {
-    const engine = audioEngineRef.current;
-    if (!engine) return;
+    const ctx = await resumeAudioContext();
+    if (!ctx || !filterNodeRef.current) return;
 
-    await engine.resume();
+    const buffer = buffersRef.current[pad.audioFile];
+    if (!buffer) return;
 
-    const buffer = engine.bufferManager.getBuffer(pad.audioFile);
-    if (buffer) {
-      const baseRate = currentKit.playbackRate || 1.0;
-      engine.playBuffer(buffer, {
-        playbackRate: baseRate * speed,
-      });
-    }
-  }, [currentKit, speed]);
+    const baseRate = currentKit.playbackRate || 1.0;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = baseRate * speed;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = 1.0;
+
+    source.connect(gainNode);
+    gainNode.connect(filterNodeRef.current);
+    source.start();
+  }, [currentKit, speed, resumeAudioContext]);
 
   const toggleStep = useCallback((padId: string, stepIndex: number) => {
     if (mode === "remix") {
@@ -444,21 +528,14 @@ export function ProSequencer() {
     setSteps(cleared);
     setIsPlaying(false);
     setCurrentStep(0);
-    setActiveLoops(new Set());
-    Object.values(loopAudioRefs.current).forEach((audio) => {
-      audio.pause();
-      audio.currentTime = 0;
-    });
+    stopAllLoops();
     router.push("/beatmaker", { scroll: false });
-  }, [pads, router]);
+  }, [pads, router, stopAllLoops]);
 
   const handlePlayToggle = useCallback(async () => {
-    const engine = audioEngineRef.current;
-    if (engine) {
-      await engine.resume();
-    }
+    await resumeAudioContext();
     setIsPlaying(!isPlaying);
-  }, [isPlaying]);
+  }, [isPlaying, resumeAudioContext]);
 
   const getStreetColor = (color: "green" | "pink" | "cyan") => {
     switch (color) {
@@ -578,8 +655,8 @@ export function ProSequencer() {
           <MPCScreen
             kitName={currentKit.name}
             bpm={bpm}
-            audioContext={audioEngineRef.current?.audioContext}
-            masterGainNode={audioEngineRef.current?.masterGain}
+            audioContext={audioContextRef.current}
+            masterGainNode={masterGainRef.current ?? undefined}
           />
         </div>
         {/* Speed Fader (Vertical Slider) */}
