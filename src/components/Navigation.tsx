@@ -6,11 +6,11 @@ import Link from "next/link";
 export function Navigation() {
   const navLinks = [
     { href: "/#home", label: "Home" },
-    { href: "/#bio", label: "About" },
+    { href: "/#rap-sheet", label: "About" },
     { href: "/music", label: "Music" },
     { href: "/videos", label: "Videos" },
-    { href: "/beatmaker", label: "Beat Maker" },
-    { href: "/guestbook", label: "Guestbook" },
+    { href: "/events", label: "Tour" },
+    { href: "/beatmaker", label: "Studio" },
     { href: "/#contact", label: "Contact" },
   ];
 

@@ -18,12 +18,28 @@ export function Contact() {
     setIsSubmitting(true);
     setSubmitStatus("idle");
 
-    // Simulate form submission (replace with actual API call)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSubmitStatus("success");
-      setFormData({ name: "", email: "", message: "" });
-    } catch {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "contact",
+          ...formData,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitStatus("success");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        setSubmitStatus("error");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -147,7 +163,7 @@ export function Contact() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {isSubmitting ? "ENVIANDO..." : "FRAGILE - HANDLE WITH CARE"}
+              {isSubmitting ? "TRANSMITTING..." : "FRAGILE - HANDLE WITH CARE"}
               {/* Distressed border effect */}
               <div
                 className="absolute inset-0 pointer-events-none"
@@ -166,18 +182,18 @@ export function Contact() {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center font-tag text-toxic-lime text-lg"
+                className="text-center font-header text-toxic-lime text-lg font-bold"
               >
-                ✓ Mensaje enviado con éxito!
+                ✓ TRANSMISSION SECURE
               </motion.p>
             )}
             {submitStatus === "error" && (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center font-tag text-red-500 text-lg"
+                className="text-center font-header text-red-500 text-lg font-bold"
               >
-                ✗ Error al enviar. Por favor intenta de nuevo.
+                ✗ SIGNAL LOST - Please try again
               </motion.p>
             )}
           </form>

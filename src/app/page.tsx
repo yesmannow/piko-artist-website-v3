@@ -9,6 +9,8 @@ import { TrackList } from "@/components/TrackList";
 import { GlitchText } from "@/components/GlitchText";
 import { BeatMakerTeaser } from "@/components/BeatMakerTeaser";
 import { HeroScene } from "@/components/HeroScene";
+import { EventList } from "@/components/EventList";
+import Link from "next/link";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -145,7 +147,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Section 3: THE LAB (Beat Maker) */}
+      {/* Section 3: LIVE OPERATIONS (Events) */}
+      <section id="live-operations" className="relative py-20 px-8 bg-card">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-header mb-8 md:mb-12 text-center text-foreground">
+              LIVE OPERATIONS
+            </h2>
+            <EventList limit={2} />
+            <div className="mt-8 flex justify-center">
+              <Link
+                href="/events"
+                className="px-6 py-3 bg-white text-black font-header font-bold transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black"
+                style={{
+                  boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                }}
+              >
+                VIEW FULL TOUR
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Caution Tape Divider */}
+        <div
+          className="w-full h-16 mt-20"
+          style={{
+            background: "repeating-linear-gradient(45deg, #fbbf24 0%, #fbbf24 10%, #000 10%, #000 20%)",
+            backgroundSize: "40px 40px",
+            borderTop: "2px solid #000",
+            borderBottom: "2px solid #000",
+          }}
+        />
+      </section>
+
+      {/* Section 4: THE LAB (Beat Maker) */}
       <section id="the-lab" className="relative py-20 px-8 bg-background">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -165,7 +206,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Section 4: RAP SHEET (Bio) */}
+      {/* Section 5: RAP SHEET (Bio) */}
       <section id="rap-sheet" className="relative py-20 px-8 bg-card">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
