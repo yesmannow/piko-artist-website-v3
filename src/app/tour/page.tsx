@@ -30,7 +30,7 @@ export default function TourPage() {
               WORLD <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">TOUR</span>
             </h1>
             <p className="text-zinc-400 font-mono mt-2 text-sm md:text-base bg-black/50 inline-block px-2 py-1 rounded backdrop-blur-sm">
-              // INTERACTIVE MAP: DRAG TO ROTATE • HOVER PINS FOR INTEL
+              INTERACTIVE MAP: DRAG TO ROTATE • HOVER PINS FOR INTEL
             </p>
           </motion.div>
         </div>

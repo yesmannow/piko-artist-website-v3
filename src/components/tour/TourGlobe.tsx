@@ -28,21 +28,21 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
   }, []);
 
   useEffect(() => {
-    if (globeEl.current) {
-      globeEl.current.controls().autoRotate = true;
-      globeEl.current.controls().autoRotateSpeed = 0.5;
-      globeEl.current.pointOfView({ altitude: 2.5 });
+    // Capture ref value at the start
+    const currentGlobe = globeEl.current;
+
+    if (currentGlobe) {
+      currentGlobe.controls().autoRotate = true;
+      currentGlobe.controls().autoRotateSpeed = 0.5;
+      currentGlobe.pointOfView({ altitude: 2.5 });
     }
 
     return () => {
-      // CLEANUP: Kill the renderer to free GPU memory
-      setDimensions({ width: 0, height: 0 }); // Force unmount
-      setHoveredPoint(null); // Clear hover state
-      // If the library exposes a destroy method, call it here
-      if (globeEl.current) {
+      // Use the captured variable, NOT the ref directly
+      if (currentGlobe) {
         try {
           // Try to dispose of the renderer if available
-          const renderer = globeEl.current.renderer?.();
+          const renderer = currentGlobe.renderer?.();
           if (renderer && typeof renderer.dispose === 'function') {
             renderer.dispose();
           }
@@ -50,6 +50,9 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
           // Ignore errors if dispose is not available
         }
       }
+      // CLEANUP: Kill the renderer to free GPU memory
+      setDimensions({ width: 0, height: 0 }); // Force unmount
+      setHoveredPoint(null); // Clear hover state
     };
   }, []);
 
