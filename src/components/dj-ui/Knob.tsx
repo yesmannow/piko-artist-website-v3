@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Tooltip } from "./Tooltip";
 
 interface KnobProps {
   value: number; // 0 to 1
@@ -11,6 +12,7 @@ interface KnobProps {
   max?: number;
   size?: number;
   color?: "low" | "mid" | "high"; // Color coding for EQ
+  helpText?: string;
 }
 
 export function Knob({
@@ -20,7 +22,8 @@ export function Knob({
   min = 0,
   max = 1,
   size = 60,
-  color
+  color,
+  helpText
 }: KnobProps) {
   const [isDragging, setIsDragging] = useState(false);
   const knobRef = useRef<HTMLDivElement>(null);
@@ -114,7 +117,7 @@ export function Knob({
     };
   }, [isDragging, onChange, min, max, normalizedValue]);
 
-  return (
+  const knobContent = (
     <div className="flex flex-col items-center gap-2">
       <div
         ref={knobRef}
@@ -178,5 +181,11 @@ export function Knob({
       )}
     </div>
   );
+
+  if (helpText) {
+    return <Tooltip content={helpText}>{knobContent}</Tooltip>;
+  }
+
+  return knobContent;
 }
 

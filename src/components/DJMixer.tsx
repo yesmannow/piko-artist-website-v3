@@ -156,6 +156,7 @@ export function DJMixer({
                 max={12}
                 color="high"
                 size={50}
+                helpText="Adjusts high frequencies (treble). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckAKillHighChange(!deckAKillHigh)}
@@ -178,6 +179,7 @@ export function DJMixer({
                 max={12}
                 color="mid"
                 size={50}
+                helpText="Adjusts mid frequencies. Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckAKillMidChange(!deckAKillMid)}
@@ -200,6 +202,7 @@ export function DJMixer({
                 max={12}
                 color="low"
                 size={50}
+                helpText="Adjusts low frequencies (bass). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckAKillLowChange(!deckAKillLow)}
@@ -231,8 +234,13 @@ export function DJMixer({
           </div>
 
           {/* Crossfader */}
-          <div className="mt-auto w-full">
-            <Crossfader value={crossfader} onChange={onCrossfaderChange} width={200} />
+          <div className="mt-auto w-full" data-tour="master-out">
+            <Crossfader
+              value={crossfader}
+              onChange={onCrossfaderChange}
+              width={200}
+              helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
+            />
           </div>
         </div>
 
@@ -248,6 +256,7 @@ export function DJMixer({
             onChange={onDeckBVolumeChange}
             label="VOL"
             height={180}
+            helpText="Adjusts the volume level for Deck B"
           />
 
           {/* EQ Knobs */}
@@ -261,6 +270,7 @@ export function DJMixer({
                 max={12}
                 color="high"
                 size={50}
+                helpText="Adjusts high frequencies (treble). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckBKillHighChange(!deckBKillHigh)}
@@ -283,6 +293,7 @@ export function DJMixer({
                 max={12}
                 color="mid"
                 size={50}
+                helpText="Adjusts mid frequencies. Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckBKillMidChange(!deckBKillMid)}
@@ -305,6 +316,7 @@ export function DJMixer({
                 max={12}
                 color="low"
                 size={50}
+                helpText="Adjusts low frequencies (bass). Boost or cut up to ±12dB"
               />
               <button
                 onClick={() => onDeckBKillLowChange(!deckBKillLow)}

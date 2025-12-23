@@ -5,6 +5,7 @@ import WaveSurfer from "wavesurfer.js";
 import { JogWheel } from "./dj-ui/JogWheel";
 import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
+import { Tooltip } from "./dj-ui/Tooltip";
 import { Play, Pause, RotateCcw, Link2, Repeat } from "lucide-react";
 
 interface DJDeckProps {
@@ -165,6 +166,19 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         gainNode.gain.value = volume;
       }
     }, [volume, gainNode]);
+
+    // Mute audio during scratching for clean "cut" effect
+    useEffect(() => {
+      if (gainNode) {
+        if (isScrubbing) {
+          // Mute audio when scratching
+          gainNode.gain.value = 0;
+        } else {
+          // Restore volume when not scratching
+          gainNode.gain.value = volume;
+        }
+      }
+    }, [isScrubbing, volume, gainNode]);
 
     // Handle play/pause
     const handlePlayPause = () => {
@@ -349,11 +363,13 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             onScrub={handleScrub}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            bpm={120} // Default BPM - can be made configurable in the future
+            playbackRate={speed}
           />
         </div>
 
         {/* Transport Controls */}
-        <div className="flex gap-2 md:gap-3 items-center flex-wrap justify-center">
+        <div className="relative z-10 flex gap-2 md:gap-3 items-center flex-wrap justify-center" data-tour="sync-pitch">
           {/* Cue Button */}
           <button
             onClick={handleCue}
@@ -388,20 +404,22 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           </button>
 
           {/* Sync Button */}
-          <button
-            onClick={onSync}
-            className={`relative w-16 h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 ${
-              isSynced ? "border-green-500" : "border-gray-700"
-            }`}
-            style={{
-              boxShadow: isSynced
-                ? `0 0 15px rgba(34, 197, 94, 0.3), inset 0 0 8px rgba(34, 197, 94, 0.1)`
-                : "inset 0 2px 4px rgba(0,0,0,0.5)",
-            }}
-            title="Sync BPM"
-          >
-            <Link2 className="w-6 h-6" style={{ color: isSynced ? "#22c55e" : deckColor }} />
-          </button>
+          <Tooltip content="Automatically matches this deck's BPM to the other deck">
+            <button
+              onClick={onSync}
+              className={`relative w-16 h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 ${
+                isSynced ? "border-green-500" : "border-gray-700"
+              }`}
+              style={{
+                boxShadow: isSynced
+                  ? `0 0 15px rgba(34, 197, 94, 0.3), inset 0 0 8px rgba(34, 197, 94, 0.1)`
+                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
+              }}
+              title="Sync BPM"
+            >
+              <Link2 className="w-6 h-6" style={{ color: isSynced ? "#22c55e" : deckColor }} />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Pitch Fader (Vertical, +/- 8%) */}
@@ -418,6 +436,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 onSpeedChange?.(newSpeed);
               }}
               height={150}
+              helpText="Adjusts playback speed (pitch). Range: -8% to +8%"
             />
             <div className="flex flex-col items-center gap-1 text-xs text-gray-500 font-barlow">
               <span>+8%</span>
@@ -487,12 +506,15 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         />
 
         {/* Performance Pads */}
-        <PerformancePads
-          onCueSet={handleCueSet}
-          onCueJump={handleCueJump}
-          onCueClear={handleCueClear}
-          getCurrentTime={() => wavesurferRef.current?.getCurrentTime() || 0}
-        />
+        <div data-tour="performance-pads">
+          <PerformancePads
+            onCueSet={handleCueSet}
+            onCueJump={handleCueJump}
+            onCueClear={handleCueClear}
+            getCurrentTime={() => wavesurferRef.current?.getCurrentTime() || 0}
+            helpText="Set Hot Cues or trigger Loops. Click to set/jump, Right-click to clear"
+          />
+        </div>
 
         {/* Track Info */}
         {trackUrl && (

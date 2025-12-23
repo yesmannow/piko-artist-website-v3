@@ -5,8 +5,13 @@ import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
 import { tracks } from "@/lib/data";
+import { X, HelpCircle } from "lucide-react";
+import { useHelp } from "@/context/HelpContext";
+import { ConsoleTour } from "./dj-ui/ConsoleTour";
 
 export function DJInterface() {
+  const { isHelpMode, toggleHelp } = useHelp();
+
   // Deck A state
   const [deckATrack, setDeckATrack] = useState<string | null>(null);
   const [deckAPlaying, setDeckAPlaying] = useState(false);
@@ -224,16 +229,20 @@ export function DJInterface() {
     }
   }, [deckBHigh, deckBMid, deckBLow]);
 
-  // Update volume gains
+  // Update volume gains with Equal Power Crossfading
   useEffect(() => {
     if (deckAGainRef.current) {
-      deckAGainRef.current.gain.value = deckAVolume * (1 - crossfader);
+      // Equal Power Crossfading: Gain A = cos(crossfaderValue * 0.5 * π)
+      const equalPowerGainA = Math.cos(crossfader * 0.5 * Math.PI);
+      deckAGainRef.current.gain.value = deckAVolume * equalPowerGainA;
     }
   }, [deckAVolume, crossfader]);
 
   useEffect(() => {
     if (deckBGainRef.current) {
-      deckBGainRef.current.gain.value = deckBVolume * crossfader;
+      // Equal Power Crossfading: Gain B = cos((1 - crossfaderValue) * 0.5 * π)
+      const equalPowerGainB = Math.cos((1 - crossfader) * 0.5 * Math.PI);
+      deckBGainRef.current.gain.value = deckBVolume * equalPowerGainB;
     }
   }, [deckBVolume, crossfader]);
 
@@ -241,6 +250,30 @@ export function DJInterface() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Mobile landscape hint state
+  const [showLandscapeHint, setShowLandscapeHint] = useState(false);
+  const [landscapeHintDismissed, setLandscapeHintDismissed] = useState(false);
+
+  // Check for mobile portrait orientation
+  useEffect(() => {
+    if (landscapeHintDismissed) return;
+
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setShowLandscapeHint(isMobile && isPortrait);
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, [landscapeHintDismissed]);
 
   // Get audio tracks only and filter by search
   const audioTracks = tracks
@@ -310,9 +343,31 @@ export function DJInterface() {
   };
 
   return (
-    <div
-      className="min-h-screen p-3 md:p-6"
-      style={{
+    <>
+      {/* Mobile Landscape Hint */}
+      {showLandscapeHint && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1a1a1a] border-2 border-gray-700 rounded-lg px-4 py-3 shadow-lg max-w-sm mx-4 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-barlow text-gray-300">
+              For the best DJ experience, rotate your phone to Landscape.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setShowLandscapeHint(false);
+              setLandscapeHintDismissed(true);
+            }}
+            className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+      <ConsoleTour />
+      <div
+        className="min-h-screen p-3 md:p-6"
+        style={{
         background: "#121212",
         backgroundImage: `
           repeating-linear-gradient(
@@ -327,11 +382,25 @@ export function DJInterface() {
     >
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Library/Browser */}
-        <div className="bg-[#0a0a0a] rounded-lg border border-gray-800 p-4">
+        <div className="bg-[#0a0a0a] rounded-lg border border-gray-800 p-4" data-tour="library">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
-              TRACK LIBRARY
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
+                TRACK LIBRARY
+              </h2>
+              <button
+                onClick={toggleHelp}
+                className={`p-2 rounded border-2 transition-all ${
+                  isHelpMode
+                    ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
+                    : "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
+                }`}
+                title={isHelpMode ? "Exit Help Mode" : "Enable Help Mode"}
+                aria-label="Toggle help mode"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+            </div>
             {/* Search Bar */}
             <input
               type="text"
@@ -387,6 +456,7 @@ export function DJInterface() {
         </div>
 
         {/* FX Rack */}
+        <div data-tour="fx-unit">
         <FXUnit
           filterFreq={filterFreq}
           filterType={filterType}
@@ -399,11 +469,13 @@ export function DJInterface() {
           onDelayTimeChange={setDelayTime}
           onDelayFeedbackChange={setDelayFeedback}
         />
+        </div>
 
         {/* Main Console */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Deck A */}
           <div
+            data-tour="deck-a"
             onDragOver={(e) => {
               e.preventDefault();
               e.dataTransfer.dropEffect = "move";
@@ -418,6 +490,7 @@ export function DJInterface() {
             }}
             onDrop={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               const dropZone = document.getElementById("deck-a-drop-zone");
               if (dropZone) dropZone.style.opacity = "0";
               try {
@@ -453,6 +526,7 @@ export function DJInterface() {
           </div>
 
           {/* Mixer */}
+          <div data-tour="mixer">
           <DJMixer
             deckAVolume={deckAVolume}
             deckAHigh={deckAHigh}
@@ -487,6 +561,7 @@ export function DJInterface() {
             audioContext={audioContextRef.current || undefined}
             masterGainNode={masterGainRef.current || undefined}
           />
+          </div>
 
           {/* Deck B */}
           <div
@@ -504,6 +579,7 @@ export function DJInterface() {
             }}
             onDrop={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               const dropZone = document.getElementById("deck-b-drop-zone");
               if (dropZone) dropZone.style.opacity = "0";
               try {
@@ -541,6 +617,7 @@ export function DJInterface() {
 
       </div>
     </div>
+    </>
   );
 }
 

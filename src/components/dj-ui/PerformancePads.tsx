@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Tooltip } from "./Tooltip";
 
 interface PerformancePadsProps {
   onCueSet: (padIndex: number, time: number) => void;
   onCueJump: (time: number) => void;
   onCueClear: (padIndex: number) => void;
   getCurrentTime: () => number;
+  helpText?: string;
 }
 
 export function PerformancePads({
@@ -15,6 +17,7 @@ export function PerformancePads({
   onCueJump,
   onCueClear,
   getCurrentTime,
+  helpText,
 }: PerformancePadsProps) {
   const [cuePoints, setCuePoints] = useState<Record<number, number>>({});
 
@@ -49,7 +52,7 @@ export function PerformancePads({
     }
   };
 
-  return (
+  const padsContent = (
     <div className="grid grid-cols-2 gap-3 w-full max-w-[200px]">
       {[0, 1, 2, 3].map((padIndex) => {
         const isSet = cuePoints[padIndex] !== undefined;
@@ -104,5 +107,11 @@ export function PerformancePads({
       })}
     </div>
   );
+
+  if (helpText) {
+    return <Tooltip content={helpText}>{padsContent}</Tooltip>;
+  }
+
+  return padsContent;
 }
 

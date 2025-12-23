@@ -2,6 +2,9 @@
 
 import { Suspense } from "react";
 import { DJInterface } from "@/components/DJInterface";
+import { HelpProvider } from "@/context/HelpContext";
+// Preload 3D models early
+import "@/components/dj-ui/preload3D";
 
 function BeatMakerContent() {
   return <DJInterface />;
@@ -9,9 +12,11 @@ function BeatMakerContent() {
 
 export default function BeatMakerPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#121212]" />}>
-      <BeatMakerContent />
-    </Suspense>
+    <HelpProvider>
+      <Suspense fallback={<div className="min-h-screen bg-[#121212]" />}>
+        <BeatMakerContent />
+      </Suspense>
+    </HelpProvider>
   );
 }
 

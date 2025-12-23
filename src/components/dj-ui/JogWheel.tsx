@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { JogWheel3D } from "./JogWheel3D";
+import { DeskProps } from "./DeskProps";
 
 interface JogWheelProps {
   rotation: number; // Rotation in degrees
@@ -10,6 +12,17 @@ interface JogWheelProps {
   onScrub?: (delta: number) => void; // Delta rotation for scrubbing
   onDragStart?: () => void;
   onDragEnd?: () => void;
+  bpm?: number; // Track BPM (default 120)
+  playbackRate?: number; // Playback rate/pitch (default 1.0)
+}
+
+// Simple loader component
+function Loader() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin" />
+    </div>
+  );
 }
 
 export function JogWheel({
@@ -19,6 +32,8 @@ export function JogWheel({
   onScrub,
   onDragStart,
   onDragEnd,
+  bpm = 120,
+  playbackRate = 1.0,
 }: JogWheelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragRotation, setDragRotation] = useState(0);
@@ -91,13 +106,14 @@ export function JogWheel({
     };
   }, [isDragging, onScrub, onDragEnd]);
 
+  // Calculate display rotation: use drag rotation when dragging, otherwise use rotation prop
   const displayRotation = isDragging ? dragRotation : (isPlaying ? rotation : 0);
 
   return (
     <div
       ref={wheelRef}
-      className="relative cursor-grab active:cursor-grabbing select-none touch-none"
-      style={{ width: size, height: size }}
+      className="relative cursor-grab active:cursor-grabbing select-none touch-none z-0"
+      style={{ width: size, height: size, touchAction: "none" }}
       onMouseDown={handleMouseDown}
       onTouchStart={(e) => {
         setIsDragging(true);
@@ -114,45 +130,34 @@ export function JogWheel({
         }
       }}
     >
-      {/* Outer ring */}
-      <div className="absolute inset-0 rounded-full border-4 border-gray-700 bg-[#1a1a1a]" />
-
-      {/* Inner ring */}
-      <div className="absolute inset-4 rounded-full border-2 border-gray-600 bg-[#0a0a0a]" />
-
-      {/* Rotating disc */}
-      <motion.div
-        className="absolute inset-8 rounded-full bg-[#1a1a1a] border border-gray-700"
-        animate={{ rotate: displayRotation }}
-        transition={isDragging ? { duration: 0 } : { duration: 0.1, ease: "linear" }}
+      <Canvas
+        dpr={[1, 2]}
+        camera={{ position: [0, 0, 8], fov: 50 }}
+        style={{ width: "100%", height: "100%", pointerEvents: "none", touchAction: "none" }}
       >
-        {/* Center dot */}
-        <div className="absolute top-1/2 left-1/2 w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-500" />
-
-        {/* Spoke lines */}
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-          <div
-            key={angle}
-            className="absolute top-1/2 left-1/2 w-px h-1/2 origin-top bg-gray-600"
-            style={{
-              transform: `translate(-50%, -50%) rotate(${angle}deg)`,
-            }}
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={0.8} />
+        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={0.5} />
+        <Suspense fallback={null}>
+          <JogWheel3D
+            isPlaying={isPlaying && !isDragging}
+            isScratching={isDragging}
+            rotation={displayRotation}
+            bpm={bpm}
+            playbackRate={playbackRate}
           />
-        ))}
-      </motion.div>
+          <DeskProps />
+        </Suspense>
+      </Canvas>
 
-      {/* Play indicator */}
+      {/* Play indicator overlay */}
       {isPlaying && !isDragging && (
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500"
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500 animate-pulse pointer-events-none z-20" />
       )}
 
-      {/* Drag indicator */}
+      {/* Drag indicator overlay */}
       {isDragging && (
-        <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-500" />
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-500 pointer-events-none z-20" />
       )}
     </div>
   );

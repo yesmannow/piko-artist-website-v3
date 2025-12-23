@@ -2,15 +2,17 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Tooltip } from "./Tooltip";
 
 interface FaderProps {
   value: number; // 0 to 1
   onChange: (value: number) => void;
   label?: string;
   height?: number;
+  helpText?: string;
 }
 
-export function Fader({ value, onChange, label, height = 200 }: FaderProps) {
+export function Fader({ value, onChange, label, height = 200, helpText }: FaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +48,7 @@ export function Fader({ value, onChange, label, height = 200 }: FaderProps) {
 
   const position = (1 - value) * height;
 
-  return (
+  const faderContent = (
     <div className="flex flex-col items-center gap-2">
       {label && (
         <span className="text-xs font-barlow uppercase text-gray-400 tracking-wider">
@@ -83,5 +85,11 @@ export function Fader({ value, onChange, label, height = 200 }: FaderProps) {
       </div>
     </div>
   );
+
+  if (helpText) {
+    return <Tooltip content={helpText}>{faderContent}</Tooltip>;
+  }
+
+  return faderContent;
 }
 

@@ -2,14 +2,16 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Tooltip } from "./Tooltip";
 
 interface CrossfaderProps {
   value: number; // 0 to 1 (0 = left, 1 = right)
   onChange: (value: number) => void;
   width?: number;
+  helpText?: string;
 }
 
-export function Crossfader({ value, onChange, width = 300 }: CrossfaderProps) {
+export function Crossfader({ value, onChange, width = 300, helpText }: CrossfaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +47,7 @@ export function Crossfader({ value, onChange, width = 300 }: CrossfaderProps) {
 
   const position = value * width;
 
-  return (
+  const crossfaderContent = (
     <div className="flex flex-col items-center gap-2">
       <span className="text-xs font-barlow uppercase text-gray-400 tracking-wider">
         CROSSFADER
@@ -78,5 +80,11 @@ export function Crossfader({ value, onChange, width = 300 }: CrossfaderProps) {
       </div>
     </div>
   );
+
+  if (helpText) {
+    return <Tooltip content={helpText}>{crossfaderContent}</Tooltip>;
+  }
+
+  return crossfaderContent;
 }
 
