@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
-import { tracks, MediaItem } from "@/lib/data";
+import { tracks } from "@/lib/data";
 import { X, HelpCircle } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";

@@ -163,6 +163,7 @@ export function JogWheel({
         }}
       >
         {coverArt ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={coverArt} alt="Label" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-[#111] flex items-center justify-center">

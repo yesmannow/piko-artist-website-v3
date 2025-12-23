@@ -153,7 +153,6 @@ export function ConsoleTour() {
 
   // 4. Smart Tooltip Positioning (Fixes Off-Screen Glitch)
   const getSmartPosition = () => {
-    const tooltipHeight = 200; // Approx max height
     const gap = 20;
     let top = 0;
     let left = 0;

@@ -86,9 +86,6 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         backend: "MediaElement",
         mediaControls: false,
         interact: true,
-        xhr: {
-          crossOrigin: "anonymous",
-        },
       });
 
       wavesurferRef.current = ws;
