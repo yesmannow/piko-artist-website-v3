@@ -8,6 +8,7 @@ import { getKit, type KitType, type Pad } from "@/lib/audio-kits";
 import { MPCScreen } from "@/components/MPCScreen";
 import { createDistortionCurve } from "@/lib/audio-engine";
 import { useHaptic } from "@/hooks/useHaptic";
+import { RemixDeck, type RemixDeckRef } from "@/components/RemixDeck";
 
 const STEPS = 16;
 const DEFAULT_BPM = 120;
@@ -64,7 +65,10 @@ export function ProSequencer() {
   const [speed, setSpeed] = useState(1.0); // Speed/Pitch: 0.5-1.0
   const [filter, setFilter] = useState(100); // Filter: 0-100
   const [mutedPads, setMutedPads] = useState<Set<string>>(new Set()); // Muted pads in remix mode
+  const [soloedPads, setSoloedPads] = useState<Set<string>>(new Set()); // Soloed pads in remix mode
+  const [masterVolume, setMasterVolume] = useState(1.0); // Master volume fader (0-1)
   const [buffersLoaded, setBuffersLoaded] = useState(false);
+  const remixDeckRefs = useRef<Record<string, RemixDeckRef>>({}); // Refs for RemixDeck components
   const recordingStepCountRef = useRef(0);
   const nextNoteTimeRef = useRef(0);
   const rafIdRef = useRef<number | null>(null);
@@ -368,10 +372,19 @@ export function ProSequencer() {
     Object.keys(loopGainRefs.current).forEach((padId) => {
       const gainNode = loopGainRefs.current[padId];
       if (gainNode) {
-        gainNode.gain.value = mutedPads.has(padId) ? 0 : 1.0;
+        const isMuted = mutedPads.has(padId);
+        const isSoloed = soloedPads.has(padId);
+        const hasSolo = soloedPads.size > 0;
+
+        // Solo logic: if any pad is soloed, only soloed pads play
+        if (hasSolo) {
+          gainNode.gain.value = isSoloed && !isMuted ? 1.0 : 0;
+        } else {
+          gainNode.gain.value = isMuted ? 0 : 1.0;
+        }
       }
     });
-  }, [mutedPads]);
+  }, [mutedPads, soloedPads]);
 
   // Handle mode change
   useEffect(() => {
@@ -453,6 +466,20 @@ export function ProSequencer() {
   const toggleMute = useCallback((padId: string) => {
     triggerHaptic();
     setMutedPads((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(padId)) {
+        newSet.delete(padId);
+      } else {
+        newSet.add(padId);
+      }
+      return newSet;
+    });
+  }, [triggerHaptic]);
+
+  // Toggle solo for a pad in remix mode
+  const toggleSolo = useCallback((padId: string) => {
+    triggerHaptic();
+    setSoloedPads((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(padId)) {
         newSet.delete(padId);
@@ -545,6 +572,14 @@ export function ProSequencer() {
   const handlePlayToggle = useCallback(async () => {
     triggerHaptic();
     await resumeAudioContext();
+
+    if (!isPlaying) {
+      // When starting playback, seek all remix decks to beginning
+      Object.values(remixDeckRefs.current).forEach((deck) => {
+        deck.seek(0);
+      });
+    }
+
     setIsPlaying(!isPlaying);
   }, [isPlaying, resumeAudioContext, triggerHaptic]);
 
@@ -821,97 +856,146 @@ export function ProSequencer() {
             </div>
           </>
         ) : (
-          /* Remix Mode: Loop Pads */
+          /* Remix Mode: DAW Timeline with Waveforms */
           <div className="space-y-4">
-            {/* MUTE Buttons Row (only for first 4 pads) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {pads.slice(0, 4).map((pad) => {
-                const isMuted = mutedPads.has(pad.id);
-                return (
-                  <motion.button
-                    key={`mute-${pad.id}`}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMute(pad.id);
-                    }}
-                    className={`
-                      px-3 py-2 rounded-lg
-                      border-2 border-black
-                      font-industrial font-bold text-xs md:text-sm
-                      transition-all
-                    `}
-                    style={{
-                      backgroundColor: isMuted ? "#ef4444" : "#2a2a2a",
-                      color: isMuted ? "#fff" : "#ef4444",
-                      boxShadow: isMuted ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {isMuted ? "UNMUTE" : "MUTE"}
-                  </motion.button>
-                );
-              })}
-            </div>
+            {/* Mixing Console Container */}
+            <div
+              className="bg-[#2a2a2a] rounded-lg border-2 border-black p-4 md:p-6"
+              style={{
+                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)",
+              }}
+            >
+              {/* Remix Decks Stack */}
+              <div className="space-y-3 mb-6">
+                {pads.map((pad) => {
+                  const isMuted = mutedPads.has(pad.id);
+                  const isSoloed = soloedPads.has(pad.id);
+                  const hasSolo = soloedPads.size > 0;
 
-            {/* Pad Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {pads.map((pad) => {
-                const streetColor = getStreetColor(pad.color);
-                const isActive = activeLoops.has(pad.id);
-                const isMuted = mutedPads.has(pad.id);
+                  // Apply solo logic: if any pad is soloed, only show soloed pads as active
+                  const shouldPlay = hasSolo ? isSoloed && !isMuted : !isMuted;
 
-                return (
-                  <motion.button
-                    key={pad.id}
-                    type="button"
-                    onClick={() => toggleLoop(pad.id)}
-                    className={`
-                      relative aspect-square rounded-lg
-                      border-2 transition-all border-black
-                      flex flex-col items-center justify-center gap-2
-                      ${isActive ? "scale-95" : "scale-100"}
-                      ${isMuted ? "opacity-50" : ""}
-                    `}
-                    style={{
-                      borderColor: isActive ? streetColor : "#000",
-                      backgroundColor: isActive ? streetColor : "#2a2a2a",
-                      boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
-                    }}
-                    whileHover={{
-                      scale: 1.05,
-                      borderColor: streetColor,
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div
-                      className="font-industrial font-bold uppercase tracking-wider text-lg md:text-xl"
-                      style={{
-                        color: isActive ? "#000" : streetColor,
+                  return (
+                    <RemixDeck
+                      key={pad.id}
+                      ref={(ref) => {
+                        if (ref) {
+                          remixDeckRefs.current[pad.id] = ref;
+                        }
                       }}
-                    >
-                      {pad.name}
-                    </div>
-                    {isActive && (
-                      <motion.div
-                        className="w-3 h-3 rounded-full bg-black"
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [1, 0.7, 1],
-                        }}
-                        transition={{
-                          duration: 0.8,
-                          repeat: Infinity,
+                      trackName={pad.name.toUpperCase()}
+                      audioUrl={pad.audioFile}
+                      isMuted={isMuted}
+                      isSolo={isSoloed}
+                      hasSolo={soloedPads.size > 0}
+                      onMuteToggle={() => toggleMute(pad.id)}
+                      onSoloToggle={() => toggleSolo(pad.id)}
+                      isPlaying={isPlaying}
+                      playbackRate={speed}
+                      audioContext={audioContextRef.current || undefined}
+                      filterNode={filterNodeRef.current || undefined}
+                      masterGain={masterGainRef.current || undefined}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Master Controls Row */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-4 pt-4 border-t-2 border-black">
+                {/* Master Play Button */}
+                <motion.button
+                  onClick={handlePlayToggle}
+                  className={`w-full md:w-auto px-6 md:px-8 py-3 bg-toxic-lime/20 border-2 border-black text-toxic-lime font-industrial font-bold rounded-lg flex items-center justify-center gap-2 shadow-hard min-h-[44px]`}
+                  style={{
+                    boxShadow: isPlaying
+                      ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px #ccff00"
+                      : "4px 4px 0px 0px rgba(0,0,0,1)",
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isPlaying ? (
+                    <>
+                      <Square className="w-5 h-5" />
+                      Stop
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5" />
+                      Play
+                    </>
+                  )}
+                </motion.button>
+
+                {/* Master Fader - Horizontal on mobile, Vertical on desktop */}
+                <div className="flex flex-row md:flex-col items-center gap-2 w-full md:w-auto">
+                  <label className="font-industrial font-bold text-foreground text-xs md:text-sm whitespace-nowrap">
+                    MASTER
+                  </label>
+                  {/* Mobile: Horizontal Slider */}
+                  <div className="flex-1 md:hidden flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={masterVolume}
+                      onChange={(e) => setMasterVolume(Number(e.target.value))}
+                      className="flex-1 h-2 bg-foreground/10 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        accentColor: "#ccff00",
+                        background: `linear-gradient(to right, #ccff00 0%, #ccff00 ${masterVolume * 100}%, rgba(255, 255, 255, 0.1) ${masterVolume * 100}%, rgba(255, 255, 255, 0.1) 100%)`,
+                      }}
+                    />
+                    <span className="font-header text-toxic-lime text-sm font-bold min-w-[3rem] text-center">
+                      {Math.round(masterVolume * 100)}%
+                    </span>
+                  </div>
+                  {/* Desktop: Vertical Fader */}
+                  <div className="hidden md:flex flex-col items-center gap-2">
+                    <div className="relative h-48 md:h-64 w-12 flex items-center justify-center">
+                      <div
+                        className="absolute w-8 h-full bg-foreground/10 rounded-lg border-2 border-black"
+                        style={{
+                          background: `linear-gradient(to top, #ccff00 0%, #ccff00 ${masterVolume * 100}%, rgba(255, 255, 255, 0.1) ${masterVolume * 100}%, rgba(255, 255, 255, 0.1) 100%)`,
                         }}
                       />
-                    )}
-                    {isMuted && (
-                      <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black" />
-                    )}
-                  </motion.button>
-                );
-              })}
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={masterVolume}
+                        onChange={(e) => setMasterVolume(Number(e.target.value))}
+                        className="absolute w-full h-full appearance-none bg-transparent cursor-pointer z-10"
+                        style={{
+                          writingMode: "vertical-lr",
+                          direction: "rtl",
+                          accentColor: "transparent",
+                        }}
+                      />
+                      {/* Fader Cap Style */}
+                      <div
+                        className="absolute pointer-events-none z-20"
+                        style={{
+                          left: "50%",
+                          top: `${100 - masterVolume * 100}%`,
+                          transform: "translate(-50%, -50%)",
+                          width: "24px",
+                          height: "32px",
+                          backgroundColor: "#ccff00",
+                          border: "2px solid #000",
+                          borderRadius: "4px",
+                          boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)",
+                        }}
+                      />
+                    </div>
+                    <span className="font-header text-toxic-lime text-xs font-bold">
+                      {Math.round(masterVolume * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

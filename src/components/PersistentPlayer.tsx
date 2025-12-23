@@ -3,16 +3,10 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
-import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useHaptic } from "@/hooks/useHaptic";
-
-// Ad-Lib sample files
-const adLibSamples = [
-  "/audio/sfx/spray-shake.mp3",
-  "/audio/sfx/dice-throw.mp3",
-  "/audio/sfx/dice-shake.mp3",
-];
+import Image from "next/image";
 
 // Type declaration for webkit prefixed AudioContext
 interface WindowWithWebkit extends Window {
@@ -36,36 +30,84 @@ export function PersistentPlayer() {
   const [visualizerData, setVisualizerData] = useState<number[]>([0, 0, 0]);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const adLibAudioRefs = useRef<(HTMLAudioElement | null)[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const previousVolumeRef = useRef<number>(1);
 
-  // Initialize ad-lib audio elements
+  // Helper to check if coverArt is an image path
+  const isImagePath = (coverArt: string): boolean => {
+    return coverArt.startsWith("/");
+  };
+
+  // Detect mobile for proper positioning
   useEffect(() => {
-    adLibAudioRefs.current = adLibSamples.map((src) => {
-      const audio = new Audio(src);
-      audio.volume = 0.6; // Slightly lower volume to layer over music
-      return audio;
-    });
-
-    return () => {
-      adLibAudioRefs.current.forEach((audio) => {
-        if (audio) {
-          audio.pause();
-          audio.src = "";
-        }
-      });
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Play ad-lib sample
-  const playAdLib = (index: number) => {
-    const audio = adLibAudioRefs.current[index];
-    if (audio) {
-      audio.currentTime = 0; // Reset to start
-      audio.play().catch((error) => {
-        console.error("Error playing ad-lib:", error);
-      });
+  // Toggle mute/unmute
+  const toggleMute = useCallback(() => {
+    if (!audioRef.current) return;
+
+    if (isMuted) {
+      // Unmute: restore previous volume
+      setVolume(previousVolumeRef.current);
+      audioRef.current.volume = previousVolumeRef.current;
+      setIsMuted(false);
+    } else {
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = volume;
+      setVolume(0);
+      audioRef.current.volume = 0;
+      setIsMuted(true);
     }
-  };
+    triggerHaptic();
+  }, [isMuted, volume, setVolume, triggerHaptic]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input/textarea
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement).isContentEditable
+      ) {
+        return;
+      }
+
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          togglePlay();
+          triggerHaptic();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skipPrevious();
+          triggerHaptic();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skipNext();
+          triggerHaptic();
+          break;
+        case "KeyM":
+          e.preventDefault();
+          toggleMute();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [togglePlay, skipPrevious, skipNext, toggleMute, triggerHaptic]);
 
   // Set up audio visualizer
   useEffect(() => {
@@ -146,7 +188,9 @@ export function PersistentPlayer() {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="fixed bottom-0 left-0 right-0 z-50 w-full"
+          className={`fixed left-0 right-0 w-full z-40 md:z-50 ${
+            isMobile ? "bottom-[64px] pb-[env(safe-area-inset-bottom)]" : "bottom-0"
+          }`}
         >
           {/* Progress bar at top */}
           <div className="h-1 bg-black/50 w-full">
@@ -157,18 +201,54 @@ export function PersistentPlayer() {
             />
           </div>
 
-          {/* Player container */}
-          <div className="bg-concrete/95 backdrop-blur-xl border-t-2 border-black">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
+          {/* Player container with glassmorphism */}
+          <div
+            className="relative border-t-2 border-black/20 overflow-hidden backdrop-blur-xl bg-black/60"
+            style={{
+              boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            {/* Album art background with blur */}
+            {currentTrack && (
+              <>
+                {isImagePath(currentTrack.coverArt) ? (
+                  <Image
+                    src={currentTrack.coverArt}
+                    alt={currentTrack.title}
+                    fill
+                    className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 -z-10"
+                    sizes="100vw"
+                    priority
+                  />
+                ) : (
+                  <div
+                    className={`absolute inset-0 w-full h-full bg-gradient-to-r ${currentTrack.coverArt} blur-2xl opacity-40 -z-10`}
+                  />
+                )}
+              </>
+            )}
+            <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
               <div className="flex items-center gap-4 md:gap-6">
                 {/* Left: Thumbnail + Scrolling Text */}
                 <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                   {currentTrack && (
                     <>
                       {/* Tiny thumbnail */}
-                      <div
-                        className={`w-12 h-12 md:w-16 md:h-16 rounded-lg bg-gradient-to-r ${currentTrack.coverArt} flex-shrink-0`}
-                      />
+                      {isImagePath(currentTrack.coverArt) ? (
+                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 relative">
+                          <Image
+                            src={currentTrack.coverArt}
+                            alt={currentTrack.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 48px, 64px"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className={`w-12 h-12 md:w-16 md:h-16 rounded-lg bg-gradient-to-r ${currentTrack.coverArt} flex-shrink-0`}
+                        />
+                      )}
 
                       {/* Scrolling marquee text */}
                       <div className="flex-1 min-w-0 overflow-hidden">
@@ -183,7 +263,7 @@ export function PersistentPlayer() {
                   )}
                 </div>
 
-                {/* Center: Play/Pause/Skip Controls + Ad-Lib Buttons */}
+                {/* Center: Play/Pause/Skip Controls */}
                 <div className="flex items-center gap-2 md:gap-4">
                   <button
                     onClick={() => {
@@ -221,35 +301,6 @@ export function PersistentPlayer() {
                   >
                     <SkipForward className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
                   </button>
-
-                  {/* Ad-Lib Spray Can Cap Buttons */}
-                  <div className="flex items-center gap-1.5 ml-2 pl-2 border-l-2 border-black">
-                    {adLibSamples.map((_, index) => {
-                      const colors = ["#ff0099", "#ccff00", "#ff6600"]; // spray-magenta, toxic-lime, safety-orange
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            triggerHaptic();
-                            playAdLib(index);
-                          }}
-                          className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-black transition-all hover:scale-110 active:scale-95 shadow-hard"
-                          style={{
-                            backgroundColor: colors[index],
-                            boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
-                          }}
-                          aria-label={`Play ad-lib ${index + 1}`}
-                        >
-                          <div className="w-full h-full rounded-full flex items-center justify-center">
-                            <div
-                              className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-black/30"
-                              style={{ boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 {/* Right: Volume + Mini Visualizer */}
@@ -278,15 +329,28 @@ export function PersistentPlayer() {
 
                   {/* Volume slider */}
                   <div className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4 text-toxic-lime flex-shrink-0" />
+                    <button
+                      onClick={toggleMute}
+                      className="p-1 hover:bg-foreground/10 rounded transition-colors"
+                      aria-label={isMuted ? "Unmute" : "Mute"}
+                    >
+                      {isMuted ? (
+                        <VolumeX className="w-4 h-4 text-toxic-lime flex-shrink-0" />
+                      ) : (
+                        <Volume2 className="w-4 h-4 text-toxic-lime flex-shrink-0" />
+                      )}
+                    </button>
                     <input
                       type="range"
                       min="0"
                       max="1"
                       step="0.01"
-                      value={volume}
+                      value={isMuted ? 0 : volume}
                       onChange={(e) => {
                         const newVolume = parseFloat(e.target.value);
+                        if (newVolume > 0 && isMuted) {
+                          setIsMuted(false);
+                        }
                         setVolume(newVolume);
                         if (audioRef.current) {
                           audioRef.current.volume = newVolume;
