@@ -18,15 +18,13 @@ export function SprayCursor() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMoving, setIsMoving] = useState(false);
 
-  const colors = [
-    "hsl(var(--neon-pink))",
-    "hsl(var(--neon-green))",
-    "hsl(var(--neon-cyan))",
-  ];
-
   useEffect(() => {
     let moveTimeout: NodeJS.Timeout;
-    let sprayInterval: NodeJS.Timeout;
+    const colors = [
+      "hsl(var(--neon-pink))",
+      "hsl(var(--neon-green))",
+      "hsl(var(--neon-cyan))",
+    ];
     let particleId = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -75,7 +73,7 @@ export function SprayCursor() {
     window.addEventListener("mousemove", handleMouseMove);
 
     // Spawn particles at interval when moving
-    sprayInterval = setInterval(spawnParticles, 30);
+    const sprayInterval = setInterval(spawnParticles, 30);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);

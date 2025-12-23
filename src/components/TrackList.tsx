@@ -72,108 +72,196 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[760px] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden">
-          {/* Sticky header */}
-          <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
-            <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-tag">
-              <div>#</div>
-              <div>TITLE</div>
-              <div>ARTIST</div>
-              <div>VIBE</div>
-              <div className="text-right">TIME</div>
+      {featuredOnly ? (
+        // Featured Mode: Table Layout
+        <div className="overflow-x-auto">
+          <div className="min-w-[760px] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden">
+            {/* Sticky header */}
+            <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
+              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-tag">
+                <div>#</div>
+                <div>TITLE</div>
+                <div>ARTIST</div>
+                <div>VIBE</div>
+                <div className="text-right">TIME</div>
+              </div>
             </div>
-          </div>
 
-          {/* Rows */}
-          <div className="divide-y divide-white/10">
-            {visibleTracks.map((track, idx) => {
-              const isActive = currentTrack?.id === track.id && isPlaying;
+            {/* Rows */}
+            <div className="divide-y divide-white/10">
+              {visibleTracks.map((track, idx) => {
+                const isActive = currentTrack?.id === track.id && isPlaying;
 
-              return (
-                <motion.button
-                  key={track.id}
-                  type="button"
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
-                  viewport={{ once: true }}
-                  onClick={() => playTrack(track)}
-                  className={[
-                    "group w-full text-left",
-                    "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
-                    "px-4 py-3 md:py-4",
-                    "hover:bg-white/5 transition-colors",
-                    isActive ? "text-neon-green" : "text-white",
-                  ].join(" ")}
-                >
-                  {/* Col 1: Index / Play icon */}
-                  <div className="relative flex items-center justify-center">
-                    <span
-                      className={[
-                        "text-sm font-tag",
-                        "group-hover:opacity-0 transition-opacity",
-                        isActive ? "opacity-0" : "opacity-100 text-white/70",
-                      ].join(" ")}
-                    >
-                      {idx + 1}
-                    </span>
-                    <span
-                      className={[
-                        "absolute",
-                        "opacity-0 group-hover:opacity-100 transition-opacity",
-                        isActive ? "opacity-100" : "",
-                      ].join(" ")}
-                      aria-hidden="true"
-                    >
-                      <Play className="w-4 h-4" fill="currentColor" />
-                    </span>
-                  </div>
-
-                  {/* Col 2: Cover + Title */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`w-10 h-10 rounded-md bg-gradient-to-r ${track.coverArt} flex-shrink-0 border border-white/10`}
-                    />
-                    <div className="min-w-0">
-                      <div
+                return (
+                  <motion.button
+                    key={track.id}
+                    type="button"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
+                    viewport={{ once: true }}
+                    onClick={() => playTrack(track)}
+                    className={[
+                      "group w-full text-left",
+                      "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
+                      "px-4 py-3 md:py-4",
+                      "hover:bg-white/5 transition-colors",
+                      isActive ? "text-neon-green" : "text-white",
+                    ].join(" ")}
+                  >
+                    {/* Col 1: Index / Play icon */}
+                    <div className="relative flex items-center justify-center">
+                      <span
                         className={[
-                          "truncate font-tag text-sm md:text-base",
-                          isActive ? "text-neon-green" : "text-white font-bold",
+                          "text-sm font-tag",
+                          "group-hover:opacity-0 transition-opacity",
+                          isActive ? "opacity-0" : "opacity-100 text-white/70",
                         ].join(" ")}
                       >
-                        {track.title}
+                        {idx + 1}
+                      </span>
+                      <span
+                        className={[
+                          "absolute",
+                          "opacity-0 group-hover:opacity-100 transition-opacity",
+                          isActive ? "opacity-100" : "",
+                        ].join(" ")}
+                        aria-hidden="true"
+                      >
+                        <Play className="w-4 h-4" fill="currentColor" />
+                      </span>
+                    </div>
+
+                    {/* Col 2: Cover + Title */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-10 h-10 rounded-md bg-gradient-to-r ${track.coverArt} flex-shrink-0 border border-white/10`}
+                      />
+                      <div className="min-w-0">
+                        <div
+                          className={[
+                            "truncate font-tag text-sm md:text-base",
+                            isActive ? "text-neon-green" : "text-white font-bold",
+                          ].join(" ")}
+                        >
+                          {track.title}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Col 3: Artist */}
-                  <div className={["flex items-center", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
-                    <span className="truncate text-sm">{track.artist}</span>
-                  </div>
+                    {/* Col 3: Artist */}
+                    <div className={["flex items-center", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                      <span className="truncate text-sm">{track.artist}</span>
+                    </div>
 
-                  {/* Col 4: Vibe badge */}
-                  <div className="flex items-center">
+                    {/* Col 4: Vibe badge */}
+                    <div className="flex items-center">
+                      <span
+                        className={[
+                          "px-3 py-1 rounded-full border text-[11px] font-tag tracking-[0.2em] uppercase",
+                          vibeColors[track.vibe],
+                        ].join(" ")}
+                      >
+                        {track.vibe}
+                      </span>
+                    </div>
+
+                    {/* Col 5: Duration */}
+                    <div className={["flex items-center justify-end text-sm", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                      3:00
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Full Mode: Vertical YouTube Music Style List
+        <div className="flex flex-col gap-2">
+          {visibleTracks.map((track, idx) => {
+            const isActive = currentTrack?.id === track.id && isPlaying;
+
+            return (
+              <motion.button
+                key={track.id}
+                type="button"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
+                viewport={{ once: true }}
+                onClick={() => playTrack(track)}
+                className={[
+                  "group w-full text-left",
+                  "flex items-center gap-4 p-4 rounded-lg",
+                  "hover:bg-white/5 transition-colors",
+                  "border border-transparent hover:border-white/10",
+                  isActive ? "bg-neon-green/10 border-neon-green/30" : "",
+                ].join(" ")}
+              >
+                {/* Play Icon / Index */}
+                <div className="relative flex items-center justify-center w-10 h-10 flex-shrink-0">
+                  <span
+                    className={[
+                      "text-sm font-tag",
+                      "group-hover:opacity-0 transition-opacity",
+                      isActive ? "opacity-0" : "opacity-100 text-white/70",
+                    ].join(" ")}
+                  >
+                    {idx + 1}
+                  </span>
+                  <span
+                    className={[
+                      "absolute",
+                      "opacity-0 group-hover:opacity-100 transition-opacity",
+                      isActive ? "opacity-100" : "",
+                    ].join(" ")}
+                    aria-hidden="true"
+                  >
+                    <Play className="w-5 h-5" fill={isActive ? "hsl(var(--neon-green))" : "currentColor"} />
+                  </span>
+                </div>
+
+                {/* Cover Art */}
+                <div
+                  className={`w-14 h-14 md:w-16 md:h-16 rounded-lg bg-gradient-to-r ${track.coverArt} flex-shrink-0 border border-white/10`}
+                />
+
+                {/* Title + Artist + Vibe */}
+                <div className="flex-1 min-w-0">
+                  <div
+                    className={[
+                      "truncate font-tag text-base md:text-lg mb-1",
+                      isActive ? "text-neon-green" : "text-white font-bold",
+                    ].join(" ")}
+                  >
+                    {track.title}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={["text-sm", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                      {track.artist}
+                    </span>
+                    <span className="text-white/40">•</span>
                     <span
                       className={[
-                        "px-3 py-1 rounded-full border text-[11px] font-tag tracking-[0.2em] uppercase",
+                        "px-2 py-0.5 rounded-full border text-[10px] font-tag tracking-[0.15em] uppercase",
                         vibeColors[track.vibe],
                       ].join(" ")}
                     >
                       {track.vibe}
                     </span>
                   </div>
+                </div>
 
-                  {/* Col 5: Duration */}
-                  <div className={["flex items-center justify-end text-sm", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
-                    3:00
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
+                {/* Duration */}
+                <div className={["text-sm flex-shrink-0", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                  3:00
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
-      </div>
+      )}
 
       {featuredOnly && (
         <div className="mt-6 flex justify-center">

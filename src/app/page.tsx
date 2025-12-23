@@ -6,6 +6,7 @@ import { VideoGallery } from "@/components/VideoGallery";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { GlitchText } from "@/components/GlitchText";
+import { MpcPad } from "@/components/MpcPad";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -151,6 +152,23 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* MPC Beat Maker Section */}
+      <section id="beat-maker" className="relative py-20 px-8 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+              <GlitchText text="MAKE A BEAT" />
+            </h2>
+            <MpcPad />
+          </motion.div>
         </div>
       </section>
 
