@@ -92,7 +92,18 @@ export function DJMixer({
     let analyzer: AudioMotionAnalyzer | null = null;
 
     try {
-      // Initialize with a safe default gradient to prevent crash
+      // Register the Custom "Piko" Gradient first
+      // (We'll register it before initialization to use it directly)
+      const pikoGradient = {
+        bgColor: "#00000000", // Transparent
+        dir: "h", // Horizontal gradient
+        colorStops: [
+          { pos: 0, color: "#4a90e2" }, // Cyan (Deck A)
+          { pos: 1, color: "#e24a4a" }, // Red (Deck B)
+        ],
+      };
+
+      // Initialize AudioMotionAnalyzer with Reflex Mode
       analyzer = new AudioMotionAnalyzer(analyzerRef.current, {
         audioCtx: audioContext,
         source: masterGainNode,
@@ -111,23 +122,14 @@ export function DJMixer({
         height: 150,
         lineWidth: 2,
         radial: false,
-        gradient: "classic", // Start with a safe default
+        gradient: "classic", // Start with safe default
         reflexRatio: 0.3,
         reflexAlpha: 0.25,
         reflexBright: 1,
       });
 
-      // Register the Custom "Piko" Gradient properly
-      analyzer.registerGradient("piko-custom", {
-        bgColor: "#00000000", // Transparent
-        dir: "h", // Horizontal gradient
-        colorStops: [
-          { pos: 0, color: "#4a90e2" }, // Cyan (Deck A)
-          { pos: 1, color: "#e24a4a" }, // Red (Deck B)
-        ],
-      });
-
-      // Apply the custom gradient
+      // Register and apply the custom gradient
+      analyzer.registerGradient("piko-custom", pikoGradient);
       analyzer.setOptions({
         gradient: "piko-custom",
         reflexRatio: 0.3,

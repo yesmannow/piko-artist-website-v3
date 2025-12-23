@@ -43,13 +43,25 @@ export function DJInterface() {
   // Mixer state
   const [crossfader, setCrossfader] = useState(0.5);
 
-  // FX state
-  const [filterFreq, setFilterFreq] = useState(1000);
-  const [filterType, setFilterType] = useState<"lowpass" | "highpass">("lowpass");
-  const [reverbDryWet, setReverbDryWet] = useState(0);
-  const [delayTime, setDelayTime] = useState(0);
-  const [delayFeedback, setDelayFeedback] = useState(0);
-  const [distortionAmount, setDistortionAmount] = useState(0);
+  // Active deck for FX control
+  const [activeDeck, setActiveDeck] = useState<"A" | "B">("A");
+
+  // FX state for Deck A
+  const [filterFreqA, setFilterFreqA] = useState(1000);
+  const [filterTypeA, setFilterTypeA] = useState<"lowpass" | "highpass">("lowpass");
+  const [reverbDryWetA, setReverbDryWetA] = useState(0);
+  const [delayTimeA, setDelayTimeA] = useState(0);
+  const [delayFeedbackA, setDelayFeedbackA] = useState(0);
+  const [distortionAmountA, setDistortionAmountA] = useState(0);
+
+  // FX state for Deck B
+  const [filterFreqB, setFilterFreqB] = useState(1000);
+  const [filterTypeB, setFilterTypeB] = useState<"lowpass" | "highpass">("lowpass");
+  const [reverbDryWetB, setReverbDryWetB] = useState(0);
+  const [delayTimeB, setDelayTimeB] = useState(0);
+  const [delayFeedbackB, setDelayFeedbackB] = useState(0);
+  const [distortionAmountB, setDistortionAmountB] = useState(0);
+
   const clampDelayFeedback = (value: number) => Math.min(Math.max(value, 0), FX_DELAY_FEEDBACK_MAX);
   const clampDistortionAmount = (value: number) => Math.min(Math.max(value, 0), 1);
 
@@ -84,14 +96,25 @@ export function DJInterface() {
   const masterGainRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
 
-  // FX nodes (shared between decks)
-  const fxFilterRef = useRef<BiquadFilterNode | null>(null);
-  const fxReverbRef = useRef<ConvolverNode | null>(null);
-  const fxReverbGainRef = useRef<GainNode | null>(null);
-  const fxDelayRef = useRef<DelayNode | null>(null);
-  const fxDelayGainRef = useRef<GainNode | null>(null);
-  const fxDelayFeedbackRef = useRef<GainNode | null>(null);
-  const fxDistortionRef = useRef<WaveShaperNode | null>(null);
+  // FX nodes for Deck A
+  const fxFilterARef = useRef<BiquadFilterNode | null>(null);
+  const fxReverbARef = useRef<ConvolverNode | null>(null);
+  const fxReverbGainARef = useRef<GainNode | null>(null);
+  const fxDelayARef = useRef<DelayNode | null>(null);
+  const fxDelayGainARef = useRef<GainNode | null>(null);
+  const fxDelayFeedbackARef = useRef<GainNode | null>(null);
+  const fxDistortionARef = useRef<WaveShaperNode | null>(null);
+  const preFxGainARef = useRef<GainNode | null>(null);
+
+  // FX nodes for Deck B
+  const fxFilterBRef = useRef<BiquadFilterNode | null>(null);
+  const fxReverbBRef = useRef<ConvolverNode | null>(null);
+  const fxReverbGainBRef = useRef<GainNode | null>(null);
+  const fxDelayBRef = useRef<DelayNode | null>(null);
+  const fxDelayGainBRef = useRef<GainNode | null>(null);
+  const fxDelayFeedbackBRef = useRef<GainNode | null>(null);
+  const fxDistortionBRef = useRef<WaveShaperNode | null>(null);
+  const preFxGainBRef = useRef<GainNode | null>(null);
 
   // 1. INITIALIZATION (Run ONCE - Empty dependency array)
   useEffect(() => {
@@ -168,50 +191,112 @@ export function DJInterface() {
     deckBGain.gain.value = 0.7; // Initial default
     deckBGainRef.current = deckBGain;
 
-    // Pre-FX gain to sum decks before FX chain
-    const preFxGain = ctx.createGain();
-    preFxGain.gain.value = 1;
+    // Helper function to create reverb impulse response
+    const createReverbImpulse = () => {
+      const impulseLength = ctx.sampleRate * 2; // 2 seconds
+      const impulse = ctx.createBuffer(2, impulseLength, ctx.sampleRate);
+      const impulseL = impulse.getChannelData(0);
+      const impulseR = impulse.getChannelData(1);
 
-    // Create FX nodes (initial values will be set by FX update useEffects)
-    // Filter
-    const fxFilter = ctx.createBiquadFilter();
-    fxFilter.type = "lowpass"; // Initial default
-    fxFilter.frequency.value = 1000; // Initial default
-    fxFilter.Q.value = 1;
-    fxFilterRef.current = fxFilter;
+      for (let i = 0; i < impulseLength; i++) {
+        const n = impulseLength - i;
+        impulseL[i] = (Math.random() * 2 - 1) * Math.pow(n / impulseLength, 2);
+        impulseR[i] = (Math.random() * 2 - 1) * Math.pow(n / impulseLength, 2);
+      }
+      return impulse;
+    };
 
-    // Distortion
-    const fxDistortion = ctx.createWaveShaper();
-    fxDistortion.curve = makeDistortionCurve(0);
-    fxDistortion.oversample = "4x";
-    fxDistortionRef.current = fxDistortion;
+    // ========== DECK A FX CHAIN ==========
+    // Pre-FX Mix node for Deck A
+    const preFxGainA = ctx.createGain();
+    preFxGainA.gain.value = 1.0;
+    preFxGainARef.current = preFxGainA;
 
-    // Reverb (using ConvolverNode with impulse response)
-    const reverbGain = ctx.createGain();
-    reverbGain.gain.value = 0; // Initial default
-    fxReverbGainRef.current = reverbGain;
+    // Distortion (Grit) Effect for Deck A
+    const fxDistortionA = ctx.createWaveShaper();
+    fxDistortionA.curve = makeDistortionCurve(0);
+    fxDistortionA.oversample = "4x";
+    fxDistortionARef.current = fxDistortionA;
 
-    // Create a simple reverb impulse (we'll use a delay-based approach for simplicity)
-    const reverbConvolver = ctx.createConvolver();
-    // For now, we'll use a simple delay-based reverb
-    fxReverbRef.current = reverbConvolver;
+    // Filter for Deck A
+    const fxFilterA = ctx.createBiquadFilter();
+    fxFilterA.type = "lowpass";
+    fxFilterA.frequency.value = 1000;
+    fxFilterA.Q.value = 1;
+    fxFilterARef.current = fxFilterA;
 
-    // Delay
-    const delay = ctx.createDelay(1.0); // Max 1 second delay
-    delay.delayTime.value = 0; // Initial default
-    fxDelayRef.current = delay;
+    // Reverb for Deck A
+    const reverbGainA = ctx.createGain();
+    reverbGainA.gain.value = 0;
+    fxReverbGainARef.current = reverbGainA;
 
-    const delayGain = ctx.createGain();
-    delayGain.gain.value = 0.5; // Output gain
-    fxDelayGainRef.current = delayGain;
+    const reverbConvolverA = ctx.createConvolver();
+    reverbConvolverA.buffer = createReverbImpulse();
+    reverbConvolverA.normalize = true;
+    fxReverbARef.current = reverbConvolverA;
 
-    const delayFeedbackGain = ctx.createGain();
-    delayFeedbackGain.gain.value = 0; // Initial default
-    fxDelayFeedbackRef.current = delayFeedbackGain;
+    // Delay for Deck A
+    const delayA = ctx.createDelay(1.0);
+    delayA.delayTime.value = 0;
+    fxDelayARef.current = delayA;
 
-    // Connect delay feedback loop (gain limited in FX updates)
-    delay.connect(delayFeedbackGain);
-    delayFeedbackGain.connect(delay);
+    const delayGainA = ctx.createGain();
+    delayGainA.gain.value = 0.5;
+    fxDelayGainARef.current = delayGainA;
+
+    const delayFeedbackGainA = ctx.createGain();
+    delayFeedbackGainA.gain.value = 0;
+    fxDelayFeedbackARef.current = delayFeedbackGainA;
+
+    // Connect delay feedback loop for Deck A
+    delayA.connect(delayFeedbackGainA);
+    delayFeedbackGainA.connect(delayA);
+
+    // ========== DECK B FX CHAIN ==========
+    // Pre-FX Mix node for Deck B
+    const preFxGainB = ctx.createGain();
+    preFxGainB.gain.value = 1.0;
+    preFxGainBRef.current = preFxGainB;
+
+    // Distortion (Grit) Effect for Deck B
+    const fxDistortionB = ctx.createWaveShaper();
+    fxDistortionB.curve = makeDistortionCurve(0);
+    fxDistortionB.oversample = "4x";
+    fxDistortionBRef.current = fxDistortionB;
+
+    // Filter for Deck B
+    const fxFilterB = ctx.createBiquadFilter();
+    fxFilterB.type = "lowpass";
+    fxFilterB.frequency.value = 1000;
+    fxFilterB.Q.value = 1;
+    fxFilterBRef.current = fxFilterB;
+
+    // Reverb for Deck B
+    const reverbGainB = ctx.createGain();
+    reverbGainB.gain.value = 0;
+    fxReverbGainBRef.current = reverbGainB;
+
+    const reverbConvolverB = ctx.createConvolver();
+    reverbConvolverB.buffer = createReverbImpulse();
+    reverbConvolverB.normalize = true;
+    fxReverbBRef.current = reverbConvolverB;
+
+    // Delay for Deck B
+    const delayB = ctx.createDelay(1.0);
+    delayB.delayTime.value = 0;
+    fxDelayBRef.current = delayB;
+
+    const delayGainB = ctx.createGain();
+    delayGainB.gain.value = 0.5;
+    fxDelayGainBRef.current = delayGainB;
+
+    const delayFeedbackGainB = ctx.createGain();
+    delayFeedbackGainB.gain.value = 0;
+    fxDelayFeedbackBRef.current = delayFeedbackGainB;
+
+    // Connect delay feedback loop for Deck B
+    delayB.connect(delayFeedbackGainB);
+    delayFeedbackGainB.connect(delayB);
 
     // Connect filter chains: Low -> Mid -> High -> Gain (Volume)
     deckALowFilter.connect(deckAMidFilter);
@@ -222,24 +307,53 @@ export function DJInterface() {
     deckBMidFilter.connect(deckBHighFilter);
     deckBHighFilter.connect(deckBGain);
 
-    // Audio routing: Decks -> Pre-FX -> Distortion -> Filter -> (Dry/Delay/Reverb) -> Master -> Analyzer -> Destination
-    deckAGain.connect(preFxGain);
-    deckBGain.connect(preFxGain);
+    // Audio routing: Each deck has its own FX chain
+    // Deck A: Deck A Gain -> Pre-FX A -> Distortion A -> Filter A -> (Dry/Delay/Reverb A) -> Master
+    // Deck B: Deck B Gain -> Pre-FX B -> Distortion B -> Filter B -> (Dry/Delay/Reverb B) -> Master
 
-    preFxGain.connect(fxDistortion);
-    fxDistortion.connect(fxFilter);
+    // ========== DECK A ROUTING ==========
+    // Connect Deck A to its Pre-FX Mix
+    deckAGain.connect(preFxGainA);
 
-    // Dry
-    fxFilter.connect(masterGain);
-    // Delay path
-    fxFilter.connect(delay);
-    delay.connect(delayGain);
-    delayGain.connect(masterGain);
-    // Reverb path
-    fxFilter.connect(reverbConvolver);
-    reverbConvolver.connect(reverbGain);
-    reverbGain.connect(masterGain);
+    // Connect Pre-FX A -> Distortion A -> Filter A
+    preFxGainA.connect(fxDistortionA);
+    fxDistortionA.connect(fxFilterA);
 
+    // Dry Signal Path: Filter A -> Master
+    fxFilterA.connect(masterGain);
+
+    // Wet Signal Path (Delay A): Filter A -> Delay A -> DelayGain A -> Master
+    fxFilterA.connect(delayA);
+    delayA.connect(delayGainA);
+    delayGainA.connect(masterGain);
+
+    // Wet Signal Path (Reverb A): Filter A -> Reverb A -> ReverbGain A -> Master
+    fxFilterA.connect(reverbConvolverA);
+    reverbConvolverA.connect(reverbGainA);
+    reverbGainA.connect(masterGain);
+
+    // ========== DECK B ROUTING ==========
+    // Connect Deck B to its Pre-FX Mix
+    deckBGain.connect(preFxGainB);
+
+    // Connect Pre-FX B -> Distortion B -> Filter B
+    preFxGainB.connect(fxDistortionB);
+    fxDistortionB.connect(fxFilterB);
+
+    // Dry Signal Path: Filter B -> Master
+    fxFilterB.connect(masterGain);
+
+    // Wet Signal Path (Delay B): Filter B -> Delay B -> DelayGain B -> Master
+    fxFilterB.connect(delayB);
+    delayB.connect(delayGainB);
+    delayGainB.connect(masterGain);
+
+    // Wet Signal Path (Reverb B): Filter B -> Reverb B -> ReverbGain B -> Master
+    fxFilterB.connect(reverbConvolverB);
+    reverbConvolverB.connect(reverbGainB);
+    reverbGainB.connect(masterGain);
+
+    // ========== MASTER OUTPUT ==========
     masterGain.connect(analyser);
     analyser.connect(ctx.destination);
 
@@ -274,33 +388,61 @@ export function DJInterface() {
     }
   }, [deckBVolume, crossfader]);
 
-  // 3. FX UPDATES (Real-time, no reboot)
+  // 3. FX UPDATES (Real-time, no reboot) - Deck A
   useEffect(() => {
-    if (fxFilterRef.current) {
-      fxFilterRef.current.type = filterType;
-      fxFilterRef.current.frequency.value = filterFreq;
+    if (fxFilterARef.current) {
+      fxFilterARef.current.type = filterTypeA;
+      fxFilterARef.current.frequency.value = filterFreqA;
     }
-  }, [filterFreq, filterType]);
+  }, [filterFreqA, filterTypeA]);
 
   useEffect(() => {
-    if (fxReverbGainRef.current) {
-      fxReverbGainRef.current.gain.value = reverbDryWet;
+    if (fxReverbGainARef.current) {
+      fxReverbGainARef.current.gain.value = reverbDryWetA;
     }
-  }, [reverbDryWet]);
+  }, [reverbDryWetA]);
 
   useEffect(() => {
-    if (fxDelayRef.current && fxDelayFeedbackRef.current) {
-      fxDelayRef.current.delayTime.value = delayTime;
-      fxDelayFeedbackRef.current.gain.value = delayFeedback;
+    if (fxDelayARef.current && fxDelayFeedbackARef.current) {
+      fxDelayARef.current.delayTime.value = delayTimeA;
+      fxDelayFeedbackARef.current.gain.value = delayFeedbackA;
     }
-  }, [delayTime, delayFeedback]);
+  }, [delayTimeA, delayFeedbackA]);
 
   useEffect(() => {
-    if (fxDistortionRef.current) {
-      const drive = clampDistortionAmount(distortionAmount);
-      fxDistortionRef.current.curve = makeDistortionCurve(drive * DISTORTION_SCALE);
+    if (fxDistortionARef.current) {
+      const drive = clampDistortionAmount(distortionAmountA);
+      fxDistortionARef.current.curve = makeDistortionCurve(drive * DISTORTION_SCALE);
     }
-  }, [distortionAmount]);
+  }, [distortionAmountA]);
+
+  // 3. FX UPDATES (Real-time, no reboot) - Deck B
+  useEffect(() => {
+    if (fxFilterBRef.current) {
+      fxFilterBRef.current.type = filterTypeB;
+      fxFilterBRef.current.frequency.value = filterFreqB;
+    }
+  }, [filterFreqB, filterTypeB]);
+
+  useEffect(() => {
+    if (fxReverbGainBRef.current) {
+      fxReverbGainBRef.current.gain.value = reverbDryWetB;
+    }
+  }, [reverbDryWetB]);
+
+  useEffect(() => {
+    if (fxDelayBRef.current && fxDelayFeedbackBRef.current) {
+      fxDelayBRef.current.delayTime.value = delayTimeB;
+      fxDelayFeedbackBRef.current.gain.value = delayFeedbackB;
+    }
+  }, [delayTimeB, delayFeedbackB]);
+
+  useEffect(() => {
+    if (fxDistortionBRef.current) {
+      const drive = clampDistortionAmount(distortionAmountB);
+      fxDistortionBRef.current.curve = makeDistortionCurve(drive * DISTORTION_SCALE);
+    }
+  }, [distortionAmountB]);
 
   // 4. EQ FILTER UPDATES
   useEffect(() => {
@@ -537,18 +679,35 @@ export function DJInterface() {
         {/* FX Rack */}
         <div data-tour="fx-unit">
         <FXUnit
-          filterFreq={filterFreq}
-          filterType={filterType}
-          onFilterFreqChange={setFilterFreq}
-          onFilterTypeChange={setFilterType}
-          reverbDryWet={reverbDryWet}
-          onReverbDryWetChange={setReverbDryWet}
-          delayTime={delayTime}
-          delayFeedback={delayFeedback}
-          onDelayTimeChange={setDelayTime}
-          onDelayFeedbackChange={(val) => setDelayFeedback(clampDelayFeedback(val))}
-          distortionAmount={distortionAmount}
-          onDistortionChange={(val) => setDistortionAmount(clampDistortionAmount(val))}
+          // Deck A FX
+          filterFreqA={filterFreqA}
+          filterTypeA={filterTypeA}
+          onFilterFreqChangeA={setFilterFreqA}
+          onFilterTypeChangeA={setFilterTypeA}
+          reverbDryWetA={reverbDryWetA}
+          onReverbDryWetChangeA={setReverbDryWetA}
+          delayTimeA={delayTimeA}
+          delayFeedbackA={delayFeedbackA}
+          onDelayTimeChangeA={setDelayTimeA}
+          onDelayFeedbackChangeA={(val) => setDelayFeedbackA(clampDelayFeedback(val))}
+          distortionAmountA={distortionAmountA}
+          onDistortionChangeA={(val) => setDistortionAmountA(clampDistortionAmount(val))}
+          // Deck B FX
+          filterFreqB={filterFreqB}
+          filterTypeB={filterTypeB}
+          onFilterFreqChangeB={setFilterFreqB}
+          onFilterTypeChangeB={setFilterTypeB}
+          reverbDryWetB={reverbDryWetB}
+          onReverbDryWetChangeB={setReverbDryWetB}
+          delayTimeB={delayTimeB}
+          delayFeedbackB={delayFeedbackB}
+          onDelayTimeChangeB={setDelayTimeB}
+          onDelayFeedbackChangeB={(val) => setDelayFeedbackB(clampDelayFeedback(val))}
+          distortionAmountB={distortionAmountB}
+          onDistortionChangeB={(val) => setDistortionAmountB(clampDistortionAmount(val))}
+          // Active deck toggle
+          activeDeck={activeDeck}
+          onActiveDeckChange={setActiveDeck}
         />
         </div>
 

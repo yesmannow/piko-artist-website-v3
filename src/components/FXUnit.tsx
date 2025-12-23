@@ -27,27 +27,62 @@ function denormalizeFilterFreq(value: number) {
 }
 
 interface FXUnitProps {
-  filterFreq: number;
-  filterType: "lowpass" | "highpass";
-  onFilterFreqChange: (val: number) => void;
-  onFilterTypeChange: (type: "lowpass" | "highpass") => void;
-  reverbDryWet: number;
-  onReverbDryWetChange: (val: number) => void;
-  delayTime: number;
-  delayFeedback: number;
-  onDelayTimeChange: (val: number) => void;
-  onDelayFeedbackChange: (val: number) => void;
-  // NEW: Distortion
-  distortionAmount: number;
-  onDistortionChange: (val: number) => void;
+  // Deck A FX
+  filterFreqA: number;
+  filterTypeA: "lowpass" | "highpass";
+  onFilterFreqChangeA: (val: number) => void;
+  onFilterTypeChangeA: (type: "lowpass" | "highpass") => void;
+  reverbDryWetA: number;
+  onReverbDryWetChangeA: (val: number) => void;
+  delayTimeA: number;
+  delayFeedbackA: number;
+  onDelayTimeChangeA: (val: number) => void;
+  onDelayFeedbackChangeA: (val: number) => void;
+  distortionAmountA: number;
+  onDistortionChangeA: (val: number) => void;
+  // Deck B FX
+  filterFreqB: number;
+  filterTypeB: "lowpass" | "highpass";
+  onFilterFreqChangeB: (val: number) => void;
+  onFilterTypeChangeB: (type: "lowpass" | "highpass") => void;
+  reverbDryWetB: number;
+  onReverbDryWetChangeB: (val: number) => void;
+  delayTimeB: number;
+  delayFeedbackB: number;
+  onDelayTimeChangeB: (val: number) => void;
+  onDelayFeedbackChangeB: (val: number) => void;
+  distortionAmountB: number;
+  onDistortionChangeB: (val: number) => void;
+  // Active deck toggle
+  activeDeck: "A" | "B";
+  onActiveDeckChange: (deck: "A" | "B") => void;
 }
 
 export function FXUnit({
-  filterFreq, filterType, onFilterFreqChange, onFilterTypeChange,
-  reverbDryWet, onReverbDryWetChange,
-  delayTime, delayFeedback, onDelayTimeChange, onDelayFeedbackChange,
-  distortionAmount, onDistortionChange
+  filterFreqA, filterTypeA, onFilterFreqChangeA, onFilterTypeChangeA,
+  reverbDryWetA, onReverbDryWetChangeA,
+  delayTimeA, delayFeedbackA, onDelayTimeChangeA, onDelayFeedbackChangeA,
+  distortionAmountA, onDistortionChangeA,
+  filterFreqB, filterTypeB, onFilterFreqChangeB, onFilterTypeChangeB,
+  reverbDryWetB, onReverbDryWetChangeB,
+  delayTimeB, delayFeedbackB, onDelayTimeChangeB, onDelayFeedbackChangeB,
+  distortionAmountB, onDistortionChangeB,
+  activeDeck, onActiveDeckChange
 }: FXUnitProps) {
+  // Select active deck's values
+  const filterFreq = activeDeck === "A" ? filterFreqA : filterFreqB;
+  const filterType = activeDeck === "A" ? filterTypeA : filterTypeB;
+  const onFilterFreqChange = activeDeck === "A" ? onFilterFreqChangeA : onFilterFreqChangeB;
+  const onFilterTypeChange = activeDeck === "A" ? onFilterTypeChangeA : onFilterTypeChangeB;
+  const reverbDryWet = activeDeck === "A" ? reverbDryWetA : reverbDryWetB;
+  const onReverbDryWetChange = activeDeck === "A" ? onReverbDryWetChangeA : onReverbDryWetChangeB;
+  const delayTime = activeDeck === "A" ? delayTimeA : delayTimeB;
+  const delayFeedback = activeDeck === "A" ? delayFeedbackA : delayFeedbackB;
+  const onDelayTimeChange = activeDeck === "A" ? onDelayTimeChangeA : onDelayTimeChangeB;
+  const onDelayFeedbackChange = activeDeck === "A" ? onDelayFeedbackChangeA : onDelayFeedbackChangeB;
+  const distortionAmount = activeDeck === "A" ? distortionAmountA : distortionAmountB;
+  const onDistortionChange = activeDeck === "A" ? onDistortionChangeA : onDistortionChangeB;
+
   const filterButtonClasses = (type: "lowpass" | "highpass") =>
     `px-2 py-1 text-[10px] rounded border ${
       filterType === type ? "bg-blue-500 text-white border-blue-500" : "border-gray-700 text-gray-500"
@@ -55,8 +90,31 @@ export function FXUnit({
 
   return (
     <div className="p-6 bg-[#0a0a0a] rounded-lg border border-gray-800">
-      <div className="text-center mb-4">
+      <div className="flex items-center justify-center gap-4 mb-4">
         <h3 className="text-lg font-barlow uppercase tracking-wider text-gray-300">FX RACK</h3>
+        {/* Deck Toggle */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => onActiveDeckChange("A")}
+            className={`px-3 py-1 text-xs font-barlow uppercase tracking-wider rounded border-2 transition-all ${
+              activeDeck === "A"
+                ? "bg-[#4a90e2] text-white border-[#4a90e2]"
+                : "border-gray-700 text-gray-400 hover:border-gray-600"
+            }`}
+          >
+            DECK A
+          </button>
+          <button
+            onClick={() => onActiveDeckChange("B")}
+            className={`px-3 py-1 text-xs font-barlow uppercase tracking-wider rounded border-2 transition-all ${
+              activeDeck === "B"
+                ? "bg-[#e24a4a] text-white border-[#e24a4a]"
+                : "border-gray-700 text-gray-400 hover:border-gray-600"
+            }`}
+          >
+            DECK B
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
         {/* FILTER */}
@@ -77,7 +135,7 @@ export function FXUnit({
           />
         </div>
 
-        {/* NEW: DISTORTION (GRIT) */}
+        {/* DISTORTION (GRIT) */}
         <div className="flex flex-col items-center gap-3">
           <span className="text-xs text-gray-400 uppercase tracking-widest">GRIT</span>
           <div className="h-[26px]"></div> {/* Spacer */}
