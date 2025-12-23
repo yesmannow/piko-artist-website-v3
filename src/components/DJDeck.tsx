@@ -108,7 +108,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             if (mediaSourceRef.current) {
               try {
                 mediaSourceRef.current.disconnect();
-              } catch (e) {
+              } catch {
                 // Ignore disconnect errors
               }
             }
@@ -143,7 +143,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         if (mediaSourceRef.current) {
           try {
             mediaSourceRef.current.disconnect();
-          } catch (e) {
+          } catch {
             // Ignore disconnect errors
           }
         }
