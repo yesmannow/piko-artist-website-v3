@@ -89,37 +89,58 @@ export function DJMixer({
   useEffect(() => {
     if (!audioContext || !masterGainNode || !analyzerRef.current) return;
 
+    let analyzer: AudioMotionAnalyzer | null = null;
+
     try {
-      const audioMotion = new AudioMotionAnalyzer(analyzerRef.current, {
+      // Initialize with a safe default gradient to prevent crash
+      analyzer = new AudioMotionAnalyzer(analyzerRef.current, {
         audioCtx: audioContext,
         source: masterGainNode,
         connectSpeakers: false,
         mode: 10, // Octave Bands
-        gradient: "linear-gradient(90deg, #4a90e2 0%, #e24a4a 100%)",
+        barSpace: 0.6,
+        ledBars: true,
         showScaleX: false,
         showScaleY: false,
+        showPeaks: false,
+        bgAlpha: 0, // Transparent background
+        overlay: true,
+        ansiBands: false,
+        channelLayout: "dual-combined",
+        smoothing: 0.7,
         height: 150,
         lineWidth: 2,
-        smoothing: 0.8,
         radial: false,
-        overlay: true,
+        gradient: "classic", // Start with a safe default
       });
 
-      audioMotionRef.current = audioMotion;
+      // Register the Custom "Piko" Gradient properly
+      analyzer.registerGradient("piko-custom", {
+        bgColor: "#00000000", // Transparent
+        dir: "h", // Horizontal gradient
+        colorStops: [
+          { pos: 0, color: "#4a90e2" }, // Cyan (Deck A)
+          { pos: 1, color: "#e24a4a" }, // Red (Deck B)
+        ],
+      });
 
-      return () => {
-        try {
-          if (audioMotionRef.current) {
-            audioMotionRef.current.destroy();
-            audioMotionRef.current = null;
-          }
-        } catch (error) {
-          console.error("Error cleaning up AudioMotion:", error);
-        }
-      };
-    } catch (error) {
-      console.error("Error setting up AudioMotion analyzer:", error);
+      // Apply the custom gradient
+      analyzer.setOptions({ gradient: "piko-custom" });
+
+      audioMotionRef.current = analyzer;
+    } catch (err) {
+      console.error("Visualizer failed to initialize:", err);
     }
+
+    return () => {
+      if (analyzer) {
+        try {
+          analyzer.destroy();
+        } catch (e) {
+          console.error("Error cleaning up analyzer:", e);
+        }
+      }
+    };
   }, [audioContext, masterGainNode]);
 
   return (

@@ -3,11 +3,16 @@
 import { Suspense } from "react";
 import { DJInterface } from "@/components/DJInterface";
 import { HelpProvider } from "@/context/HelpContext";
+import { CrashGuard } from "@/components/dj-ui/CrashGuard";
 // Preload 3D models early
 import "@/components/dj-ui/preload3D";
 
 function BeatMakerContent() {
-  return <DJInterface />;
+  return (
+    <CrashGuard>
+      <DJInterface />
+    </CrashGuard>
+  );
 }
 
 export default function BeatMakerPage() {
