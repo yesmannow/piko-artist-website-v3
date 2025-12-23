@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import AudioMotionAnalyzer from "audiomotion-analyzer";
 
 interface MPCScreenProps {
   kitName: string;
@@ -10,105 +11,45 @@ interface MPCScreenProps {
 }
 
 export function MPCScreen({ kitName, bpm, audioContext, masterGainNode }: MPCScreenProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const analyzerRef = useRef<AnalyserNode | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const audioMotionRef = useRef<AudioMotionAnalyzer | null>(null);
 
-  // Setup audio analyzer
+  // Setup AudioMotion analyzer
   useEffect(() => {
-    if (!audioContext || !masterGainNode) return;
+    if (!audioContext || !masterGainNode || !containerRef.current) return;
 
     try {
-      const analyzer = audioContext.createAnalyser();
-      analyzer.fftSize = 256;
-      analyzer.smoothingTimeConstant = 0.8;
+      // Create AudioMotion analyzer instance
+      const audioMotion = new AudioMotionAnalyzer(containerRef.current, {
+        audioCtx: audioContext,
+        source: masterGainNode,
+        connectSpeakers: false, // Don't route audio to speakers
+        mode: 2, // Discrete Bars - LCD style
+        gradient: 'linear-gradient(90deg, #ccff00 0%, #2a2a2a 100%)', // Toxic Lime to Dark
+        showScaleX: false,
+        ledBars: true, // Segmented look
+        height: 80,
+        lineWidth: 2,
+        smoothing: 0.8,
+      });
 
-      // Tap the signal from master gain to analyzer (parallel connection)
-      // The analyzer doesn't need to connect to destination - it just reads data
-      masterGainNode.connect(analyzer);
-
-      analyzerRef.current = analyzer;
+      audioMotionRef.current = audioMotion;
 
       return () => {
         try {
-          if (analyzerRef.current) {
-            analyzerRef.current.disconnect();
+          if (audioMotionRef.current) {
+            // Destroy the analyzer (handles cleanup internally)
+            audioMotionRef.current.destroy();
+            audioMotionRef.current = null;
           }
-        } catch {
-          // Ignore disconnect errors
+        } catch (error) {
+          console.error("Error cleaning up AudioMotion:", error);
         }
       };
     } catch (error) {
-      console.error("Error setting up analyzer:", error);
+      console.error("Error setting up AudioMotion analyzer:", error);
     }
   }, [audioContext, masterGainNode]);
-
-  // Visualizer animation loop
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !analyzerRef.current) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const analyzer = analyzerRef.current;
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
-      animationFrameRef.current = requestAnimationFrame(draw);
-
-      analyzer.getByteTimeDomainData(dataArray);
-
-      ctx.fillStyle = "#4ade80"; // LCD green background
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw inner shadow effect
-      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw oscilloscope line
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#166534"; // Dark green for pixelated look
-      ctx.beginPath();
-
-      const sliceWidth = canvas.width / bufferLength;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-
-        x += sliceWidth;
-      }
-
-      ctx.stroke();
-
-      // Add pixelated effect by drawing small rectangles
-      ctx.fillStyle = "#166534";
-      for (let i = 0; i < bufferLength; i += 4) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-        const x = (i / bufferLength) * canvas.width;
-        ctx.fillRect(x, y, 2, 2);
-      }
-    };
-
-    draw();
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div
@@ -146,15 +87,14 @@ export function MPCScreen({ kitName, bpm, audioContext, masterGainNode }: MPCScr
           BPM: {bpm}
         </div>
 
-        {/* Canvas Visualizer */}
+        {/* AudioMotion Visualizer */}
         <div className="mt-2">
-          <canvas
-            ref={canvasRef}
-            width={300}
-            height={80}
+          <div
+            ref={containerRef}
             className="w-full border border-black/20"
             style={{
-              imageRendering: "crisp-edges",
+              height: "80px",
+              minHeight: "80px",
             }}
           />
         </div>

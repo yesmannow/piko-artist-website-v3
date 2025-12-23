@@ -9,6 +9,7 @@ import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TrackDrawer } from "@/components/TrackDrawer";
 
 const vibeColors = {
   chill: "bg-toxic-lime/20 text-toxic-lime border-toxic-lime border-black",
@@ -264,25 +265,28 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 const isActive = currentTrack?.id === track.id && isPlaying;
 
                 return (
-                  <motion.button
+                  <TrackDrawer
                     key={track.id}
-                    type="button"
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
-                    viewport={{ once: true }}
-                    onClick={() => {
-                      triggerHaptic();
-                      playTrack(track);
-                    }}
-                    className={[
-                      "group w-full text-left",
-                      "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
-                      "px-4 py-3 md:py-4",
-                      "hover:bg-foreground/5 transition-colors",
-                      isActive ? "text-toxic-lime" : "text-foreground",
-                    ].join(" ")}
+                    track={track}
                   >
+                    <motion.button
+                      type="button"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
+                      viewport={{ once: true }}
+                      onClick={() => {
+                        triggerHaptic();
+                        playTrack(track);
+                      }}
+                      className={[
+                        "group w-full text-left",
+                        "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
+                        "px-4 py-3 md:py-4",
+                        "hover:bg-foreground/5 transition-colors",
+                        isActive ? "text-toxic-lime" : "text-foreground",
+                      ].join(" ")}
+                    >
                     {/* Col 1: Index / Play icon */}
                     <div className="relative flex items-center justify-center">
                       <span
@@ -343,6 +347,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                       3:00
                     </div>
                   </motion.button>
+                  </TrackDrawer>
                 );
               })}
             </div>
@@ -352,17 +357,22 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look with 3D Tilt
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 snap-y snap-mandatory overflow-y-auto" style={{ perspective: "1000px" }}>
           {visibleTracks.map((track, idx) => (
-            <div key={track.id} className="snap-center">
-              <TrackCard
-                track={track}
-                index={idx}
-              isActive={currentTrack?.id === track.id && isPlaying}
-              onPlay={() => {
-                triggerHaptic();
-                playTrack(track);
-              }}
-              />
-            </div>
+            <TrackDrawer
+              key={track.id}
+              track={track}
+            >
+              <div className="snap-center">
+                <TrackCard
+                  track={track}
+                  index={idx}
+                  isActive={currentTrack?.id === track.id && isPlaying}
+                  onPlay={() => {
+                    triggerHaptic();
+                    playTrack(track);
+                  }}
+                />
+              </div>
+            </TrackDrawer>
           ))}
         </div>
       )}

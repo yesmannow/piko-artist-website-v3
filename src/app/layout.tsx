@@ -11,6 +11,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallApp } from "@/components/InstallApp";
 import { PullSoundHandler } from "@/components/PullSoundHandler";
+import { SmoothScroll } from "@/components/SmoothScroll";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -76,7 +77,9 @@ export default function RootLayout({
           <VideoProvider>
             <PullSoundHandler />
             <Navigation />
-            <PageTransition>{children}</PageTransition>
+            <SmoothScroll>
+              <PageTransition>{children}</PageTransition>
+            </SmoothScroll>
             <Footer />
             <FloatingVideoPlayer />
             <PersistentPlayer />
