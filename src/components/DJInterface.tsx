@@ -39,6 +39,7 @@ export function DJInterface() {
   const [reverbDryWet, setReverbDryWet] = useState(0);
   const [delayTime, setDelayTime] = useState(0);
   const [delayFeedback, setDelayFeedback] = useState(0);
+  const [distortionAmount, setDistortionAmount] = useState(0);
 
   // Kill switches
   const [deckAKillHigh, setDeckAKillHigh] = useState(false);
@@ -78,6 +79,7 @@ export function DJInterface() {
   const fxDelayRef = useRef<DelayNode | null>(null);
   const fxDelayGainRef = useRef<GainNode | null>(null);
   const fxDelayFeedbackRef = useRef<GainNode | null>(null);
+  const fxDistortionRef = useRef<WaveShaperNode | null>(null);
 
   // 1. INITIALIZATION (Run ONCE - Empty dependency array)
   useEffect(() => {
@@ -154,6 +156,10 @@ export function DJInterface() {
     deckBGain.gain.value = 0.7; // Initial default
     deckBGainRef.current = deckBGain;
 
+    // Pre-FX gain to sum decks before FX chain
+    const preFxGain = ctx.createGain();
+    preFxGain.gain.value = 1;
+
     // Create FX nodes (initial values will be set by FX update useEffects)
     // Filter
     const fxFilter = ctx.createBiquadFilter();
@@ -161,6 +167,12 @@ export function DJInterface() {
     fxFilter.frequency.value = 1000; // Initial default
     fxFilter.Q.value = 1;
     fxFilterRef.current = fxFilter;
+
+    // Distortion
+    const fxDistortion = ctx.createWaveShaper();
+    fxDistortion.curve = makeDistortionCurve(0);
+    fxDistortion.oversample = "4x";
+    fxDistortionRef.current = fxDistortion;
 
     // Reverb (using ConvolverNode with impulse response)
     const reverbGain = ctx.createGain();
@@ -186,7 +198,6 @@ export function DJInterface() {
     fxDelayFeedbackRef.current = delayFeedbackGain;
 
     // Connect delay feedback loop
-    delay.connect(delayGain);
     delay.connect(delayFeedbackGain);
     delayFeedbackGain.connect(delay);
 
@@ -199,11 +210,24 @@ export function DJInterface() {
     deckBMidFilter.connect(deckBHighFilter);
     deckBHighFilter.connect(deckBGain);
 
-    // Audio routing: Source -> FX -> EQ -> Volume -> Crossfader -> Master -> Analyzer -> Destination
-    // Note: FX will be connected in DJDeck when media source is created
-    // For now, connect decks directly to master (FX will be inserted in the chain)
-    deckAGain.connect(masterGain);
-    deckBGain.connect(masterGain);
+    // Audio routing: Decks -> Pre-FX -> Distortion -> Filter -> (Dry/Delay/Reverb) -> Master -> Analyzer -> Destination
+    deckAGain.connect(preFxGain);
+    deckBGain.connect(preFxGain);
+
+    preFxGain.connect(fxDistortion);
+    fxDistortion.connect(fxFilter);
+
+    // Dry
+    fxFilter.connect(masterGain);
+    // Delay path
+    fxFilter.connect(delay);
+    delay.connect(delayGain);
+    delayGain.connect(masterGain);
+    // Reverb path
+    fxFilter.connect(reverbConvolver);
+    reverbConvolver.connect(reverbGain);
+    reverbGain.connect(masterGain);
+
     masterGain.connect(analyser);
     analyser.connect(ctx.destination);
 
@@ -258,6 +282,12 @@ export function DJInterface() {
       fxDelayFeedbackRef.current.gain.value = delayFeedback;
     }
   }, [delayTime, delayFeedback]);
+
+  useEffect(() => {
+    if (fxDistortionRef.current) {
+      fxDistortionRef.current.curve = makeDistortionCurve(distortionAmount * 400);
+    }
+  }, [distortionAmount]);
 
   // 4. EQ FILTER UPDATES
   useEffect(() => {
@@ -504,6 +534,8 @@ export function DJInterface() {
           delayFeedback={delayFeedback}
           onDelayTimeChange={setDelayTime}
           onDelayFeedbackChange={setDelayFeedback}
+          distortionAmount={distortionAmount}
+          onDistortionChange={setDistortionAmount}
         />
         </div>
 
@@ -657,3 +689,14 @@ export function DJInterface() {
   );
 }
 
+function makeDistortionCurve(amount: number) {
+  const k = typeof amount === "number" ? amount : 50;
+  const n_samples = 44100;
+  const curve = new Float32Array(n_samples);
+  const deg = Math.PI / 180;
+  for (let i = 0; i < n_samples; ++i) {
+    const x = (i * 2) / n_samples - 1;
+    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}

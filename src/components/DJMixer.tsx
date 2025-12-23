@@ -97,7 +97,7 @@ export function DJMixer({
         audioCtx: audioContext,
         source: masterGainNode,
         connectSpeakers: false,
-        mode: 10, // Octave Bands
+        mode: 5, // 1/3 octave bands
         barSpace: 0.6,
         ledBars: true,
         showScaleX: false,
@@ -112,6 +112,9 @@ export function DJMixer({
         lineWidth: 2,
         radial: false,
         gradient: "classic", // Start with a safe default
+        reflexRatio: 0.3,
+        reflexAlpha: 0.25,
+        reflexBright: 1,
       });
 
       // Register the Custom "Piko" Gradient properly
@@ -125,7 +128,12 @@ export function DJMixer({
       });
 
       // Apply the custom gradient
-      analyzer.setOptions({ gradient: "piko-custom" });
+      analyzer.setOptions({
+        gradient: "piko-custom",
+        reflexRatio: 0.3,
+        reflexAlpha: 0.25,
+        reflexBright: 1,
+      });
 
       audioMotionRef.current = analyzer;
     } catch (err) {
@@ -357,4 +365,3 @@ export function DJMixer({
     </div>
   );
 }
-
