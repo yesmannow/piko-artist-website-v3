@@ -9,10 +9,10 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 
 const vibeColors = {
-  chill: "bg-neon-green/20 text-neon-green border-neon-green",
-  hype: "bg-neon-pink/20 text-neon-pink border-neon-pink",
-  classic: "bg-amber-500/20 text-amber-400 border-amber-400",
-  storytelling: "bg-purple-500/20 text-purple-400 border-purple-400",
+  chill: "bg-toxic-lime/20 text-toxic-lime border-toxic-lime border-black",
+  hype: "bg-spray-magenta/20 text-spray-magenta border-spray-magenta border-black",
+  classic: "bg-safety-orange/20 text-safety-orange border-safety-orange border-black",
+  storytelling: "bg-spray-magenta/20 text-spray-magenta border-spray-magenta border-black",
 };
 
 type VibeFilter = "all" | "chill" | "hype" | "storytelling" | "classic";
@@ -85,10 +85,10 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 type="button"
                 onClick={() => setActiveFilter(opt.id)}
                 className={[
-                  "px-4 py-2 rounded-full border font-tag tracking-wider text-sm transition-all",
+                  "px-4 py-2 rounded-full border-2 border-black font-tag tracking-wider text-sm transition-all",
                   isActive
-                    ? "border-neon-green text-neon-green bg-neon-green/10 shadow-[0_0_15px_rgba(0,255,153,0.25)]"
-                    : "border-white/10 text-white/80 hover:text-white hover:border-white/30 hover:bg-white/5",
+                    ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
+                    : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
                 ].join(" ")}
               >
                 {opt.label}
@@ -131,8 +131,8 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                       "group w-full text-left",
                       "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
                       "px-4 py-3 md:py-4",
-                      "hover:bg-white/5 transition-colors",
-                      isActive ? "text-neon-green" : "text-white",
+                      "hover:bg-foreground/5 transition-colors",
+                      isActive ? "text-toxic-lime" : "text-foreground",
                     ].join(" ")}
                   >
                     {/* Col 1: Index / Play icon */}
@@ -165,7 +165,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                         <div
                           className={[
                             "truncate font-tag text-sm md:text-base",
-                            isActive ? "text-neon-green" : "text-white font-bold",
+                            isActive ? "text-toxic-lime" : "text-foreground font-bold",
                           ].join(" ")}
                         >
                           {track.title}
@@ -174,7 +174,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     </div>
 
                     {/* Col 3: Artist */}
-                    <div className={["flex items-center", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                    <div className={["flex items-center", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
                       <span className="truncate text-sm">{track.artist}</span>
                     </div>
 
@@ -191,7 +191,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     </div>
 
                     {/* Col 5: Duration */}
-                    <div className={["flex items-center justify-end text-sm", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                    <div className={["flex items-center justify-end text-sm", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
                       3:00
                     </div>
                   </motion.button>
@@ -201,10 +201,12 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
           </div>
         </div>
       ) : (
-        // Full Mode: 3-Column Responsive Grid
+        // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {visibleTracks.map((track, idx) => {
             const isActive = currentTrack?.id === track.id && isPlaying;
+            // Random rotation between -1deg and 1deg for pasted-on-wall effect
+            const rotation = (Math.random() * 2 - 1).toFixed(2);
 
             return (
               <motion.button
@@ -215,11 +217,14 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
                 viewport={{ once: true }}
                 onClick={() => playTrack(track)}
+                style={{ transform: `rotate(${rotation}deg)` }}
                 className={[
                   "group relative w-full text-left",
-                  "bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden",
-                  "border border-transparent hover:border-white/20 transition-all",
-                  isActive ? "border-neon-green/50 bg-neon-green/10" : "",
+                  "bg-concrete overflow-hidden",
+                  "border-2 border-black",
+                  "shadow-hard",
+                  "transition-all hover:scale-[1.02]",
+                  isActive ? "ring-2 ring-toxic-lime" : "",
                 ].join(" ")}
               >
                 {/* Cover Art Image */}
@@ -239,12 +244,12 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                   {/* Hover Overlay with Play Button */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-neon-green/20 rounded-full blur-xl" />
+                      <div className="absolute inset-0 bg-toxic-lime/20 rounded-full blur-xl" />
                       <Play
                         className="relative w-12 h-12 md:w-16 md:h-16 text-white"
                         fill="currentColor"
                         style={{
-                          filter: `drop-shadow(0 0 10px hsl(var(--neon-green)))`,
+                          filter: `drop-shadow(0 0 10px #ccff00)`,
                         }}
                       />
                     </div>
@@ -253,7 +258,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                   {/* Active Indicator */}
                   {isActive && (
                     <div className="absolute top-2 right-2">
-                      <div className="w-3 h-3 bg-neon-green rounded-full animate-pulse" />
+                      <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse" />
                     </div>
                   )}
                 </div>
@@ -262,20 +267,20 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 <div className="p-4">
                   <div
                     className={[
-                      "font-tag text-base md:text-lg mb-1 line-clamp-2",
-                      isActive ? "text-neon-green" : "text-white font-bold",
+                      "font-header text-base md:text-lg mb-1 line-clamp-2",
+                      isActive ? "text-toxic-lime" : "text-foreground font-bold",
                     ].join(" ")}
                   >
                     {track.title}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={["text-sm", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                    <span className={["text-sm", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
                       {track.artist}
                     </span>
-                    <span className="text-white/40">•</span>
+                    <span className="text-foreground/40">•</span>
                     <span
                       className={[
-                        "px-2 py-0.5 rounded-full border text-[10px] font-tag tracking-[0.15em] uppercase",
+                        "px-2 py-0.5 rounded-full border border-black text-[10px] font-tag tracking-[0.15em] uppercase",
                         vibeColors[track.vibe],
                       ].join(" ")}
                     >
@@ -293,7 +298,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         <div className="mt-6 flex justify-center">
           <Link
             href="/music"
-            className="px-6 py-3 rounded-full border border-neon-green/50 bg-neon-green/10 text-neon-green font-tag tracking-wider hover:bg-neon-green/20 transition-colors"
+            className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-tag tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
           >
             View Full Discography
           </Link>

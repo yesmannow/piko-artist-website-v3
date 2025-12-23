@@ -92,7 +92,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
 
                       {/* Play Icon Overlay */}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="w-16 h-16 rounded-full bg-neon-green/90 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-toxic-lime/90 flex items-center justify-center border-2 border-black">
                           <svg
                             className="w-8 h-8 text-black ml-1"
                             fill="currentColor"
@@ -125,7 +125,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
           <div className="mt-8 flex justify-center">
             <Link
               href="/videos"
-              className="px-6 py-3 rounded-full border border-neon-green/50 bg-neon-green/10 text-neon-green font-tag tracking-wider hover:bg-neon-green/20 transition-colors"
+              className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-tag tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
             >
               Watch All Visuals
             </Link>
@@ -133,67 +133,82 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
         </>
       ) : (
         <>
-          {/* YouTube-Style Grid Layout - Full Archive Mode */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {visibleVideos.map((video, index) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.25) }}
-                viewport={{ once: true }}
-                className="group cursor-pointer"
-                onClick={() => playVideo(video.id)}
-              >
-                {/* YouTube-Style Card */}
-                <div className="bg-card rounded-lg overflow-hidden border border-white/10 hover:border-neon-green/50 transition-colors">
-                  {/* Thumbnail Container */}
-                  <div className="relative aspect-video bg-black overflow-hidden">
-                    <Image
-                      src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
-                      alt={video.title}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      unoptimized
-                    />
+          {/* Wheatpaste Wall Grid Layout - Full Archive Mode */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2 md:px-0">
+            {visibleVideos.map((video, index) => {
+              // Random rotation for pasted-on-wall effect
+              const rotation = (Math.random() * 2 - 1).toFixed(2);
+              const tapeRotation = (Math.random() * 8 - 4).toFixed(2);
 
-                    {/* Duration Badge (Bottom-Right) */}
-                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-tag text-white">
-                      {getFakeDuration(index)}
+              return (
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.25) }}
+                  viewport={{ once: true }}
+                  className="group cursor-pointer relative overflow-visible"
+                  onClick={() => playVideo(video.id)}
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                  {/* Duct Tape Element - Top Center */}
+                  <div
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-12 md:w-16 h-4 md:h-6 bg-tape-gray opacity-80"
+                    style={{ transform: `translateX(-50%) rotate(${tapeRotation}deg)` }}
+                  >
+                    <div className="w-full h-full bg-tape-gray border border-black/20" />
+                  </div>
+
+                  {/* Poster Card */}
+                  <div className="bg-concrete overflow-hidden border-2 border-black shadow-hard transition-all hover:scale-[1.02]">
+                    {/* Thumbnail Container */}
+                    <div className="relative aspect-video bg-black overflow-hidden">
+                      <Image
+                        src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+                        alt={video.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        unoptimized
+                      />
+
+                      {/* Duration Badge (Bottom-Right) */}
+                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-tag text-white border border-black">
+                        {getFakeDuration(index)}
+                      </div>
+
+                      {/* Play Button Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                        <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border-2 border-black">
+                          <svg
+                            className="w-7 h-7 text-black ml-1"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Play Button Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
-                      <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                        <svg
-                          className="w-7 h-7 text-black ml-1"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
+                    {/* Card Info */}
+                    <div className="p-3 md:p-4">
+                      <h3 className="font-header text-base md:text-lg text-foreground line-clamp-2 mb-2 group-hover:text-toxic-lime transition-colors font-bold">
+                        {video.title}
+                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs md:text-sm text-foreground/60">
+                          {video.artist}
+                        </p>
+                        <span className="text-foreground/40">•</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-tag uppercase bg-foreground/5 text-foreground/70 border border-black">
+                          {video.vibe}
+                        </span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Card Info */}
-                  <div className="p-3 md:p-4">
-                    <h3 className="font-tag text-base md:text-lg text-white line-clamp-2 mb-2 group-hover:text-neon-green transition-colors">
-                      {video.title}
-                    </h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-xs md:text-sm text-white/60">
-                        {video.artist}
-                      </p>
-                      <span className="text-white/40">•</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-tag uppercase bg-white/5 text-white/70 border border-white/10">
-                        {video.vibe}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </>
       )}

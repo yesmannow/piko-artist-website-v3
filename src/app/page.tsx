@@ -118,10 +118,63 @@ export default function Home() {
                 Versos Reales. Ritmo Urbano. Una Mas Music.
               </p>
 
-              {/* Narrative */}
-              <p className="text-lg md:text-xl text-foreground/90 mb-8 leading-relaxed">
-                Representing the Una Mas Music movement, Piko blends the raw energy of the underground with the emotional complexity of real relationships. From the smoke-filled vibes of &apos;Entre Humos&apos; to the heartfelt promises of &apos;Te Prometo,&apos; his music is a mirror of the streets—beautiful, chaotic, and real.
-              </p>
+              {/* Narrative - "Rap Sheet" Case File Style */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="relative p-6 md:p-8 mb-8 bg-[#f0e6d2] text-black shadow-hard"
+                style={{
+                  transform: "rotate(-1deg)",
+                  boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                }}
+              >
+                {/* Paperclip Element */}
+                <div className="absolute -top-2 right-8 z-10">
+                  <svg
+                    width="24"
+                    height="32"
+                    viewBox="0 0 24 32"
+                    fill="none"
+                    className="text-gray-600"
+                  >
+                    <path
+                      d="M8 2C8 1.44772 8.44772 1 9 1H15C15.5523 1 16 1.44772 16 2V8C16 8.55228 15.5523 9 15 9H9C8.44772 9 8 8.55228 8 8V2Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M8 10C8 9.44772 8.44772 9 9 9H15C15.5523 9 16 9.44772 16 10V16C16 16.5523 15.5523 17 15 17H9C8.44772 17 8 16.5523 8 16V10Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M8 18C8 17.4477 8.44772 17 9 17H15C15.5523 17 16 17.4477 16 18V24C16 24.5523 15.5523 25 15 25H9C8.44772 25 8 24.5523 8 24V18Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+
+                {/* Typewriter-style text with highlights */}
+                <p className="text-base md:text-lg font-mono leading-relaxed">
+                  Representing the{" "}
+                  <span className="relative inline-block px-1 bg-yellow-300" style={{ clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)" }}>
+                    Una Mas Music
+                  </span>{" "}
+                  movement,{" "}
+                  <span className="relative inline-block px-1 bg-yellow-300" style={{ clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)" }}>
+                    Piko
+                  </span>{" "}
+                  blends the raw energy of the underground with the emotional complexity of real relationships. From the smoke-filled vibes of &apos;Entre Humos&apos; to the heartfelt promises of &apos;Te Prometo,&apos; his music is a mirror of the streets—beautiful, chaotic, and real. As a{" "}
+                  <span className="relative inline-block px-1 bg-yellow-300" style={{ clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)" }}>
+                    Producer
+                  </span>{" "}
+                  and{" "}
+                  <span className="relative inline-block px-1 bg-yellow-300" style={{ clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)" }}>
+                    Artist
+                  </span>
+                  , he continues to push boundaries.
+                </p>
+              </motion.div>
 
               {/* Featured Quote */}
               <motion.div

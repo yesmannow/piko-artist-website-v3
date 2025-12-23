@@ -1,31 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface Particle {
+interface Drip {
   id: number;
   x: number;
   y: number;
   color: string;
-  size: number;
+  width: number;
+  length: number;
   velocityX: number;
   velocityY: number;
 }
 
 export function SprayCursor() {
-  const [particles, setParticles] = useState<Particle[]>();
+  const [drips, setDrips] = useState<Drip[]>();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMoving, setIsMoving] = useState(false);
+  const colorIndexRef = useRef(0);
 
   useEffect(() => {
     let moveTimeout: NodeJS.Timeout;
+    // New "Street" palette colors
     const colors = [
-      "hsl(var(--neon-pink))",
-      "hsl(var(--neon-green))",
-      "hsl(var(--neon-cyan))",
+      "#ff0099", // spray-magenta
+      "#ccff00", // toxic-lime
+      "#ff6600", // safety-orange
     ];
-    let particleId = 0;
+
+    let dripId = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
@@ -34,46 +38,51 @@ export function SprayCursor() {
       // Clear existing timeout
       clearTimeout(moveTimeout);
 
-      // Set timeout to stop spawning particles
+      // Set timeout to stop spawning drips
       moveTimeout = setTimeout(() => {
         setIsMoving(false);
       }, 100);
     };
 
-    const spawnParticles = () => {
+    const spawnDrips = () => {
       if (!isMoving) return;
 
-      const particleCount = Math.random() > 0.5 ? 2 : 3; // Random 2-3 particles per spawn
-      const newParticles: Particle[] = [];
+      const dripCount = Math.random() > 0.6 ? 1 : 2; // Random 1-2 drips per spawn
+      const newDrips: Drip[] = [];
 
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < dripCount; i++) {
         // Random spread around cursor
-        const spread = 15;
+        const spread = 12;
         const offsetX = (Math.random() - 0.5) * spread;
-        const offsetY = (Math.random() - 0.5) * spread;
+        const offsetY = (Math.random() - 0.5) * spread * 0.5; // Less vertical spread for drips
 
-        newParticles.push({
-          id: particleId++,
+        // Cycle through colors
+        const color = colors[colorIndexRef.current % colors.length];
+        colorIndexRef.current++;
+
+        newDrips.push({
+          id: dripId++,
           x: mousePosition.x + offsetX,
           y: mousePosition.y + offsetY,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          size: Math.random() * 4 + 2, // Random size 2-6px
-          velocityX: (Math.random() - 0.5) * 2, // Random horizontal drift
-          velocityY: Math.random() * 2 + 1, // Downward gravity
+          color: color,
+          width: Math.random() * 3 + 2, // Random width 2-5px
+          length: Math.random() * 20 + 15, // Random length 15-35px for drip effect
+          velocityX: (Math.random() - 0.5) * 1.5, // Minimal horizontal drift
+          velocityY: Math.random() * 3 + 2, // Stronger downward gravity for drip
         });
       }
 
-      setParticles((prev) => {
-        const updated = [...(prev || []), ...newParticles];
-        // Keep only the last 100 particles for performance
-        return updated.slice(-100);
+      setDrips((prev) => {
+        const updated = [...(prev || []), ...newDrips];
+        // Keep only the last 80 drips for performance
+        return updated.slice(-80);
       });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Spawn particles at interval when moving
-    const sprayInterval = setInterval(spawnParticles, 30);
+    // Spawn drips at interval when moving
+    const sprayInterval = setInterval(spawnDrips, 40);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
@@ -85,32 +94,35 @@ export function SprayCursor() {
   return (
     <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
       <AnimatePresence>
-        {particles?.map((particle) => (
+        {drips?.map((drip) => (
           <motion.div
-            key={particle.id}
+            key={drip.id}
             initial={{
-              x: particle.x,
-              y: particle.y,
+              x: drip.x,
+              y: drip.y,
               opacity: 1,
-              scale: 1,
+              scaleY: 1,
             }}
             animate={{
-              x: particle.x + particle.velocityX * 10,
-              y: particle.y + particle.velocityY * 30, // Drip effect
+              x: drip.x + drip.velocityX * 15,
+              y: drip.y + drip.velocityY * 40, // Strong downward drip
               opacity: 0,
-              scale: 0.5,
+              scaleY: 1.5, // Stretch as it falls
             }}
             exit={{ opacity: 0 }}
             transition={{
-              duration: 1,
-              ease: "easeOut",
+              duration: 1.2,
+              ease: "easeIn",
             }}
-            className="absolute rounded-full"
+            className="absolute origin-top"
             style={{
-              width: particle.size,
-              height: particle.size,
-              backgroundColor: particle.color,
-              boxShadow: `0 0 ${particle.size * 2}px ${particle.color}, 0 0 ${particle.size * 4}px ${particle.color}`,
+              width: `${drip.width}px`,
+              height: `${drip.length}px`,
+              backgroundColor: drip.color,
+              borderRadius: `${drip.width / 2}px`,
+              boxShadow: `0 0 ${drip.width * 1.5}px ${drip.color}, 0 0 ${drip.width * 3}px ${drip.color}`,
+              // Create drip shape with gradient
+              background: `linear-gradient(to bottom, ${drip.color}, ${drip.color}dd, ${drip.color}88)`,
             }}
           />
         ))}

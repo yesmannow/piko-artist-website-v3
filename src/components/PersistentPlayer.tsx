@@ -6,6 +6,13 @@ import { useAudio } from "@/context/AudioContext";
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+// Ad-Lib sample files
+const adLibSamples = [
+  "/audio/sfx/spray-shake.mp3",
+  "/audio/sfx/dice-throw.mp3",
+  "/audio/sfx/dice-shake.mp3",
+];
+
 // Type declaration for webkit prefixed AudioContext
 interface WindowWithWebkit extends Window {
   webkitAudioContext?: typeof AudioContext;
@@ -27,6 +34,36 @@ export function PersistentPlayer() {
   const [visualizerData, setVisualizerData] = useState<number[]>([0, 0, 0]);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const adLibAudioRefs = useRef<(HTMLAudioElement | null)[]>([]);
+
+  // Initialize ad-lib audio elements
+  useEffect(() => {
+    adLibAudioRefs.current = adLibSamples.map((src) => {
+      const audio = new Audio(src);
+      audio.volume = 0.6; // Slightly lower volume to layer over music
+      return audio;
+    });
+
+    return () => {
+      adLibAudioRefs.current.forEach((audio) => {
+        if (audio) {
+          audio.pause();
+          audio.src = "";
+        }
+      });
+    };
+  }, []);
+
+  // Play ad-lib sample
+  const playAdLib = (index: number) => {
+    const audio = adLibAudioRefs.current[index];
+    if (audio) {
+      audio.currentTime = 0; // Reset to start
+      audio.play().catch((error) => {
+        console.error("Error playing ad-lib:", error);
+      });
+    }
+  };
 
   // Set up audio visualizer
   useEffect(() => {
@@ -112,14 +149,14 @@ export function PersistentPlayer() {
           {/* Progress bar at top */}
           <div className="h-1 bg-black/50 w-full">
             <motion.div
-              className="h-full bg-neon-green"
+              className="h-full bg-toxic-lime"
               style={{ width: `${progress}%` }}
               transition={{ duration: 0.1 }}
             />
           </div>
 
           {/* Player container */}
-          <div className="bg-black/90 backdrop-blur-xl border-t border-neon-green/30">
+          <div className="bg-concrete/95 backdrop-blur-xl border-t-2 border-black">
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
               <div className="flex items-center gap-4 md:gap-6">
                 {/* Left: Thumbnail + Scrolling Text */}
@@ -133,9 +170,9 @@ export function PersistentPlayer() {
 
                       {/* Scrolling marquee text */}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="font-tag text-sm md:text-base text-white truncate">
+                        <div className="font-tag text-sm md:text-base text-foreground truncate">
                           <span>{currentTrack.title}</span>
-                          <span className="text-muted-foreground text-xs md:text-sm">
+                          <span className="text-foreground/60 text-xs md:text-sm">
                             {" "}• {currentTrack.artist}
                           </span>
                         </div>
@@ -144,35 +181,61 @@ export function PersistentPlayer() {
                   )}
                 </div>
 
-                {/* Center: Play/Pause/Skip Controls */}
+                {/* Center: Play/Pause/Skip Controls + Ad-Lib Buttons */}
                 <div className="flex items-center gap-2 md:gap-4">
                   <button
                     onClick={skipPrevious}
-                    className="p-2 hover:bg-white/10 rounded transition-colors"
+                    className="p-2 hover:bg-foreground/10 rounded transition-colors"
                     aria-label="Previous track"
                   >
-                    <SkipBack className="w-4 h-4 md:w-5 md:h-5 text-neon-green" />
+                    <SkipBack className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
                   </button>
 
                   <button
                     onClick={togglePlay}
-                    className="p-2 md:p-3 bg-neon-green/20 hover:bg-neon-green/30 border border-neon-green rounded-full transition-colors"
+                    className="p-2 md:p-3 bg-toxic-lime/20 hover:bg-toxic-lime/30 border-2 border-black rounded-full transition-colors shadow-hard"
                     aria-label={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
-                      <Pause className="w-5 h-5 md:w-6 md:h-6 text-neon-green" />
+                      <Pause className="w-5 h-5 md:w-6 md:h-6 text-toxic-lime" />
                     ) : (
-                      <Play className="w-5 h-5 md:w-6 md:h-6 text-neon-green ml-0.5" />
+                      <Play className="w-5 h-5 md:w-6 md:h-6 text-toxic-lime ml-0.5" />
                     )}
                   </button>
 
                   <button
                     onClick={skipNext}
-                    className="p-2 hover:bg-white/10 rounded transition-colors"
+                    className="p-2 hover:bg-foreground/10 rounded transition-colors"
                     aria-label="Next track"
                   >
-                    <SkipForward className="w-4 h-4 md:w-5 md:h-5 text-neon-green" />
+                    <SkipForward className="w-4 h-4 md:w-5 md:h-5 text-toxic-lime" />
                   </button>
+
+                  {/* Ad-Lib Spray Can Cap Buttons */}
+                  <div className="flex items-center gap-1.5 ml-2 pl-2 border-l-2 border-black">
+                    {adLibSamples.map((_, index) => {
+                      const colors = ["#ff0099", "#ccff00", "#ff6600"]; // spray-magenta, toxic-lime, safety-orange
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => playAdLib(index)}
+                          className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-black transition-all hover:scale-110 active:scale-95 shadow-hard"
+                          style={{
+                            backgroundColor: colors[index],
+                            boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+                          }}
+                          aria-label={`Play ad-lib ${index + 1}`}
+                        >
+                          <div className="w-full h-full rounded-full flex items-center justify-center">
+                            <div
+                              className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-black/30"
+                              style={{ boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }}
+                            />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Right: Volume + Mini Visualizer */}
@@ -182,7 +245,7 @@ export function PersistentPlayer() {
                     {visualizerData.map((value, index) => (
                       <motion.div
                         key={index}
-                        className="w-1.5 bg-neon-green rounded-t"
+                        className="w-1.5 bg-toxic-lime rounded-t border border-black"
                         animate={{
                           height: `${Math.max(20, value * 100)}%`,
                         }}
@@ -192,7 +255,7 @@ export function PersistentPlayer() {
                         }}
                         style={{
                           boxShadow: isPlaying
-                            ? "0 0 4px hsl(var(--neon-green))"
+                            ? "0 0 4px #ccff00"
                             : "none",
                         }}
                       />
@@ -201,7 +264,7 @@ export function PersistentPlayer() {
 
                   {/* Volume slider */}
                   <div className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4 text-neon-green flex-shrink-0" />
+                    <Volume2 className="w-4 h-4 text-toxic-lime flex-shrink-0" />
                     <input
                       type="range"
                       min="0"
@@ -216,7 +279,10 @@ export function PersistentPlayer() {
                         }
                       }}
                       aria-label="Volume control"
-                      className="w-20 md:w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-neon-green"
+                      className="w-20 md:w-24 h-1 bg-foreground/20 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        accentColor: "#ccff00",
+                      }}
                     />
                   </div>
                 </div>

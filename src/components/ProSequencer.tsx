@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Square, Share2, Check } from "lucide-react";
+import { Play, Square, Share2, Check, Circle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 interface Instrument {
@@ -25,6 +25,7 @@ const STEPS = 16;
 const DEFAULT_BPM = 120;
 const MIN_BPM = 60;
 const MAX_BPM = 200;
+const BARS_TO_RECORD = 4; // 4 bars = 64 steps (16 steps per bar)
 
 // Encoding: Convert steps state to compressed string
 function encodePattern(steps: Record<string, boolean[]>): string {
@@ -58,10 +59,16 @@ function decodePattern(encoded: string): Record<string, boolean[]> | null {
   }
 }
 
+type KitType = "street" | "lofi";
+
 export function ProSequencer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showToast, setShowToast] = useState(false);
+  const [selectedKit, setSelectedKit] = useState<KitType>("street");
+  const [isRecording, setIsRecording] = useState(false);
+  const [showRecordModal, setShowRecordModal] = useState(false);
+  const recordingStepCountRef = useRef(0);
 
   // State: [instrumentId][stepIndex] = boolean
   const [steps, setSteps] = useState<Record<string, boolean[]>>(() => {
@@ -97,6 +104,8 @@ export function ProSequencer() {
       for (let i = 0; i < 4; i++) {
         const audio = new Audio(instrument.audioFile);
         audio.preload = "auto";
+        // Set playback rate based on kit selection
+        audio.playbackRate = selectedKit === "lofi" ? 0.8 : 1.0;
         currentAudioRefs[instrument.id].push(audio);
       }
     });
@@ -110,7 +119,7 @@ export function ProSequencer() {
         });
       });
     };
-  }, []);
+  }, [selectedKit]);
 
   // Sequencer loop
   useEffect(() => {
@@ -137,8 +146,9 @@ export function ProSequencer() {
             (audio) => audio.paused || audio.currentTime === 0
           ) || audioInstances[0]; // Fallback to first if all playing
 
-          // Reset and play
+          // Reset and play with kit-specific playback rate
           availableAudio.currentTime = 0;
+          availableAudio.playbackRate = selectedKit === "lofi" ? 0.8 : 1.0;
           availableAudio.play().catch((err) => {
             console.error(`Error playing ${instrument.name}:`, err);
           });
@@ -146,7 +156,21 @@ export function ProSequencer() {
       });
 
       // Move to next step
-      setCurrentStep((prev) => (prev + 1) % STEPS);
+      setCurrentStep((prev) => {
+        const nextStep = (prev + 1) % STEPS;
+
+        // Recording logic: count steps and stop after 4 bars (64 steps)
+        if (isRecording) {
+          recordingStepCountRef.current += 1;
+          if (recordingStepCountRef.current >= BARS_TO_RECORD * STEPS) {
+            setIsRecording(false);
+            setShowRecordModal(true);
+            recordingStepCountRef.current = 0;
+          }
+        }
+
+        return nextStep;
+      });
     }, stepDuration);
 
     return () => {
@@ -161,8 +185,21 @@ export function ProSequencer() {
   useEffect(() => {
     if (!isPlaying) {
       setCurrentStep(0);
+      if (isRecording) {
+        setIsRecording(false);
+        recordingStepCountRef.current = 0;
+      }
     }
-  }, [isPlaying]);
+  }, [isPlaying, isRecording]);
+
+  // Start recording
+  const startRecording = () => {
+    if (!isPlaying) {
+      setIsPlaying(true);
+    }
+    setIsRecording(true);
+    recordingStepCountRef.current = 0;
+  };
 
   const toggleStep = (instrumentId: string, stepIndex: number) => {
     setSteps((prev) => {
@@ -190,14 +227,14 @@ export function ProSequencer() {
     }
   };
 
-  const getNeonColor = (color: "green" | "pink" | "cyan") => {
+  const getStreetColor = (color: "green" | "pink" | "cyan") => {
     switch (color) {
       case "green":
-        return "hsl(var(--neon-green))";
+        return "#ccff00"; // toxic-lime
       case "pink":
-        return "hsl(var(--neon-pink))";
+        return "#ff0099"; // spray-magenta
       case "cyan":
-        return "hsl(var(--neon-cyan))";
+        return "#ff6600"; // safety-orange
     }
   };
 
@@ -205,25 +242,62 @@ export function ProSequencer() {
     <div className="w-full max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h2 className="text-3xl md:text-4xl font-graffiti mb-2 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+        <h2 className="text-3xl md:text-4xl font-header mb-2 text-foreground">
           PRO SEQUENCER
         </h2>
-        <p className="text-white/60 font-tag text-sm md:text-base">
-          Click steps to build your pattern • Audio engine coming soon
+        <p className="text-foreground/60 font-tag text-sm md:text-base">
+          Click steps to build your pattern • Crate digging enabled
         </p>
       </div>
 
+      {/* Kit Selector */}
+      <div className="mb-6 flex items-center justify-center gap-4">
+        <label className="font-tag text-foreground text-sm md:text-base">Kit:</label>
+        <div className="flex gap-2 border-2 border-black shadow-hard">
+          <button
+            type="button"
+            onClick={() => setSelectedKit("street")}
+            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+              selectedKit === "street"
+                ? "bg-toxic-lime text-black font-bold"
+                : "bg-concrete text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            STREET
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedKit("lofi")}
+            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+              selectedKit === "lofi"
+                ? "bg-toxic-lime text-black font-bold"
+                : "bg-concrete text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            LO-FI
+          </button>
+        </div>
+      </div>
+
       {/* Sequencer Grid */}
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg border-2 border-white/10 p-4 md:p-6">
+      <div
+        className={`bg-concrete rounded-lg border-2 p-4 md:p-6 transition-all ${
+          isRecording ? "border-red-500" : "border-black shadow-hard"
+        }`}
+        style={{
+          animation: isRecording ? "recording-pulse 0.5s ease-in-out infinite" : "none",
+          boxShadow: isRecording ? "4px 4px 0px 0px rgba(0,0,0,1)" : "4px 4px 0px 0px rgba(0,0,0,1)",
+        }}
+      >
         {/* Step Numbers Header */}
         <div className="grid grid-cols-[120px_repeat(16,1fr)] gap-2 mb-4">
-          <div className="text-xs md:text-sm font-tag text-white/40 text-center">
+          <div className="text-xs md:text-sm font-tag text-foreground/40 text-center">
             Instrument
           </div>
           {Array.from({ length: STEPS }, (_, i) => (
             <div
               key={i}
-              className="text-xs md:text-sm font-tag text-white/40 text-center"
+              className="text-xs md:text-sm font-tag text-foreground/40 text-center"
             >
               {i + 1}
             </div>
@@ -233,7 +307,7 @@ export function ProSequencer() {
         {/* Instrument Rows */}
         <div className="space-y-3">
           {instruments.map((instrument) => {
-            const neonColor = getNeonColor(instrument.color);
+            const streetColor = getStreetColor(instrument.color);
             const instrumentSteps = steps[instrument.id] || [];
 
             return (
@@ -243,11 +317,9 @@ export function ProSequencer() {
               >
                 {/* Instrument Label */}
                 <div
-                  className="font-tag text-sm md:text-base font-bold text-center px-2 py-2 rounded border-2"
+                  className="font-header text-sm md:text-base font-bold text-center px-2 py-2 rounded border-2 border-black bg-concrete"
                   style={{
-                    borderColor: neonColor,
-                    color: neonColor,
-                    backgroundColor: `${neonColor}10`,
+                    color: streetColor,
                   }}
                 >
                   {instrument.name}
@@ -263,16 +335,14 @@ export function ProSequencer() {
                       onClick={() => toggleStep(instrument.id, stepIndex)}
                       className={`
                         aspect-square rounded
-                        border-2 transition-all
+                        border-2 transition-all border-black
                         ${isActive ? "scale-95" : "scale-100"}
-                        ${isCurrentStep ? "ring-2 ring-offset-2 ring-offset-black" : ""}
+                        ${isCurrentStep ? "ring-2 ring-offset-1 ring-offset-concrete" : ""}
                       `}
                       style={{
-                        borderColor: isActive ? neonColor : "rgba(255, 255, 255, 0.2)",
-                        backgroundColor: isActive ? `${neonColor}40` : "rgba(255, 255, 255, 0.05)",
-                        boxShadow: isActive
-                          ? `0 0 10px ${neonColor}, inset 0 0 10px ${neonColor}20`
-                          : "none",
+                        borderColor: isActive ? streetColor : "#000",
+                        backgroundColor: isActive ? streetColor : "#2a2a2a",
+                        boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
                       }}
                       animate={isCurrentStep ? {
                         scale: [1, 1.15, 1],
@@ -283,7 +353,7 @@ export function ProSequencer() {
                       } : {}}
                       whileHover={{
                         scale: 1.1,
-                        borderColor: neonColor,
+                        borderColor: streetColor,
                       }}
                       whileTap={{ scale: 0.9 }}
                     >
@@ -291,8 +361,8 @@ export function ProSequencer() {
                         <motion.div
                           className="w-full h-full rounded"
                           style={{
-                            backgroundColor: neonColor,
-                            opacity: isCurrentStep ? 1 : 0.6,
+                            backgroundColor: streetColor,
+                            opacity: isCurrentStep ? 1 : 0.8,
                           }}
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
@@ -308,18 +378,18 @@ export function ProSequencer() {
         </div>
 
         {/* Controls */}
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <div className="flex flex-wrap items-center justify-center gap-6">
+        <div className="mt-8 pt-6 border-t-2 border-black">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
             {/* Play/Stop Button */}
             <motion.button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="px-8 py-3 bg-neon-green/20 border-2 border-neon-green/50 text-neon-green font-tag rounded-lg flex items-center gap-2"
+              className="px-6 md:px-8 py-3 bg-toxic-lime/20 border-2 border-black text-toxic-lime font-tag rounded-lg flex items-center gap-2 shadow-hard"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{
                 boxShadow: isPlaying
-                  ? "0 0 20px hsl(var(--neon-green))"
-                  : "none",
+                  ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px #ccff00"
+                  : "4px 4px 0px 0px rgba(0,0,0,1)",
               }}
             >
               {isPlaying ? (
@@ -335,9 +405,30 @@ export function ProSequencer() {
               )}
             </motion.button>
 
+            {/* REC Button */}
+            <motion.button
+              onClick={startRecording}
+              disabled={isRecording}
+              className={`px-6 md:px-8 py-3 border-2 border-black font-tag rounded-lg flex items-center gap-2 shadow-hard ${
+                isRecording
+                  ? "bg-red-500 text-white"
+                  : "bg-concrete text-red-500 hover:bg-red-500/10"
+              }`}
+              whileHover={!isRecording ? { scale: 1.05 } : {}}
+              whileTap={!isRecording ? { scale: 0.95 } : {}}
+              style={{
+                boxShadow: isRecording
+                  ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px #ef4444"
+                  : "4px 4px 0px 0px rgba(0,0,0,1)",
+              }}
+            >
+              <Circle className={`w-5 h-5 ${isRecording ? "fill-white" : "fill-red-500"}`} />
+              {isRecording ? "REC..." : "REC"}
+            </motion.button>
+
             {/* Tempo/BPM Slider */}
             <div className="flex items-center gap-4">
-              <label className="font-tag text-white/80 text-sm md:text-base">
+              <label className="font-tag text-foreground text-sm md:text-base">
                 BPM:
               </label>
               <div className="flex items-center gap-3">
@@ -347,12 +438,13 @@ export function ProSequencer() {
                   max={MAX_BPM}
                   value={bpm}
                   onChange={(e) => setBpm(Number(e.target.value))}
-                  className="w-32 md:w-40 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-green"
+                  className="w-32 md:w-40 h-2 bg-foreground/10 rounded-lg appearance-none cursor-pointer"
                   style={{
-                    background: `linear-gradient(to right, hsl(var(--neon-green)) 0%, hsl(var(--neon-green)) ${((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100}%, rgba(255, 255, 255, 0.1) ${((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100}%, rgba(255, 255, 255, 0.1) 100%)`,
+                    accentColor: "#ccff00",
+                    background: `linear-gradient(to right, #ccff00 0%, #ccff00 ${((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100}%, rgba(255, 255, 255, 0.1) ${((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100}%, rgba(255, 255, 255, 0.1) 100%)`,
                   }}
                 />
-                <span className="font-tag text-neon-green text-lg md:text-xl font-bold min-w-[3rem] text-center">
+                <span className="font-header text-toxic-lime text-lg md:text-xl font-bold min-w-[3rem] text-center">
                   {bpm}
                 </span>
               </div>
@@ -360,7 +452,7 @@ export function ProSequencer() {
 
             {/* Share Button */}
             <motion.button
-              className="px-6 py-3 bg-neon-cyan/20 border-2 border-neon-cyan/50 text-neon-cyan font-tag rounded-lg flex items-center gap-2"
+              className="px-6 py-3 bg-safety-orange/20 border-2 border-black text-safety-orange font-tag rounded-lg flex items-center gap-2 shadow-hard"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleShare}
@@ -371,7 +463,7 @@ export function ProSequencer() {
 
             {/* Clear All Button */}
             <motion.button
-              className="px-6 py-3 bg-neon-pink/20 border-2 border-neon-pink/50 text-neon-pink font-tag rounded-lg"
+              className="px-6 py-3 bg-spray-magenta/20 border-2 border-black text-spray-magenta font-tag rounded-lg shadow-hard"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
@@ -399,13 +491,59 @@ export function ProSequencer() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-black/90 border-2 border-neon-green/50 rounded-lg px-6 py-4 flex items-center gap-3 shadow-lg"
-            style={{
-              boxShadow: "0 0 30px hsl(var(--neon-green))",
-            }}
+            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-concrete border-2 border-black rounded-lg px-6 py-4 flex items-center gap-3 shadow-hard"
           >
-            <Check className="w-5 h-5 text-neon-green" />
-            <span className="font-tag text-neon-green">Link Copied!</span>
+            <Check className="w-5 h-5 text-toxic-lime" />
+            <span className="font-tag text-toxic-lime">Link Copied!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Record Modal */}
+      <AnimatePresence>
+        {showRecordModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setShowRecordModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-concrete border-2 border-black p-6 md:p-8 max-w-md w-full shadow-hard"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="font-header text-2xl md:text-3xl text-foreground mb-4 text-center">
+                Beat Captured!
+              </h3>
+              <p className="font-tag text-foreground/80 text-center mb-6">
+                Share this pattern?
+              </p>
+              <div className="flex gap-4 justify-center">
+                <motion.button
+                  onClick={() => {
+                    setShowRecordModal(false);
+                    handleShare();
+                  }}
+                  className="px-6 py-3 bg-toxic-lime border-2 border-black text-black font-tag rounded-lg shadow-hard"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Share
+                </motion.button>
+                <motion.button
+                  onClick={() => setShowRecordModal(false)}
+                  className="px-6 py-3 bg-concrete border-2 border-black text-foreground font-tag rounded-lg shadow-hard"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

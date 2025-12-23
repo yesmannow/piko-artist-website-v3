@@ -19,6 +19,7 @@ module.exports = {
       fontFamily: {
         graffiti: ["var(--font-permanent-marker)", "cursive"],
         tag: ["var(--font-sedgwick-ave)", "cursive"],
+        header: ["Impact", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -54,17 +55,31 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // The New "Street" Palette
+        "spray-magenta": "#ff0099",
+        "toxic-lime": "#ccff00",
+        "safety-orange": "#ff6600",
+        "concrete": "#2a2a2a",
+        "tape-gray": "#888888",
+        // Legacy neon colors (kept for backward compatibility)
         neon: {
-          pink: "hsl(var(--neon-pink))",
-          green: "hsl(var(--neon-green))",
+          pink: "#ff0099",
+          green: "#ccff00",
         },
-        "neon-pink": "hsl(var(--neon-pink))",
-        "neon-green": "hsl(var(--neon-green))",
+        "neon-pink": "#ff0099",
+        "neon-green": "#ccff00",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        hard: "4px 4px 0px 0px rgba(0,0,0,1)",
+      },
+      backgroundImage: {
+        noise: "url('/textures/noise.png')",
+        "concrete-wall": "url('/images/bg/concrete-dark.jpg')",
       },
       keyframes: {
         "accordion-down": {
