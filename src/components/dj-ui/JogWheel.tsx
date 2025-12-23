@@ -16,15 +16,6 @@ interface JogWheelProps {
   playbackRate?: number; // Playback rate/pitch (default 1.0)
 }
 
-// Simple loader component
-function Loader() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin" />
-    </div>
-  );
-}
-
 export function JogWheel({
   rotation,
   isPlaying,
@@ -86,6 +77,36 @@ export function JogWheel({
       lastAngleRef.current = currentAngle;
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!wheelRef.current || lastAngleRef.current === null) return;
+      if (e.touches.length === 0) return;
+
+      const rect = wheelRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const touch = e.touches[0];
+      const dx = touch.clientX - centerX;
+      const dy = touch.clientY - centerY;
+      const currentAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      // Calculate delta angle
+      let deltaAngle = currentAngle - lastAngleRef.current;
+
+      // Handle wrap-around
+      if (deltaAngle > 180) deltaAngle -= 360;
+      if (deltaAngle < -180) deltaAngle += 360;
+
+      // Update drag rotation
+      setDragRotation((prev) => prev + deltaAngle);
+
+      // Call scrub callback
+      if (onScrub) {
+        onScrub(deltaAngle);
+      }
+
+      lastAngleRef.current = currentAngle;
+    };
+
     const handleMouseUp = () => {
       setIsDragging(false);
       setDragRotation(0);
@@ -95,13 +116,13 @@ export function JogWheel({
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("touchmove", handleMouseMove as any);
+    window.addEventListener("touchmove", handleTouchMove);
     window.addEventListener("touchend", handleMouseUp);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("touchmove", handleMouseMove as any);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleMouseUp);
     };
   }, [isDragging, onScrub, onDragEnd]);

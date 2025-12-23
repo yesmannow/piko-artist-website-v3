@@ -98,6 +98,48 @@ export function Knob({
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!knobRef.current) return;
+      if (e.touches.length === 0) return;
+
+      const rect = knobRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const touch = e.touches[0];
+
+      // Support both circular drag and vertical drag
+      const dx = touch.clientX - centerX;
+      const dy = touch.clientY - centerY;
+
+      // Vertical drag (up/down) for easier mobile interaction
+      if (Math.abs(dy) > Math.abs(dx)) {
+        const deltaY = lastY === 0 ? 0 : touch.clientY - lastY;
+        lastY = touch.clientY;
+        accumulatedDelta -= deltaY; // Invert: up = increase, down = decrease
+
+        const sensitivity = 2; // Adjust sensitivity
+        const normalizedDelta = accumulatedDelta / (rect.height * sensitivity);
+        let newValue = normalizedValue + normalizedDelta;
+        newValue = Math.max(0, Math.min(1, newValue));
+
+        const finalValue = min + newValue * (max - min);
+        onChange(finalValue);
+      } else {
+        // Circular drag (original behavior)
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        angle += 90; // Adjust for 0 at top
+        if (angle < 0) angle += 360;
+
+        // Map angle (0-360) to value (0-1)
+        let newValue = (angle - 135) / 270;
+        if (newValue < 0) newValue = 0;
+        if (newValue > 1) newValue = 1;
+
+        const finalValue = min + newValue * (max - min);
+        onChange(finalValue);
+      }
+    };
+
     const handleMouseUp = () => {
       setIsDragging(false);
       lastY = 0;
@@ -106,13 +148,13 @@ export function Knob({
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("touchmove", handleMouseMove as any);
+    window.addEventListener("touchmove", handleTouchMove);
     window.addEventListener("touchend", handleMouseUp);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("touchmove", handleMouseMove as any);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleMouseUp);
     };
   }, [isDragging, onChange, min, max, normalizedValue]);

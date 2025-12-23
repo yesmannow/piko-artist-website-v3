@@ -62,7 +62,7 @@ export function PerformancePads({
             onMouseDown={(e) => handlePadClick(padIndex, e)}
             onContextMenu={(e) => {
               e.preventDefault();
-              handlePadClick(padIndex, { ...e, button: 2 } as any);
+              handlePadClick(padIndex, { ...e, button: 2 } as React.MouseEvent);
             }}
             className={`relative aspect-square rounded-lg border-2 transition-all ${
               isSet

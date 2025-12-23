@@ -372,10 +372,9 @@ export function ProSequencer() {
       if (gainNode) {
         const isMuted = mutedPads.has(padId);
         const isSoloed = soloedPads.has(padId);
-        const hasSolo = soloedPads.size > 0;
 
         // Solo logic: if any pad is soloed, only soloed pads play
-        if (hasSolo) {
+        if (soloedPads.size > 0) {
           gainNode.gain.value = isSoloed && !isMuted ? 1.0 : 0;
         } else {
           gainNode.gain.value = isMuted ? 0 : 1.0;

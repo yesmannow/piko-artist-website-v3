@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
@@ -210,7 +210,7 @@ export function DJInterface() {
     return () => {
       ctx.close();
     };
-  }, []);
+  }, [deckAVolume, deckBVolume, delayFeedback, delayTime, filterFreq, filterType, reverbDryWet]);
 
   // Update EQ filters
   useEffect(() => {

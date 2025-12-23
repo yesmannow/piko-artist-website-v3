@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -97,9 +97,9 @@ export function ConsoleTour() {
         window.removeEventListener("scroll", updateTargetPosition, true);
       };
     }
-  }, [isVisible, currentStep]);
+  }, [isVisible, currentStep, updateTargetPosition]);
 
-  const updateTargetPosition = () => {
+  const updateTargetPosition = useCallback(() => {
     const step = tourSteps[currentStep];
     if (!step) return;
 
@@ -108,7 +108,7 @@ export function ConsoleTour() {
       const rect = targetElement.getBoundingClientRect();
       setTargetRect(rect);
     }
-  };
+  }, [currentStep]);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
