@@ -43,6 +43,21 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
     }));
   }, []);
 
+  // Wrapper functions to handle type conversion from object to TourDate
+  const handlePointHover = (point: object | null) => {
+    setHoveredPoint(point as TourDate | null);
+  };
+
+  const handlePointClick = (point: object) => {
+    const tourDate = point as TourDate;
+    if (globeEl.current) {
+      globeEl.current.pointOfView({ lat: tourDate.lat, lng: tourDate.lng, altitude: 1.5 }, 1000);
+    }
+    if (onCityClick) {
+      onCityClick(tourDate.city);
+    }
+  };
+
   return (
     <div id="globe-container" className="w-full h-full relative group cursor-move">
       {dimensions.width > 0 && (
@@ -67,11 +82,8 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
           arcDashLength={0.4}
           arcDashGap={0.2}
           arcDashAnimateTime={1500}
-          onPointHover={setHoveredPoint}
-          onPointClick={(point: TourDate) => {
-            globeEl.current.pointOfView({ lat: point.lat, lng: point.lng, altitude: 1.5 }, 1000);
-            if(onCityClick) onCityClick(point.city);
-          }}
+          onPointHover={handlePointHover}
+          onPointClick={handlePointClick}
         />
       )}
 
