@@ -56,6 +56,9 @@ export function ProSequencer() {
   const [isRecording, setIsRecording] = useState(false);
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [grit, setGrit] = useState(0); // Master FX: 0-100
+  const [speed, setSpeed] = useState(1.0); // Speed/Pitch: 0.5-1.0
+  const [filter, setFilter] = useState(100); // Filter: 0-100
+  const [mutedPads, setMutedPads] = useState<Set<string>>(new Set()); // Muted pads in remix mode
   const recordingStepCountRef = useRef(0);
 
   // Get current kit and pads
@@ -94,6 +97,13 @@ export function ProSequencer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const waveShaperRef = useRef<WaveShaperNode | null>(null);
+  const filterNodeRef = useRef<BiquadFilterNode | null>(null);
+
+  // Track audio sources and gain nodes for speed/mute control
+  const audioSourceRefs = useRef<Record<string, MediaElementAudioSourceNode[]>>({});
+  const audioGainRefs = useRef<Record<string, GainNode[]>>({});
+  const loopSourceRefs = useRef<Record<string, MediaElementAudioSourceNode>>({});
+  const loopGainRefs = useRef<Record<string, GainNode>>({});
 
   // Initialize AudioContext and master effects chain
   useEffect(() => {
@@ -101,6 +111,12 @@ export function ProSequencer() {
       try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
         audioContextRef.current = ctx;
+
+        // Create low-pass filter node
+        const filterNode = ctx.createBiquadFilter();
+        filterNode.type = "lowpass";
+        filterNode.frequency.value = 22050; // Default: fully open
+        filterNodeRef.current = filterNode;
 
         // Create master gain node
         const masterGain = ctx.createGain();
@@ -112,7 +128,8 @@ export function ProSequencer() {
         updateWaveShaperCurve(waveShaper, grit);
         waveShaperRef.current = waveShaper;
 
-        // Connect: masterGain -> waveShaper -> destination
+        // Connect: filterNode -> masterGain -> waveShaper -> destination
+        filterNode.connect(masterGain);
         masterGain.connect(waveShaper);
         waveShaper.connect(ctx.destination);
       } catch (error) {
@@ -157,6 +174,49 @@ export function ProSequencer() {
     }
   }, [grit]);
 
+  // Update filter frequency when filter value changes
+  useEffect(() => {
+    if (filterNodeRef.current) {
+      // Map 0-100 to 200Hz-22000Hz using exponential curve
+      // At 0: 200Hz (muffled), At 100: 22000Hz (clear)
+      const minFreq = 200;
+      const maxFreq = 22000;
+      // Exponential mapping for more musical response
+      const normalized = filter / 100; // 0 to 1
+      const frequency = minFreq * Math.pow(maxFreq / minFreq, normalized);
+      filterNodeRef.current.frequency.value = frequency;
+    }
+  }, [filter]);
+
+  // Update playback rate for all active audio sources when speed changes
+  useEffect(() => {
+    const baseRate = currentKit.playbackRate || 1.0;
+    const targetRate = baseRate * speed;
+
+    // Update sequencer mode audio sources
+    Object.values(audioRefs.current).forEach((audioArray) => {
+      audioArray.forEach((audio) => {
+        audio.playbackRate = targetRate;
+      });
+    });
+
+    // Update remix mode loop sources
+    Object.values(loopAudioRefs.current).forEach((audio) => {
+      audio.playbackRate = targetRate;
+    });
+  }, [speed, currentKit]);
+
+  // Update gain nodes when mute state changes
+  useEffect(() => {
+    // Update remix mode loop gain nodes
+    Object.keys(loopGainRefs.current).forEach((padId) => {
+      const gainNode = loopGainRefs.current[padId];
+      if (gainNode) {
+        gainNode.gain.value = mutedPads.has(padId) ? 0 : 1.0;
+      }
+    });
+  }, [mutedPads]);
+
   // Preload audio files (create multiple instances for overlapping sounds)
   useEffect(() => {
     const currentAudioRefs = audioRefs.current;
@@ -177,26 +237,42 @@ export function ProSequencer() {
     // Reset refs
     Object.keys(currentAudioRefs).forEach((key) => delete currentAudioRefs[key]);
     Object.keys(currentLoopRefs).forEach((key) => delete currentLoopRefs[key]);
+    Object.keys(audioSourceRefs.current).forEach((key) => delete audioSourceRefs.current[key]);
+    Object.keys(audioGainRefs.current).forEach((key) => delete audioGainRefs.current[key]);
+    Object.keys(loopSourceRefs.current).forEach((key) => delete loopSourceRefs.current[key]);
+    Object.keys(loopGainRefs.current).forEach((key) => delete loopGainRefs.current[key]);
 
     // Load sequencer mode pads (one-shot samples)
     if (mode === "sequencer" || selectedKit === "street" || selectedKit === "lofi") {
       pads.forEach((pad) => {
         currentAudioRefs[pad.id] = [];
+        audioSourceRefs.current[pad.id] = [];
+        audioGainRefs.current[pad.id] = [];
+
         // Create 4 instances per pad for overlapping playback
         for (let i = 0; i < 4; i++) {
           const audio = new Audio(pad.audioFile);
           audio.preload = "auto";
-          audio.playbackRate = currentKit.playbackRate || 1.0;
+          const baseRate = currentKit.playbackRate || 1.0;
+          audio.playbackRate = baseRate * speed;
 
-          // Connect to master gain if available
-          if (audioContextRef.current && masterGainRef.current) {
+          // Connect to filter node through gain node if available
+          if (audioContextRef.current && filterNodeRef.current) {
             try {
               // Resume audio context if suspended (requires user interaction)
               if (audioContextRef.current.state === "suspended") {
                 audioContextRef.current.resume();
               }
               const source = audioContextRef.current.createMediaElementSource(audio);
-              source.connect(masterGainRef.current);
+              const gainNode = audioContextRef.current.createGain();
+              gainNode.gain.value = 1.0;
+
+              // Connect: source -> gain -> filter -> masterGain -> waveShaper -> destination
+              source.connect(gainNode);
+              gainNode.connect(filterNodeRef.current);
+
+              audioSourceRefs.current[pad.id].push(source);
+              audioGainRefs.current[pad.id].push(gainNode);
             } catch (error) {
               console.error(`Error connecting audio for ${pad.name}:`, error);
             }
@@ -213,17 +289,27 @@ export function ProSequencer() {
         const audio = new Audio(pad.audioFile);
         audio.loop = true;
         audio.preload = "auto";
-        audio.playbackRate = currentKit.playbackRate || 1.0;
+        const baseRate = currentKit.playbackRate || 1.0;
+        audio.playbackRate = baseRate * speed;
 
-        // Connect to master gain if available
-        if (audioContextRef.current && masterGainRef.current) {
+        // Connect to filter node through gain node if available
+        if (audioContextRef.current && filterNodeRef.current) {
           try {
             // Resume audio context if suspended (requires user interaction)
             if (audioContextRef.current.state === "suspended") {
               audioContextRef.current.resume();
             }
             const source = audioContextRef.current.createMediaElementSource(audio);
-            source.connect(masterGainRef.current);
+            const gainNode = audioContextRef.current.createGain();
+            // Set initial gain based on mute state
+            gainNode.gain.value = mutedPads.has(pad.id) ? 0 : 1.0;
+
+            // Connect: source -> gain -> filter -> masterGain -> waveShaper -> destination
+            source.connect(gainNode);
+            gainNode.connect(filterNodeRef.current);
+
+            loopSourceRefs.current[pad.id] = source;
+            loopGainRefs.current[pad.id] = gainNode;
           } catch (error) {
             console.error(`Error connecting loop audio for ${pad.name}:`, error);
           }
@@ -246,7 +332,7 @@ export function ProSequencer() {
         audio.src = "";
       });
     };
-  }, [selectedKit, mode, currentKit, pads]);
+  }, [selectedKit, mode, currentKit, pads, speed, mutedPads]);
 
   // Sequencer loop (only for sequencer mode)
   useEffect(() => {
@@ -374,6 +460,21 @@ export function ProSequencer() {
         audio.play().catch((err) => {
           console.error(`Error playing loop ${padId}:`, err);
         });
+        newSet.add(padId);
+      }
+      return newSet;
+    });
+  };
+
+  // Toggle mute for a pad in remix mode
+  const toggleMute = (padId: string) => {
+    setMutedPads((prev) => {
+      const newSet = new Set(prev);
+      const isMuted = newSet.has(padId);
+
+      if (isMuted) {
+        newSet.delete(padId);
+      } else {
         newSet.add(padId);
       }
       return newSet;
@@ -533,14 +634,62 @@ export function ProSequencer() {
         </div>
       </div>
 
-      {/* MPC Screen */}
-      <div className="mb-6">
-        <MPCScreen
-          kitName={currentKit.name}
-          bpm={bpm}
-          audioContext={audioContextRef.current || undefined}
-          masterGainNode={masterGainRef.current || undefined}
-        />
+      {/* MPC Screen with Speed Slider */}
+      <div className="mb-6 flex items-start gap-4">
+        <div className="flex-1">
+          <MPCScreen
+            kitName={currentKit.name}
+            bpm={bpm}
+            audioContext={audioContextRef.current || undefined}
+            masterGainNode={masterGainRef.current || undefined}
+          />
+        </div>
+        {/* Speed Fader (Vertical Slider) */}
+        <div className="flex flex-col items-center gap-2 pt-4">
+          <label className="font-tag text-foreground text-xs md:text-sm font-bold">
+            SPEED
+          </label>
+          <div className="relative h-48 md:h-64 w-12 flex items-center justify-center">
+            <div
+              className="absolute w-8 h-full bg-foreground/10 rounded-lg border-2 border-black"
+              style={{
+                background: `linear-gradient(to top, #ccff00 0%, #ccff00 ${((speed - 0.5) / 0.5) * 100}%, rgba(255, 255, 255, 0.1) ${((speed - 0.5) / 0.5) * 100}%, rgba(255, 255, 255, 0.1) 100%)`,
+              }}
+            />
+            <input
+              type="range"
+              min={0.5}
+              max={1.0}
+              step={0.01}
+              value={speed}
+              onChange={(e) => setSpeed(Number(e.target.value))}
+              className="absolute w-full h-full appearance-none bg-transparent cursor-pointer z-10"
+              style={{
+                writingMode: "vertical-lr",
+                direction: "rtl",
+                accentColor: "transparent",
+              }}
+            />
+            {/* Fader Cap Style */}
+            <div
+              className="absolute pointer-events-none z-20"
+              style={{
+                left: "50%",
+                top: `${100 - ((speed - 0.5) / 0.5) * 100}%`,
+                transform: "translate(-50%, -50%)",
+                width: "24px",
+                height: "32px",
+                backgroundColor: "#ccff00",
+                border: "2px solid #000",
+                borderRadius: "4px",
+                boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)",
+              }}
+            />
+          </div>
+          <span className="font-header text-toxic-lime text-xs font-bold">
+            {(speed * 100).toFixed(0)}%
+          </span>
+        </div>
       </div>
 
       {/* Sequencer Grid / Remix Pads */}
@@ -645,57 +794,97 @@ export function ProSequencer() {
           </>
         ) : (
           /* Remix Mode: Loop Pads */
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {pads.map((pad) => {
-              const streetColor = getStreetColor(pad.color);
-              const isActive = activeLoops.has(pad.id);
-
-              return (
-                <motion.button
-                  key={pad.id}
-                  type="button"
-                  onClick={() => toggleLoop(pad.id)}
-                  className={`
-                    aspect-square rounded-lg
-                    border-2 transition-all border-black
-                    flex flex-col items-center justify-center gap-2
-                    ${isActive ? "scale-95" : "scale-100"}
-                  `}
-                  style={{
-                    borderColor: isActive ? streetColor : "#000",
-                    backgroundColor: isActive ? streetColor : "#2a2a2a",
-                    boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
-                  }}
-                  whileHover={{
-                    scale: 1.05,
-                    borderColor: streetColor,
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div
-                    className="font-header text-lg md:text-xl font-bold"
-                    style={{
-                      color: isActive ? "#000" : streetColor,
+          <div className="space-y-4">
+            {/* MUTE Buttons Row (only for first 4 pads) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {pads.slice(0, 4).map((pad) => {
+                const isMuted = mutedPads.has(pad.id);
+                return (
+                  <motion.button
+                    key={`mute-${pad.id}`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMute(pad.id);
                     }}
+                    className={`
+                      px-3 py-2 rounded-lg
+                      border-2 border-black
+                      font-tag text-xs md:text-sm font-bold
+                      transition-all
+                    `}
+                    style={{
+                      backgroundColor: isMuted ? "#ef4444" : "#2a2a2a",
+                      color: isMuted ? "#fff" : "#ef4444",
+                      boxShadow: isMuted ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {pad.name}
-                  </div>
-                  {isActive && (
-                    <motion.div
-                      className="w-3 h-3 rounded-full bg-black"
-                      animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [1, 0.7, 1],
+                    {isMuted ? "UNMUTE" : "MUTE"}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Pad Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {pads.map((pad) => {
+                const streetColor = getStreetColor(pad.color);
+                const isActive = activeLoops.has(pad.id);
+                const isMuted = mutedPads.has(pad.id);
+
+                return (
+                  <motion.button
+                    key={pad.id}
+                    type="button"
+                    onClick={() => toggleLoop(pad.id)}
+                    className={`
+                      relative aspect-square rounded-lg
+                      border-2 transition-all border-black
+                      flex flex-col items-center justify-center gap-2
+                      ${isActive ? "scale-95" : "scale-100"}
+                      ${isMuted ? "opacity-50" : ""}
+                    `}
+                    style={{
+                      borderColor: isActive ? streetColor : "#000",
+                      backgroundColor: isActive ? streetColor : "#2a2a2a",
+                      boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
+                    }}
+                    whileHover={{
+                      scale: 1.05,
+                      borderColor: streetColor,
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div
+                      className="font-header text-lg md:text-xl font-bold"
+                      style={{
+                        color: isActive ? "#000" : streetColor,
                       }}
-                      transition={{
-                        duration: 0.8,
-                        repeat: Infinity,
-                      }}
-                    />
-                  )}
-                </motion.button>
-              );
-            })}
+                    >
+                      {pad.name}
+                    </div>
+                    {isActive && (
+                      <motion.div
+                        className="w-3 h-3 rounded-full bg-black"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [1, 0.7, 1],
+                        }}
+                        transition={{
+                          duration: 0.8,
+                          repeat: Infinity,
+                        }}
+                      />
+                    )}
+                    {isMuted && (
+                      <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black" />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -800,6 +989,30 @@ export function ProSequencer() {
                 />
                 <span className="font-header text-safety-orange text-sm font-bold min-w-[2.5rem] text-center">
                   {grit}%
+                </span>
+              </div>
+            </div>
+
+            {/* FILTER Knob */}
+            <div className="flex flex-col items-center gap-2">
+              <label className="font-tag text-foreground text-xs md:text-sm">
+                FILTER
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={filter}
+                  onChange={(e) => setFilter(Number(e.target.value))}
+                  className="w-24 h-2 bg-foreground/10 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: "#00ffff",
+                    background: `linear-gradient(to right, #00ffff 0%, #00ffff ${filter}%, rgba(255, 255, 255, 0.1) ${filter}%, rgba(255, 255, 255, 0.1) 100%)`,
+                  }}
+                />
+                <span className="font-header text-cyan-500 text-sm font-bold min-w-[2.5rem] text-center">
+                  {filter}%
                 </span>
               </div>
             </div>
