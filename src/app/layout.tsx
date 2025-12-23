@@ -4,7 +4,9 @@ import "./globals.css";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { AudioProvider } from "@/context/AudioContext";
+import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
+import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { SprayCursor } from "@/components/SprayCursor";
 
 const permanentMarker = Permanent_Marker({
@@ -35,11 +37,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${permanentMarker.variable} ${sedgwickAve.variable}`}>
         <AudioProvider>
-          <SprayCursor />
-          <Navigation />
-          {children}
-          <Footer />
-          <PersistentPlayer />
+          <VideoProvider>
+            <SprayCursor />
+            <Navigation />
+            {children}
+            <Footer />
+            <FloatingVideoPlayer />
+            <PersistentPlayer />
+          </VideoProvider>
         </AudioProvider>
       </body>
     </html>

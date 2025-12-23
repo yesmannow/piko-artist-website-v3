@@ -9,6 +9,7 @@ export function Navigation() {
     { href: "/#bio", label: "About" },
     { href: "/music", label: "Music" },
     { href: "/videos", label: "Videos" },
+    { href: "/beatmaker", label: "Beat Maker" },
     { href: "/#contact", label: "Contact" },
   ];
 

@@ -1,21 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MediaItem, tracks } from "@/lib/data";
-import { CinemaModal } from "./CinemaModal";
+import { tracks } from "@/lib/data";
+import { useVideo } from "@/context/VideoContext";
 
 interface VideoGalleryProps {
   featuredOnly?: boolean;
 }
 
 export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
-  const [selectedVideo, setSelectedVideo] = useState<MediaItem | null>(null);
+  const { playVideo } = useVideo();
 
   const videos = tracks.filter((t) => t.type === "video");
   const visibleVideos = featuredOnly ? videos.slice(0, 3) : videos;
+
+  // Generate fake duration for YouTube-style timestamp
+  const getFakeDuration = (index: number) => {
+    const durations = ["3:45", "4:12", "2:58", "5:23", "3:19", "4:56", "2:34", "3:47"];
+    return durations[index % durations.length];
+  };
 
   return (
     <>
@@ -32,7 +37,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                   className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer"
-                  onClick={() => setSelectedVideo(video)}
+                  onClick={() => playVideo(video.id)}
                 >
                   {/* TV Frame */}
                   <div className="relative bg-gray-800 rounded-lg p-3 md:p-4 shadow-2xl">
@@ -128,8 +133,8 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
         </>
       ) : (
         <>
-          {/* Video Feed Layout - Full Archive Mode */}
-          <div className="flex flex-col gap-10">
+          {/* YouTube-Style Grid Layout - Full Archive Mode */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {visibleVideos.map((video, index) => (
               <motion.div
                 key={video.id}
@@ -137,28 +142,31 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.25) }}
                 viewport={{ once: true }}
-                className="group"
+                className="group cursor-pointer"
+                onClick={() => playVideo(video.id)}
               >
-                <button
-                  type="button"
-                  onClick={() => setSelectedVideo(video)}
-                  className="w-full text-left"
-                >
-                  <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black shadow-2xl">
+                {/* YouTube-Style Card */}
+                <div className="bg-card rounded-lg overflow-hidden border border-white/10 hover:border-neon-green/50 transition-colors">
+                  {/* Thumbnail Container */}
+                  <div className="relative aspect-video bg-black overflow-hidden">
                     <Image
                       src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
                       alt={video.title}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                       unoptimized
                     />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                    {/* Duration Badge (Bottom-Right) */}
+                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-tag text-white">
+                      {getFakeDuration(index)}
+                    </div>
 
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 rounded-full bg-neon-green/90 flex items-center justify-center shadow-lg">
+                    {/* Play Button Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                      <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
                         <svg
-                          className="w-8 h-8 text-black ml-1"
+                          className="w-7 h-7 text-black ml-1"
                           fill="currentColor"
                           viewBox="0 0 24 24"
                         >
@@ -168,32 +176,26 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="font-tag text-xl md:text-2xl text-white">
-                        {video.title}
-                      </h3>
-                      <span className="px-3 py-1 rounded-full border text-[11px] font-tag tracking-[0.2em] uppercase bg-white/5 text-white/80 border-white/15">
+                  {/* Card Info */}
+                  <div className="p-3 md:p-4">
+                    <h3 className="font-tag text-base md:text-lg text-white line-clamp-2 mb-2 group-hover:text-neon-green transition-colors">
+                      {video.title}
+                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs md:text-sm text-white/60">
+                        {video.artist}
+                      </p>
+                      <span className="text-white/40">•</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-tag uppercase bg-white/5 text-white/70 border border-white/10">
                         {video.vibe}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm md:text-base text-white/60">
-                      {video.artist} • Official Visual • {video.vibe} energy
-                    </p>
                   </div>
-                </button>
+                </div>
               </motion.div>
             ))}
           </div>
         </>
-      )}
-
-      {/* Cinema Modal */}
-      {selectedVideo && (
-        <CinemaModal
-          video={selectedVideo}
-          onClose={() => setSelectedVideo(null)}
-        />
       )}
     </>
   );

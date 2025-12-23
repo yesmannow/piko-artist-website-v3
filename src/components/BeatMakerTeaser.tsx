@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 interface Pad {
   key: string;
@@ -11,15 +12,15 @@ interface Pad {
 }
 
 const pads: Pad[] = [
-  { key: "Q", soundName: "Kick", audioFile: "/assets/audio/samples/kick-drum-426037.mp3", color: "green" },
-  { key: "W", soundName: "Snare", audioFile: "/assets/audio/samples/tr909-snare-drum-241413.mp3", color: "pink" },
-  { key: "E", soundName: "Hi-Hat", audioFile: "/assets/audio/samples/090241_chimbal-aberto-39488.mp3", color: "cyan" },
-  { key: "A", soundName: "Bass", audioFile: "/assets/audio/samples/deep-808-230752.mp3", color: "green" },
-  { key: "S", soundName: "Shaker", audioFile: "/assets/audio/samples/shaker-drum-434902.mp3", color: "pink" },
-  { key: "D", soundName: "FX", audioFile: "/assets/audio/samples/reverse-cymbal-riser-451412.mp3", color: "cyan" },
+  { key: "Q", soundName: "Kick", audioFile: "/audio/samples/kick-drum-426037.mp3", color: "green" },
+  { key: "W", soundName: "Snare", audioFile: "/audio/samples/tr909-snare-drum-241413.mp3", color: "pink" },
+  { key: "E", soundName: "Hi-Hat", audioFile: "/audio/samples/090241_chimbal-aberto-39488.mp3", color: "cyan" },
+  { key: "A", soundName: "Bass", audioFile: "/audio/samples/deep-808-230752.mp3", color: "green" },
+  { key: "S", soundName: "Shaker", audioFile: "/audio/samples/shaker-drum-434902.mp3", color: "pink" },
+  { key: "D", soundName: "FX", audioFile: "/audio/samples/reverse-cymbal-riser-451412.mp3", color: "cyan" },
 ];
 
-export function MpcPad() {
+export function BeatMakerTeaser() {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const [activePad, setActivePad] = useState<string | null>(null);
 
@@ -150,6 +151,36 @@ export function MpcPad() {
             </motion.button>
           );
         })}
+      </div>
+
+      {/* LAUNCH PRO STUDIO Button */}
+      <div className="mt-8 md:mt-12 flex justify-center">
+        <Link href="/beatmaker">
+          <motion.button
+            className="px-8 py-4 md:px-12 md:py-6 bg-gradient-to-r from-neon-pink via-neon-green to-neon-cyan text-black font-tag text-lg md:text-xl font-bold rounded-lg relative overflow-hidden group"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              boxShadow: "0 0 30px hsl(var(--neon-green)), 0 0 60px hsl(var(--neon-pink))",
+            }}
+          >
+            <span className="relative z-10">LAUNCH PRO STUDIO</span>
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-neon-green via-neon-pink to-neon-cyan opacity-0 group-hover:opacity-100 transition-opacity"
+              animate={{
+                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              style={{
+                backgroundSize: "200% 200%",
+              }}
+            />
+          </motion.button>
+        </Link>
       </div>
     </div>
   );
