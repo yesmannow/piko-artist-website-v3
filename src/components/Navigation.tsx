@@ -10,6 +10,7 @@ export function Navigation() {
     { href: "/music", label: "Music" },
     { href: "/videos", label: "Videos" },
     { href: "/beatmaker", label: "Beat Maker" },
+    { href: "/guestbook", label: "Guestbook" },
     { href: "/#contact", label: "Contact" },
   ];
 

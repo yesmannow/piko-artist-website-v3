@@ -26,15 +26,17 @@ export function BeatMakerTeaser() {
 
   // Preload all audio files
   useEffect(() => {
+    const currentAudioRefs = audioRefs.current;
+
     pads.forEach((pad) => {
       const audio = new Audio(pad.audioFile);
       audio.preload = "auto";
-      audioRefs.current[pad.key] = audio;
+      currentAudioRefs[pad.key] = audio;
     });
 
     return () => {
       // Cleanup
-      Object.values(audioRefs.current).forEach((audio) => {
+      Object.values(currentAudioRefs).forEach((audio) => {
         audio.pause();
         audio.src = "";
       });

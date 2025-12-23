@@ -7,6 +7,7 @@ import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { GlitchText } from "@/components/GlitchText";
 import { BeatMakerTeaser } from "@/components/BeatMakerTeaser";
+import { HeroScene } from "@/components/HeroScene";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -31,6 +32,11 @@ export default function Home() {
           />
           {/* Black Overlay */}
           <div className="absolute inset-0 bg-black/50 z-10" />
+        </div>
+
+        {/* 3D Scene */}
+        <div className="absolute inset-0 z-[5]">
+          <HeroScene />
         </div>
 
         {/* Hero Content */}

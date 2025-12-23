@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { Play, Square } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Square, Share2, Check } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface Instrument {
   id: string;
@@ -25,9 +26,54 @@ const DEFAULT_BPM = 120;
 const MIN_BPM = 60;
 const MAX_BPM = 200;
 
+// Encoding: Convert steps state to compressed string
+function encodePattern(steps: Record<string, boolean[]>): string {
+  const pattern: string[] = [];
+  instruments.forEach((inst) => {
+    const stepPattern = steps[inst.id] || [];
+    // Convert boolean array to binary string, then to base36
+    const binary = stepPattern.map((b) => (b ? "1" : "0")).join("");
+    // Convert binary to base36 for shorter URLs
+    const num = parseInt(binary, 2);
+    pattern.push(num.toString(36));
+  });
+  return pattern.join("-");
+}
+
+// Decoding: Parse compressed string back to steps state
+function decodePattern(encoded: string): Record<string, boolean[]> | null {
+  try {
+    const parts = encoded.split("-");
+    if (parts.length !== instruments.length) return null;
+
+    const decoded: Record<string, boolean[]> = {};
+    instruments.forEach((inst, index) => {
+      const num = parseInt(parts[index], 36);
+      const binary = num.toString(2).padStart(STEPS, "0");
+      decoded[inst.id] = binary.split("").map((b) => b === "1");
+    });
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
 export function ProSequencer() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showToast, setShowToast] = useState(false);
+
   // State: [instrumentId][stepIndex] = boolean
   const [steps, setSteps] = useState<Record<string, boolean[]>>(() => {
+    // Try to load from URL on mount
+    const patternParam = searchParams.get("pattern");
+    if (patternParam) {
+      const decoded = decodePattern(patternParam);
+      if (decoded) {
+        return decoded;
+      }
+    }
+    // Default empty state
     const initial: Record<string, boolean[]> = {};
     instruments.forEach((inst) => {
       initial[inst.id] = new Array(STEPS).fill(false);
@@ -43,19 +89,21 @@ export function ProSequencer() {
 
   // Preload audio files (create multiple instances for overlapping sounds)
   useEffect(() => {
+    const currentAudioRefs = audioRefs.current;
+
     instruments.forEach((instrument) => {
-      audioRefs.current[instrument.id] = [];
+      currentAudioRefs[instrument.id] = [];
       // Create 4 instances per instrument for overlapping playback
       for (let i = 0; i < 4; i++) {
         const audio = new Audio(instrument.audioFile);
         audio.preload = "auto";
-        audioRefs.current[instrument.id].push(audio);
+        currentAudioRefs[instrument.id].push(audio);
       }
     });
 
     return () => {
       // Cleanup
-      Object.values(audioRefs.current).forEach((audioArray) => {
+      Object.values(currentAudioRefs).forEach((audioArray) => {
         audioArray.forEach((audio) => {
           audio.pause();
           audio.src = "";
@@ -123,6 +171,23 @@ export function ProSequencer() {
       newSteps[instrumentId][stepIndex] = !newSteps[instrumentId][stepIndex];
       return newSteps;
     });
+  };
+
+  const handleShare = async () => {
+    const encoded = encodePattern(steps);
+    const url = new URL(window.location.href);
+    url.searchParams.set("pattern", encoded);
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+      // Update URL without reload
+      router.push(`/beatmaker?pattern=${encoded}`, { scroll: false });
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   const getNeonColor = (color: "green" | "pink" | "cyan") => {
@@ -208,7 +273,6 @@ export function ProSequencer() {
                         boxShadow: isActive
                           ? `0 0 10px ${neonColor}, inset 0 0 10px ${neonColor}20`
                           : "none",
-                        ringColor: isCurrentStep ? neonColor : "transparent",
                       }}
                       animate={isCurrentStep ? {
                         scale: [1, 1.15, 1],
@@ -294,6 +358,17 @@ export function ProSequencer() {
               </div>
             </div>
 
+            {/* Share Button */}
+            <motion.button
+              className="px-6 py-3 bg-neon-cyan/20 border-2 border-neon-cyan/50 text-neon-cyan font-tag rounded-lg flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleShare}
+            >
+              <Share2 className="w-5 h-5" />
+              Share Beat
+            </motion.button>
+
             {/* Clear All Button */}
             <motion.button
               className="px-6 py-3 bg-neon-pink/20 border-2 border-neon-pink/50 text-neon-pink font-tag rounded-lg"
@@ -307,6 +382,8 @@ export function ProSequencer() {
                 setSteps(cleared);
                 setIsPlaying(false);
                 setCurrentStep(0);
+                // Clear URL pattern
+                router.push("/beatmaker", { scroll: false });
               }}
             >
               Clear All
@@ -314,6 +391,24 @@ export function ProSequencer() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-black/90 border-2 border-neon-green/50 rounded-lg px-6 py-4 flex items-center gap-3 shadow-lg"
+            style={{
+              boxShadow: "0 0 30px hsl(var(--neon-green))",
+            }}
+          >
+            <Check className="w-5 h-5 text-neon-green" />
+            <span className="font-tag text-neon-green">Link Copied!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

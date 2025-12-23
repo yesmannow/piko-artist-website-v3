@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense } from "react";
 import { motion } from "framer-motion";
-import { ProSequencer } from "@/components/ProSequencer";
+import { GraffitiCanvas } from "@/components/GraffitiCanvas";
 import { GlitchText } from "@/components/GlitchText";
 
-function BeatMakerContent() {
+export default function GuestbookPage() {
   return (
     <div className="min-h-screen bg-background">
       <section className="relative py-20 px-8">
@@ -16,24 +15,16 @@ function BeatMakerContent() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-6xl font-graffiti mb-4 md:mb-8 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
-              <GlitchText text="PRO STUDIO" />
+              <GlitchText text="TAG THE WALL" />
             </h1>
             <p className="text-center text-white/60 font-tag text-lg md:text-xl mb-12">
-              Professional Beat Making Environment
+              Leave your mark • Spray paint the canvas
             </p>
-            <ProSequencer />
+            <GraffitiCanvas />
           </motion.div>
         </div>
       </section>
     </div>
-  );
-}
-
-export default function BeatMakerPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <BeatMakerContent />
-    </Suspense>
   );
 }
 
