@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Square, Share2, Check, Circle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -87,6 +87,19 @@ export function ProSequencer() {
   const [activeLoops, setActiveLoops] = useState<Set<string>>(new Set());
   const loopAudioRefs = useRef<Record<string, HTMLAudioElement>>({});
 
+  // Refs for accessing state values in interval callbacks without triggering re-renders
+  const isRecordingRef = useRef(isRecording);
+  const activeLoopsRef = useRef(activeLoops);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
+  useEffect(() => {
+    activeLoopsRef.current = activeLoops;
+  }, [activeLoops]);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [bpm, setBpm] = useState(DEFAULT_BPM);
@@ -109,7 +122,8 @@ export function ProSequencer() {
   useEffect(() => {
     const initAudioContext = async () => {
       try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AudioContextClass();
         audioContextRef.current = ctx;
 
         // Create low-pass filter node
@@ -144,14 +158,16 @@ export function ProSequencer() {
         audioContextRef.current.close();
       }
     };
+    // Initialization effect - grit value at mount time used for initial state
+    // Subsequent grit changes handled by separate effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update wave shaper curve when grit changes
-  const updateWaveShaperCurve = (waveShaper: WaveShaperNode, gritValue: number) => {
+  const updateWaveShaperCurve = useCallback((waveShaper: WaveShaperNode, gritValue: number) => {
     const amount = gritValue / 100; // 0 to 1
     const samples = 44100;
     const curve = new Float32Array(samples);
-    const deg = Math.PI / 180;
 
     for (let i = 0; i < samples; i++) {
       const x = (i * 2) / samples - 1;
@@ -166,13 +182,13 @@ export function ProSequencer() {
 
     waveShaper.curve = curve;
     waveShaper.oversample = "4x";
-  };
+  }, []);
 
   useEffect(() => {
     if (waveShaperRef.current) {
       updateWaveShaperCurve(waveShaperRef.current, grit);
     }
-  }, [grit]);
+  }, [grit, updateWaveShaperCurve]);
 
   // Update filter frequency when filter value changes
   useEffect(() => {
@@ -375,7 +391,8 @@ export function ProSequencer() {
         const nextStep = (prev + 1) % STEPS;
 
         // Recording logic: count steps and stop after 4 bars (64 steps)
-        if (isRecording) {
+        // Use ref to avoid dependency issues with interval timing
+        if (isRecordingRef.current) {
           recordingStepCountRef.current += 1;
           if (recordingStepCountRef.current >= BARS_TO_RECORD * STEPS) {
             setIsRecording(false);
@@ -426,7 +443,8 @@ export function ProSequencer() {
       setIsRecording(false);
     } else {
       // Stop all loops when switching to sequencer mode
-      activeLoops.forEach((padId) => {
+      // Use ref to avoid dependency on activeLoops which would cause re-runs
+      activeLoopsRef.current.forEach((padId) => {
         const audio = loopAudioRefs.current[padId];
         if (audio) {
           audio.pause();

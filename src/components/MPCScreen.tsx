@@ -34,7 +34,7 @@ export function MPCScreen({ kitName, bpm, audioContext, masterGainNode }: MPCScr
           if (analyzerRef.current) {
             analyzerRef.current.disconnect();
           }
-        } catch (e) {
+        } catch {
           // Ignore disconnect errors
         }
       };
@@ -107,7 +107,8 @@ export function MPCScreen({ kitName, bpm, audioContext, masterGainNode }: MPCScr
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [analyzerRef.current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
@@ -153,7 +154,6 @@ export function MPCScreen({ kitName, bpm, audioContext, masterGainNode }: MPCScr
             height={80}
             className="w-full border border-black/20"
             style={{
-              imageRendering: "pixelated",
               imageRendering: "crisp-edges",
             }}
           />

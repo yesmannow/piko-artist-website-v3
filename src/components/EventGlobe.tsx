@@ -28,9 +28,9 @@ function EventMarker({ event, position }: EventMarkerProps) {
   const [hovered, setHovered] = useState(false);
 
   // Pulsing animation
-  useFrame((state) => {
+  useFrame(({ clock }) => {
     if (meshRef.current) {
-      const scale = 1 + Math.sin(state.clock.getElapsedTime() * 2) * 0.2;
+      const scale = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.2;
       meshRef.current.scale.set(scale, scale, scale);
     }
   });
@@ -84,7 +84,7 @@ function GlobeScene({ events }: { events: Event[] }) {
   const globeRef = useRef<THREE.Mesh>(null);
 
   // Auto-rotate
-  useFrame((state) => {
+  useFrame(() => {
     if (globeRef.current) {
       globeRef.current.rotation.y += 0.005;
     }

@@ -195,7 +195,7 @@ export function GraffitiCanvas() {
     const tempCtx = tempCanvas.getContext("2d");
     if (!tempCtx) return;
 
-    const img = new Image();
+    const img = document.createElement("img");
     img.onload = () => {
       tempCtx.drawImage(img, 0, 0);
       const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
