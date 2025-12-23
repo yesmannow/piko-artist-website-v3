@@ -54,6 +54,131 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
   );
 };
 
+// TrackCard component for Full Mode with 3D tilt effects
+interface TrackCardProps {
+  track: (typeof tracks)[0];
+  index: number;
+  isActive: boolean;
+  onPlay: () => void;
+}
+
+function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
+  // Random rotation between -1deg and 1deg for pasted-on-wall effect
+  const rotation = (Math.random() * 2 - 1).toFixed(2);
+
+  // 3D Tilt Physics
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const rotateX = useTransform(y, [-0.5, 0.5], [5, -5]);
+  const rotateY = useTransform(x, [-0.5, 0.5], [-5, 5]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const mouseX = (e.clientX - centerX) / rect.width;
+    const mouseY = (e.clientY - centerY) / rect.height;
+    x.set(mouseX);
+    y.set(mouseY);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={cardRef}
+      type="button"
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.25) }}
+      viewport={{ once: true }}
+      onClick={onPlay}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={[
+        "group relative w-full text-left",
+        "bg-[#e5e5e5] overflow-hidden",
+        "border-2 border-black",
+        "transition-all",
+        isActive ? "ring-2 ring-toxic-lime" : "",
+      ].join(" ")}
+      style={{
+        transform: `rotate(${rotation}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+        transformStyle: "preserve-3d",
+        boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+      }}
+    >
+      {/* Cover Art Image */}
+      <div className="relative aspect-square w-full overflow-hidden">
+        {isImagePath(track.coverArt) ? (
+          <Image
+            src={track.coverArt}
+            alt={track.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+        )}
+
+        {/* Hover Overlay with Play Button */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-toxic-lime/20 rounded-full blur-xl" />
+            <Play
+              className="relative w-12 h-12 md:w-16 md:h-16 text-white"
+              fill="currentColor"
+              style={{
+                filter: `drop-shadow(0 0 10px #ccff00)`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Active Indicator */}
+        {isActive && (
+          <div className="absolute top-2 right-2">
+            <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse" />
+          </div>
+        )}
+      </div>
+
+      {/* Metadata Below Image */}
+      <div className="p-4 bg-[#e5e5e5]">
+        <div
+          className={[
+            "font-header text-base md:text-lg mb-1 line-clamp-2 font-bold",
+            isActive ? "text-toxic-lime" : "text-black",
+          ].join(" ")}
+        >
+          {track.title}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={["text-sm", isActive ? "text-toxic-lime/80" : "text-black/70"].join(" ")}>
+            {track.artist}
+          </span>
+          <span className="text-black/40">•</span>
+          <span
+            className={[
+              "px-2 py-0.5 rounded-full border border-black text-[10px] font-tag tracking-[0.15em] uppercase",
+              vibeColors[track.vibe],
+            ].join(" ")}
+          >
+            {track.vibe}
+          </span>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
 export function TrackList({ featuredOnly = false }: TrackListProps) {
   const { playTrack, currentTrack, isPlaying } = useAudio();
   const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
@@ -203,124 +328,15 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
       ) : (
         // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look with 3D Tilt
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" style={{ perspective: "1000px" }}>
-          {visibleTracks.map((track, idx) => {
-            const isActive = currentTrack?.id === track.id && isPlaying;
-            // Random rotation between -1deg and 1deg for pasted-on-wall effect
-            const rotation = (Math.random() * 2 - 1).toFixed(2);
-
-            // 3D Tilt Physics
-            const cardRef = useRef<HTMLButtonElement>(null);
-            const x = useMotionValue(0);
-            const y = useMotionValue(0);
-
-            const rotateX = useTransform(y, [-0.5, 0.5], [5, -5]);
-            const rotateY = useTransform(x, [-0.5, 0.5], [-5, 5]);
-
-            const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!cardRef.current) return;
-              const rect = cardRef.current.getBoundingClientRect();
-              const centerX = rect.left + rect.width / 2;
-              const centerY = rect.top + rect.height / 2;
-              const mouseX = (e.clientX - centerX) / rect.width;
-              const mouseY = (e.clientY - centerY) / rect.height;
-              x.set(mouseX);
-              y.set(mouseY);
-            };
-
-            const handleMouseLeave = () => {
-              x.set(0);
-              y.set(0);
-            };
-
-            return (
-              <motion.button
-                ref={cardRef}
-                key={track.id}
-                type="button"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
-                viewport={{ once: true }}
-                onClick={() => playTrack(track)}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                className={[
-                  "group relative w-full text-left",
-                  "bg-[#e5e5e5] overflow-hidden",
-                  "border-2 border-black",
-                  "transition-all",
-                  isActive ? "ring-2 ring-toxic-lime" : "",
-                ].join(" ")}
-                style={{
-                  transform: `rotate(${rotation}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-                  transformStyle: "preserve-3d",
-                  boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
-                }}
-              >
-                {/* Cover Art Image */}
-                <div className="relative aspect-square w-full overflow-hidden">
-                  {isImagePath(track.coverArt) ? (
-                    <Image
-                      src={track.coverArt}
-                      alt={track.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
-                  )}
-
-                  {/* Hover Overlay with Play Button */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-toxic-lime/20 rounded-full blur-xl" />
-                      <Play
-                        className="relative w-12 h-12 md:w-16 md:h-16 text-white"
-                        fill="currentColor"
-                        style={{
-                          filter: `drop-shadow(0 0 10px #ccff00)`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Active Indicator */}
-                  {isActive && (
-                    <div className="absolute top-2 right-2">
-                      <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Metadata Below Image */}
-                <div className="p-4 bg-[#e5e5e5]">
-                  <div
-                    className={[
-                      "font-header text-base md:text-lg mb-1 line-clamp-2 font-bold",
-                      isActive ? "text-toxic-lime" : "text-black",
-                    ].join(" ")}
-                  >
-                    {track.title}
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={["text-sm", isActive ? "text-toxic-lime/80" : "text-black/70"].join(" ")}>
-                      {track.artist}
-                    </span>
-                    <span className="text-black/40">•</span>
-                    <span
-                      className={[
-                        "px-2 py-0.5 rounded-full border border-black text-[10px] font-tag tracking-[0.15em] uppercase",
-                        vibeColors[track.vibe],
-                      ].join(" ")}
-                    >
-                      {track.vibe}
-                    </span>
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
+          {visibleTracks.map((track, idx) => (
+            <TrackCard
+              key={track.id}
+              track={track}
+              index={idx}
+              isActive={currentTrack?.id === track.id && isPlaying}
+              onPlay={() => playTrack(track)}
+            />
+          ))}
         </div>
       )}
 

@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Download, Trash2 } from "lucide-react";
+import Image from "next/image";
 
 const COLORS = [
   { name: "Neon Green", value: "hsl(var(--neon-green))" },
@@ -385,10 +386,13 @@ export function GraffitiCanvas() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  <img
+                  <Image
                     src={tag.dataURL}
                     alt="Graffiti tag"
+                    width={200}
+                    height={200}
                     className="w-full aspect-square object-cover rounded-lg border-2 border-white/20"
+                    unoptimized
                   />
                   <motion.button
                     onClick={() => deleteTag(tag.id)}

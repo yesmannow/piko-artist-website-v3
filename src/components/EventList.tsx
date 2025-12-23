@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { events, getUpcomingEvents, getPastEvents, Event } from "@/lib/events";
+import { getUpcomingEvents, getPastEvents, Event } from "@/lib/events";
 import { Calendar, MapPin, ExternalLink } from "lucide-react";
 
 interface EventListProps {

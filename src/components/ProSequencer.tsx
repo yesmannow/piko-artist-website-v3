@@ -4,22 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Square, Share2, Check, Circle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-
-interface Instrument {
-  id: string;
-  name: string;
-  audioFile: string;
-  color: "green" | "pink" | "cyan";
-}
-
-const instruments: Instrument[] = [
-  { id: "kick", name: "Kick", audioFile: "/audio/samples/kick-drum-426037.mp3", color: "green" },
-  { id: "snare", name: "Snare", audioFile: "/audio/samples/tr909-snare-drum-241413.mp3", color: "pink" },
-  { id: "hihat", name: "Hi-Hat", audioFile: "/audio/samples/090241_chimbal-aberto-39488.mp3", color: "cyan" },
-  { id: "bass", name: "Bass", audioFile: "/audio/samples/deep-808-230752.mp3", color: "green" },
-  { id: "perc", name: "Perc", audioFile: "/audio/samples/shaker-drum-434902.mp3", color: "pink" },
-  { id: "fx", name: "FX", audioFile: "/audio/samples/reverse-cymbal-riser-451412.mp3", color: "cyan" },
-];
+import { getKit, type KitType, type Pad } from "@/lib/audio-kits";
+import { MPCScreen } from "@/components/MPCScreen";
 
 const STEPS = 16;
 const DEFAULT_BPM = 120;
@@ -27,11 +13,13 @@ const MIN_BPM = 60;
 const MAX_BPM = 200;
 const BARS_TO_RECORD = 4; // 4 bars = 64 steps (16 steps per bar)
 
+type Mode = "sequencer" | "remix";
+
 // Encoding: Convert steps state to compressed string
-function encodePattern(steps: Record<string, boolean[]>): string {
+function encodePattern(steps: Record<string, boolean[]>, pads: Pad[]): string {
   const pattern: string[] = [];
-  instruments.forEach((inst) => {
-    const stepPattern = steps[inst.id] || [];
+  pads.forEach((pad) => {
+    const stepPattern = steps[pad.id] || [];
     // Convert boolean array to binary string, then to base36
     const binary = stepPattern.map((b) => (b ? "1" : "0")).join("");
     // Convert binary to base36 for shorter URLs
@@ -42,16 +30,16 @@ function encodePattern(steps: Record<string, boolean[]>): string {
 }
 
 // Decoding: Parse compressed string back to steps state
-function decodePattern(encoded: string): Record<string, boolean[]> | null {
+function decodePattern(encoded: string, pads: Pad[]): Record<string, boolean[]> | null {
   try {
     const parts = encoded.split("-");
-    if (parts.length !== instruments.length) return null;
+    if (parts.length !== pads.length) return null;
 
     const decoded: Record<string, boolean[]> = {};
-    instruments.forEach((inst, index) => {
+    pads.forEach((pad, index) => {
       const num = parseInt(parts[index], 36);
       const binary = num.toString(2).padStart(STEPS, "0");
-      decoded[inst.id] = binary.split("").map((b) => b === "1");
+      decoded[pad.id] = binary.split("").map((b) => b === "1");
     });
     return decoded;
   } catch {
@@ -59,34 +47,42 @@ function decodePattern(encoded: string): Record<string, boolean[]> | null {
   }
 }
 
-type KitType = "street" | "lofi";
-
 export function ProSequencer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showToast, setShowToast] = useState(false);
   const [selectedKit, setSelectedKit] = useState<KitType>("street");
+  const [mode, setMode] = useState<Mode>("sequencer");
   const [isRecording, setIsRecording] = useState(false);
   const [showRecordModal, setShowRecordModal] = useState(false);
+  const [grit, setGrit] = useState(0); // Master FX: 0-100
   const recordingStepCountRef = useRef(0);
 
-  // State: [instrumentId][stepIndex] = boolean
+  // Get current kit and pads
+  const currentKit = getKit(selectedKit);
+  const pads = currentKit.pads;
+
+  // State: [padId][stepIndex] = boolean
   const [steps, setSteps] = useState<Record<string, boolean[]>>(() => {
     // Try to load from URL on mount
     const beatParam = searchParams.get("beat");
     if (beatParam) {
-      const decoded = decodePattern(beatParam);
+      const decoded = decodePattern(beatParam, pads);
       if (decoded) {
         return decoded;
       }
     }
     // Default empty state
     const initial: Record<string, boolean[]> = {};
-    instruments.forEach((inst) => {
-      initial[inst.id] = new Array(STEPS).fill(false);
+    pads.forEach((pad) => {
+      initial[pad.id] = new Array(STEPS).fill(false);
     });
     return initial;
   });
+
+  // Remix mode: Track which loops are playing
+  const [activeLoops, setActiveLoops] = useState<Set<string>>(new Set());
+  const loopAudioRefs = useRef<Record<string, HTMLAudioElement>>({});
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -94,21 +90,148 @@ export function ProSequencer() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRefs = useRef<Record<string, HTMLAudioElement[]>>({});
 
+  // AudioContext setup
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const waveShaperRef = useRef<WaveShaperNode | null>(null);
+
+  // Initialize AudioContext and master effects chain
+  useEffect(() => {
+    const initAudioContext = async () => {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = ctx;
+
+        // Create master gain node
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 1.0;
+        masterGainRef.current = masterGain;
+
+        // Create wave shaper for distortion/grit
+        const waveShaper = ctx.createWaveShaper();
+        updateWaveShaperCurve(waveShaper, grit);
+        waveShaperRef.current = waveShaper;
+
+        // Connect: masterGain -> waveShaper -> destination
+        masterGain.connect(waveShaper);
+        waveShaper.connect(ctx.destination);
+      } catch (error) {
+        console.error("Error initializing AudioContext:", error);
+      }
+    };
+
+    initAudioContext();
+
+    return () => {
+      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  // Update wave shaper curve when grit changes
+  const updateWaveShaperCurve = (waveShaper: WaveShaperNode, gritValue: number) => {
+    const amount = gritValue / 100; // 0 to 1
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const deg = Math.PI / 180;
+
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1;
+      // Bit-crush and saturation effect
+      const k = 2 * amount / (1 - amount);
+      curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+      // Add bit-crushing
+      const bits = Math.max(1, 16 - Math.floor(amount * 15));
+      const step = Math.pow(2, bits);
+      curve[i] = Math.floor(curve[i] * step) / step;
+    }
+
+    waveShaper.curve = curve;
+    waveShaper.oversample = "4x";
+  };
+
+  useEffect(() => {
+    if (waveShaperRef.current) {
+      updateWaveShaperCurve(waveShaperRef.current, grit);
+    }
+  }, [grit]);
+
   // Preload audio files (create multiple instances for overlapping sounds)
   useEffect(() => {
     const currentAudioRefs = audioRefs.current;
+    const currentLoopRefs = loopAudioRefs.current;
 
-    instruments.forEach((instrument) => {
-      currentAudioRefs[instrument.id] = [];
-      // Create 4 instances per instrument for overlapping playback
-      for (let i = 0; i < 4; i++) {
-        const audio = new Audio(instrument.audioFile);
-        audio.preload = "auto";
-        // Set playback rate based on kit selection
-        audio.playbackRate = selectedKit === "lofi" ? 0.8 : 1.0;
-        currentAudioRefs[instrument.id].push(audio);
-      }
+    // Cleanup old refs
+    Object.values(currentAudioRefs).forEach((audioArray) => {
+      audioArray.forEach((audio) => {
+        audio.pause();
+        audio.src = "";
+      });
     });
+    Object.values(currentLoopRefs).forEach((audio) => {
+      audio.pause();
+      audio.src = "";
+    });
+
+    // Reset refs
+    Object.keys(currentAudioRefs).forEach((key) => delete currentAudioRefs[key]);
+    Object.keys(currentLoopRefs).forEach((key) => delete currentLoopRefs[key]);
+
+    // Load sequencer mode pads (one-shot samples)
+    if (mode === "sequencer" || selectedKit === "street" || selectedKit === "lofi") {
+      pads.forEach((pad) => {
+        currentAudioRefs[pad.id] = [];
+        // Create 4 instances per pad for overlapping playback
+        for (let i = 0; i < 4; i++) {
+          const audio = new Audio(pad.audioFile);
+          audio.preload = "auto";
+          audio.playbackRate = currentKit.playbackRate || 1.0;
+
+          // Connect to master gain if available
+          if (audioContextRef.current && masterGainRef.current) {
+            try {
+              // Resume audio context if suspended (requires user interaction)
+              if (audioContextRef.current.state === "suspended") {
+                audioContextRef.current.resume();
+              }
+              const source = audioContextRef.current.createMediaElementSource(audio);
+              source.connect(masterGainRef.current);
+            } catch (error) {
+              console.error(`Error connecting audio for ${pad.name}:`, error);
+            }
+          }
+
+          currentAudioRefs[pad.id].push(audio);
+        }
+      });
+    }
+
+    // Load remix mode pads (loop stems)
+    if (mode === "remix" && (selectedKit === "jardin" || selectedKit === "amor")) {
+      pads.forEach((pad) => {
+        const audio = new Audio(pad.audioFile);
+        audio.loop = true;
+        audio.preload = "auto";
+        audio.playbackRate = currentKit.playbackRate || 1.0;
+
+        // Connect to master gain if available
+        if (audioContextRef.current && masterGainRef.current) {
+          try {
+            // Resume audio context if suspended (requires user interaction)
+            if (audioContextRef.current.state === "suspended") {
+              audioContextRef.current.resume();
+            }
+            const source = audioContextRef.current.createMediaElementSource(audio);
+            source.connect(masterGainRef.current);
+          } catch (error) {
+            console.error(`Error connecting loop audio for ${pad.name}:`, error);
+          }
+        }
+
+        currentLoopRefs[pad.id] = audio;
+      });
+    }
 
     return () => {
       // Cleanup
@@ -118,12 +241,16 @@ export function ProSequencer() {
           audio.src = "";
         });
       });
+      Object.values(currentLoopRefs).forEach((audio) => {
+        audio.pause();
+        audio.src = "";
+      });
     };
-  }, [selectedKit]);
+  }, [selectedKit, mode, currentKit, pads]);
 
-  // Sequencer loop
+  // Sequencer loop (only for sequencer mode)
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying || mode !== "sequencer") {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -137,21 +264,23 @@ export function ProSequencer() {
 
     intervalRef.current = setInterval(() => {
       // Play sounds for current step
-      instruments.forEach((instrument) => {
-        const instrumentSteps = steps[instrument.id] || [];
-        if (instrumentSteps[currentStep]) {
+      pads.forEach((pad) => {
+        const padSteps = steps[pad.id] || [];
+        if (padSteps[currentStep]) {
           // Find an available audio instance
-          const audioInstances = audioRefs.current[instrument.id];
-          const availableAudio = audioInstances.find(
-            (audio) => audio.paused || audio.currentTime === 0
-          ) || audioInstances[0]; // Fallback to first if all playing
+          const audioInstances = audioRefs.current[pad.id];
+          if (audioInstances && audioInstances.length > 0) {
+            const availableAudio = audioInstances.find(
+              (audio) => audio.paused || audio.currentTime === 0
+            ) || audioInstances[0]; // Fallback to first if all playing
 
-          // Reset and play with kit-specific playback rate
-          availableAudio.currentTime = 0;
-          availableAudio.playbackRate = selectedKit === "lofi" ? 0.8 : 1.0;
-          availableAudio.play().catch((err) => {
-            console.error(`Error playing ${instrument.name}:`, err);
-          });
+            // Reset and play with kit-specific playback rate
+            availableAudio.currentTime = 0;
+            availableAudio.playbackRate = currentKit.playbackRate || 1.0;
+            availableAudio.play().catch((err) => {
+              console.error(`Error playing ${pad.name}:`, err);
+            });
+          }
         }
       });
 
@@ -179,7 +308,7 @@ export function ProSequencer() {
         intervalRef.current = null;
       }
     };
-  }, [isPlaying, currentStep, bpm, steps]);
+  }, [isPlaying, currentStep, bpm, steps, mode, pads, currentKit]);
 
   // Reset current step when stopping
   useEffect(() => {
@@ -189,8 +318,67 @@ export function ProSequencer() {
         setIsRecording(false);
         recordingStepCountRef.current = 0;
       }
+      // Stop all loops in remix mode
+      if (mode === "remix") {
+        activeLoops.forEach((padId) => {
+          const audio = loopAudioRefs.current[padId];
+          if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        });
+        setActiveLoops(new Set());
+      }
     }
-  }, [isPlaying, isRecording]);
+  }, [isPlaying, isRecording, mode, activeLoops]);
+
+  // Handle mode change: reset state appropriately
+  useEffect(() => {
+    if (mode === "remix") {
+      // Reset sequencer-specific state
+      setCurrentStep(0);
+      setIsRecording(false);
+    } else {
+      // Stop all loops when switching to sequencer mode
+      activeLoops.forEach((padId) => {
+        const audio = loopAudioRefs.current[padId];
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+      setActiveLoops(new Set());
+    }
+  }, [mode]);
+
+  // Remix mode: Toggle loop playback
+  const toggleLoop = async (padId: string) => {
+    const audio = loopAudioRefs.current[padId];
+    if (!audio) return;
+
+    // Resume audio context on first user interaction
+    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+      await audioContextRef.current.resume();
+    }
+
+    setActiveLoops((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(padId)) {
+        // Stop loop
+        audio.pause();
+        audio.currentTime = 0;
+        newSet.delete(padId);
+      } else {
+        // Start loop
+        audio.currentTime = 0;
+        audio.play().catch((err) => {
+          console.error(`Error playing loop ${padId}:`, err);
+        });
+        newSet.add(padId);
+      }
+      return newSet;
+    });
+  };
 
   // Start recording
   const startRecording = () => {
@@ -201,17 +389,28 @@ export function ProSequencer() {
     recordingStepCountRef.current = 0;
   };
 
-  const toggleStep = (instrumentId: string, stepIndex: number) => {
+  const toggleStep = (padId: string, stepIndex: number) => {
+    if (mode === "remix") {
+      // In remix mode, clicking a pad toggles the loop
+      toggleLoop(padId);
+      return;
+    }
+
     setSteps((prev) => {
       const newSteps = { ...prev };
-      newSteps[instrumentId] = [...newSteps[instrumentId]];
-      newSteps[instrumentId][stepIndex] = !newSteps[instrumentId][stepIndex];
+      newSteps[padId] = [...newSteps[padId]];
+      newSteps[padId][stepIndex] = !newSteps[padId][stepIndex];
       return newSteps;
     });
   };
 
   const handleShare = async () => {
-    const encoded = encodePattern(steps);
+    if (mode === "remix") {
+      // Remix mode doesn't use pattern encoding
+      return;
+    }
+
+    const encoded = encodePattern(steps, pads);
     const url = new URL(window.location.href);
     url.searchParams.set("beat", encoded);
 
@@ -243,17 +442,48 @@ export function ProSequencer() {
       {/* Header */}
       <div className="mb-8 text-center">
         <h2 className="text-3xl md:text-4xl font-header mb-2 text-foreground">
-          PRO SEQUENCER
+          {mode === "remix" ? "REMIX STATION" : "PRO SEQUENCER"}
         </h2>
         <p className="text-foreground/60 font-tag text-sm md:text-base">
-          Click steps to build your pattern • Crate digging enabled
+          {mode === "remix"
+            ? "Click pads to toggle loops • Mix stems in real-time"
+            : "Click steps to build your pattern • Crate digging enabled"}
         </p>
+      </div>
+
+      {/* Mode Selector */}
+      <div className="mb-6 flex items-center justify-center gap-4">
+        <label className="font-tag text-foreground text-sm md:text-base">Mode:</label>
+        <div className="flex gap-2 border-2 border-black shadow-hard">
+          <button
+            type="button"
+            onClick={() => setMode("sequencer")}
+            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+              mode === "sequencer"
+                ? "bg-toxic-lime text-black font-bold"
+                : "bg-concrete text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            SEQUENCER
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("remix")}
+            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+              mode === "remix"
+                ? "bg-toxic-lime text-black font-bold"
+                : "bg-concrete text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            REMIX
+          </button>
+        </div>
       </div>
 
       {/* Kit Selector */}
       <div className="mb-6 flex items-center justify-center gap-4">
         <label className="font-tag text-foreground text-sm md:text-base">Kit:</label>
-        <div className="flex gap-2 border-2 border-black shadow-hard">
+        <div className="flex gap-2 border-2 border-black shadow-hard flex-wrap justify-center">
           <button
             type="button"
             onClick={() => setSelectedKit("street")}
@@ -276,10 +506,44 @@ export function ProSequencer() {
           >
             LO-FI
           </button>
+          <button
+            type="button"
+            onClick={() => setSelectedKit("jardin")}
+            disabled={mode === "sequencer"}
+            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+              selectedKit === "jardin"
+                ? "bg-toxic-lime text-black font-bold"
+                : "bg-concrete text-foreground/60 hover:text-foreground"
+            } ${mode === "sequencer" ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            JARDIN
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedKit("amor")}
+            disabled={mode === "sequencer"}
+            className={`px-4 py-2 font-tag text-sm md:text-base transition-all ${
+              selectedKit === "amor"
+                ? "bg-toxic-lime text-black font-bold"
+                : "bg-concrete text-foreground/60 hover:text-foreground"
+            } ${mode === "sequencer" ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            AMOR
+          </button>
         </div>
       </div>
 
-      {/* Sequencer Grid */}
+      {/* MPC Screen */}
+      <div className="mb-6">
+        <MPCScreen
+          kitName={currentKit.name}
+          bpm={bpm}
+          audioContext={audioContextRef.current || undefined}
+          masterGainNode={masterGainRef.current || undefined}
+        />
+      </div>
+
+      {/* Sequencer Grid / Remix Pads */}
       <div
         className={`bg-concrete rounded-lg border-2 p-4 md:p-6 transition-all ${
           isRecording ? "border-red-500" : "border-black shadow-hard"
@@ -289,100 +553,164 @@ export function ProSequencer() {
           boxShadow: isRecording ? "4px 4px 0px 0px rgba(0,0,0,1)" : "4px 4px 0px 0px rgba(0,0,0,1)",
         }}
       >
-        {/* Step Numbers Header */}
-        <div className="grid grid-cols-[120px_repeat(16,1fr)] gap-2 mb-4">
-          <div className="text-xs md:text-sm font-tag text-foreground/40 text-center">
-            Instrument
-          </div>
-          {Array.from({ length: STEPS }, (_, i) => (
-            <div
-              key={i}
-              className="text-xs md:text-sm font-tag text-foreground/40 text-center"
-            >
-              {i + 1}
-            </div>
-          ))}
-        </div>
-
-        {/* Instrument Rows */}
-        <div className="space-y-3">
-          {instruments.map((instrument) => {
-            const streetColor = getStreetColor(instrument.color);
-            const instrumentSteps = steps[instrument.id] || [];
-
-            return (
-              <div
-                key={instrument.id}
-                className="grid grid-cols-[120px_repeat(16,1fr)] gap-2 items-center"
-              >
-                {/* Instrument Label */}
-                <div
-                  className="font-header text-sm md:text-base font-bold text-center px-2 py-2 rounded border-2 border-black bg-concrete"
-                  style={{
-                    color: streetColor,
-                  }}
-                >
-                  {instrument.name}
-                </div>
-
-                {/* Step Buttons */}
-                {instrumentSteps.map((isActive, stepIndex) => {
-                  const isCurrentStep = isPlaying && currentStep === stepIndex;
-                  return (
-                    <motion.button
-                      key={stepIndex}
-                      type="button"
-                      onClick={() => toggleStep(instrument.id, stepIndex)}
-                      className={`
-                        aspect-square rounded
-                        border-2 transition-all border-black
-                        ${isActive ? "scale-95" : "scale-100"}
-                        ${isCurrentStep ? "ring-2 ring-offset-1 ring-offset-concrete" : ""}
-                      `}
-                      style={{
-                        borderColor: isActive ? streetColor : "#000",
-                        backgroundColor: isActive ? streetColor : "#2a2a2a",
-                        boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
-                      }}
-                      animate={isCurrentStep ? {
-                        scale: [1, 1.15, 1],
-                      } : {}}
-                      transition={isCurrentStep ? {
-                        duration: 0.1,
-                        repeat: Infinity,
-                      } : {}}
-                      whileHover={{
-                        scale: 1.1,
-                        borderColor: streetColor,
-                      }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      {isActive && (
-                        <motion.div
-                          className="w-full h-full rounded"
-                          style={{
-                            backgroundColor: streetColor,
-                            opacity: isCurrentStep ? 1 : 0.8,
-                          }}
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        />
-                      )}
-                    </motion.button>
-                  );
-                })}
+        {mode === "sequencer" ? (
+          <>
+            {/* Step Numbers Header */}
+            <div className="grid grid-cols-[120px_repeat(16,1fr)] gap-2 mb-4">
+              <div className="text-xs md:text-sm font-tag text-foreground/40 text-center">
+                Pad
               </div>
-            );
-          })}
-        </div>
+              {Array.from({ length: STEPS }, (_, i) => (
+                <div
+                  key={i}
+                  className="text-xs md:text-sm font-tag text-foreground/40 text-center"
+                >
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+
+            {/* Pad Rows */}
+            <div className="space-y-3">
+              {pads.map((pad) => {
+                const streetColor = getStreetColor(pad.color);
+                const padSteps = steps[pad.id] || [];
+
+                return (
+                  <div
+                    key={pad.id}
+                    className="grid grid-cols-[120px_repeat(16,1fr)] gap-2 items-center"
+                  >
+                    {/* Pad Label */}
+                    <div
+                      className="font-header text-sm md:text-base font-bold text-center px-2 py-2 rounded border-2 border-black bg-concrete"
+                      style={{
+                        color: streetColor,
+                      }}
+                    >
+                      {pad.name}
+                    </div>
+
+                    {/* Step Buttons */}
+                    {padSteps.map((isActive, stepIndex) => {
+                      const isCurrentStep = isPlaying && currentStep === stepIndex;
+                      return (
+                        <motion.button
+                          key={stepIndex}
+                          type="button"
+                          onClick={() => toggleStep(pad.id, stepIndex)}
+                          className={`
+                            aspect-square rounded
+                            border-2 transition-all border-black
+                            ${isActive ? "scale-95" : "scale-100"}
+                            ${isCurrentStep ? "ring-2 ring-offset-1 ring-offset-concrete" : ""}
+                          `}
+                          style={{
+                            borderColor: isActive ? streetColor : "#000",
+                            backgroundColor: isActive ? streetColor : "#2a2a2a",
+                            boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
+                          }}
+                          animate={isCurrentStep ? {
+                            scale: [1, 1.15, 1],
+                          } : {}}
+                          transition={isCurrentStep ? {
+                            duration: 0.1,
+                            repeat: Infinity,
+                          } : {}}
+                          whileHover={{
+                            scale: 1.1,
+                            borderColor: streetColor,
+                          }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          {isActive && (
+                            <motion.div
+                              className="w-full h-full rounded"
+                              style={{
+                                backgroundColor: streetColor,
+                                opacity: isCurrentStep ? 1 : 0.8,
+                              }}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", stiffness: 300 }}
+                            />
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          /* Remix Mode: Loop Pads */
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {pads.map((pad) => {
+              const streetColor = getStreetColor(pad.color);
+              const isActive = activeLoops.has(pad.id);
+
+              return (
+                <motion.button
+                  key={pad.id}
+                  type="button"
+                  onClick={() => toggleLoop(pad.id)}
+                  className={`
+                    aspect-square rounded-lg
+                    border-2 transition-all border-black
+                    flex flex-col items-center justify-center gap-2
+                    ${isActive ? "scale-95" : "scale-100"}
+                  `}
+                  style={{
+                    borderColor: isActive ? streetColor : "#000",
+                    backgroundColor: isActive ? streetColor : "#2a2a2a",
+                    boxShadow: isActive ? "4px 4px 0px 0px rgba(0,0,0,1)" : "none",
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                    borderColor: streetColor,
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div
+                    className="font-header text-lg md:text-xl font-bold"
+                    style={{
+                      color: isActive ? "#000" : streetColor,
+                    }}
+                  >
+                    {pad.name}
+                  </div>
+                  {isActive && (
+                    <motion.div
+                      className="w-3 h-3 rounded-full bg-black"
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [1, 0.7, 1],
+                      }}
+                      transition={{
+                        duration: 0.8,
+                        repeat: Infinity,
+                      }}
+                    />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Controls */}
         <div className="mt-8 pt-6 border-t-2 border-black">
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
             {/* Play/Stop Button */}
             <motion.button
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={async () => {
+                // Resume audio context on first user interaction
+                if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+                  await audioContextRef.current.resume();
+                }
+                setIsPlaying(!isPlaying);
+              }}
               className="px-6 md:px-8 py-3 bg-toxic-lime/20 border-2 border-black text-toxic-lime font-tag rounded-lg flex items-center gap-2 shadow-hard"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -405,26 +733,28 @@ export function ProSequencer() {
               )}
             </motion.button>
 
-            {/* REC Button */}
-            <motion.button
-              onClick={startRecording}
-              disabled={isRecording}
-              className={`px-6 md:px-8 py-3 border-2 border-black font-tag rounded-lg flex items-center gap-2 shadow-hard ${
-                isRecording
-                  ? "bg-red-500 text-white"
-                  : "bg-concrete text-red-500 hover:bg-red-500/10"
-              }`}
-              whileHover={!isRecording ? { scale: 1.05 } : {}}
-              whileTap={!isRecording ? { scale: 0.95 } : {}}
-              style={{
-                boxShadow: isRecording
-                  ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px #ef4444"
-                  : "4px 4px 0px 0px rgba(0,0,0,1)",
-              }}
-            >
-              <Circle className={`w-5 h-5 ${isRecording ? "fill-white" : "fill-red-500"}`} />
-              {isRecording ? "REC..." : "REC"}
-            </motion.button>
+            {/* REC Button (only in sequencer mode) */}
+            {mode === "sequencer" && (
+              <motion.button
+                onClick={startRecording}
+                disabled={isRecording}
+                className={`px-6 md:px-8 py-3 border-2 border-black font-tag rounded-lg flex items-center gap-2 shadow-hard ${
+                  isRecording
+                    ? "bg-red-500 text-white"
+                    : "bg-concrete text-red-500 hover:bg-red-500/10"
+                }`}
+                whileHover={!isRecording ? { scale: 1.05 } : {}}
+                whileTap={!isRecording ? { scale: 0.95 } : {}}
+                style={{
+                  boxShadow: isRecording
+                    ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px #ef4444"
+                    : "4px 4px 0px 0px rgba(0,0,0,1)",
+                }}
+              >
+                <Circle className={`w-5 h-5 ${isRecording ? "fill-white" : "fill-red-500"}`} />
+                {isRecording ? "REC..." : "REC"}
+              </motion.button>
+            )}
 
             {/* Tempo/BPM Slider */}
             <div className="flex items-center gap-4">
@@ -450,16 +780,42 @@ export function ProSequencer() {
               </div>
             </div>
 
-            {/* Share Button */}
-            <motion.button
-              className="px-6 py-3 bg-safety-orange/20 border-2 border-black text-safety-orange font-tag rounded-lg flex items-center gap-2 shadow-hard"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleShare}
-            >
-              <Share2 className="w-5 h-5" />
-              Share Beat
-            </motion.button>
+            {/* GRIT Knob (Master FX) */}
+            <div className="flex flex-col items-center gap-2">
+              <label className="font-tag text-foreground text-xs md:text-sm">
+                GRIT
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={grit}
+                  onChange={(e) => setGrit(Number(e.target.value))}
+                  className="w-24 h-2 bg-foreground/10 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: "#ff6600",
+                    background: `linear-gradient(to right, #ff6600 0%, #ff6600 ${grit}%, rgba(255, 255, 255, 0.1) ${grit}%, rgba(255, 255, 255, 0.1) 100%)`,
+                  }}
+                />
+                <span className="font-header text-safety-orange text-sm font-bold min-w-[2.5rem] text-center">
+                  {grit}%
+                </span>
+              </div>
+            </div>
+
+            {/* Share Button (only in sequencer mode) */}
+            {mode === "sequencer" && (
+              <motion.button
+                className="px-6 py-3 bg-safety-orange/20 border-2 border-black text-safety-orange font-tag rounded-lg flex items-center gap-2 shadow-hard"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleShare}
+              >
+                <Share2 className="w-5 h-5" />
+                Share Beat
+              </motion.button>
+            )}
 
             {/* Clear All Button */}
             <motion.button
@@ -468,12 +824,18 @@ export function ProSequencer() {
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 const cleared: Record<string, boolean[]> = {};
-                instruments.forEach((inst) => {
-                  cleared[inst.id] = new Array(STEPS).fill(false);
+                pads.forEach((pad) => {
+                  cleared[pad.id] = new Array(STEPS).fill(false);
                 });
                 setSteps(cleared);
                 setIsPlaying(false);
                 setCurrentStep(0);
+                setActiveLoops(new Set());
+                // Stop all loops
+                Object.values(loopAudioRefs.current).forEach((audio) => {
+                  audio.pause();
+                  audio.currentTime = 0;
+                });
                 // Clear URL beat parameter
                 router.push("/beatmaker", { scroll: false });
               }}
