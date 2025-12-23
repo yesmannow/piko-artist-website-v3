@@ -18,12 +18,12 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 w-full bg-black/50 backdrop-blur-md border-b border-neon-green/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center flex-wrap gap-2 sm:gap-4 md:gap-6 lg:space-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="group relative font-tag text-lg text-foreground transition-colors"
+                className="group relative font-tag text-sm sm:text-base md:text-lg text-foreground transition-colors"
               >
                 <motion.span
                   className="inline-block"

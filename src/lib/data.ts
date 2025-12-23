@@ -4,7 +4,7 @@ export interface MediaItem {
   artist: string;
   type: 'audio' | 'video';
   src: string;
-  coverArt: string; // Tailwind gradient placeholder
+  coverArt: string; // Image path or Tailwind gradient placeholder (for videos)
   vibe: 'chill' | 'hype' | 'storytelling' | 'classic';
 }
 
@@ -85,7 +85,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/dejate-llevar.mp3",
-    coverArt: "from-purple-500 to-indigo-500",
+    coverArt: "/images/tracks/abstract-1846847_1280.jpg",
     vibe: "chill"
   },
   {
@@ -94,7 +94,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/entre-humos.mp3",
-    coverArt: "from-slate-700 to-slate-900",
+    coverArt: "/images/tracks/architecture-3189972_1280.jpg",
     vibe: "chill"
   },
   {
@@ -103,7 +103,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/ganja.mp3",
-    coverArt: "from-green-500 to-emerald-700",
+    coverArt: "/images/tracks/aurora-borealis-9267515_1280.jpg",
     vibe: "chill"
   },
   {
@@ -112,7 +112,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/amor-sincero.mp3",
-    coverArt: "from-pink-500 to-rose-500",
+    coverArt: "/images/tracks/background-1833056_1280.jpg",
     vibe: "chill"
   },
   {
@@ -121,7 +121,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/amores-perdidos.mp3",
-    coverArt: "from-rose-500 to-pink-600",
+    coverArt: "/images/tracks/bicycle-3045580_1280.jpg",
     vibe: "chill"
   },
   {
@@ -130,7 +130,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/bungalow.mp3",
-    coverArt: "from-cyan-500 to-blue-500",
+    coverArt: "/images/tracks/dj-2581269_1280.jpg",
     vibe: "chill"
   },
   {
@@ -139,7 +139,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/corazon-y-mente.mp3",
-    coverArt: "from-red-400 to-pink-500",
+    coverArt: "/images/tracks/gong-8255081_1280.jpg",
     vibe: "chill"
   },
   {
@@ -148,7 +148,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/crussin.mp3",
-    coverArt: "from-blue-600 to-violet-600",
+    coverArt: "/images/tracks/graffiti-1476119_1280.jpg",
     vibe: "chill"
   },
   {
@@ -157,7 +157,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/jardin-de-rosas.mp3",
-    coverArt: "from-green-400 to-emerald-600",
+    coverArt: "/images/tracks/graffiti-3750912_1280.jpg",
     vibe: "chill"
   },
   {
@@ -166,7 +166,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/noches-enteras.mp3",
-    coverArt: "from-indigo-800 to-purple-900",
+    coverArt: "/images/tracks/hamburg-2718329_1280.jpg",
     vibe: "chill"
   },
   {
@@ -175,7 +175,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/sentimientos.mp3",
-    coverArt: "from-violet-500 to-fuchsia-500",
+    coverArt: "/images/tracks/love-2724141_1280.png",
     vibe: "chill"
   },
   {
@@ -184,7 +184,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/sin-rencores.mp3",
-    coverArt: "from-gray-500 to-slate-600",
+    coverArt: "/images/tracks/skateboard-447147_1280.jpg",
     vibe: "chill"
   },
   {
@@ -193,7 +193,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/te-perdi.mp3",
-    coverArt: "from-stone-500 to-neutral-600",
+    coverArt: "/images/tracks/skull-and-crossbones-414207_1280.jpg",
     vibe: "chill"
   },
   {
@@ -202,7 +202,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/te-prometo.mp3",
-    coverArt: "from-sky-400 to-blue-500",
+    coverArt: "/images/tracks/starry-sky-1655503_1280.jpg",
     vibe: "chill"
   },
   {
@@ -211,7 +211,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/un-dia-mas.mp3",
-    coverArt: "from-orange-300 to-amber-400",
+    coverArt: "/images/tracks/street-art-1499524_1280.jpg",
     vibe: "chill"
   },
 
@@ -222,7 +222,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/gunster.mp3",
-    coverArt: "from-zinc-800 to-black",
+    coverArt: "/images/tracks/tube-7260586_1280.jpg",
     vibe: "hype"
   },
   {
@@ -231,7 +231,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/el-don.mp3",
-    coverArt: "from-yellow-500 to-amber-500",
+    coverArt: "/images/tracks/vinyl-1595847_1280.jpg",
     vibe: "hype"
   },
   {
@@ -240,7 +240,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/f-7.mp3",
-    coverArt: "from-red-600 to-orange-600",
+    coverArt: "/images/tracks/wall-2583885_1280.jpg",
     vibe: "hype"
   },
   {
@@ -249,7 +249,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/los-5.mp3",
-    coverArt: "from-blue-700 to-indigo-800",
+    coverArt: "/images/tracks/wallpaper-5928106_1280.png",
     vibe: "hype"
   },
   {
@@ -258,7 +258,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/party.mp3",
-    coverArt: "from-fuchsia-600 to-purple-700",
+    coverArt: "/images/tracks/woman-3633737_1280.jpg",
     vibe: "hype"
   },
 
@@ -269,7 +269,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/falle.mp3",
-    coverArt: "from-red-900 to-red-950",
+    coverArt: "/images/tracks/abstract-1846847_1280.jpg",
     vibe: "storytelling"
   },
   {
@@ -278,7 +278,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/im-sorry.mp3",
-    coverArt: "from-gray-700 to-gray-900",
+    coverArt: "/images/tracks/architecture-3189972_1280.jpg",
     vibe: "storytelling"
   },
   {
@@ -287,7 +287,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/me-cuentan.mp3",
-    coverArt: "from-teal-700 to-emerald-800",
+    coverArt: "/images/tracks/aurora-borealis-9267515_1280.jpg",
     vibe: "storytelling"
   },
   {
@@ -296,7 +296,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/quejas.mp3",
-    coverArt: "from-slate-600 to-gray-700",
+    coverArt: "/images/tracks/background-1833056_1280.jpg",
     vibe: "storytelling"
   },
 
@@ -307,7 +307,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/tortas-de-jamon.mp3",
-    coverArt: "from-amber-600 to-yellow-600",
+    coverArt: "/images/tracks/bicycle-3045580_1280.jpg",
     vibe: "classic"
   },
   {
@@ -316,7 +316,7 @@ export const tracks: MediaItem[] = [
     artist: "Piko",
     type: 'audio',
     src: "/audio/tracks/12_05.mp3",
-    coverArt: "from-neutral-700 to-stone-800",
+    coverArt: "/images/tracks/dj-2581269_1280.jpg",
     vibe: "classic"
   }
 ];

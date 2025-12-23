@@ -86,8 +86,8 @@ export function BeatMakerTeaser() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="grid grid-cols-3 gap-4 md:gap-6">
+    <div className="w-full max-w-2xl mx-auto px-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
         {pads.map((pad) => {
           const isActive = activePad === pad.key;
           const neonColor = getNeonColor(pad.color);

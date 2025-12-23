@@ -66,9 +66,9 @@ export function ProSequencer() {
   // State: [instrumentId][stepIndex] = boolean
   const [steps, setSteps] = useState<Record<string, boolean[]>>(() => {
     // Try to load from URL on mount
-    const patternParam = searchParams.get("pattern");
-    if (patternParam) {
-      const decoded = decodePattern(patternParam);
+    const beatParam = searchParams.get("beat");
+    if (beatParam) {
+      const decoded = decodePattern(beatParam);
       if (decoded) {
         return decoded;
       }
@@ -176,7 +176,7 @@ export function ProSequencer() {
   const handleShare = async () => {
     const encoded = encodePattern(steps);
     const url = new URL(window.location.href);
-    url.searchParams.set("pattern", encoded);
+    url.searchParams.set("beat", encoded);
 
     try {
       await navigator.clipboard.writeText(url.toString());
@@ -184,7 +184,7 @@ export function ProSequencer() {
       setTimeout(() => setShowToast(false), 2000);
 
       // Update URL without reload
-      router.push(`/beatmaker?pattern=${encoded}`, { scroll: false });
+      router.push(`/beatmaker?beat=${encoded}`, { scroll: false });
     } catch (err) {
       console.error("Failed to copy:", err);
     }
@@ -382,7 +382,7 @@ export function ProSequencer() {
                 setSteps(cleared);
                 setIsPlaying(false);
                 setCurrentStep(0);
-                // Clear URL pattern
+                // Clear URL beat parameter
                 router.push("/beatmaker", { scroll: false });
               }}
             >

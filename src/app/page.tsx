@@ -109,7 +109,7 @@ export default function Home() {
               viewport={{ once: true }}
             >
               {/* Headline */}
-              <h2 className="text-6xl md:text-8xl font-graffiti mb-4 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-graffiti mb-4 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
                 <GlitchText text="PIKO FG" />
               </h2>
 
