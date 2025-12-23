@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import AudioMotionAnalyzer from "audiomotion-analyzer";
+import AudioMotionAnalyzer, { type GradientOptions } from "audiomotion-analyzer";
 
 interface AudioReactiveVisualizerProps {
   audioContext?: AudioContext;
@@ -45,9 +45,9 @@ export function AudioReactiveVisualizer({
 
     try {
       // Create custom gradient that reacts to frequency bands
-      const pikoGradient = {
+      const pikoGradient: GradientOptions = {
         bgColor: "#00000000",
-        dir: "h" as const,
+        dir: "h",
         colorStops: [
           { pos: 0, color: deckAColor },
           { pos: 1, color: deckBColor },
