@@ -10,7 +10,6 @@ import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallApp } from "@/components/InstallApp";
-import { PullSoundHandler } from "@/components/PullSoundHandler";
 import { SmoothScroll } from "@/components/SmoothScroll";
 
 // 1. Graffiti Font (Accents & Logos)
@@ -75,7 +74,6 @@ export default function RootLayout({
       >
         <AudioProvider>
           <VideoProvider>
-            <PullSoundHandler />
             <Navigation />
             <SmoothScroll>
               <PageTransition>{children}</PageTransition>
