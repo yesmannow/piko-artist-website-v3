@@ -400,15 +400,16 @@ export const tracks: MediaItem[] = [
 ];
 
 export interface TourDate {
-  id: number;
+  id: number | string; // Allow string IDs too just in case
   city: string;
   venue: string;
   date: string;
   lat: number;
   lng: number;
   ticketUrl: string;
-  image: string;
-  description: string;
+  // NEW FIELDS
+  image?: string;
+  description?: string;
 }
 
 export const tourDates: TourDate[] = [

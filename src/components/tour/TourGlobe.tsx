@@ -33,6 +33,24 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
       globeEl.current.controls().autoRotateSpeed = 0.5;
       globeEl.current.pointOfView({ altitude: 2.5 });
     }
+
+    return () => {
+      // CLEANUP: Kill the renderer to free GPU memory
+      setDimensions({ width: 0, height: 0 }); // Force unmount
+      setHoveredPoint(null); // Clear hover state
+      // If the library exposes a destroy method, call it here
+      if (globeEl.current) {
+        try {
+          // Try to dispose of the renderer if available
+          const renderer = globeEl.current.renderer?.();
+          if (renderer && typeof renderer.dispose === 'function') {
+            renderer.dispose();
+          }
+        } catch {
+          // Ignore errors if dispose is not available
+        }
+      }
+    };
   }, []);
 
   const arcsData = useMemo(() => {
@@ -59,7 +77,10 @@ export function TourGlobe({ onCityClick }: { onCityClick?: (city: string) => voi
   };
 
   return (
-    <div id="globe-container" className="w-full h-full relative group cursor-move">
+    <div
+      id="globe-container"
+      className="w-full h-full relative cursor-move touch-pan-y"
+    >
       {dimensions.width > 0 && (
         <Globe
           ref={globeEl}

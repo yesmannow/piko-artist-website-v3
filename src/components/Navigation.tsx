@@ -5,25 +5,32 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useHaptic } from "@/hooks/useHaptic";
+import { useState, useEffect } from "react";
 
 export function Navigation() {
   const triggerHaptic = useHaptic();
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const navLinks = [
-    { href: "/#home", label: "Home" },
-    { href: "/#rap-sheet", label: "About" },
-    { href: "/music", label: "Music" },
-    { href: "/videos", label: "Videos" },
-    { href: "/events", label: "Tour" },
-    { href: "/beatmaker", label: "Studio" },
-    { href: "/#contact", label: "Contact" },
+    { href: "/", label: "Home", path: "/" },
+    { href: "/#rap-sheet", label: "About", path: "/" },
+    { href: "/music", label: "Music", path: "/music" },
+    { href: "/videos", label: "Videos", path: "/videos" },
+    { href: "/tour", label: "Tour", path: "/tour" },
+    { href: "/beatmaker", label: "Studio", path: "/beatmaker" },
+    { href: "/#contact", label: "Contact", path: "/" },
   ];
 
-  const isActive = (href: string) => {
-    if (href === "/#home" || href === "/") {
+  const isActive = (item: typeof navLinks[0]) => {
+    if (item.path === "/" && (item.href === "/#home" || item.href === "/")) {
       return pathname === "/";
     }
-    return pathname === href || pathname.startsWith(href.replace("#", ""));
+    return pathname === item.path || pathname.startsWith(item.path);
   };
 
   return (
@@ -49,46 +56,41 @@ export function Navigation() {
       </div>
 
       {/* Desktop Navigation - Hidden on Mobile */}
-      <div className="hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center flex-wrap gap-2 sm:gap-4 md:gap-6 lg:space-x-8">
-              {navLinks.map((link) => {
-                const active = isActive(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => triggerHaptic()}
-                    className="group relative transition-colors"
-                  >
-                    <motion.span
-                      className={`inline-block text-sm sm:text-base md:text-lg transition-colors ${
-                        active
-                          ? "font-header text-toxic-lime"
-                          : "font-industrial text-zinc-400 font-medium tracking-normal"
-                      }`}
-                      whileHover={{
-                        color: "#ccff00",
-                      }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {link.label}
-                    </motion.span>
-                    {/* Underline effect on hover/active */}
-                    <motion.div
-                      className="absolute bottom-0 left-0 h-0.5 bg-toxic-lime"
-                      initial={{ width: active ? "100%" : "0%" }}
-                      whileHover={{ width: "100%" }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </Link>
-                );
-              })}
+      {isMounted && (
+        <div className="hidden md:block">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center flex-wrap gap-2 sm:gap-4 md:gap-6 lg:space-x-8">
+                {navLinks.map((link) => {
+                  const active = isActive(link);
+                  return (
+                    <div key={link.href} className="relative">
+                      <Link
+                        href={link.href}
+                        onClick={() => triggerHaptic()}
+                        className={`text-sm sm:text-base md:text-lg font-bold uppercase tracking-widest transition-colors ${
+                          active
+                            ? "text-white"
+                            : "text-zinc-500 hover:text-zinc-300"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                      {active && (
+                        <motion.div
+                          layoutId="nav-underline"
+                          className="absolute -bottom-2 left-0 right-0 h-[2px] bg-[#ccff00] shadow-[0_0_10px_#ccff00]"
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 }
