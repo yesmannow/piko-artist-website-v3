@@ -3,16 +3,11 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { VideoGallery } from "@/components/VideoGallery";
-import { StudioGallery } from "@/components/StudioGallery";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { GlitchText } from "@/components/GlitchText";
-import { tracks } from "@/lib/data";
 
 export default function Home() {
-  // Filter videos from tracks
-  const videos = tracks.filter((track) => track.type === "video");
-
   const scrollToMusic = () => {
     const musicSection = document.getElementById("music");
     if (musicSection) {
@@ -159,11 +154,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Studio Life Gallery Section */}
-      <section className="relative py-20 px-8 bg-background">
-        <StudioGallery />
-      </section>
-
       {/* Discography Section */}
       <section id="music" className="relative py-20 px-8 bg-card">
         <div className="max-w-7xl mx-auto">
@@ -176,7 +166,7 @@ export default function Home() {
             <h2 className="text-4xl md:text-5xl font-graffiti mb-8 md:mb-12 text-center bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
               <GlitchText text="DISCOGRAPHY" />
             </h2>
-            <TrackList />
+            <TrackList featuredOnly={true} />
           </motion.div>
         </div>
       </section>
@@ -214,7 +204,7 @@ export default function Home() {
             >
               <GlitchText text="VISUALS" />
             </motion.h2>
-            <VideoGallery videos={videos} />
+            <VideoGallery featuredOnly={true} />
           </motion.div>
         </div>
       </section>

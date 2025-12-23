@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 interface SectionHeaderProps {
   title: string;
@@ -10,6 +11,13 @@ interface SectionHeaderProps {
 }
 
 export function SectionHeader({ title, subtitle, className = "" }: SectionHeaderProps) {
+  const navLinks = [
+    { href: "/music", label: "Music" },
+    { href: "/videos", label: "Videos" },
+    { href: "/#bio", label: "About" },
+    { href: "/#contact", label: "Contact" },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -82,6 +90,19 @@ export function SectionHeader({ title, subtitle, className = "" }: SectionHeader
           {subtitle}
         </motion.p>
       )}
+
+      {/* Quick links (Hybrid navigation) */}
+      <div className="mt-6 flex flex-wrap justify-center gap-x-8 gap-y-3">
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="font-tag text-lg text-foreground/80 hover:text-neon-green transition-colors"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
     </motion.div>
   );
 }

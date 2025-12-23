@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
+import Link from "next/link";
 import { Play } from "lucide-react";
+import { useMemo, useState } from "react";
 
 const vibeColors = {
   chill: "bg-neon-green/20 text-neon-green border-neon-green",
@@ -12,98 +14,177 @@ const vibeColors = {
   storytelling: "bg-purple-500/20 text-purple-400 border-purple-400",
 };
 
-const vibeIcons = {
-  chill: "🌊",
-  hype: "🔥",
-  classic: "👑",
-  storytelling: "📖",
-};
+type VibeFilter = "all" | "chill" | "hype" | "storytelling" | "classic";
 
-export function TrackList() {
-  const { playTrack, currentTrack } = useAudio();
+interface TrackListProps {
+  featuredOnly?: boolean;
+}
 
-  // Filter to only audio tracks (exclude videos)
-  const audioTracks = tracks.filter((track) => track.type === "audio");
+const filterOptions: { id: VibeFilter; label: string }[] = [
+  { id: "all", label: "ALL" },
+  { id: "chill", label: "CHILL" },
+  { id: "hype", label: "HYPE" },
+  { id: "storytelling", label: "STORY" },
+  { id: "classic", label: "CLASSIC" },
+];
+
+export function TrackList({ featuredOnly = false }: TrackListProps) {
+  const { playTrack, currentTrack, isPlaying } = useAudio();
+  const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
+
+  const audioTracks = useMemo(
+    () => tracks.filter((t) => t.type === "audio"),
+    []
+  );
+
+  const visibleTracks = useMemo(() => {
+    const filtered =
+      activeFilter === "all"
+        ? audioTracks
+        : audioTracks.filter((t) => t.vibe === activeFilter);
+
+    if (featuredOnly) return filtered.slice(0, 5);
+    return filtered;
+  }, [activeFilter, audioTracks, featuredOnly]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-      {audioTracks.map((track, index) => (
-        <motion.div
-          key={track.id}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.05 }}
-          viewport={{ once: true }}
-          className="group relative cursor-pointer"
-          onClick={() => playTrack(track)}
-        >
-          {/* Vinyl Sleeve Card */}
-          <div className="relative overflow-hidden rounded-lg">
-            {/* Album Art (Sleeve) */}
-            <div
-              className={`aspect-square rounded-lg bg-gradient-to-r ${track.coverArt} relative overflow-hidden transition-transform duration-300 group-hover:scale-[1.02]`}
-            >
-              {/* Play Button Overlay */}
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"
-                whileHover={{ scale: 1.1 }}
+    <div className="w-full">
+      {!featuredOnly && (
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+          {filterOptions.map((opt) => {
+            const isActive = opt.id === activeFilter;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setActiveFilter(opt.id)}
+                className={[
+                  "px-4 py-2 rounded-full border font-tag tracking-wider text-sm transition-all",
+                  isActive
+                    ? "border-neon-green text-neon-green bg-neon-green/10 shadow-[0_0_15px_rgba(0,255,153,0.25)]"
+                    : "border-white/10 text-white/80 hover:text-white hover:border-white/30 hover:bg-white/5",
+                ].join(" ")}
               >
-                <div className="w-16 h-16 rounded-full bg-neon-green/90 flex items-center justify-center shadow-lg">
-                  <Play className="w-8 h-8 text-black ml-1" fill="currentColor" />
-                </div>
-              </motion.div>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Vinyl Record - Slides out on hover */}
-              <motion.div
-                className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-black border-4 border-gray-800 shadow-2xl z-20"
-                initial={{ x: "100%" }}
-                whileHover={{ x: "-20%" }}
-                transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              >
-                {/* Inner label */}
-                <div className="absolute inset-4 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-black"></div>
-                </div>
-                {/* Vinyl grooves */}
-                <div className="absolute inset-0 rounded-full border border-gray-600/30"></div>
-                <div className="absolute inset-2 rounded-full border border-gray-600/20"></div>
-                <div className="absolute inset-4 rounded-full border border-gray-600/10"></div>
-              </motion.div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[760px] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden">
+          {/* Sticky header */}
+          <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
+            <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-tag">
+              <div>#</div>
+              <div>TITLE</div>
+              <div>ARTIST</div>
+              <div>VIBE</div>
+              <div className="text-right">TIME</div>
             </div>
-
-            {/* Track Details */}
-            <div className="mt-4">
-              <h3 className="font-tag text-lg md:text-xl text-foreground mb-2 group-hover:text-neon-green transition-colors">
-                {track.title}
-              </h3>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">{track.artist}</p>
-                {/* Vibe Badge */}
-                <div
-                  className={`flex items-center gap-1 px-2 py-1 rounded-full border text-xs ${vibeColors[track.vibe]}`}
-                >
-                  <span>{vibeIcons[track.vibe]}</span>
-                  <span className="uppercase tracking-wider font-tag">
-                    {track.vibe}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Active indicator */}
-            {currentTrack?.id === track.id && (
-              <motion.div
-                className="absolute top-2 right-2 w-3 h-3 rounded-full bg-neon-green"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{
-                  boxShadow: "0 0 10px hsl(var(--neon-green))",
-                }}
-              />
-            )}
           </div>
-        </motion.div>
-      ))}
+
+          {/* Rows */}
+          <div className="divide-y divide-white/10">
+            {visibleTracks.map((track, idx) => {
+              const isActive = currentTrack?.id === track.id && isPlaying;
+
+              return (
+                <motion.button
+                  key={track.id}
+                  type="button"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
+                  viewport={{ once: true }}
+                  onClick={() => playTrack(track)}
+                  className={[
+                    "group w-full text-left",
+                    "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
+                    "px-4 py-3 md:py-4",
+                    "hover:bg-white/5 transition-colors",
+                    isActive ? "text-neon-green" : "text-white",
+                  ].join(" ")}
+                >
+                  {/* Col 1: Index / Play icon */}
+                  <div className="relative flex items-center justify-center">
+                    <span
+                      className={[
+                        "text-sm font-tag",
+                        "group-hover:opacity-0 transition-opacity",
+                        isActive ? "opacity-0" : "opacity-100 text-white/70",
+                      ].join(" ")}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span
+                      className={[
+                        "absolute",
+                        "opacity-0 group-hover:opacity-100 transition-opacity",
+                        isActive ? "opacity-100" : "",
+                      ].join(" ")}
+                      aria-hidden="true"
+                    >
+                      <Play className="w-4 h-4" fill="currentColor" />
+                    </span>
+                  </div>
+
+                  {/* Col 2: Cover + Title */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`w-10 h-10 rounded-md bg-gradient-to-r ${track.coverArt} flex-shrink-0 border border-white/10`}
+                    />
+                    <div className="min-w-0">
+                      <div
+                        className={[
+                          "truncate font-tag text-sm md:text-base",
+                          isActive ? "text-neon-green" : "text-white font-bold",
+                        ].join(" ")}
+                      >
+                        {track.title}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Col 3: Artist */}
+                  <div className={["flex items-center", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                    <span className="truncate text-sm">{track.artist}</span>
+                  </div>
+
+                  {/* Col 4: Vibe badge */}
+                  <div className="flex items-center">
+                    <span
+                      className={[
+                        "px-3 py-1 rounded-full border text-[11px] font-tag tracking-[0.2em] uppercase",
+                        vibeColors[track.vibe],
+                      ].join(" ")}
+                    >
+                      {track.vibe}
+                    </span>
+                  </div>
+
+                  {/* Col 5: Duration */}
+                  <div className={["flex items-center justify-end text-sm", isActive ? "text-neon-green/80" : "text-white/60"].join(" ")}>
+                    3:00
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {featuredOnly && (
+        <div className="mt-6 flex justify-center">
+          <Link
+            href="/music"
+            className="px-6 py-3 rounded-full border border-neon-green/50 bg-neon-green/10 text-neon-green font-tag tracking-wider hover:bg-neon-green/20 transition-colors"
+          >
+            View Full Discography
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
