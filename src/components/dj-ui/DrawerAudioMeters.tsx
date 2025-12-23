@@ -24,6 +24,7 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
     const updateLevels = () => {
       if (!analyser || !dataArrayRef.current) return;
 
+      // @ts-expect-error - TypeScript strictness issue with ArrayBufferLike vs ArrayBuffer
       analyser.getByteFrequencyData(dataArrayRef.current);
       const data = dataArrayRef.current;
 

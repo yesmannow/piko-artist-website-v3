@@ -47,7 +47,7 @@ export function AudioReactiveVisualizer({
       // Create custom gradient that reacts to frequency bands
       const pikoGradient = {
         bgColor: "#00000000",
-        dir: "h",
+        dir: "h" as const,
         colorStops: [
           { pos: 0, color: deckAColor },
           { pos: 1, color: deckBColor },
@@ -96,15 +96,15 @@ export function AudioReactiveVisualizer({
         if (bars && bars.length > 0) {
           // Low frequencies (0-30% of bars)
           const lowEnd = Math.floor(bars.length * 0.3);
-          const lowAvg = bars.slice(0, lowEnd).reduce((a, b) => a + b, 0) / lowEnd;
+          const lowAvg = bars.slice(0, lowEnd).reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / lowEnd;
 
           // Mid frequencies (30-70% of bars)
           const midStart = lowEnd;
           const midEnd = Math.floor(bars.length * 0.7);
-          const midAvg = bars.slice(midStart, midEnd).reduce((a, b) => a + b, 0) / (midEnd - midStart);
+          const midAvg = bars.slice(midStart, midEnd).reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / (midEnd - midStart);
 
           // High frequencies (70-100% of bars)
-          const highAvg = bars.slice(midEnd).reduce((a, b) => a + b, 0) / (bars.length - midEnd);
+          const highAvg = bars.slice(midEnd).reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / (bars.length - midEnd);
 
           setFrequencyData({
             low: Math.min(lowAvg / 100, 1),
