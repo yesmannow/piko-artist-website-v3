@@ -55,12 +55,12 @@ export default function TourPage() {
         </div>
       </div>
 
-      {/* Right Panel: 3D Globe */}
-      <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative bg-black">
+      {/* Right Panel: 3D Globe - FIXED HEIGHT */}
+      <div className="w-full md:w-1/2 h-[60vh] md:h-screen relative bg-black">
         <div className="absolute inset-0">
           <TourGlobe />
         </div>
-        {/* Gradient Overlay for seamless blending */}
+        {/* Gradient Overlay */}
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#121212] via-transparent to-transparent md:bg-gradient-to-l" />
       </div>
     </div>

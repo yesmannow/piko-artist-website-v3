@@ -86,6 +86,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         backend: "MediaElement",
         mediaControls: false,
         interact: true,
+        xhr: {
+          crossOrigin: "anonymous",
+        },
       });
 
       wavesurferRef.current = ws;
@@ -158,32 +161,51 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     // No need to update gain node here
 
     // Handle play/pause
-    const handlePlayPause = () => {
-      // CRITICAL: Unlock audio context on first user interaction
+    const handlePlayPause = async () => {
+      // FORCE WAKE UP
       if (audioContext && audioContext.state === "suspended") {
-        audioContext.resume();
+        await audioContext.resume();
       }
 
       if (wavesurferRef.current) {
-        if (wavesurferRef.current.isPlaying()) {
-          wavesurferRef.current.pause();
-        } else {
-          wavesurferRef.current.play();
-        }
+        wavesurferRef.current.playPause();
       }
       onPlayPause();
     };
 
-    // Sync isPlaying with wavesurfer state
+    // Sync isPlaying with wavesurfer state and ensure audio connection
     useEffect(() => {
       if (!wavesurferRef.current) return;
+
+      const ensureConnection = async () => {
+        // FORCE WAKE UP audio context if suspended
+        if (audioContext && audioContext.state === "suspended") {
+          await audioContext.resume();
+        }
+
+        // Ensure media source is connected
+        if (audioContext && outputNode && !mediaSourceRef.current) {
+          try {
+            const mediaElement = wavesurferRef.current.getMediaElement();
+            if (mediaElement) {
+              const mediaSource = audioContext.createMediaElementSource(mediaElement);
+              mediaSourceRef.current = mediaSource;
+              mediaSource.connect(outputNode);
+            }
+          } catch (error) {
+            console.warn("Could not connect media element to Web Audio:", error);
+          }
+        }
+      };
+
+      ensureConnection();
 
       if (isPlaying && !wavesurferRef.current.isPlaying()) {
         wavesurferRef.current.play();
       } else if (!isPlaying && wavesurferRef.current.isPlaying()) {
         wavesurferRef.current.pause();
       }
-    }, [isPlaying]);
+    }, [isPlaying, audioContext, outputNode]);
 
     // Handle cue button
     const handleCue = () => {

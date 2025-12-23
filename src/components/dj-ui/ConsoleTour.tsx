@@ -157,7 +157,6 @@ export function ConsoleTour() {
     const gap = 20;
     let top = 0;
     let left = 0;
-    let isFlipped = false;
 
     // Default Calculations
     if (step.position === "top") {
@@ -168,15 +167,14 @@ export function ConsoleTour() {
       top = targetRect.top; // Side positioning
     }
 
-    // Edge Detection: Flip if too close to bottom
-    if (step.position === "bottom" && top + tooltipHeight > window.innerHeight) {
-      top = targetRect.top - gap - 180; // Flip to top
-      isFlipped = true;
+    // Vertical Flip Logic: If the tooltip would render below the viewport...
+    if (step.position === "bottom" && (top + 250 > window.innerHeight)) {
+      // ...force it to render ABOVE the target instead.
+      top = targetRect.top - 20 - 200; // 200 is approx tooltip height
     }
     // Edge Detection: Flip if too close to top
     if (step.position === "top" && top < 80) {
       top = targetRect.bottom + gap; // Flip to bottom
-      isFlipped = true;
     }
 
     // Safety Clamp: Hard limit to prevent tooltip from rendering below viewport
