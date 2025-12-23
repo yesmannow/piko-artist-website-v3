@@ -181,7 +181,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         }
 
         // Ensure media source is connected
-        if (audioContext && outputNode && !mediaSourceRef.current) {
+        if (audioContext && outputNode && !mediaSourceRef.current && wavesurferRef.current) {
           try {
             const mediaElement = wavesurferRef.current.getMediaElement();
             if (mediaElement) {
