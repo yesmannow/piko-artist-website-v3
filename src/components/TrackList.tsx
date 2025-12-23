@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
+import { useHaptic } from "@/hooks/useHaptic";
 
 const vibeColors = {
   chill: "bg-toxic-lime/20 text-toxic-lime border-toxic-lime border-black",
@@ -63,6 +64,7 @@ interface TrackCardProps {
 }
 
 function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
+  const triggerHaptic = useHaptic();
   // Random rotation between -1deg and 1deg for pasted-on-wall effect
   const rotation = (Math.random() * 2 - 1).toFixed(2);
 
@@ -98,7 +100,10 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.25) }}
       viewport={{ once: true }}
-      onClick={onPlay}
+      onClick={() => {
+        triggerHaptic();
+        onPlay();
+      }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={[
@@ -181,6 +186,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
 export function TrackList({ featuredOnly = false }: TrackListProps) {
   const { playTrack, currentTrack, isPlaying } = useAudio();
+  const triggerHaptic = useHaptic();
   const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
 
   const audioTracks = useMemo(
@@ -225,7 +231,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
 
       {featuredOnly ? (
         // Featured Mode: Table Layout
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide">
           <div className="min-w-[760px] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden">
             {/* Sticky header */}
             <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
@@ -251,7 +257,10 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
                     viewport={{ once: true }}
-                    onClick={() => playTrack(track)}
+                    onClick={() => {
+                      triggerHaptic();
+                      playTrack(track);
+                    }}
                     className={[
                       "group w-full text-left",
                       "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
@@ -327,15 +336,19 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         </div>
       ) : (
         // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look with 3D Tilt
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" style={{ perspective: "1000px" }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 snap-y snap-mandatory overflow-y-auto" style={{ perspective: "1000px" }}>
           {visibleTracks.map((track, idx) => (
-            <TrackCard
-              key={track.id}
-              track={track}
-              index={idx}
+            <div key={track.id} className="snap-center">
+              <TrackCard
+                track={track}
+                index={idx}
               isActive={currentTrack?.id === track.id && isPlaying}
-              onPlay={() => playTrack(track)}
-            />
+              onPlay={() => {
+                triggerHaptic();
+                playTrack(track);
+              }}
+              />
+            </div>
           ))}
         </div>
       )}

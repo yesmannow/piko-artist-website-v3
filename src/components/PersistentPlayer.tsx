@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useHaptic } from "@/hooks/useHaptic";
 
 // Ad-Lib sample files
 const adLibSamples = [
@@ -19,6 +20,7 @@ interface WindowWithWebkit extends Window {
 }
 
 export function PersistentPlayer() {
+  const triggerHaptic = useHaptic();
   const {
     currentTrack,
     isPlaying,
@@ -184,7 +186,10 @@ export function PersistentPlayer() {
                 {/* Center: Play/Pause/Skip Controls + Ad-Lib Buttons */}
                 <div className="flex items-center gap-2 md:gap-4">
                   <button
-                    onClick={skipPrevious}
+                    onClick={() => {
+                      triggerHaptic();
+                      skipPrevious();
+                    }}
                     className="p-2 hover:bg-foreground/10 rounded transition-colors"
                     aria-label="Previous track"
                   >
@@ -192,7 +197,10 @@ export function PersistentPlayer() {
                   </button>
 
                   <button
-                    onClick={togglePlay}
+                    onClick={() => {
+                      triggerHaptic();
+                      togglePlay();
+                    }}
                     className="p-2 md:p-3 bg-toxic-lime/20 hover:bg-toxic-lime/30 border-2 border-black rounded-full transition-colors shadow-hard"
                     aria-label={isPlaying ? "Pause" : "Play"}
                   >
@@ -204,7 +212,10 @@ export function PersistentPlayer() {
                   </button>
 
                   <button
-                    onClick={skipNext}
+                    onClick={() => {
+                      triggerHaptic();
+                      skipNext();
+                    }}
                     className="p-2 hover:bg-foreground/10 rounded transition-colors"
                     aria-label="Next track"
                   >
@@ -218,7 +229,10 @@ export function PersistentPlayer() {
                       return (
                         <button
                           key={index}
-                          onClick={() => playAdLib(index)}
+                          onClick={() => {
+                            triggerHaptic();
+                            playAdLib(index);
+                          }}
                           className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-black transition-all hover:scale-110 active:scale-95 shadow-hard"
                           style={{
                             backgroundColor: colors[index],

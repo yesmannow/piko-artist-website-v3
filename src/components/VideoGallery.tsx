@@ -161,7 +161,7 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
       {featuredOnly ? (
         <>
           {/* TV Stack Masonry Layout - Home Featured Mode */}
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6 snap-y snap-mandatory">
             {visibleVideos.map((video, index) => {
               return (
                 <motion.div
@@ -268,14 +268,15 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
       ) : (
         <>
           {/* Wheatpaste Wall Grid Layout - Full Archive Mode */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2 md:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2 md:px-0 snap-y snap-mandatory overflow-y-auto">
             {visibleVideos.map((video, index) => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                index={index}
-                onPlay={() => playVideo(video.id)}
-              />
+              <div key={video.id} className="snap-center">
+                <VideoCard
+                  video={video}
+                  index={index}
+                  onPlay={() => playVideo(video.id)}
+                />
+              </div>
             ))}
           </div>
         </>

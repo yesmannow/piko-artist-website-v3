@@ -6,6 +6,7 @@ import WaveSurfer from "wavesurfer.js";
 import Image from "next/image";
 import { Play, Pause, Volume2 } from "lucide-react";
 import { tracks, MediaItem } from "@/lib/data";
+import { useHaptic } from "@/hooks/useHaptic";
 
 const vibeColors = {
   chill: "bg-neon-green/20 text-neon-green border-neon-green",
@@ -29,6 +30,7 @@ const vibeTooltips = {
 };
 
 export function Player() {
+  const triggerHaptic = useHaptic();
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -171,6 +173,7 @@ export function Player() {
   }, [isPlaying]);
 
   const handlePlayPause = () => {
+    triggerHaptic();
     if (wavesurferRef.current) {
       wavesurferRef.current.playPause();
     }

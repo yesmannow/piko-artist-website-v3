@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Permanent_Marker, Sedgwick_Ave } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/Navigation";
@@ -8,6 +8,8 @@ import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
+import { MobileNav } from "@/components/MobileNav";
+import { InstallApp } from "@/components/InstallApp";
 
 const permanentMarker = Permanent_Marker({
   weight: "400",
@@ -26,6 +28,19 @@ const sedgwickAve = Sedgwick_Ave({
 export const metadata: Metadata = {
   title: "Piko Artist Portfolio",
   description: "Music artist portfolio and showcase",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Piko",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -45,6 +60,8 @@ export default function RootLayout({
             <Footer />
             <FloatingVideoPlayer />
             <PersistentPlayer />
+            <MobileNav />
+            <InstallApp />
           </VideoProvider>
         </AudioProvider>
       </body>

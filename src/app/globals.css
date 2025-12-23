@@ -40,6 +40,15 @@
     background-blend-mode: overlay;
     background-attachment: fixed;
     cursor: crosshair;
+    /* Add padding-bottom on mobile for bottom navigation */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Mobile bottom nav spacing */
+  @media (max-width: 768px) {
+    body {
+      padding-bottom: 4rem; /* 64px for MobileNav height */
+    }
   }
 
   /* Cursor styles */
@@ -77,5 +86,16 @@
       border-color: #dc2626;
       box-shadow: 4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px rgba(239, 68, 68, 0.8);
     }
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for cleaner look */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

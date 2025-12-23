@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { getKit, type KitType, type Pad } from "@/lib/audio-kits";
 import { MPCScreen } from "@/components/MPCScreen";
 import { createDistortionCurve } from "@/lib/audio-engine";
+import { useHaptic } from "@/hooks/useHaptic";
 
 const STEPS = 16;
 const DEFAULT_BPM = 120;
@@ -53,6 +54,7 @@ function decodePattern(encoded: string, pads: Pad[]): Record<string, boolean[]> 
 export function ProSequencer() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const triggerHaptic = useHaptic();
   const [showToast, setShowToast] = useState(false);
   const [selectedKit, setSelectedKit] = useState<KitType>("street");
   const [mode, setMode] = useState<Mode>("sequencer");
@@ -66,6 +68,7 @@ export function ProSequencer() {
   const recordingStepCountRef = useRef(0);
   const nextNoteTimeRef = useRef(0);
   const rafIdRef = useRef<number | null>(null);
+  const currentStepRef = useRef(0);
 
   // Get current kit and pads
   const currentKit = getKit(selectedKit);
@@ -396,6 +399,7 @@ export function ProSequencer() {
     if (mode !== "remix") return;
     if (selectedKit !== "jardin" && selectedKit !== "amor") return;
 
+    triggerHaptic();
     const ctx = await resumeAudioContext();
     if (!ctx || !filterNodeRef.current) return;
 
@@ -443,10 +447,11 @@ export function ProSequencer() {
       }
       return newSet;
     });
-  }, [mode, selectedKit, pads, currentKit, speed, mutedPads, resumeAudioContext]);
+  }, [mode, selectedKit, pads, currentKit, speed, mutedPads, resumeAudioContext, triggerHaptic]);
 
   // Toggle mute for a pad in remix mode
   const toggleMute = useCallback((padId: string) => {
+    triggerHaptic();
     setMutedPads((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(padId)) {
@@ -456,20 +461,22 @@ export function ProSequencer() {
       }
       return newSet;
     });
-  }, []);
+  }, [triggerHaptic]);
 
   // Start recording
   const startRecording = useCallback(async () => {
+    triggerHaptic();
     await resumeAudioContext();
     if (!isPlaying) {
       setIsPlaying(true);
     }
     setIsRecording(true);
     recordingStepCountRef.current = 0;
-  }, [isPlaying, resumeAudioContext]);
+  }, [isPlaying, resumeAudioContext, triggerHaptic]);
 
   // Play a single pad immediately (for manual pad tapping)
   const playPadNow = useCallback(async (pad: Pad) => {
+    triggerHaptic();
     const ctx = await resumeAudioContext();
     if (!ctx || !filterNodeRef.current) return;
 
@@ -487,9 +494,10 @@ export function ProSequencer() {
     source.connect(gainNode);
     gainNode.connect(filterNodeRef.current);
     source.start();
-  }, [currentKit, speed, resumeAudioContext]);
+  }, [currentKit, speed, resumeAudioContext, triggerHaptic]);
 
   const toggleStep = useCallback((padId: string, stepIndex: number) => {
+    triggerHaptic();
     if (mode === "remix") {
       toggleLoop(padId);
       return;
@@ -501,11 +509,12 @@ export function ProSequencer() {
       newSteps[padId][stepIndex] = !newSteps[padId][stepIndex];
       return newSteps;
     });
-  }, [mode, toggleLoop]);
+  }, [mode, toggleLoop, triggerHaptic]);
 
   const handleShare = useCallback(async () => {
     if (mode === "remix") return;
 
+    triggerHaptic();
     const encoded = encodePattern(steps, pads);
     const url = new URL(window.location.href);
     url.searchParams.set("beat", encoded);
@@ -518,9 +527,10 @@ export function ProSequencer() {
     } catch (err) {
       console.error("Failed to copy:", err);
     }
-  }, [mode, steps, pads, router]);
+  }, [mode, steps, pads, router, triggerHaptic]);
 
   const handleClearAll = useCallback(() => {
+    triggerHaptic();
     const cleared: Record<string, boolean[]> = {};
     pads.forEach((pad) => {
       cleared[pad.id] = new Array(STEPS).fill(false);
@@ -530,12 +540,13 @@ export function ProSequencer() {
     setCurrentStep(0);
     stopAllLoops();
     router.push("/beatmaker", { scroll: false });
-  }, [pads, router, stopAllLoops]);
+  }, [pads, router, stopAllLoops, triggerHaptic]);
 
   const handlePlayToggle = useCallback(async () => {
+    triggerHaptic();
     await resumeAudioContext();
     setIsPlaying(!isPlaying);
-  }, [isPlaying, resumeAudioContext]);
+  }, [isPlaying, resumeAudioContext, triggerHaptic]);
 
   const getStreetColor = (color: "green" | "pink" | "cyan") => {
     switch (color) {

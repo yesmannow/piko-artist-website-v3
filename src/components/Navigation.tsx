@@ -2,8 +2,10 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useHaptic } from "@/hooks/useHaptic";
 
 export function Navigation() {
+  const triggerHaptic = useHaptic();
   const navLinks = [
     { href: "/#home", label: "Home" },
     { href: "/#rap-sheet", label: "About" },
@@ -30,6 +32,7 @@ export function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => triggerHaptic()}
                 className="group relative font-tag text-sm sm:text-base md:text-lg text-foreground transition-colors"
               >
                 <motion.span
