@@ -320,3 +320,61 @@ export const tracks: MediaItem[] = [
     vibe: "classic"
   }
 ];
+
+export interface TourDate {
+  id: number;
+  city: string;
+  venue: string;
+  date: string;
+  lat: number;
+  lng: number;
+  ticketUrl: string;
+}
+
+export const tourDates: TourDate[] = [
+  {
+    id: 1,
+    city: "New York",
+    venue: "Terminal 5",
+    date: "OCT 15",
+    lat: 40.7128,
+    lng: -74.0060,
+    ticketUrl: "#"
+  },
+  {
+    id: 2,
+    city: "London",
+    venue: "O2 Brixton",
+    date: "OCT 22",
+    lat: 51.5074,
+    lng: -0.1278,
+    ticketUrl: "#"
+  },
+  {
+    id: 3,
+    city: "Tokyo",
+    venue: "Zepp DiverCity",
+    date: "NOV 05",
+    lat: 35.6762,
+    lng: 139.6503,
+    ticketUrl: "#"
+  },
+  {
+    id: 4,
+    city: "Mexico City",
+    venue: "Auditorio Nacional",
+    date: "NOV 12",
+    lat: 19.4326,
+    lng: -99.1332,
+    ticketUrl: "#"
+  },
+  {
+    id: 5,
+    city: "Los Angeles",
+    venue: "The Wiltern",
+    date: "NOV 20",
+    lat: 34.0522,
+    lng: -118.2437,
+    ticketUrl: "#"
+  }
+];
