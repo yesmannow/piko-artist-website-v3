@@ -21,11 +21,13 @@ export function VideoGrid({ videos, onPlay }: { videos: MediaItem[], onPlay: (id
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className={`px-4 py-2 text-xs font-bold rounded-full border border-zinc-800 transition-all ${
+            className={`px-4 py-2.5 text-xs font-bold rounded-full border-2 transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 ${
               filter === cat
-                ? "bg-white text-black border-white"
-                : "bg-transparent text-zinc-500 hover:text-white hover:border-zinc-600"
+                ? "bg-white text-black border-white shadow-lg"
+                : "bg-transparent text-foreground/60 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5"
             }`}
+            aria-label={`Filter by ${cat}`}
+            aria-pressed={filter === cat}
           >
             {cat}
           </button>
@@ -43,7 +45,10 @@ export function VideoGrid({ videos, onPlay }: { videos: MediaItem[], onPlay: (id
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.2 }}
-              className="group relative aspect-video bg-zinc-900 rounded-xl overflow-hidden cursor-pointer border border-zinc-800 hover:border-[#ccff00] transition-colors"
+              className="group relative aspect-video bg-zinc-900 rounded-lg overflow-hidden cursor-pointer border-2 border-zinc-800 hover:border-toxic-lime transition-all shadow-lg hover:shadow-xl"
+              aria-label={`Play video: ${video.title}`}
+              role="button"
+              tabIndex={0}
               onClick={() => onPlay(video.id)}
             >
               {/* Thumbnail - SAFE HQ Image */}

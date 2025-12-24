@@ -5,13 +5,14 @@
 @layer base {
   html,
   body {
-    overscroll-behavior-y: none; /* Stops pull-to-refresh bounce */
-    -webkit-tap-highlight-color: transparent; /* Removes blue tap box on mobile */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   :root {
-    --background: 240 5% 8%; /* Very dark grey, not pure black */
-    --foreground: 60 5% 90%; /* Dirty white */
+    /* Base Color Palette - Dark Theme */
+    --background: 240 5% 8%;
+    --foreground: 60 5% 90%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
@@ -30,7 +31,7 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
-    /* Urban Grit Palette */
+    /* Urban Grit Palette - Brand Colors */
     --spray-magenta: 318 100% 42%;
     --toxic-lime: 75 100% 45%;
     --safety-orange: 25 100% 50%;
@@ -39,32 +40,53 @@
 
   body {
     @apply bg-background text-foreground;
-    /* The "Grit" Overlay - Dark Concrete Texture */
     background-image:
       linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)),
       url("https://www.transparenttextures.com/patterns/concrete-wall.png");
     background-blend-mode: overlay;
     background-attachment: fixed;
     cursor: crosshair;
-    /* Add padding-bottom on mobile for bottom navigation */
     padding-bottom: env(safe-area-inset-bottom, 0);
-    /* Hide horizontal scrollbar during transitions */
     overflow-x: hidden;
   }
 
   /* Mobile bottom nav spacing */
   @media (max-width: 768px) {
     body {
-      padding-bottom: 4rem; /* 64px for MobileNav height */
+      padding-bottom: 4rem;
     }
   }
 
-  /* Cursor styles */
-  a, button, [role="button"], input[type="submit"], input[type="button"] {
-    cursor: pointer;
+  /* Typography - Standardized Font Sizes */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-header;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
-  /* Hydraulic Button Press Effect */
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  p, span, div {
+    @apply font-industrial;
+  }
+
+  /* Interactive Elements */
+  a, button, [role="button"], input[type="submit"], input[type="button"] {
+    cursor: pointer;
+    @apply touch-manipulation;
+  }
+
+  /* Button Press Effect */
   button:active,
   [role="button"]:active,
   input[type="submit"]:active,
@@ -74,7 +96,16 @@
     transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
   }
 
-  /* "Torn Paper" Effect for Cards */
+  /* Focus States for Accessibility */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-toxic-lime ring-offset-2 ring-offset-background;
+  }
+
+  /* Torn Paper Effect for Cards */
   .torn-edge {
     clip-path: polygon(
       0% 0%, 100% 0%, 100% 100%,
@@ -84,7 +115,7 @@
     );
   }
 
-  /* Recording pulse animation */
+  /* Recording Pulse Animation */
   @keyframes recording-pulse {
     0%, 100% {
       border-color: #ef4444;
@@ -96,7 +127,7 @@
     }
   }
 
-  /* Loading bar animation */
+  /* Loading Bar Animation */
   @keyframes loading-bar {
     0% {
       transform: scaleX(0);
@@ -116,19 +147,7 @@
     animation: loading-bar 1.5s ease-in-out infinite;
   }
 
-  /* Globe marker pulse animation */
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.7;
-      transform: scale(1.1);
-    }
-  }
-
-  /* Radial gradient utility */
+  /* Radial Gradient Utility */
   .bg-gradient-radial {
     background: radial-gradient(circle, var(--tw-gradient-stops));
   }

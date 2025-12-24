@@ -13,6 +13,7 @@ interface EventListProps {
 
 function EventCard({ event, index, onEventClick }: { event: Event; index: number; onEventClick?: (event: Event) => void }) {
   const setSelectedEvent = useEventStore((state) => state.setSelectedEvent);
+  const setPendingEvent = useEventStore((state) => state.setPendingEvent);
   const selectedEvent = useEventStore((state) => state.selectedEvent);
   const dateStr = event.date.toLocaleDateString("en-US", {
     month: "short",
@@ -23,13 +24,23 @@ function EventCard({ event, index, onEventClick }: { event: Event; index: number
   const isSelected = selectedEvent?.id === event.id;
 
   const handleClick = () => {
-    setSelectedEvent(event);
+    if (isSelected) {
+      // Deselect immediately if already selected
+      setSelectedEvent(null);
+      setPendingEvent(null);
+      onEventClick?.(event);
+      return;
+    }
+
+    // Trigger fly-to animation by setting pending event
+    // The CameraController will handle the fly-to and then set selectedEvent
+    setPendingEvent(event);
     onEventClick?.(event);
   };
 
-  // Random rotation for wheatpaste effect
+  // Random rotation for urban wheatpaste effect
   const rotation = (Math.random() * 2 - 1).toFixed(2);
-  const tapeRotation = (Math.random() * 8 - 4).toFixed(2);
+  const tagRotation = (Math.random() * 8 - 4).toFixed(2);
 
   return (
     <motion.div
@@ -41,18 +52,34 @@ function EventCard({ event, index, onEventClick }: { event: Event; index: number
       style={{ transform: `rotate(${rotation}deg)` }}
       onClick={handleClick}
     >
-      {/* Duct Tape Element - Top Center */}
+      {/* Graffiti Tag Element - Top Center */}
       <div
-        className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-12 md:w-16 h-4 md:h-6 bg-tape-gray opacity-80"
-        style={{ transform: `translateX(-50%) rotate(${tapeRotation}deg)` }}
+        className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-16 md:w-20 h-6 md:h-8 opacity-90"
+        style={{ transform: `translateX(-50%) rotate(${tagRotation}deg)` }}
       >
-        <div className="w-full h-full bg-tape-gray border border-black/20" />
+        <div
+          className="w-full h-full relative"
+          style={{
+            background: 'linear-gradient(135deg, rgba(204,255,0,0.15) 0%, rgba(204,255,0,0.05) 100%)',
+            border: '2px solid rgba(204,255,0,0.4)',
+            borderRadius: '2px',
+            boxShadow: '0 0 10px rgba(204,255,0,0.3)',
+          }}
+        >
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='50' height='50' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='spray'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23spray)'/%3E%3C/svg%3E")`,
+              mixBlendMode: 'overlay',
+            }}
+          />
+        </div>
       </div>
 
       {/* Poster Card */}
       <div
-        className={`bg-concrete overflow-hidden border-2 transition-all hover:scale-[1.02] relative torn-edge ${
-          isSelected ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.5)]" : "border-black"
+        className={`bg-concrete overflow-hidden border-2 transition-all hover:scale-[1.02] relative torn-edge rounded-lg shadow-lg ${
+          isSelected ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.5)] ring-2 ring-toxic-lime" : "border-black hover:shadow-xl"
         }`}
         style={{
           boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",

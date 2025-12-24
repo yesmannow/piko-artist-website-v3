@@ -34,7 +34,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-black/40 z-10" />
 
-        <div className="relative z-20 flex flex-col items-center gap-8 text-center px-6">
+        <div className="relative z-20 flex flex-col items-center gap-6 md:gap-8 text-center px-4 md:px-6">
           <motion.img
             src="/images/branding/piko-logo.png"
             alt="Piko FG logo"
@@ -78,7 +78,7 @@ export default function Home() {
       </section>
 
       {/* Section 1: LATEST DROPS (Music) */}
-      <section id="latest-drops" className="relative py-20 px-8 bg-background">
+      <section id="latest-drops" className="relative py-12 md:py-20 px-4 md:px-8 bg-background">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -87,8 +87,8 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {/* Backstage Pass Container */}
-            <div className="border-l-4 border-toxic-lime bg-concrete/50 p-6 md:p-8 mb-8">
-              <h2 className="text-4xl md:text-5xl font-header mb-8 text-foreground">
+            <div className="border-l-4 border-toxic-lime bg-concrete/50 p-4 md:p-6 lg:p-8 mb-6 md:mb-8 rounded-r-lg">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-header mb-6 md:mb-8 text-foreground">
                 LATEST DROPS
               </h2>
               <TrackList featuredOnly={true} />
@@ -109,7 +109,7 @@ export default function Home() {
       </section>
 
       {/* Section 2: RECENT SIGHTINGS (Videos) */}
-      <section id="recent-sightings" className="relative py-20 px-8 bg-card">
+      <section id="recent-sightings" className="relative py-12 md:py-20 px-4 md:px-8 bg-card">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -118,8 +118,8 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {/* Header with REC dot */}
-            <div className="relative mb-8 md:mb-12">
-              <h2 className="text-4xl md:text-5xl font-header text-center text-foreground">
+            <div className="relative mb-6 md:mb-8 lg:mb-12">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-header text-center text-foreground">
                 RECENT SIGHTINGS
               </h2>
               {/* REC Red Dot Animation */}
@@ -156,7 +156,7 @@ export default function Home() {
       </section>
 
       {/* Section 3: LIVE OPERATIONS (Events) */}
-      <section id="live-operations" className="relative py-20 px-8 bg-card">
+      <section id="live-operations" className="relative py-12 md:py-20 px-4 md:px-8 bg-card">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -164,7 +164,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-5xl font-header mb-8 md:mb-12 text-center text-foreground">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-header mb-6 md:mb-8 lg:mb-12 text-center text-foreground">
               LIVE OPERATIONS
             </h2>
             <EventList limit={2} />
@@ -195,7 +195,7 @@ export default function Home() {
       </section>
 
       {/* Section 4: THE LAB (Beat Maker) */}
-      <section id="the-lab" className="relative py-20 px-8 bg-background">
+      <section id="the-lab" className="relative py-12 md:py-20 px-4 md:px-8 bg-background">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -204,8 +204,8 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {/* Desk Mat Background */}
-            <div className="bg-zinc-800 p-8 md:p-12 border-2 border-black shadow-hard">
-              <h2 className="text-4xl md:text-5xl font-header mb-8 md:mb-12 text-center text-foreground">
+            <div className="bg-zinc-800 p-6 md:p-8 lg:p-12 border-2 border-black shadow-hard rounded-lg">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-header mb-6 md:mb-8 lg:mb-12 text-center text-foreground">
                 THE LAB
               </h2>
               <BeatMakerTeaser />
@@ -215,7 +215,7 @@ export default function Home() {
       </section>
 
       {/* Section 5: RAP SHEET (Bio) */}
-      <section id="rap-sheet" className="relative py-20 px-8 bg-card">
+      <section id="rap-sheet" className="relative py-12 md:py-20 px-4 md:px-8 bg-card">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
             {/* Text Content - Left Column */}
@@ -226,7 +226,7 @@ export default function Home() {
               viewport={{ once: true }}
             >
               {/* Headline */}
-              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-header mb-4 text-foreground">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-header mb-4 md:mb-6 text-foreground">
                 <GlitchText text="PIKO FG" />
               </h2>
 

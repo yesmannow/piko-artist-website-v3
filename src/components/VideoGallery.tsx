@@ -31,6 +31,15 @@ function FeaturedVideoThumbnail({ video, index, onPlay }: FeaturedVideoThumbnail
       viewport={{ once: true }}
       className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer"
       onClick={onPlay}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play video: ${video.title}`}
     >
       {/* TV Frame */}
       <div className="relative bg-gray-800 rounded-lg p-3 md:p-4 shadow-2xl">
@@ -146,9 +155,18 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
       viewport={{ once: true }}
       className="group cursor-pointer relative overflow-visible"
       onClick={onPlay}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay();
+        }
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ transform: `rotate(${rotation}deg)` }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play video: ${video.title}`}
     >
       {/* Duct Tape Element - Top Center */}
       <div

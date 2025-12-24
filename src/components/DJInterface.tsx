@@ -561,7 +561,8 @@ export function DJInterface() {
     if (isLightboxOpen) {
       setIsLightboxOpen(false);
     }
-  }, [pathname]); // Only depend on pathname
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]); // Only depend on pathname to avoid infinite loops
 
   // Handle ESC key to close lightbox
   useEffect(() => {

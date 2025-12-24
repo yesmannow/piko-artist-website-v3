@@ -19,8 +19,24 @@ interface PosterModalProps {
 export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isZoomed, setIsZoomed] = useState(false);
-  const parallax = useMouseParallax(containerRef as React.RefObject<HTMLElement>, { intensity: 0.03, tiltIntensity: 3 });
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+
+  // Detect mobile for performance optimization
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Only enable parallax on desktop for performance
+  const parallax = useMouseParallax(
+    !isMobile ? (containerRef as React.RefObject<HTMLElement>) : { current: null },
+    { intensity: 0.03, tiltIntensity: 3 }
+  );
 
   // Close modal on route change to prevent overlays persisting
   useEffect(() => {
@@ -81,25 +97,36 @@ export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterMod
             className="fixed inset-4 md:inset-8 lg:inset-16 z-[71] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* CRT Glow Border */}
-            <div className="absolute inset-0 border-4 border-toxic-lime shadow-[0_0_40px_rgba(204,255,0,0.5),inset_0_0_40px_rgba(204,255,0,0.1)] pointer-events-none" />
+            {/* Urban Glow Border - Hip-Hop Style */}
+            <div className="absolute inset-0 border-4 border-toxic-lime shadow-[0_0_40px_rgba(204,255,0,0.5),inset_0_0_40px_rgba(204,255,0,0.1)] pointer-events-none rounded-lg" />
 
             {/* Content Container */}
             <div
               ref={containerRef}
-              className="relative w-full h-full max-w-7xl max-h-[90vh] bg-black border-4 border-toxic-lime p-4 md:p-8"
+              className="relative w-full h-full max-w-7xl max-h-[90vh] bg-black border-4 border-toxic-lime p-4 md:p-8 rounded-lg"
               style={{
-                transform: `translate(${parallax.x}px, ${parallax.y}px) rotateX(${parallax.rotateX}deg) rotateY(${parallax.rotateY}deg)`,
-                transformStyle: "preserve-3d",
-                transition: "transform 0.1s ease-out",
+                transform: !isMobile
+                  ? `translate(${parallax.x}px, ${parallax.y}px) rotateX(${parallax.rotateX}deg) rotateY(${parallax.rotateY}deg)`
+                  : undefined,
+                transformStyle: !isMobile ? "preserve-3d" : undefined,
+                transition: !isMobile ? "transform 0.1s ease-out" : undefined,
               }}
             >
-              {/* Poster Image */}
+              {/* Graffiti Texture Background - Subtle */}
               <div
-                className={`relative w-full h-full transition-transform duration-300 ${
-                  isZoomed ? "scale-150" : "scale-100"
-                }`}
-                onMouseEnter={() => setIsZoomed(true)}
+                className="absolute inset-0 opacity-[0.05] pointer-events-none z-0"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='graffiti'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23graffiti)' opacity='0.3'/%3E%3C/svg%3E")`,
+                  mixBlendMode: "overlay",
+                }}
+              />
+
+              {/* Poster Image */}
+              <motion.div
+                className="relative w-full h-full"
+                whileHover={!isMobile ? { scale: 1.05 } : {}}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                onMouseEnter={() => !isMobile && setIsZoomed(true)}
                 onMouseLeave={() => setIsZoomed(false)}
               >
                 <Image
@@ -111,20 +138,40 @@ export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterMod
                   priority
                 />
 
-                {/* Noise Distortion Layer on Hover */}
-                {isZoomed && (
+                {/* Vinyl Scratch Effect on Hover - Subtle */}
+                {isZoomed && !isMobile && (
                   <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.15 }}
+                    animate={{ opacity: 0.08 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 pointer-events-none"
+                    className="absolute inset-0 pointer-events-none z-10"
+                    style={{
+                      backgroundImage: `repeating-linear-gradient(
+                        45deg,
+                        transparent,
+                        transparent 2px,
+                        rgba(0, 0, 0, 0.1) 2px,
+                        rgba(0, 0, 0, 0.1) 4px
+                      )`,
+                      mixBlendMode: "multiply",
+                    }}
+                  />
+                )}
+
+                {/* Noise Distortion Layer on Hover */}
+                {isZoomed && !isMobile && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.12 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 pointer-events-none z-10"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
                       mixBlendMode: "overlay",
                     }}
                   />
                 )}
-              </div>
+              </motion.div>
 
               {/* Close Button */}
               <button

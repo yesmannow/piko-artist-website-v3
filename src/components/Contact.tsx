@@ -68,7 +68,7 @@ export function Contact() {
   };
 
   return (
-    <section id="contact" className="relative min-h-[600px] flex items-center justify-center py-20 px-4 md:px-8 overflow-hidden">
+    <section id="contact" className="relative min-h-[600px] flex items-center justify-center py-12 md:py-20 px-4 md:px-8 overflow-hidden">
       {/* Graffiti Wall Background */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -90,7 +90,7 @@ export function Contact() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl font-header mb-8 text-center text-foreground">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-header mb-6 md:mb-8 text-center text-foreground">
             Booking / Contact
           </h2>
 
@@ -112,7 +112,7 @@ export function Contact() {
                   maxLength={100}
                   aria-label="Your name"
                   aria-required="true"
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-toxic-lime transition-all placeholder:text-gray-600"
+                  className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600"
                   style={{
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                     boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -138,7 +138,7 @@ export function Contact() {
                   maxLength={254}
                   aria-label="Your email address"
                   aria-required="true"
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-toxic-lime transition-all placeholder:text-gray-600"
+                  className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600"
                   style={{
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                     boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -165,7 +165,7 @@ export function Contact() {
                   rows={6}
                   aria-label="Your message"
                   aria-required="true"
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-toxic-lime transition-all placeholder:text-gray-600 resize-none"
+                  className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[120px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600 resize-none"
                   style={{
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
                     boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
@@ -181,7 +181,7 @@ export function Contact() {
               disabled={isSubmitting}
               aria-label={isSubmitting ? "Submitting form" : "Submit contact form"}
               aria-busy={isSubmitting}
-              className="w-full px-8 py-4 bg-red-600 border-2 border-black font-header text-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden shadow-hard focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2"
+              className="w-full px-8 py-4 bg-red-600 border-2 border-black font-header text-lg md:text-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden shadow-hard min-h-[56px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2"
               style={{
                 clipPath: "polygon(2% 0%, 98% 0%, 100% 3%, 100% 97%, 98% 100%, 2% 100%, 0% 97%, 0% 3%)",
                 boxShadow: "4px 4px 0px 0px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.1)",

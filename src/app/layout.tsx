@@ -11,6 +11,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallApp } from "@/components/InstallApp";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { ScrollToTopOnRouteChange } from "@/components/ScrollToTopOnRouteChange";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -76,6 +77,7 @@ export default function RootLayout({
           <VideoProvider>
             <Navbar />
             <SmoothScroll>
+              <ScrollToTopOnRouteChange />
               <PageTransition>{children}</PageTransition>
             </SmoothScroll>
             <Footer />

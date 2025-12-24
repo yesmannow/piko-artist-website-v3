@@ -151,7 +151,7 @@ export function EventModalWrapper({ events }: EventModalWrapperProps) {
                     className={`inline-block px-3 py-1 rounded border-2 border-black text-xs font-header font-bold ${
                       selectedEvent.status === "upcoming"
                         ? "bg-safety-orange text-black"
-                        : "bg-tape-gray text-black"
+                        : "bg-zinc-700 text-white"
                     }`}
                   >
                     {selectedEvent.status === "upcoming" ? "UPCOMING" : "PAST"}

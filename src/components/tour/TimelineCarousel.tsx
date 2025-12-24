@@ -49,6 +49,7 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
     dragFree: true,
   });
   const setSelectedEvent = useEventStore((state) => state.setSelectedEvent);
+  const setPendingEvent = useEventStore((state) => state.setPendingEvent);
   const selectedEvent = useEventStore((state) => state.selectedEvent);
 
   const groupedEvents = useMemo(() => groupEventsByYearMonth(events), [events]);
@@ -105,10 +106,21 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
               key={group.key}
               className="flex-shrink-0 w-[280px] md:w-[320px]"
             >
-              {/* Year/Month Header */}
-              <div className="mb-4 bg-concrete border-2 border-black p-3 shadow-hard">
-                <h3 className="font-header text-2xl text-foreground">
+              {/* Year/Month Header with Graffiti Style */}
+              <div className="mb-4 bg-concrete border-2 border-black p-3 shadow-hard relative overflow-hidden rounded-lg">
+                {/* Graffiti texture background */}
+                <div
+                  className="absolute inset-0 opacity-10 pointer-events-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='graffiti'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23graffiti)' opacity='0.4'/%3E%3C/svg%3E")`,
+                    mixBlendMode: 'overlay',
+                  }}
+                />
+                <h3 className="font-header text-2xl text-foreground relative z-10 flex items-center gap-2">
+                  {/* Graffiti icon between month and year */}
+                  <span className="text-[#ccff00] text-lg">✱</span>
                   {monthNames[group.month]} {group.year}
+                  <span className="text-[#ccff00] text-lg">✱</span>
                 </h3>
               </div>
 
@@ -119,6 +131,16 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
                   const isUpcoming = event.status === "upcoming";
                   const isLive = isUpcoming && new Date(event.date) > new Date();
 
+                  const handleClick = () => {
+                    if (isSelected) {
+                      setSelectedEvent(null);
+                      setPendingEvent(null);
+                      return;
+                    }
+                    // Trigger fly-to animation
+                    setPendingEvent(event);
+                  };
+
                   return (
                     <motion.div
                       key={event.id}
@@ -126,14 +148,16 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.4, delay: eventIndex * 0.1 }}
-                      onClick={() => setSelectedEvent(event)}
-                      className={`relative p-4 bg-concrete border-2 cursor-pointer transition-all hover:scale-105 ${
+                      onClick={handleClick}
+                      className={`relative p-4 bg-concrete border-2 cursor-pointer transition-all hover:scale-105 rounded-lg shadow-lg ${
                         isSelected
-                          ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.5)]"
-                          : "border-black"
+                          ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.5)] ring-2 ring-toxic-lime"
+                          : "border-black hover:shadow-xl hover:border-toxic-lime/30"
                       } ${isLive ? "ring-2 ring-safety-orange ring-opacity-50" : ""}`}
                       style={{
-                        boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)",
+                        boxShadow: isSelected
+                          ? "2px 2px 0px 0px rgba(0,0,0,1), 0 0 30px rgba(204,255,0,0.4)"
+                          : "2px 2px 0px 0px rgba(0,0,0,1)",
                       }}
                     >
                       {/* Live/Upcoming Glow */}
@@ -176,7 +200,7 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
                             className={`inline-block px-2 py-1 rounded border-2 border-black text-xs font-header font-bold ${
                               isUpcoming
                                 ? "bg-safety-orange text-black"
-                                : "bg-tape-gray text-black"
+                                : "bg-zinc-700 text-white"
                             }`}
                           >
                             {isUpcoming ? "UPCOMING" : "PAST"}

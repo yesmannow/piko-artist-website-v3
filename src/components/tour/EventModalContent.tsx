@@ -63,18 +63,19 @@ export function EventModalContent({ event, onVideoElementReady }: EventModalCont
                 </div>
               )}
 
-              {/* VHS Scanlines Overlay */}
+              {/* Neon VHS Scanlines Overlay - Hip-Hop Style */}
               <div
-                className="absolute inset-0 pointer-events-none z-10 opacity-30"
+                className="absolute inset-0 pointer-events-none z-10 opacity-40"
                 style={{
                   backgroundImage: `repeating-linear-gradient(
                     0deg,
                     transparent,
                     transparent 2px,
-                    rgba(0, 255, 0, 0.1) 2px,
-                    rgba(0, 255, 0, 0.1) 4px
+                    rgba(204, 255, 0, 0.15) 2px,
+                    rgba(204, 255, 0, 0.15) 4px
                   )`,
                   mixBlendMode: "screen",
+                  boxShadow: 'inset 0 0 20px rgba(204,255,0,0.1)',
                 }}
               />
 

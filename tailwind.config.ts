@@ -85,8 +85,7 @@ const config: Config = {
         hard: "4px 4px 0px 0px rgba(0,0,0,1)",
       },
       backgroundImage: {
-        noise: "url('/textures/noise.png')",
-        "concrete-wall": "url('/images/bg/concrete-dark.jpg')",
+        // Removed unused background images - using inline SVG patterns instead
       },
       keyframes: {
         "accordion-down": {

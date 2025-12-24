@@ -17,7 +17,8 @@ export default function VideosPage() {
     if (selectedVideoId) {
       setSelectedVideoId(null);
     }
-  }, [pathname]); // Only depend on pathname, not selectedVideoId to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]); // Only depend on pathname to avoid infinite loops
   const videos = tracks.filter(t => t.type === 'video');
   const featuredVideo = videos.length > 0 ? videos[videos.length - 1] : null;
   const gridVideos = videos.length > 1 ? videos.slice(0, -1) : [];
@@ -25,7 +26,7 @@ export default function VideosPage() {
   // Optional: Early return for empty state
   if (!videos.length) {
     return (
-      <div className="min-h-screen bg-[#121212] pt-24 pb-20 px-4 md:px-8">
+      <div className="min-h-screen bg-background pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
             <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter mb-2">
@@ -38,23 +39,23 @@ export default function VideosPage() {
               Exploring the visual landscape of sound.
             </p>
           </div>
-          <div className="text-center text-white py-12">No videos available.</div>
+          <div className="text-center text-foreground/60 py-12 font-industrial">No videos available.</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] pt-24 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-background pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter mb-2">
+        <div className="mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-header text-foreground tracking-tighter mb-2">
             VISUAL{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-toxic-lime to-green-500">
               ARCHIVE
             </span>
           </h1>
-          <p className="text-zinc-400 font-mono">
+          <p className="text-foreground/60 font-industrial text-sm md:text-base">
             Exploring the visual landscape of sound.
           </p>
         </div>

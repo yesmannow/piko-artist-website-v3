@@ -8,7 +8,19 @@ export function VideoHero({ featuredVideo, onPlay }: { featuredVideo: MediaItem,
   if (!featuredVideo?.id) return null;
 
   return (
-    <div className="relative w-full h-[60vh] md:h-[70vh] mb-12 rounded-3xl overflow-hidden border border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] group cursor-pointer" onClick={() => onPlay(featuredVideo.id)}>
+    <div
+      className="relative w-full h-[60vh] md:h-[70vh] mb-8 md:mb-12 rounded-lg overflow-hidden border-2 border-zinc-800 shadow-2xl group cursor-pointer focus-within:ring-2 focus-within:ring-toxic-lime focus-within:ring-offset-2"
+      onClick={() => onPlay(featuredVideo.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay(featuredVideo.id);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play featured video: ${featuredVideo.title}`}
+    >
       {/* Background Image */}
       <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
            style={{ backgroundImage: `url(https://img.youtube.com/vi/${featuredVideo.id}/hqdefault.jpg)` }} />
@@ -26,7 +38,10 @@ export function VideoHero({ featuredVideo, onPlay }: { featuredVideo: MediaItem,
             {featuredVideo.title}
           </h1>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-full hover:bg-[#ccff00] transition-colors">
+            <button
+              className="flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-full hover:bg-toxic-lime transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 focus:ring-offset-black"
+              aria-label="Watch featured video"
+            >
               <Play className="w-5 h-5 fill-current" />
               WATCH NOW
             </button>

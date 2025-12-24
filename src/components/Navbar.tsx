@@ -8,6 +8,8 @@ import Image from "next/image";
 import { useLenis } from "lenis/react";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const navItems = [
   { name: "Home", path: "/", anchor: "home" },
@@ -19,56 +21,95 @@ const navItems = [
   { name: "Contact", path: "/", anchor: "contact" },
 ];
 
-// Animated Logo Component
-const AnimatedLogo = ({ isScrolled }: { isScrolled: boolean }) => {
+// Animated Logo Component - Urban/Hip-Hop Style
+const AnimatedLogo = ({
+  isScrolled,
+  reducedMotion,
+  pathname,
+  lenis,
+}: {
+  isScrolled: boolean;
+  reducedMotion: boolean;
+  pathname: string;
+  lenis: ReturnType<typeof useLenis>;
+}) => {
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If already on home, scroll to top
+    if (pathname === "/") {
+      e.preventDefault();
+      if (lenis) {
+        lenis.scrollTo(0, { immediate: false, duration: 1.5 });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+  };
+
   return (
     <motion.div
       className="relative flex items-center"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={reducedMotion ? {} : { scale: 1.05 }}
+      whileTap={reducedMotion ? {} : { scale: 0.95 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
       <motion.div
         className="relative"
-        animate={{
-          rotate: [0, 5, -5, 0],
-          scale: isScrolled ? 0.8 : 1,
-        }}
-        transition={{
-          rotate: {
-            duration: 0.5,
-            repeat: Infinity,
-            repeatType: "reverse",
-            repeatDelay: 2,
-          },
-          scale: {
-            duration: 0.3,
-          },
-        }}
+        animate={
+          reducedMotion
+            ? { scale: isScrolled ? 0.85 : 1 }
+            : {
+                rotate: [0, 3, -3, 0],
+                scale: isScrolled ? 0.85 : 1,
+              }
+        }
+        transition={
+          reducedMotion
+            ? { duration: 0.3 }
+            : {
+                rotate: {
+                  duration: 0.5,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  repeatDelay: 2,
+                },
+                scale: {
+                  duration: 0.3,
+                },
+              }
+        }
       >
-        <motion.div
-          className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{
-            background: "radial-gradient(circle, rgba(204,255,0,0.4) 0%, transparent 70%)",
-          }}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0, 0.6, 0],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <Image
-          src="/images/branding/piko-logo.png"
-          alt="Piko Logo"
-          width={48}
-          height={48}
-          className="relative z-10 w-12 h-12 md:w-14 md:h-14 transition-all duration-300 drop-shadow-[0_0_15px_rgba(204,255,0,0.3)]"
-          priority
-        />
+        {!reducedMotion && (
+          <motion.div
+            className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{
+              background: "radial-gradient(circle, rgba(204,255,0,0.3) 0%, transparent 70%)",
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0, 0.4, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        )}
+        <Link
+          href="/"
+          className="relative z-10 block"
+          aria-label="Navigate to home"
+          onClick={handleLogoClick}
+        >
+          <Image
+            src="/images/branding/piko-logo.png"
+            alt="Piko Logo"
+            width={48}
+            height={48}
+            className="w-12 h-12 md:w-14 md:h-14 transition-all duration-300 drop-shadow-[0_0_10px_rgba(204,255,0,0.2)]"
+            priority
+          />
+        </Link>
       </motion.div>
     </motion.div>
   );
@@ -113,16 +154,32 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
   const navRef = useRef<HTMLElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
   const triggerHaptic = useHaptic();
+  const scrollDirection = useScrollDirection(50);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
-  // Track scroll position for navbar background effect with framer-motion
-  // Smooth transition at 50px threshold
+  // Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  // Focus trap for mobile menu
+  useFocusTrap(isOpen, mobileMenuRef);
+
+  // Track scroll position and direction for navbar background effect
   useMotionValueEvent(scrollY, "change", (latest) => {
     const scrolled = latest > 50;
     setIsScrolled(scrolled);
-
-    // Scroll progress calculation removed (was unused)
   });
 
   // Ensure navbar remains interactive - force pointer-events-auto on interactive elements
@@ -143,18 +200,6 @@ export function Navbar() {
 
   // Prevent scrolling when menu is open (using centralized hook)
   useBodyScrollLock(isOpen);
-
-  // Additional mobile-specific positioning to prevent background scroll
-  useEffect(() => {
-    if (isOpen) {
-      // Prevent background scroll on mobile
-      document.body.style.position = "fixed";
-      document.body.style.width = "100%";
-    } else {
-      document.body.style.position = "";
-      document.body.style.width = "";
-    }
-  }, [isOpen]);
 
   // Handle menu toggle with haptic feedback
   const handleMenuToggle = () => {
@@ -316,37 +361,44 @@ export function Navbar() {
         className="fixed top-0 left-0 right-0 z-[100] flex justify-between md:justify-center items-center px-4 md:px-8 py-3 md:py-4 pointer-events-none transition-all duration-300"
         initial={false}
         animate={{
-          backgroundColor: isScrolled
-            ? `rgba(0, 0, 0, ${0.9})`
-            : "rgba(0, 0, 0, 0)",
-          backdropFilter: isScrolled ? "blur(12px)" : "blur(0px)",
+          backgroundColor:
+            isScrolled && scrollDirection === "down"
+              ? `rgba(10, 10, 10, ${reducedMotion ? 0.95 : 0.9})`
+              : isScrolled && scrollDirection === "up"
+                ? `rgba(10, 10, 10, ${reducedMotion ? 0.85 : 0.75})`
+                : "rgba(0, 0, 0, 0)",
+          backdropFilter: isScrolled ? (reducedMotion ? "blur(8px)" : "blur(12px)") : "blur(0px)",
           borderBottom: isScrolled
-            ? "1px solid rgba(255, 255, 255, 0.1)"
+            ? "1px solid rgba(204, 255, 0, 0.15)"
             : "1px solid transparent",
           boxShadow: isScrolled
-            ? "0 4px 24px rgba(0, 0, 0, 0.5)"
+            ? scrollDirection === "down"
+              ? "0 4px 24px rgba(0, 0, 0, 0.6)"
+              : "0 2px 12px rgba(0, 0, 0, 0.3)"
             : "0 0 0 rgba(0, 0, 0, 0)",
         }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
+        transition={{ duration: reducedMotion ? 0.1 : 0.3, ease: "easeInOut" }}
         role="navigation"
         aria-label="Main navigation"
       >
         {/* Logo - Left side (Mobile & Desktop) */}
-        <Link
-          href="/"
-          className="pointer-events-auto touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
-          onClick={(e) => {
-            if (pathname === "/") {
-              e.preventDefault();
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
+        <div className="pointer-events-auto touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center">
+          <AnimatedLogo
+            isScrolled={isScrolled}
+            reducedMotion={reducedMotion}
+            pathname={pathname}
+            lenis={lenis}
+          />
+        </div>
+
+        {/* Desktop Menu - Urban/Hip-Hop Style */}
+        <ul
+          className="hidden md:flex items-center gap-6 lg:gap-8 pointer-events-auto bg-zinc-950/80 backdrop-blur-md px-6 lg:px-8 py-3 rounded-full border border-zinc-800/50 shadow-lg"
+          role="menubar"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
           }}
         >
-          <AnimatedLogo isScrolled={isScrolled} />
-        </Link>
-
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-6 lg:gap-8 pointer-events-auto bg-black/50 backdrop-blur-md px-6 lg:px-8 py-3 rounded-full border border-white/10 shadow-lg" role="menubar">
           {navItems.map((item) => {
             const active = isActive(item);
             return (
@@ -357,7 +409,7 @@ export function Navbar() {
                   className={`text-xs font-bold uppercase tracking-widest transition-all duration-300 min-h-[44px] flex items-center px-3 py-2 rounded-md touch-manipulation relative group focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2 focus:ring-offset-black ${
                     active
                       ? "text-[#ccff00]"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
                   }`}
                   role="menuitem"
                   aria-current={active ? "page" : undefined}
@@ -365,10 +417,12 @@ export function Navbar() {
                 >
                   {item.name}
                   {/* Hover gradient underline effect */}
-                  <motion.div
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#ccff00] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
-                    initial={false}
-                  />
+                  {!reducedMotion && (
+                    <motion.div
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#ccff00] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                      initial={false}
+                    />
+                  )}
                 </Link>
                 {/* Active section indicator with animated underline */}
                 {active && (
@@ -376,7 +430,11 @@ export function Navbar() {
                     layoutId="nav-active-indicator"
                     className="absolute -bottom-2 left-0 right-0 h-1 bg-[#ccff00] rounded-full shadow-[0_0_12px_#ccff00]"
                     initial={false}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    transition={
+                      reducedMotion
+                        ? { duration: 0.1 }
+                        : { type: "spring", stiffness: 500, damping: 30 }
+                    }
                   />
                 )}
               </li>
@@ -420,19 +478,27 @@ export function Navbar() {
               aria-hidden="true"
             />
 
-            {/* Menu Panel */}
+            {/* Menu Panel - Urban/Hip-Hop Style */}
             <motion.div
+              ref={mobileMenuRef}
               id="mobile-menu"
-              initial={{ opacity: 0, y: "-100%" }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: "-100%" }}
-              transition={{
-                type: "spring",
-                damping: 30,
-                stiffness: 300,
-                mass: 0.8
+              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: "-100%" }}
+              animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: "-100%" }}
+              transition={
+                reducedMotion
+                  ? { duration: 0.2 }
+                  : {
+                      type: "spring",
+                      damping: 30,
+                      stiffness: 300,
+                      mass: 0.8,
+                    }
+              }
+              className="fixed inset-0 z-[99] bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center overflow-y-auto backdrop-blur-2xl"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
               }}
-              className="fixed inset-0 z-[99] bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col items-center justify-center overflow-y-auto backdrop-blur-2xl"
               role="dialog"
               aria-modal="true"
               aria-labelledby="mobile-menu-title"
@@ -443,17 +509,26 @@ export function Navbar() {
             >
               {/* Mobile Logo */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: -30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{
-                  delay: 0.1,
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 20
-                }}
+                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8, y: -30 }}
+                animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+                transition={
+                  reducedMotion
+                    ? { duration: 0.2, delay: 0.1 }
+                    : {
+                        delay: 0.1,
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 20,
+                      }
+                }
                 className="mb-8 md:mb-12"
               >
-                <AnimatedLogo isScrolled={false} />
+                <AnimatedLogo
+                  isScrolled={false}
+                  reducedMotion={reducedMotion}
+                  pathname={pathname}
+                  lenis={lenis}
+                />
               </motion.div>
 
               {/* Mobile Menu Title (hidden but for accessibility) */}
@@ -466,14 +541,18 @@ export function Navbar() {
                   return (
                     <motion.div
                       key={`${item.path}-${item.anchor || ""}`}
-                      initial={{ opacity: 0, x: -30, scale: 0.9 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      transition={{
-                        delay: 0.15 + i * 0.05,
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 25
-                      }}
+                      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -30, scale: 0.9 }}
+                      animate={reducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
+                      transition={
+                        reducedMotion
+                          ? { duration: 0.2, delay: 0.1 + i * 0.03 }
+                          : {
+                              delay: 0.15 + i * 0.05,
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 25,
+                            }
+                      }
                     >
                       <motion.div
                         whileHover={{ scale: 1.02 }}
@@ -500,24 +579,34 @@ export function Navbar() {
                                 layoutId="mobile-menu-active-bg"
                                 className="absolute inset-0 bg-[#ccff00]/10 rounded-xl"
                                 initial={false}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={
+                                  reducedMotion
+                                    ? { duration: 0.1 }
+                                    : { type: "spring", stiffness: 500, damping: 30 }
+                                }
                               />
                               <motion.div
                                 layoutId="mobile-menu-active-underline"
                                 className="absolute bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-[#ccff00] rounded-full shadow-[0_0_12px_#ccff00]"
                                 initial={false}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={
+                                  reducedMotion
+                                    ? { duration: 0.1 }
+                                    : { type: "spring", stiffness: 500, damping: 30 }
+                                }
                               />
                             </>
                           )}
 
                           {/* Hover effect */}
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
-                            initial={{ x: "-100%" }}
-                            whileHover={{ x: "100%" }}
-                            transition={{ duration: 0.6 }}
-                          />
+                          {!reducedMotion && (
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                              initial={{ x: "-100%" }}
+                              whileHover={{ x: "100%" }}
+                              transition={{ duration: 0.6 }}
+                            />
+                          )}
 
                           {/* Text content */}
                           <span className="relative z-10">{item.name}</span>
@@ -528,7 +617,7 @@ export function Navbar() {
                               className="absolute right-4 w-2 h-2 rounded-full bg-[#ccff00] shadow-[0_0_10px_#ccff00]"
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
-                              transition={{ delay: 0.2 }}
+                              transition={reducedMotion ? { duration: 0.1 } : { delay: 0.2 }}
                             />
                           )}
                         </Link>

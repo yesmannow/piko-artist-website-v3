@@ -36,19 +36,38 @@ export function BackdropFX({ className = "" }: BackdropFXProps) {
         }}
       />
 
-      {/* Scanlines */}
+      {/* Neon Scanlines - Hip-Hop Vibe */}
       {scanlineSVG}
 
-      {/* Flicker Effect */}
+      {/* Neon Glitch Flicker Effect */}
       <motion.div
-        className="absolute inset-0 bg-white"
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(180deg, transparent 0%, rgba(204,255,0,0.02) 50%, transparent 100%)',
+        }}
         animate={{
-          opacity: [0, 0.02, 0],
+          opacity: [0, 0.03, 0],
         }}
         transition={{
           duration: 0.1,
           repeat: Infinity,
           repeatDelay: Math.random() * 2 + 1,
+        }}
+      />
+
+      {/* Neon Outline Glitch */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          boxShadow: 'inset 0 0 40px rgba(204,255,0,0.1), 0 0 60px rgba(204,255,0,0.05)',
+        }}
+        animate={{
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
       />
     </div>

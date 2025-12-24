@@ -117,54 +117,101 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
       onMouseLeave={handleMouseLeave}
       className={[
         "group relative w-full text-left",
-        "bg-[#e5e5e5] overflow-hidden",
+        "bg-[#e5e5e5] overflow-hidden rounded-lg",
         "border-2 border-black",
-        "transition-all",
-        isActive ? "ring-2 ring-toxic-lime" : "",
+        "transition-all duration-300",
+        isActive ? "ring-2 ring-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.3)]" : "shadow-lg hover:shadow-xl",
       ].join(" ")}
       style={{
         transform: `rotate(${rotation}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
         transformStyle: "preserve-3d",
-        boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+        boxShadow: isActive
+          ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px rgba(204,255,0,0.3)"
+          : "4px 4px 0px 0px rgba(0,0,0,1), 0 4px 6px rgba(0,0,0,0.1)",
       }}
     >
       {/* Cover Art Image */}
       <div className="relative aspect-square w-full overflow-hidden">
+        {/* Graffiti Texture Overlay - Subtle */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-300 pointer-events-none z-10"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='graffiti'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23graffiti)' opacity='0.3'/%3E%3C/svg%3E")`,
+            mixBlendMode: "overlay",
+          }}
+        />
+
+        {/* Vinyl Scratch Effect - Subtle */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-[0.06] transition-opacity duration-500 pointer-events-none z-10"
+          style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 2px,
+              rgba(0, 0, 0, 0.1) 2px,
+              rgba(0, 0, 0, 0.1) 4px
+            )`,
+            mixBlendMode: "multiply",
+          }}
+        />
+
         {isImagePath(track.coverArt) ? (
           <>
-            <Image
-              src={track.coverArt}
-              alt={track.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              onLoadingComplete={() => setIsLoaded(true)}
-            />
-            {!isLoaded && (
-              <Skeleton className="absolute inset-0" />
-            )}
+            <motion.div
+              className="relative w-full h-full"
+              whileHover={{ scale: 1.08, y: -4 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <Image
+                src={track.coverArt}
+                alt={track.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                onLoadingComplete={() => setIsLoaded(true)}
+              />
+              {!isLoaded && (
+                <Skeleton className="absolute inset-0" />
+              )}
+            </motion.div>
           </>
         ) : (
-          <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+          <motion.div
+            className={`w-full h-full bg-gradient-to-r ${track.coverArt}`}
+            whileHover={{ scale: 1.08, y: -4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          />
         )}
 
+        {/* Dark-to-Bright Gradient Overlay on Hover */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"
+          initial={false}
+        />
+
         {/* Hover Overlay with Play Button */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-toxic-lime/20 rounded-full blur-xl" />
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-30">
+          <motion.div
+            className="relative"
+            initial={{ scale: 0.8, opacity: 0 }}
+            whileHover={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="absolute inset-0 bg-toxic-lime/30 rounded-full blur-xl animate-pulse" />
             <Play
               className="relative w-12 h-12 md:w-16 md:h-16 text-white"
               fill="currentColor"
               style={{
-                filter: `drop-shadow(0 0 10px #ccff00)`,
+                filter: `drop-shadow(0 0 15px #ccff00)`,
               }}
             />
-          </div>
+          </motion.div>
         </div>
 
         {/* Active Indicator - Animated Equalizer */}
         {isActive && (
-          <div className="absolute top-2 right-2 flex items-end gap-0.5 h-4">
+          <div className="absolute top-2 right-2 flex items-end gap-0.5 h-4 z-30">
             {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, idx) => (
               <motion.div
                 key={idx}
@@ -185,20 +232,40 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
             ))}
           </div>
         )}
+
+        {/* Metadata Tooltip on Hover */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-40"
+          initial={false}
+        >
+          <div className="text-white">
+            <div className="font-header text-sm font-bold truncate mb-1">{track.title}</div>
+            <div className="font-industrial text-xs text-white/80 truncate mb-1">{track.artist}</div>
+            <div className="flex items-center gap-2">
+              <span className={[
+                "px-2 py-0.5 rounded text-[10px] font-industrial font-bold uppercase tracking-wider border",
+                vibeColors[track.vibe],
+              ].join(" ")}>
+                {track.vibe}
+              </span>
+              <span className="text-white/60 text-xs">3:00</span>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Metadata Below Image */}
-      <div className="p-4 bg-[#e5e5e5]">
+      {/* Metadata Below Image - Always Visible */}
+      <div className="p-3 md:p-4 bg-[#e5e5e5] border-t-2 border-black/10">
         <div
           className={[
-            "font-header text-base md:text-lg mb-1 line-clamp-2 font-bold",
+            "font-header text-sm md:text-base mb-1 line-clamp-2 font-bold",
             isActive ? "text-toxic-lime" : "text-black",
           ].join(" ")}
         >
           {track.title}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={["text-sm", isActive ? "text-toxic-lime/80" : "text-black/70"].join(" ")}>
+          <span className={["text-xs md:text-sm", isActive ? "text-toxic-lime/80" : "text-black/70"].join(" ")}>
             {track.artist}
           </span>
           <span className="text-black/40">•</span>
@@ -247,12 +314,14 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 key={opt.id}
                 type="button"
                 onClick={() => setActiveFilter(opt.id)}
-                className={[
-                  "px-4 py-2 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all",
-                  isActive
-                    ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
-                    : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
-                ].join(" ")}
+                  className={[
+                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
+                    isActive
+                      ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
+                      : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
+                  ].join(" ")}
+                  aria-label={`Filter by ${opt.label}`}
+                  aria-pressed={isActive}
               >
                 {opt.label}
               </button>
@@ -263,8 +332,8 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
 
       {featuredOnly ? (
         // Featured Mode: Table Layout
-        <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-          <div className="min-w-[760px] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden">
+        <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
+          <div className="min-w-[min(100%,760px)] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden mx-4 md:mx-0">
             {/* Sticky header */}
             <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
               <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-industrial font-bold">
