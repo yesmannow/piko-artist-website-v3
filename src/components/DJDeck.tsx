@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
 import { JogWheel } from "./dj-ui/JogWheel";
@@ -67,9 +67,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [cuePoint, setCuePoint] = useState<number | null>(null);
     const [isScrubbing, setIsScrubbing] = useState(false);
     const wasPlayingBeforeScrubRef = useRef(false);
-    const [isLooping, setIsLooping] = useState(false);
-    const [loopStart, setLoopStart] = useState<number | null>(null);
-    const [loopBeats, setLoopBeats] = useState<number | null>(null);
+  const [isLooping, setIsLooping] = useState(false);
+  const [, setLoopStart] = useState<number | null>(null); // Used internally for loop logic
+  const [loopBeats, setLoopBeats] = useState<number | null>(null);
     const loopIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const [previousTrackUrl, setPreviousTrackUrl] = useState<string | null>(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -284,78 +284,143 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       setIsScrubbing(false);
     };
 
-    // Handle performance pad cues
-    const handleCueSet = (padIndex: number, time: number) => {
-      // Store cue point (could be expanded to support multiple pads)
+    // Hot cues state (8 cues per deck) - stored but not directly used in render
+    const [, setHotCues] = useState<Record<number, number>>({});
+
+    // Handle performance pad cues (8 hot cues)
+    const handleCueSet = useCallback((padIndex: number, time: number) => {
+      setHotCues((prev) => ({
+        ...prev,
+        [padIndex]: time,
+      }));
+      // Also update single cue point for backward compatibility
       if (padIndex === 0) {
         setCuePoint(time);
       }
-    };
+    }, []);
 
-    const handleCueJump = (time: number) => {
+    const handleCueJump = useCallback((time: number) => {
       if (wavesurferRef.current && duration) {
-        wavesurferRef.current.seekTo(time / duration);
+        // Debounce rapid jumps to prevent audio glitches
+        const seekRatio = time / duration;
+        if (seekRatio >= 0 && seekRatio <= 1) {
+          wavesurferRef.current.seekTo(seekRatio);
+        }
       }
-    };
+    }, [duration]);
 
-    const handleCueClear = (padIndex: number) => {
+    const handleCueClear = useCallback((padIndex: number) => {
+      setHotCues((prev) => {
+        const newCues = { ...prev };
+        delete newCues[padIndex];
+        return newCues;
+      });
+      // Also clear single cue point if it was pad 0
       if (padIndex === 0) {
         setCuePoint(null);
       }
-    };
+    }, []);
 
-    // Handle loop functionality
-    const handleLoop = (beats: number) => {
+    // Enhanced loop functionality with in/out markers
+    const [loopIn, setLoopIn] = useState<number | null>(null);
+    const [loopOut, setLoopOut] = useState<number | null>(null);
+
+    const handleLoop = useCallback((beats: number) => {
       if (!wavesurferRef.current || !duration) return;
 
-      // Assuming 120 BPM average (2 beats per second)
+      // Assuming 120 BPM average (2 beats per second) - fallback if BPM unknown
       const beatsPerSecond = 2;
       const loopDuration = beats / beatsPerSecond;
       const currentTime = wavesurferRef.current.getCurrentTime();
 
-      if (isLooping && loopBeats === beats) {
+      if (isLooping && loopBeats === beats && loopIn !== null) {
         // Disable loop
         setIsLooping(false);
         setLoopStart(null);
         setLoopBeats(null);
+        setLoopIn(null);
+        setLoopOut(null);
         if (loopIntervalRef.current) {
           clearInterval(loopIntervalRef.current);
           loopIntervalRef.current = null;
         }
       } else {
+        // Set loop in point at current position
+        const loopInTime = currentTime;
+        const loopOutTime = Math.min(loopInTime + loopDuration, duration);
+
         // Enable loop
         setIsLooping(true);
-        setLoopStart(currentTime);
+        setLoopStart(loopInTime);
         setLoopBeats(beats);
+        setLoopIn(loopInTime);
+        setLoopOut(loopOutTime);
 
         // Clear existing loop
         if (loopIntervalRef.current) {
           clearInterval(loopIntervalRef.current);
         }
 
-        // Set up loop check
+        // Set up loop check with smooth seeking
         const checkLoop = () => {
-          if (!wavesurferRef.current || !loopStart) return;
+          if (!wavesurferRef.current || loopInTime === null) return;
           const now = wavesurferRef.current.getCurrentTime();
-          const loopEnd = loopStart + loopDuration;
 
-          if (now >= loopEnd) {
-            wavesurferRef.current.seekTo(loopStart / duration);
+          // Check if we've passed the loop out point
+          if (now >= loopOutTime || now < loopInTime) {
+            // Smoothly seek back to loop in point
+            const seekRatio = loopInTime / duration;
+            if (seekRatio >= 0 && seekRatio <= 1) {
+              wavesurferRef.current.seekTo(seekRatio);
+            }
           }
         };
 
-        loopIntervalRef.current = setInterval(checkLoop, 50);
+        // Check more frequently for better accuracy
+        loopIntervalRef.current = setInterval(checkLoop, 30);
       }
-    };
+    }, [isLooping, loopBeats, loopIn, duration]);
 
-    // Cleanup loop on unmount
+    // Set loop in point
+    const handleSetLoopIn = useCallback(() => {
+      if (wavesurferRef.current) {
+        const currentTime = wavesurferRef.current.getCurrentTime();
+        setLoopIn(currentTime);
+        // If loop out is set and is before loop in, clear it
+        if (loopOut !== null && loopOut <= currentTime) {
+          setLoopOut(null);
+        }
+      }
+    }, [loopOut]);
+
+    // Set loop out point
+    const handleSetLoopOut = useCallback(() => {
+      if (wavesurferRef.current && loopIn !== null) {
+        const currentTime = wavesurferRef.current.getCurrentTime();
+        if (currentTime > loopIn) {
+          setLoopOut(currentTime);
+          // Calculate beats based on loop length
+          const loopDuration = currentTime - loopIn;
+          const beats = Math.round(loopDuration * 2); // Assuming 2 beats per second
+          setLoopBeats(beats);
+          setIsLooping(true);
+          setLoopStart(loopIn);
+        }
+      }
+    }, [loopIn]);
+
+    // Cleanup loop on unmount or track change
     useEffect(() => {
       return () => {
         if (loopIntervalRef.current) {
           clearInterval(loopIntervalRef.current);
+          loopIntervalRef.current = null;
         }
+        setIsLooping(false);
+        setLoopStart(null);
+        setLoopBeats(null);
       };
-    }, []);
+    }, [trackUrl]);
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
@@ -499,18 +564,49 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             </div>
           </div>
 
-          {/* Loop Controls */}
+          {/* Enhanced Loop Controls */}
           <div className="flex flex-col items-center gap-2">
             <div className="text-xs font-barlow uppercase text-gray-400 tracking-wider mb-1">
               LOOP
             </div>
+            {/* Loop In/Out Controls */}
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={handleSetLoopIn}
+                className={`px-2 py-1 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation min-h-[44px] ${
+                  loopIn !== null
+                    ? "bg-[#1a1a1a] border-[#ccff00] text-[#ccff00]"
+                    : "bg-[#0a0a0a] border-gray-700 text-gray-500 hover:border-gray-600"
+                }`}
+                aria-label="Set loop in point"
+                title="Set Loop In"
+              >
+                IN
+              </button>
+              <button
+                onClick={handleSetLoopOut}
+                disabled={loopIn === null}
+                className={`px-2 py-1 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation min-h-[44px] ${
+                  loopOut !== null
+                    ? "bg-[#1a1a1a] border-[#ccff00] text-[#ccff00]"
+                    : loopIn === null
+                    ? "bg-[#0a0a0a] border-gray-700 text-gray-500 opacity-50 cursor-not-allowed"
+                    : "bg-[#0a0a0a] border-gray-700 text-gray-500 hover:border-gray-600"
+                }`}
+                aria-label="Set loop out point"
+                title="Set Loop Out"
+              >
+                OUT
+              </button>
+            </div>
+            {/* Quick Loop Length Buttons */}
             <div className="flex flex-col gap-2">
-              {[4, 8, 16].map((beats) => (
+              {[2, 4, 8, 16].map((beats) => (
                 <button
                   key={beats}
                   onClick={() => handleLoop(beats)}
                   aria-label={isLooping && loopBeats === beats ? `${beats} beat loop active. Click to disable.` : `Enable ${beats} beat loop`}
-                  className={`relative w-14 h-12 md:w-12 md:h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#ccff00] touch-manipulation ${
+                  className={`relative w-14 h-12 md:w-12 md:h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#ccff00] touch-manipulation min-h-[44px] ${
                     isLooping && loopBeats === beats
                       ? "bg-[#1a1a1a] border-[#ccff00]"
                       : "bg-[#0a0a0a] border-gray-700"
@@ -539,6 +635,12 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 </button>
               ))}
             </div>
+            {/* Loop Status Display */}
+            {isLooping && loopIn !== null && loopOut !== null && (
+              <div className="text-[10px] font-barlow text-[#ccff00] text-center mt-1">
+                {loopIn.toFixed(1)}s - {loopOut.toFixed(1)}s
+              </div>
+            )}
           </div>
         </div>
 
@@ -574,7 +676,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             onCueJump={handleCueJump}
             onCueClear={handleCueClear}
             getCurrentTime={() => wavesurferRef.current?.getCurrentTime() || 0}
-            helpText="Set Hot Cues or trigger Loops. Click to set/jump, Right-click to clear"
+            helpText="Set Hot Cues (8 pads). Click to set/jump, Long press or Shift+Click to clear"
+            numPads={typeof window !== "undefined" && window.innerWidth < 768 ? 4 : 8}
           />
         </div>
 

@@ -4,6 +4,7 @@ import { Knob } from "./dj-ui/Knob";
 import { Fader } from "./dj-ui/Fader";
 import { Crossfader } from "./dj-ui/Crossfader";
 import { AudioReactiveVisualizer } from "./dj-ui/AudioReactiveVisualizer";
+import { Circle, Square, Download, Trash2 } from "lucide-react";
 
 interface DJMixerProps {
   // Deck A controls
@@ -45,6 +46,20 @@ interface DJMixerProps {
   // Audio context for spectrum analyzer
   audioContext?: AudioContext;
   masterGainNode?: GainNode;
+
+  // Recording controls
+  isRecording?: boolean;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  onDownloadRecording?: () => void;
+  hasRecording?: boolean;
+  recordingDuration?: number;
+  recordingError?: string | null;
+  onClearRecording?: () => void;
+
+  // Master limiter
+  limiterThreshold?: number;
+  onLimiterThresholdChange?: (value: number) => void;
 }
 
 export function DJMixer({
@@ -80,6 +95,16 @@ export function DJMixer({
   onCrossfaderChange,
   audioContext,
   masterGainNode,
+  isRecording = false,
+  onStartRecording,
+  onStopRecording,
+  onDownloadRecording,
+  hasRecording = false,
+  recordingDuration = 0,
+  recordingError = null,
+  onClearRecording,
+  limiterThreshold = -3,
+  onLimiterThresholdChange,
 }: DJMixerProps) {
 
   return (
@@ -209,6 +234,100 @@ export function DJMixer({
               helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
             />
           </div>
+
+          {/* Recording Controls */}
+          {(onStartRecording || onStopRecording || onDownloadRecording) && (
+            <div className="mt-4 w-full flex flex-col items-center gap-2">
+              <div className="text-xs font-barlow uppercase text-gray-400 mb-1">
+                RECORD MIX
+              </div>
+              <div className="flex gap-2 items-center flex-wrap justify-center">
+                {!isRecording ? (
+                  <button
+                    onClick={onStartRecording}
+                    disabled={!audioContext}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-barlow uppercase text-xs rounded border-2 border-red-500 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 touch-manipulation"
+                    aria-label="Start recording mix"
+                    title="Start recording"
+                  >
+                    <Circle className="w-4 h-4 fill-current" />
+                    REC
+                  </button>
+                ) : (
+                  <button
+                    onClick={onStopRecording}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-barlow uppercase text-xs rounded border-2 border-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 touch-manipulation"
+                    aria-label="Stop recording"
+                    title="Stop recording"
+                  >
+                    <Square className="w-4 h-4 fill-current" />
+                    STOP
+                  </button>
+                )}
+                {hasRecording && onDownloadRecording && (
+                  <button
+                    onClick={onDownloadRecording}
+                    className="px-4 py-2 bg-[#00ff00] hover:bg-[#00ff00]/90 text-black font-barlow uppercase text-xs rounded border-2 border-[#00ff00] transition-all focus:outline-none focus:ring-2 focus:ring-[#00ff00] min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 touch-manipulation"
+                    aria-label="Download recording"
+                    title="Download recording"
+                  >
+                    <Download className="w-4 h-4" />
+                    DL
+                  </button>
+                )}
+                {hasRecording && onClearRecording && (
+                  <button
+                    onClick={onClearRecording}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-barlow uppercase text-xs rounded border-2 border-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 touch-manipulation"
+                    aria-label="Clear recording"
+                    title="Clear recording"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {isRecording && (
+                <div className="flex items-center gap-2 text-xs text-red-500 font-barlow">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  RECORDING {recordingDuration > 0 && `(${recordingDuration}s)`}
+                </div>
+              )}
+              {recordingError && (
+                <div className="text-xs text-red-500 font-barlow text-center max-w-[200px]">
+                  {recordingError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Master Limiter Control */}
+          {onLimiterThresholdChange && (
+            <div className="mt-4 w-full flex flex-col items-center gap-2">
+              <div className="text-xs font-barlow uppercase text-gray-400 mb-1">
+                MASTER LIMITER
+              </div>
+              <div className="flex items-center gap-2 w-full max-w-[200px]">
+                <span className="text-[10px] text-gray-500 font-barlow">-12</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="0"
+                  step="0.5"
+                  value={limiterThreshold}
+                  onChange={(e) => onLimiterThresholdChange(parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-[#0a0a0a] rounded-lg appearance-none cursor-pointer accent-[#00ff00]"
+                  style={{
+                    background: `linear-gradient(to right, #00ff00 0%, #00ff00 ${((limiterThreshold + 12) / 12) * 100}%, #0a0a0a ${((limiterThreshold + 12) / 12) * 100}%, #0a0a0a 100%)`,
+                  }}
+                  aria-label="Master limiter threshold"
+                />
+                <span className="text-[10px] text-gray-500 font-barlow">0</span>
+              </div>
+              <div className="text-[10px] font-barlow text-[#00ff00]">
+                {limiterThreshold.toFixed(1)} dB
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Strip - Deck B */}

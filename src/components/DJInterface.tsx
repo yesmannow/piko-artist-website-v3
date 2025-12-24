@@ -15,6 +15,7 @@ import { Drawer } from "vaul";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Knob } from "./dj-ui/Knob";
 import { DrawerAudioMeters } from "./dj-ui/DrawerAudioMeters";
+import { useMixRecorder } from "@/hooks/useMixRecorder";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -139,6 +140,14 @@ export function DJInterface() {
   } | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const masterLimiterRef = useRef<DynamicsCompressorNode | null>(null);
+  const [limiterThreshold, setLimiterThreshold] = useState(-3); // dB threshold
+
+  // Recording hook - records from limiter output (post-master FX, what listener hears)
+  const mixRecorder = useMixRecorder(
+    audioContextRef.current,
+    masterLimiterRef.current
+  );
 
   // FX nodes for Deck A
   const fxFilterARef = useRef<BiquadFilterNode | null>(null);
@@ -173,6 +182,15 @@ export function DJInterface() {
     const masterGain = ctx.createGain();
     masterGain.gain.value = 1.0;
     masterGainRef.current = masterGain;
+
+    // Create master limiter (DynamicsCompressorNode) to prevent clipping
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3; // dB
+    limiter.knee.value = 0; // Hard knee
+    limiter.ratio.value = 20; // High ratio for limiting
+    limiter.attack.value = 0.003; // Fast attack (3ms)
+    limiter.release.value = 0.1; // Fast release (100ms)
+    masterLimiterRef.current = limiter;
 
     // Create analyser for master level meter
     const analyser = ctx.createAnalyser();
@@ -398,7 +416,10 @@ export function DJInterface() {
     reverbGainB.connect(masterGain);
 
     // ========== MASTER OUTPUT ==========
-    masterGain.connect(analyser);
+    // Connect: masterGain -> limiter -> analyser -> destination
+    // Recording is handled by useMixRecorder hook (connects to limiter output)
+    masterGain.connect(limiter);
+    limiter.connect(analyser);
     analyser.connect(ctx.destination);
 
     return () => {
@@ -491,6 +512,13 @@ export function DJInterface() {
     }
   }, [distortionAmountB]);
 
+  // Update limiter threshold
+  useEffect(() => {
+    if (masterLimiterRef.current) {
+      masterLimiterRef.current.threshold.value = limiterThreshold;
+    }
+  }, [limiterThreshold]);
+
   // 4. EQ FILTER UPDATES (with kill switches)
   useEffect(() => {
     if (deckAFiltersRef.current) {
@@ -555,6 +583,38 @@ export function DJInterface() {
 
   // Artwork lightbox state
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Recording handlers (using hook)
+  const handleStartRecording = useCallback(async () => {
+    await mixRecorder.start();
+  }, [mixRecorder]);
+
+  const handleStopRecording = useCallback(async () => {
+    await mixRecorder.stop();
+  }, [mixRecorder]);
+
+  const handleDownloadRecording = useCallback(() => {
+    if (mixRecorder.recordingUrl) {
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+      const a = document.createElement("a");
+      a.href = mixRecorder.recordingUrl;
+      a.download = `piko-mix-${timestamp}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }, [mixRecorder.recordingUrl]);
+
+  // Cleanup recording on route change
+  useEffect(() => {
+    return () => {
+      // Hook handles cleanup, but ensure we stop if recording
+      if (mixRecorder.isRecording) {
+        mixRecorder.stop();
+      }
+    };
+  }, [pathname, mixRecorder]);
 
   // Close lightbox on route change to prevent overlays persisting
   useEffect(() => {
@@ -1568,6 +1628,16 @@ export function DJInterface() {
             onCrossfaderChange={setCrossfader}
             audioContext={audioContextRef.current || undefined}
             masterGainNode={masterGainRef.current || undefined}
+            isRecording={mixRecorder.isRecording}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            onDownloadRecording={handleDownloadRecording}
+            hasRecording={mixRecorder.recordingUrl !== null}
+            recordingDuration={mixRecorder.recordingDuration}
+            recordingError={mixRecorder.error}
+            onClearRecording={mixRecorder.clear}
+            limiterThreshold={limiterThreshold}
+            onLimiterThresholdChange={setLimiterThreshold}
           />
           </div>
 
