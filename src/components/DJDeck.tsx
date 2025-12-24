@@ -284,8 +284,14 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       setIsScrubbing(false);
     };
 
-    // Hot cues state (8 cues per deck) - stored but not directly used in render
-    const [, setHotCues] = useState<Record<number, number>>({});
+    // Hot cues state (12 cues per deck) - stored for performance pads
+    const [hotCues, setHotCues] = useState<Record<number, number>>({});
+    const hotCuesRef = useRef<Record<number, number>>({});
+
+    // Sync ref with state
+    useEffect(() => {
+      hotCuesRef.current = hotCues;
+    }, [hotCues]);
 
     // Handle performance pad cues (8 hot cues)
     const handleCueSet = useCallback((padIndex: number, time: number) => {
@@ -318,6 +324,19 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       // Also clear single cue point if it was pad 0
       if (padIndex === 0) {
         setCuePoint(null);
+      }
+    }, []);
+
+    // Handle stutter effect (jump to cue point repeatedly)
+    const handleStutter = useCallback((padIndex: number) => {
+      if (wavesurferRef.current) {
+        const cueTime = hotCuesRef.current[padIndex];
+        if (cueTime !== undefined) {
+          const duration = wavesurferRef.current.getDuration();
+          if (duration > 0) {
+            wavesurferRef.current.seekTo(cueTime / duration);
+          }
+        }
       }
     }, []);
 
@@ -675,9 +694,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             onCueSet={handleCueSet}
             onCueJump={handleCueJump}
             onCueClear={handleCueClear}
+            onStutter={handleStutter}
+            isPlaying={isPlaying}
             getCurrentTime={() => wavesurferRef.current?.getCurrentTime() || 0}
-            helpText="Set Hot Cues (8 pads). Click to set/jump, Long press or Shift+Click to clear"
-            numPads={typeof window !== "undefined" && window.innerWidth < 768 ? 4 : 8}
+            helpText="Set Hot Cues (12 pads). Click to set/jump/stutter, Long press or Shift+Click to clear"
+            numPads={typeof window !== "undefined" && window.innerWidth < 768 ? 8 : 12}
           />
         </div>
 

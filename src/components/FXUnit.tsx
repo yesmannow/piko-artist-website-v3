@@ -59,6 +59,23 @@ interface FXUnitProps {
   // Clear All handlers
   onClearAllA?: () => void;
   onClearAllB?: () => void;
+  // Bypass states
+  filterBypassA?: boolean;
+  filterBypassB?: boolean;
+  reverbBypassA?: boolean;
+  reverbBypassB?: boolean;
+  delayBypassA?: boolean;
+  delayBypassB?: boolean;
+  distortionBypassA?: boolean;
+  distortionBypassB?: boolean;
+  onFilterBypassChangeA?: (bypass: boolean) => void;
+  onFilterBypassChangeB?: (bypass: boolean) => void;
+  onReverbBypassChangeA?: (bypass: boolean) => void;
+  onReverbBypassChangeB?: (bypass: boolean) => void;
+  onDelayBypassChangeA?: (bypass: boolean) => void;
+  onDelayBypassChangeB?: (bypass: boolean) => void;
+  onDistortionBypassChangeA?: (bypass: boolean) => void;
+  onDistortionBypassChangeB?: (bypass: boolean) => void;
 }
 
 export function FXUnit({
@@ -71,7 +88,15 @@ export function FXUnit({
   delayTimeB, delayFeedbackB, onDelayTimeChangeB, onDelayFeedbackChangeB,
   distortionAmountB, onDistortionChangeB,
   activeDeck, onActiveDeckChange,
-  onClearAllA, onClearAllB
+  onClearAllA, onClearAllB,
+  filterBypassA = false, filterBypassB = false,
+  reverbBypassA = false, reverbBypassB = false,
+  delayBypassA = false, delayBypassB = false,
+  distortionBypassA = false, distortionBypassB = false,
+  onFilterBypassChangeA, onFilterBypassChangeB,
+  onReverbBypassChangeA, onReverbBypassChangeB,
+  onDelayBypassChangeA, onDelayBypassChangeB,
+  onDistortionBypassChangeA, onDistortionBypassChangeB,
 }: FXUnitProps) {
   // Select active deck's values
   const filterFreq = activeDeck === "A" ? filterFreqA : filterFreqB;
@@ -86,6 +111,16 @@ export function FXUnit({
   const onDelayFeedbackChange = activeDeck === "A" ? onDelayFeedbackChangeA : onDelayFeedbackChangeB;
   const distortionAmount = activeDeck === "A" ? distortionAmountA : distortionAmountB;
   const onDistortionChange = activeDeck === "A" ? onDistortionChangeA : onDistortionChangeB;
+
+  // Bypass states for active deck
+  const filterBypass = activeDeck === "A" ? filterBypassA : filterBypassB;
+  const reverbBypass = activeDeck === "A" ? reverbBypassA : reverbBypassB;
+  const delayBypass = activeDeck === "A" ? delayBypassA : delayBypassB;
+  const distortionBypass = activeDeck === "A" ? distortionBypassA : distortionBypassB;
+  const onFilterBypassChange = activeDeck === "A" ? onFilterBypassChangeA : onFilterBypassChangeB;
+  const onReverbBypassChange = activeDeck === "A" ? onReverbBypassChangeA : onReverbBypassChangeB;
+  const onDelayBypassChange = activeDeck === "A" ? onDelayBypassChangeA : onDelayBypassChangeB;
+  const onDistortionBypassChange = activeDeck === "A" ? onDistortionBypassChangeA : onDistortionBypassChangeB;
 
   const filterButtonClasses = (type: "lowpass" | "highpass" | "bandpass") =>
     `px-2 py-1 text-[10px] rounded border transition-colors ${
@@ -140,7 +175,23 @@ export function FXUnit({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
         {/* FILTER */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">FILTER</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 uppercase tracking-widest">FILTER</span>
+            {onFilterBypassChange && (
+              <button
+                onClick={() => onFilterBypassChange(!filterBypass)}
+                className={`px-2 py-0.5 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation ${
+                  filterBypass
+                    ? "bg-red-600 border-red-500 text-white"
+                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                }`}
+                title={filterBypass ? "Enable filter" : "Bypass filter"}
+                aria-label={filterBypass ? "Enable filter" : "Bypass filter"}
+              >
+                {filterBypass ? "ON" : "BYP"}
+              </button>
+            )}
+          </div>
           <div className="flex gap-1 mb-2 flex-wrap justify-center">
             <button onClick={() => onFilterTypeChange("lowpass")} className={filterButtonClasses("lowpass")}>LPF</button>
             <button onClick={() => onFilterTypeChange("highpass")} className={filterButtonClasses("highpass")}>HPF</button>
@@ -160,21 +211,69 @@ export function FXUnit({
 
         {/* DISTORTION (GRIT) */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">GRIT</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 uppercase tracking-widest">GRIT</span>
+            {onDistortionBypassChange && (
+              <button
+                onClick={() => onDistortionBypassChange(!distortionBypass)}
+                className={`px-2 py-0.5 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation ${
+                  distortionBypass
+                    ? "bg-red-600 border-red-500 text-white"
+                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                }`}
+                title={distortionBypass ? "Enable distortion" : "Bypass distortion"}
+                aria-label={distortionBypass ? "Enable distortion" : "Bypass distortion"}
+              >
+                {distortionBypass ? "ON" : "BYP"}
+              </button>
+            )}
+          </div>
           <div className="h-[26px]"></div> {/* Spacer */}
           <Knob value={distortionAmount} onChange={onDistortionChange} label="DRIVE" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60} color="low" />
         </div>
 
         {/* REVERB */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">REVERB</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 uppercase tracking-widest">REVERB</span>
+            {onReverbBypassChange && (
+              <button
+                onClick={() => onReverbBypassChange(!reverbBypass)}
+                className={`px-2 py-0.5 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation ${
+                  reverbBypass
+                    ? "bg-red-600 border-red-500 text-white"
+                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                }`}
+                title={reverbBypass ? "Enable reverb" : "Bypass reverb"}
+                aria-label={reverbBypass ? "Enable reverb" : "Bypass reverb"}
+              >
+                {reverbBypass ? "ON" : "BYP"}
+              </button>
+            )}
+          </div>
           <div className="h-[26px]"></div>
           <Knob value={reverbDryWet} onChange={onReverbDryWetChange} label="DRY/WET" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60} color="high" />
         </div>
 
         {/* DELAY */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">DELAY</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 uppercase tracking-widest">DELAY</span>
+            {onDelayBypassChange && (
+              <button
+                onClick={() => onDelayBypassChange(!delayBypass)}
+                className={`px-2 py-0.5 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation ${
+                  delayBypass
+                    ? "bg-red-600 border-red-500 text-white"
+                    : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                }`}
+                title={delayBypass ? "Enable delay" : "Bypass delay"}
+                aria-label={delayBypass ? "Enable delay" : "Bypass delay"}
+              >
+                {delayBypass ? "ON" : "BYP"}
+              </button>
+            )}
+          </div>
           <div className="h-[26px]"></div>
           <div className="flex gap-3 md:gap-4">
             <Knob value={delayTime} onChange={onDelayTimeChange} label="TIME" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />

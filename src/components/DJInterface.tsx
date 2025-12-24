@@ -10,7 +10,7 @@ import { HelpCircle, ArrowUpDown, Filter, X, ExternalLink } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Drawer } from "vaul";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Knob } from "./dj-ui/Knob";
@@ -18,6 +18,7 @@ import { DrawerAudioMeters } from "./dj-ui/DrawerAudioMeters";
 import { useMixRecorder } from "@/hooks/useMixRecorder";
 import { useVoiceTag } from "@/hooks/useVoiceTag";
 import { VoiceTagPanel } from "./VoiceTagPanel";
+import { MicInput } from "./MicInput";
 import { OverlayShell } from "./ui/OverlayShell";
 
 // Distortion scaling controls for WaveShaper intensity
@@ -71,6 +72,7 @@ export function DJInterface() {
 
   // Mixer state
   const [crossfader, setCrossfader] = useState(0.5);
+  const [crossfaderCurve, setCrossfaderCurve] = useState<"linear" | "sharp" | "smooth">("smooth");
 
   // Active deck for FX control
   const [activeDeck, setActiveDeck] = useState<"A" | "B">("A");
@@ -83,6 +85,12 @@ export function DJInterface() {
   const [delayFeedbackA, setDelayFeedbackA] = useState(0);
   const [distortionAmountA, setDistortionAmountA] = useState(0);
 
+  // FX bypass state for Deck A
+  const [filterBypassA, setFilterBypassA] = useState(false);
+  const [reverbBypassA, setReverbBypassA] = useState(false);
+  const [delayBypassA, setDelayBypassA] = useState(false);
+  const [distortionBypassA, setDistortionBypassA] = useState(false);
+
   // FX state for Deck B
   const [filterFreqB, setFilterFreqB] = useState(1000);
   const [filterTypeB, setFilterTypeB] = useState<"lowpass" | "highpass" | "bandpass">("lowpass");
@@ -90,6 +98,12 @@ export function DJInterface() {
   const [delayTimeB, setDelayTimeB] = useState(0);
   const [delayFeedbackB, setDelayFeedbackB] = useState(0);
   const [distortionAmountB, setDistortionAmountB] = useState(0);
+
+  // FX bypass state for Deck B
+  const [filterBypassB, setFilterBypassB] = useState(false);
+  const [reverbBypassB, setReverbBypassB] = useState(false);
+  const [delayBypassB, setDelayBypassB] = useState(false);
+  const [distortionBypassB, setDistortionBypassB] = useState(false);
 
   // Clear All FX handlers
   const handleClearAllFXA = () => {
@@ -144,6 +158,8 @@ export function DJInterface() {
   const masterGainRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const masterLimiterRef = useRef<DynamicsCompressorNode | null>(null);
+  const vuAnalyserLeftRef = useRef<AnalyserNode | null>(null);
+  const vuAnalyserRightRef = useRef<AnalyserNode | null>(null);
   const [limiterThreshold, setLimiterThreshold] = useState(-3); // dB threshold
 
   // Recording hook - records from limiter output (post-master FX, what listener hears)
@@ -205,6 +221,15 @@ export function DJInterface() {
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 256;
     analyserRef.current = analyser;
+
+    // Create stereo analysers for VU meters
+    const vuAnalyserLeft = ctx.createAnalyser();
+    vuAnalyserLeft.fftSize = 256;
+    vuAnalyserLeftRef.current = vuAnalyserLeft;
+
+    const vuAnalyserRight = ctx.createAnalyser();
+    vuAnalyserRight.fftSize = 256;
+    vuAnalyserRightRef.current = vuAnalyserRight;
 
     // Deck A filters
     const deckAHighFilter = ctx.createBiquadFilter();
@@ -429,6 +454,9 @@ export function DJInterface() {
     // Recording is handled by useMixRecorder hook (connects to limiter output)
     masterGain.connect(limiter);
     limiter.connect(analyser);
+    // Connect VU analysers (for stereo metering, using same signal for both channels)
+    limiter.connect(vuAnalyserLeft);
+    limiter.connect(vuAnalyserRight);
     analyser.connect(ctx.destination);
 
     return () => {
@@ -449,21 +477,37 @@ export function DJInterface() {
   }, []); // <--- EMPTY DEPENDENCY ARRAY (Crucial!)
 
   // 2. VOLUME UPDATES
+  // Calculate crossfader curve
+  const calculateCrossfaderGain = useCallback((value: number, curve: "linear" | "sharp" | "smooth"): number => {
+    switch (curve) {
+      case "linear":
+        return value;
+      case "sharp":
+        // Exponential curve for sharp transitions
+        return Math.pow(value, 3);
+      case "smooth":
+        // Equal power (cosine) curve for smooth transitions
+        return Math.cos((1 - value) * 0.5 * Math.PI);
+      default:
+        return value;
+    }
+  }, []);
+
   useEffect(() => {
     if (deckAGainRef.current) {
-      // Equal Power Crossfading: Gain A = cos(crossfaderValue * 0.5 * π)
-      const equalPowerGainA = Math.cos(crossfader * 0.5 * Math.PI);
-      deckAGainRef.current.gain.value = deckAVolume * equalPowerGainA;
+      // Calculate gain based on curve type
+      const gainA = calculateCrossfaderGain(1 - crossfader, crossfaderCurve);
+      deckAGainRef.current.gain.value = deckAVolume * gainA;
     }
-  }, [deckAVolume, crossfader]);
+  }, [deckAVolume, crossfader, crossfaderCurve, calculateCrossfaderGain]);
 
   useEffect(() => {
     if (deckBGainRef.current) {
-      // Equal Power Crossfading: Gain B = cos((1 - crossfaderValue) * 0.5 * π)
-      const equalPowerGainB = Math.cos((1 - crossfader) * 0.5 * Math.PI);
-      deckBGainRef.current.gain.value = deckBVolume * equalPowerGainB;
+      // Calculate gain based on curve type
+      const gainB = calculateCrossfaderGain(crossfader, crossfaderCurve);
+      deckBGainRef.current.gain.value = deckBVolume * gainB;
     }
-  }, [deckBVolume, crossfader]);
+  }, [deckBVolume, crossfader, crossfaderCurve, calculateCrossfaderGain]);
 
   // 3. FX UPDATES (Real-time, no reboot) - Deck A
   useEffect(() => {
@@ -1566,6 +1610,53 @@ export function DJInterface() {
           // Clear All handlers
           onClearAllA={handleClearAllFXA}
           onClearAllB={handleClearAllFXB}
+          // Bypass states
+          filterBypassA={filterBypassA}
+          filterBypassB={filterBypassB}
+          reverbBypassA={reverbBypassA}
+          reverbBypassB={reverbBypassB}
+          delayBypassA={delayBypassA}
+          delayBypassB={delayBypassB}
+          distortionBypassA={distortionBypassA}
+          distortionBypassB={distortionBypassB}
+          onFilterBypassChangeA={(bypass) => {
+            setFilterBypassA(bypass);
+            if (bypass) setFilterFreqA(1000); // Reset to neutral
+          }}
+          onFilterBypassChangeB={(bypass) => {
+            setFilterBypassB(bypass);
+            if (bypass) setFilterFreqB(1000); // Reset to neutral
+          }}
+          onReverbBypassChangeA={(bypass) => {
+            setReverbBypassA(bypass);
+            if (bypass) setReverbDryWetA(0);
+          }}
+          onReverbBypassChangeB={(bypass) => {
+            setReverbBypassB(bypass);
+            if (bypass) setReverbDryWetB(0);
+          }}
+          onDelayBypassChangeA={(bypass) => {
+            setDelayBypassA(bypass);
+            if (bypass) {
+              setDelayTimeA(0);
+              setDelayFeedbackA(0);
+            }
+          }}
+          onDelayBypassChangeB={(bypass) => {
+            setDelayBypassB(bypass);
+            if (bypass) {
+              setDelayTimeB(0);
+              setDelayFeedbackB(0);
+            }
+          }}
+          onDistortionBypassChangeA={(bypass) => {
+            setDistortionBypassA(bypass);
+            if (bypass) setDistortionAmountA(0);
+          }}
+          onDistortionBypassChangeB={(bypass) => {
+            setDistortionBypassB(bypass);
+            if (bypass) setDistortionAmountB(0);
+          }}
         />
         </div>
 
@@ -1646,8 +1737,12 @@ export function DJInterface() {
             onDeckBKillLowChange={setDeckBKillLow}
             crossfader={crossfader}
             onCrossfaderChange={setCrossfader}
+            crossfaderCurve={crossfaderCurve}
+            onCrossfaderCurveChange={setCrossfaderCurve}
             audioContext={audioContextRef.current || undefined}
             masterGainNode={masterGainRef.current || undefined}
+            vuAnalyserLeft={vuAnalyserLeftRef.current || undefined}
+            vuAnalyserRight={vuAnalyserRightRef.current || undefined}
             isRecording={mixRecorder.isRecording}
             onStartRecording={handleStartRecording}
             onStopRecording={handleStopRecording}
@@ -1659,27 +1754,6 @@ export function DJInterface() {
             limiterThreshold={limiterThreshold}
             onLimiterThresholdChange={setLimiterThreshold}
           />
-          </div>
-
-          {/* Voice Tag Panel */}
-          <div className="mt-4">
-            <VoiceTagPanel
-              micEnabled={voiceTag.micEnabled}
-              isRecording={voiceTag.isRecording}
-              tagUrl={voiceTag.tagUrl}
-              tagDurationMs={voiceTag.tagDurationMs}
-              level={voiceTag.level}
-              error={voiceTag.error}
-              tagVolume={tagVolume}
-              onEnableMic={voiceTag.enableMic}
-              onDisableMic={voiceTag.disableMic}
-              onStartRecording={voiceTag.startTagRecording}
-              onStopRecording={voiceTag.stopTagRecording}
-              onPlayTag={voiceTag.playTag}
-              onDownloadTag={handleDownloadTag}
-              onClearTag={voiceTag.clearTag}
-              onTagVolumeChange={handleTagVolumeChange}
-            />
           </div>
 
           {/* Deck B */}
@@ -1722,6 +1796,35 @@ export function DJInterface() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mic Input - Monitor Only */}
+        <div className="mt-4 md:mt-6">
+          <MicInput
+            audioContext={audioContextRef.current || undefined}
+            masterGainNode={masterGainRef.current || undefined}
+          />
+        </div>
+
+        {/* Voice Tag Panel - Moved outside grid */}
+        <div className="mt-4 md:mt-6">
+          <VoiceTagPanel
+            micEnabled={voiceTag.micEnabled}
+            isRecording={voiceTag.isRecording}
+            tagUrl={voiceTag.tagUrl}
+            tagDurationMs={voiceTag.tagDurationMs}
+            level={voiceTag.level}
+            error={voiceTag.error}
+            tagVolume={tagVolume}
+            onEnableMic={voiceTag.enableMic}
+            onDisableMic={voiceTag.disableMic}
+            onStartRecording={voiceTag.startTagRecording}
+            onStopRecording={voiceTag.stopTagRecording}
+            onPlayTag={voiceTag.playTag}
+            onDownloadTag={handleDownloadTag}
+            onClearTag={voiceTag.clearTag}
+            onTagVolumeChange={handleTagVolumeChange}
+          />
         </div>
 
       </div>

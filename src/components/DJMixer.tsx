@@ -4,6 +4,7 @@ import { Knob } from "./dj-ui/Knob";
 import { Fader } from "./dj-ui/Fader";
 import { Crossfader } from "./dj-ui/Crossfader";
 import { AudioReactiveVisualizer } from "./dj-ui/AudioReactiveVisualizer";
+import { VUMeter } from "./dj-ui/VUMeter";
 import { Circle, Square, Download, Trash2 } from "lucide-react";
 
 interface DJMixerProps {
@@ -42,10 +43,14 @@ interface DJMixerProps {
   // Crossfader
   crossfader: number; // 0 = left (Deck A), 1 = right (Deck B)
   onCrossfaderChange: (value: number) => void;
+  crossfaderCurve?: "linear" | "sharp" | "smooth";
+  onCrossfaderCurveChange?: (curve: "linear" | "sharp" | "smooth") => void;
 
   // Audio context for spectrum analyzer
   audioContext?: AudioContext;
   masterGainNode?: GainNode;
+  vuAnalyserLeft?: AnalyserNode;
+  vuAnalyserRight?: AnalyserNode;
 
   // Recording controls
   isRecording?: boolean;
@@ -93,8 +98,12 @@ export function DJMixer({
   onDeckBKillLowChange,
   crossfader,
   onCrossfaderChange,
+  crossfaderCurve = "smooth",
+  onCrossfaderCurveChange,
   audioContext,
   masterGainNode,
+  vuAnalyserLeft,
+  vuAnalyserRight,
   isRecording = false,
   onStartRecording,
   onStopRecording,
@@ -215,6 +224,23 @@ export function DJMixer({
 
         {/* Center - Spectrum Analyzer & Crossfader */}
         <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
+          {/* Stereo VU Meters */}
+          {(vuAnalyserLeft || vuAnalyserRight) && (
+            <div className="w-full">
+              <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
+                VU METERS
+              </div>
+              <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-3 flex justify-center gap-3">
+                {vuAnalyserLeft && (
+                  <VUMeter analyserNode={vuAnalyserLeft} label="L" color="#00d9ff" />
+                )}
+                {vuAnalyserRight && (
+                  <VUMeter analyserNode={vuAnalyserRight} label="R" color="#ff00d9" />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Enhanced Audio Reactive Visualizer */}
           <div className="w-full">
             <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
@@ -235,13 +261,38 @@ export function DJMixer({
             <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
               CROSSFADER
             </div>
-            <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-3 flex justify-center">
+            <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-3 flex flex-col items-center gap-3">
               <Crossfader
                 value={crossfader}
                 onChange={onCrossfaderChange}
                 width={typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200}
                 helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
               />
+              {/* Crossfader Curve Control */}
+              {onCrossfaderCurveChange && (
+                <div className="w-full flex flex-col items-center gap-2">
+                  <div className="text-[10px] font-barlow uppercase text-gray-500 mb-1 tracking-wider">
+                    CURVE
+                  </div>
+                  <div className="flex gap-2">
+                    {(["linear", "sharp", "smooth"] as const).map((curve) => (
+                      <button
+                        key={curve}
+                        onClick={() => onCrossfaderCurveChange(curve)}
+                        className={`px-3 py-1.5 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation min-h-[32px] ${
+                          crossfaderCurve === curve
+                            ? "bg-[#00ff00] text-black border-[#00ff00]"
+                            : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                        }`}
+                        aria-label={`Set crossfader curve to ${curve}`}
+                        title={`${curve.charAt(0).toUpperCase() + curve.slice(1)} curve`}
+                      >
+                        {curve.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
