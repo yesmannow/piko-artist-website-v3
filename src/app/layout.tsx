@@ -13,6 +13,7 @@ import { InstallApp } from "@/components/InstallApp";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ScrollRestorationManager } from "@/components/ScrollRestorationManager";
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
+import { LogoIntro } from "@/components/branding/LogoIntro";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -75,6 +76,7 @@ export default function RootLayout({
         className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >
         <ProdRuntimeGuards />
+        <LogoIntro />
         <AudioProvider>
           <VideoProvider>
             <Navbar />

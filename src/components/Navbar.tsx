@@ -115,37 +115,6 @@ const AnimatedLogo = ({
   );
 };
 
-// Animated Hamburger Icon Component
-const HamburgerIcon = ({ isOpen }: { isOpen: boolean }) => {
-  return (
-    <div className="relative w-6 h-5 flex flex-col justify-between">
-      <motion.span
-        className="block w-full h-0.5 bg-current rounded-full"
-        animate={{
-          rotate: isOpen ? 45 : 0,
-          y: isOpen ? 8 : 0,
-        }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-      />
-      <motion.span
-        className="block w-full h-0.5 bg-current rounded-full"
-        animate={{
-          opacity: isOpen ? 0 : 1,
-          x: isOpen ? -10 : 0,
-        }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
-      />
-      <motion.span
-        className="block w-full h-0.5 bg-current rounded-full"
-        animate={{
-          rotate: isOpen ? -45 : 0,
-          y: isOpen ? -8 : 0,
-        }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-      />
-    </div>
-  );
-};
 
 export function Navbar() {
   const pathname = usePathname();
@@ -358,7 +327,7 @@ export function Navbar() {
     <>
       <motion.nav
         ref={navRef}
-        className="fixed top-0 left-0 right-0 z-[100] flex justify-between md:justify-center items-center px-4 md:px-8 py-3 md:py-4 pointer-events-none transition-all duration-300"
+        className="hidden md:flex fixed top-0 left-0 right-0 z-[100] justify-between md:justify-center items-center px-4 md:px-8 py-3 md:py-4 pointer-events-none transition-all duration-300"
         initial={false}
         animate={{
           backgroundColor:
@@ -381,8 +350,11 @@ export function Navbar() {
         role="navigation"
         aria-label="Main navigation"
       >
-        {/* Logo - Left side (Mobile & Desktop) */}
-        <div className="pointer-events-auto touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center">
+        {/* Logo - Left side (Desktop only, mobile uses tray nav) */}
+        <div
+          id="nav-logo-anchor"
+          className="hidden md:flex pointer-events-auto touch-manipulation min-h-[44px] min-w-[44px] items-center justify-center"
+        >
           <AnimatedLogo
             isScrolled={isScrolled}
             reducedMotion={reducedMotion}
@@ -442,23 +414,9 @@ export function Navbar() {
           })}
         </ul>
 
-        {/* Mobile Hamburger (Right) */}
-        <div className="md:hidden pointer-events-auto">
-          <motion.button
-            onClick={handleMenuToggle}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 text-white hover:text-[#ccff00] transition-colors touch-manipulation rounded-lg hover:bg-white/10 active:bg-white/20 relative"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
-            aria-label={isOpen ? "Close menu" : "Open menu"}
-            aria-expanded={isOpen}
-            aria-controls="mobile-menu"
-          >
-            <HamburgerIcon isOpen={isOpen} />
-          </motion.button>
-        </div>
       </motion.nav>
 
-      {/* Mobile Full Screen Menu */}
+      {/* Mobile Full Screen Menu - Hidden on mobile (tray nav is primary) */}
       <AnimatePresence>
         {isOpen && (
           <>

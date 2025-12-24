@@ -6,6 +6,7 @@ import { Canvas } from "@react-three/fiber";
 import { JogWheel3D } from "./JogWheel3D";
 import { DeskProps } from "./DeskProps";
 import { Expand, Music } from "lucide-react";
+import { OverlayShell } from "../ui/OverlayShell";
 
 interface JogWheelProps {
   rotation: number; // Rotation in degrees
@@ -213,41 +214,37 @@ export function JogWheel({
       )}
 
       {/* Expanded Vinyl Artwork Modal */}
-      <AnimatePresence>
-        {isExpanded && coverArt && (
+      {coverArt && (
+        <OverlayShell
+          open={isExpanded}
+          onClose={() => setIsExpanded(false)}
+          z="modal"
+          backdropClassName="backdrop-blur-md"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
-            onClick={() => setIsExpanded(false)}
+            initial={{ scale: 0.8, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            exit={{ scale: 0.8, rotate: 180 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="relative max-w-[min(92vw,500px)] w-full aspect-square rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
           >
-            <motion.div
-              initial={{ scale: 0.8, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0.8, rotate: 180 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="relative max-w-md w-full aspect-square rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={coverArt}
+              alt="Album Artwork"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/30" />
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 min-h-[44px] min-w-[44px]"
+              aria-label="Close artwork"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={coverArt}
-                alt="Album Artwork"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/30" />
-              <button
-                onClick={() => setIsExpanded(false)}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 transition-colors"
-                aria-label="Close artwork"
-              >
-                <span className="text-white text-xl">×</span>
-              </button>
-            </motion.div>
+              <span className="text-white text-xl">×</span>
+            </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </OverlayShell>
+      )}
 
       <Canvas
         dpr={[1, 2]}

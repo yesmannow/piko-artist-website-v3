@@ -84,6 +84,15 @@ const config: Config = {
       boxShadow: {
         hard: "4px 4px 0px 0px rgba(0,0,0,1)",
       },
+      zIndex: {
+        base: "0",
+        nav: "50",
+        player: "80",
+        "player-overlay": "100",
+        overlay: "200",
+        modal: "300",
+        toast: "400",
+      },
       backgroundImage: {
         // Removed unused background images - using inline SVG patterns instead
       },

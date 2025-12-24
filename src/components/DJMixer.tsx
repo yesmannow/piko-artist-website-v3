@@ -108,7 +108,7 @@ export function DJMixer({
 }: DJMixerProps) {
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800">
+    <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800 shadow-lg">
       <div className="text-center">
         <h3 className="text-base md:text-lg font-barlow uppercase tracking-wider text-gray-300 mb-2">
           MIXER
@@ -117,8 +117,8 @@ export function DJMixer({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left Strip - Deck A */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="text-sm font-barlow uppercase text-gray-400 mb-1">
+        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
+          <div className="text-sm font-barlow uppercase text-[#00d9ff] mb-1 font-bold tracking-wider">
             DECK A
           </div>
 
@@ -208,39 +208,48 @@ export function DJMixer({
               </button>
             </div>
           </div>
+          </div>
         </div>
 
         {/* Center - Spectrum Analyzer & Crossfader */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
           {/* Enhanced Audio Reactive Visualizer */}
           <div className="w-full">
-            <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center">
+            <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
               SPECTRUM
             </div>
-            <AudioReactiveVisualizer
-              audioContext={audioContext}
-              masterGainNode={masterGainNode}
-              deckAColor="#00d9ff"
-              deckBColor="#ff00d9"
-            />
+            <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-2">
+              <AudioReactiveVisualizer
+                audioContext={audioContext}
+                masterGainNode={masterGainNode}
+                deckAColor="#00d9ff"
+                deckBColor="#ff00d9"
+              />
+            </div>
           </div>
 
           {/* Crossfader */}
-          <div className="mt-auto w-full" data-tour="master-out">
-            <Crossfader
-              value={crossfader}
-              onChange={onCrossfaderChange}
-              width={typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200}
-              helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
-            />
+          <div className="w-full" data-tour="master-out">
+            <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
+              CROSSFADER
+            </div>
+            <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-3 flex justify-center">
+              <Crossfader
+                value={crossfader}
+                onChange={onCrossfaderChange}
+                width={typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200}
+                helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
+              />
+            </div>
           </div>
 
           {/* Recording Controls */}
           {(onStartRecording || onStopRecording || onDownloadRecording) && (
-            <div className="mt-4 w-full flex flex-col items-center gap-2">
-              <div className="text-xs font-barlow uppercase text-gray-400 mb-1">
+            <div className="w-full flex flex-col items-center gap-2 mt-2">
+              <div className="text-xs font-barlow uppercase text-gray-400 mb-1 tracking-wider">
                 RECORD MIX
               </div>
+              <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-3 w-full">
               <div className="flex gap-2 items-center flex-wrap justify-center">
                 {!isRecording ? (
                   <button
@@ -297,16 +306,18 @@ export function DJMixer({
                   {recordingError}
                 </div>
               )}
+              </div>
             </div>
           )}
 
           {/* Master Limiter Control */}
           {onLimiterThresholdChange && (
-            <div className="mt-4 w-full flex flex-col items-center gap-2">
-              <div className="text-xs font-barlow uppercase text-gray-400 mb-1">
+            <div className="w-full flex flex-col items-center gap-2 mt-2">
+              <div className="text-xs font-barlow uppercase text-gray-400 mb-1 tracking-wider">
                 MASTER LIMITER
               </div>
-              <div className="flex items-center gap-2 w-full max-w-[200px]">
+              <div className="bg-[#0a0a0a] rounded border border-gray-800/50 p-3 w-full">
+              <div className="flex items-center gap-2 w-full max-w-full">
                 <span className="text-[10px] text-gray-500 font-barlow">-12</span>
                 <input
                   type="range"
@@ -323,16 +334,17 @@ export function DJMixer({
                 />
                 <span className="text-[10px] text-gray-500 font-barlow">0</span>
               </div>
-              <div className="text-[10px] font-barlow text-[#00ff00]">
+              <div className="text-[10px] font-barlow text-[#00ff00] text-center mt-1">
                 {limiterThreshold.toFixed(1)} dB
+              </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Right Strip - Deck B */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="text-sm font-barlow uppercase text-gray-400 mb-1">
+        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
+          <div className="text-sm font-barlow uppercase text-[#ff00d9] mb-1 font-bold tracking-wider">
             DECK B
           </div>
 
@@ -345,8 +357,12 @@ export function DJMixer({
             helpText="Adjusts the volume level for Deck B"
           />
 
-          {/* EQ Knobs */}
-          <div className="flex gap-2 md:gap-3 justify-center flex-wrap">
+          {/* EQ Section */}
+          <div className="w-full">
+            <div className="text-[10px] font-barlow uppercase text-gray-500 mb-2 text-center tracking-wider">
+              EQUALIZER
+            </div>
+            <div className="flex gap-2 md:gap-3 justify-center flex-wrap">
             <div className="flex flex-col items-center gap-1">
               <div className="text-[10px] md:text-xs font-barlow uppercase text-red-500 font-bold mb-1">HIGH</div>
               <Knob
@@ -422,6 +438,7 @@ export function DJMixer({
                 K
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>

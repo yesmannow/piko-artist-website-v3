@@ -16,6 +16,9 @@ import { useHaptic } from "@/hooks/useHaptic";
 import { Knob } from "./dj-ui/Knob";
 import { DrawerAudioMeters } from "./dj-ui/DrawerAudioMeters";
 import { useMixRecorder } from "@/hooks/useMixRecorder";
+import { useVoiceTag } from "@/hooks/useVoiceTag";
+import { VoiceTagPanel } from "./VoiceTagPanel";
+import { OverlayShell } from "./ui/OverlayShell";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -147,6 +150,12 @@ export function DJInterface() {
   const mixRecorder = useMixRecorder(
     audioContextRef.current,
     masterLimiterRef.current
+  );
+
+  // Voice tag hook - records and plays voice tags from microphone
+  const voiceTag = useVoiceTag(
+    audioContextRef.current,
+    masterGainRef.current
   );
 
   // FX nodes for Deck A
@@ -606,6 +615,27 @@ export function DJInterface() {
     }
   }, [mixRecorder.recordingUrl]);
 
+  // Voice tag handlers
+  const handleDownloadTag = useCallback(() => {
+    if (voiceTag.tagUrl && voiceTag.tagBlob) {
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+      const extension = voiceTag.tagBlob.type.includes("mp4") ? "mp4" : "webm";
+      const a = document.createElement("a");
+      a.href = voiceTag.tagUrl;
+      a.download = `piko-voice-tag-${timestamp}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }, [voiceTag.tagUrl, voiceTag.tagBlob]);
+
+  const [tagVolume, setTagVolume] = useState(0.7);
+  const handleTagVolumeChange = useCallback((v: number) => {
+    setTagVolume(v);
+    voiceTag.setTagVolume(v);
+  }, [voiceTag]);
+
   // Cleanup recording on route change
   useEffect(() => {
     return () => {
@@ -624,16 +654,7 @@ export function DJInterface() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]); // Only depend on pathname to avoid infinite loops
 
-  // Handle ESC key to close lightbox
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isLightboxOpen) {
-        setIsLightboxOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [isLightboxOpen]);
+  // ESC key handling is now done by OverlayShell
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -1454,62 +1475,61 @@ export function DJInterface() {
         </Drawer.Root>
 
         {/* Artwork Lightbox */}
-        <AnimatePresence>
-          {isLightboxOpen && selectedTrack && isImagePath(selectedTrack.coverArt) && (
+        <OverlayShell
+          open={isLightboxOpen && selectedTrack !== null && isImagePath(selectedTrack?.coverArt || "")}
+          onClose={() => {
+            triggerHaptic();
+            setIsLightboxOpen(false);
+          }}
+          z="modal"
+          backdropClassName="backdrop-blur-sm"
+        >
+          {/* Close Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerHaptic();
+              setIsLightboxOpen(false);
+            }}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#00ff00] min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close lightbox"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Image Container */}
+          {selectedTrack && isImagePath(selectedTrack.coverArt) && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-              onClick={() => setIsLightboxOpen(false)}
-              data-modal-open="true"
+              className="relative max-w-[min(92vw,900px)] max-h-[70vh] md:max-h-[80vh] w-full"
             >
-              {/* Backdrop */}
-              <motion.div
-                initial={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(0, 0, 0, 0)" }}
-                animate={{ backdropFilter: "blur(8px)", backgroundColor: "rgba(0, 0, 0, 0.8)" }}
-                exit={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(0, 0, 0, 0)" }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0"
-              />
-
-              {/* Close Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  triggerHaptic();
-                  setIsLightboxOpen(false);
-                }}
-                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#00ff00] min-h-[44px] min-w-[44px] flex items-center justify-center"
-                aria-label="Close lightbox"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              {/* Image Container */}
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="relative max-w-[90vw] max-h-[90vh] w-full h-full flex items-center justify-center"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="relative w-full h-full max-w-4xl max-h-[90vh]">
-                  <Image
-                    src={selectedTrack.coverArt}
-                    alt={selectedTrack.title}
-                    fill
-                    className="object-contain"
-                    sizes="90vw"
-                    priority
-                  />
-                </div>
-              </motion.div>
+              <div className="relative w-full h-full">
+                <Image
+                  src={selectedTrack.coverArt}
+                  alt={selectedTrack.title}
+                  fill
+                  className="object-contain rounded-lg shadow-2xl border border-gray-800"
+                  sizes="(max-width: 768px) 92vw, 900px"
+                  priority
+                />
+              </div>
+              {/* Caption */}
+              <div className="mt-4 text-center">
+                <p className="text-white font-barlow text-lg md:text-xl uppercase tracking-wider">
+                  {selectedTrack.title}
+                </p>
+                {selectedTrack.artist && (
+                  <p className="text-gray-400 font-barlow text-sm md:text-base mt-1">
+                    {selectedTrack.artist}
+                  </p>
+                )}
+              </div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </OverlayShell>
 
         {/* FX Rack */}
         <div data-tour="fx-unit">
@@ -1639,6 +1659,27 @@ export function DJInterface() {
             limiterThreshold={limiterThreshold}
             onLimiterThresholdChange={setLimiterThreshold}
           />
+          </div>
+
+          {/* Voice Tag Panel */}
+          <div className="mt-4">
+            <VoiceTagPanel
+              micEnabled={voiceTag.micEnabled}
+              isRecording={voiceTag.isRecording}
+              tagUrl={voiceTag.tagUrl}
+              tagDurationMs={voiceTag.tagDurationMs}
+              level={voiceTag.level}
+              error={voiceTag.error}
+              tagVolume={tagVolume}
+              onEnableMic={voiceTag.enableMic}
+              onDisableMic={voiceTag.disableMic}
+              onStartRecording={voiceTag.startTagRecording}
+              onStopRecording={voiceTag.stopTagRecording}
+              onPlayTag={voiceTag.playTag}
+              onDownloadTag={handleDownloadTag}
+              onClearTag={voiceTag.clearTag}
+              onTagVolumeChange={handleTagVolumeChange}
+            />
           </div>
 
           {/* Deck B */}
