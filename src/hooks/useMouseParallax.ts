@@ -9,8 +9,8 @@ interface ParallaxOptions {
  * Hook for mouse parallax effect on elements
  * Returns transform values for floating/tilting effect
  */
-export function useMouseParallax(
-  ref: RefObject<HTMLElement>,
+export function useMouseParallax<T extends HTMLElement = HTMLDivElement>(
+  ref: RefObject<T | null>,
   options: ParallaxOptions = {}
 ): { x: number; y: number; rotateX: number; rotateY: number } {
   const { intensity = 0.05, tiltIntensity = 5 } = options;

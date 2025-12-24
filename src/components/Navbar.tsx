@@ -110,7 +110,6 @@ export function Navbar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const { scrollY } = useScroll();
   const navRef = useRef<HTMLElement>(null);
   const lenis = useLenis();
@@ -122,12 +121,7 @@ export function Navbar() {
     const scrolled = latest > 50;
     setIsScrolled(scrolled);
 
-    // Calculate scroll progress (0-1) for additional effects
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
-    const maxScroll = documentHeight - windowHeight;
-    const progress = maxScroll > 0 ? Math.min(latest / maxScroll, 1) : 0;
-    setScrollProgress(progress);
+    // Scroll progress calculation removed (was unused)
   });
 
   // Close menu when route changes

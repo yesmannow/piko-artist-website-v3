@@ -28,7 +28,7 @@ export function useAudioAnalyser(
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   useEffect(() => {
     if (!enabled || !videoElement) {
@@ -65,7 +65,7 @@ export function useAudioAnalyser(
     // For now, we'll return zero levels for iframes
 
     const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+    const dataArray = new Uint8Array(new ArrayBuffer(bufferLength)) as Uint8Array<ArrayBuffer>;
     dataArrayRef.current = dataArray;
 
     const updateLevels = () => {

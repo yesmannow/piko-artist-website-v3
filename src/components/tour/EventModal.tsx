@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Rewind, FastForward } from "lucide-react";
 import { useEventStore } from "@/stores/useEventStore";

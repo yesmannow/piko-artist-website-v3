@@ -17,7 +17,7 @@ interface PosterModalProps {
 export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isZoomed, setIsZoomed] = useState(false);
-  const parallax = useMouseParallax(containerRef, { intensity: 0.03, tiltIntensity: 3 });
+  const parallax = useMouseParallax(containerRef as React.RefObject<HTMLElement>, { intensity: 0.03, tiltIntensity: 3 });
 
   // Close on Escape key
   useEffect(() => {
