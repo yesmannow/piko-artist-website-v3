@@ -10,6 +10,7 @@ import { EventModalContent } from "./EventModalContent";
 import { BackdropFX } from "./BackdropFX";
 import { useScrollVisibility } from "@/hooks/useScrollVisibility";
 import { AudioReactiveOverlay } from "@/components/visual/AudioReactiveOverlay";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 // EventModal component that receives events
 interface EventModalWrapperProps {
@@ -42,17 +43,8 @@ export function EventModalWrapper({ events }: EventModalWrapperProps) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [selectedEvent, setSelectedEvent]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (selectedEvent) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [selectedEvent]);
+  // Prevent body scroll when modal is open (using centralized hook)
+  useBodyScrollLock(!!selectedEvent);
 
   if (!selectedEvent) return null;
 

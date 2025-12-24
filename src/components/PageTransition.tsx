@@ -13,20 +13,10 @@ export function PageTransition({ children }: PageTransitionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevPathnameRef = useRef<string | null>(null);
 
-  // Cleanup function to reset any lingering styles
+  // Cleanup function to reset body scroll if no modals are open
   useEffect(() => {
-    // Reset any potential overlay styles on route change
+    // Only reset body overflow if no modals are open (preserve intentional scroll locks)
     if (prevPathnameRef.current && prevPathnameRef.current !== pathname) {
-      // Force cleanup of any transition-related DOM elements
-      const transitionLayers = document.querySelectorAll('.page-transition-layer, .transition-overlay');
-      transitionLayers.forEach((layer) => {
-        if (layer instanceof HTMLElement) {
-          layer.style.opacity = '0';
-          layer.style.pointerEvents = 'none';
-        }
-      });
-
-      // Ensure body styles are reset (but preserve intentional styles)
       const body = document.body;
       // Only reset transition-related styles, not global styles
       if (body.style.overflow === 'hidden' && !document.querySelector('[data-modal-open="true"]')) {
@@ -39,12 +29,12 @@ export function PageTransition({ children }: PageTransitionProps) {
 
   return (
     <div ref={containerRef} className="relative w-full overflow-x-hidden">
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={pathname}
           initial={{ x: 300, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -300, opacity: 0 }}
+          exit={{ x: "-100%", opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="relative w-full"
         >

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Home, User, Video, MoreVertical, Music, Wrench, Calendar, Mail } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Drawer } from "vaul";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
@@ -25,6 +25,11 @@ export function MobileNav() {
   const pathname = usePathname();
   const triggerHaptic = useHaptic();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+
+  // Close mobile menu drawer on route change
+  useEffect(() => {
+    setIsMoreOpen(false);
+  }, [pathname]);
 
   const handleClick = () => {
     triggerHaptic();

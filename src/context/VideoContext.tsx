@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAudio } from "./AudioContext";
 
@@ -19,19 +19,29 @@ export function VideoProvider({ children }: { children: ReactNode }) {
   const [isMinimized, setIsMinimized] = useState(false);
   const { isPlaying, togglePlay } = useAudio();
   const pathname = usePathname();
+  // Track if music was playing before video opened, so we can resume it
+  const wasMusicPlayingRef = useRef(false);
 
   // Close video on route change to prevent overlays persisting
   useEffect(() => {
     if (currentVideoId) {
+      // Resume music if it was playing before video opened
+      if (wasMusicPlayingRef.current && !isPlaying) {
+        togglePlay();
+      }
+      wasMusicPlayingRef.current = false;
       setCurrentVideoId(null);
       setIsMinimized(false);
     }
-  }, [pathname]); // Only depend on pathname, not currentVideoId
+  }, [pathname, isPlaying, togglePlay]); // Only depend on pathname, not currentVideoId
 
   const playVideo = (id: string) => {
-    // Pause any currently playing music
+    // Pause any currently playing music and remember its state
     if (isPlaying) {
+      wasMusicPlayingRef.current = true;
       togglePlay(); // This will pause if currently playing
+    } else {
+      wasMusicPlayingRef.current = false;
     }
 
     setCurrentVideoId(id);
@@ -39,6 +49,11 @@ export function VideoProvider({ children }: { children: ReactNode }) {
   };
 
   const closeVideo = () => {
+    // Resume music if it was playing before video opened
+    if (wasMusicPlayingRef.current && !isPlaying) {
+      togglePlay();
+    }
+    wasMusicPlayingRef.current = false;
     setCurrentVideoId(null);
     setIsMinimized(false);
   };

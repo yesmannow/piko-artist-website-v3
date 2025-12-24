@@ -7,6 +7,7 @@ import { X, Download, ArrowLeft } from "lucide-react";
 import { Event } from "@/lib/events";
 import Image from "next/image";
 import { useMouseParallax } from "@/hooks/useMouseParallax";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 interface PosterModalProps {
   event: Event;
@@ -40,17 +41,8 @@ export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterMod
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  // Prevent body scroll when modal is open (using centralized hook)
+  useBodyScrollLock(isOpen);
 
   const handleDownload = () => {
     const downloadUrl = event.posterDL || event.poster;

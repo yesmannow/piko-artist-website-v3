@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useLenis } from "lenis/react";
 import { useHaptic } from "@/hooks/useHaptic";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 const navItems = [
   { name: "Home", path: "/", anchor: "home" },
@@ -140,15 +141,16 @@ export function Navbar() {
     setIsOpen(false);
   }, [pathname]);
 
-  // Prevent scrolling when menu is open
+  // Prevent scrolling when menu is open (using centralized hook)
+  useBodyScrollLock(isOpen);
+
+  // Additional mobile-specific positioning to prevent background scroll
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
       // Prevent background scroll on mobile
       document.body.style.position = "fixed";
       document.body.style.width = "100%";
     } else {
-      document.body.style.overflow = "unset";
       document.body.style.position = "";
       document.body.style.width = "";
     }
