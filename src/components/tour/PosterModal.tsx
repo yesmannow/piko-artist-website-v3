@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ArrowLeft } from "lucide-react";
 import { Event } from "@/lib/events";
@@ -18,6 +19,15 @@ export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterMod
   const containerRef = useRef<HTMLDivElement>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const parallax = useMouseParallax(containerRef as React.RefObject<HTMLElement>, { intensity: 0.03, tiltIntensity: 3 });
+  const pathname = usePathname();
+
+  // Close modal on route change to prevent overlays persisting
+  useEffect(() => {
+    if (isOpen) {
+      onClose();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]); // Only depend on pathname to avoid dependency loops
 
   // Close on Escape key
   useEffect(() => {
@@ -67,6 +77,7 @@ export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterMod
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black z-[70]"
             onClick={onClose}
+            data-modal-open="true"
           />
 
           {/* Modal */}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { VideoHero } from "@/components/video/VideoHero";
 import { VideoGrid } from "@/components/video/VideoGrid";
 import { tracks } from "@/lib/data";
@@ -8,6 +9,15 @@ import { X } from "lucide-react";
 
 export default function VideosPage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  // Close video modal on route change to prevent overlays persisting
+  useEffect(() => {
+    // Close modal immediately when pathname changes
+    if (selectedVideoId) {
+      setSelectedVideoId(null);
+    }
+  }, [pathname]); // Only depend on pathname, not selectedVideoId to avoid loops
   const videos = tracks.filter(t => t.type === 'video');
   const featuredVideo = videos.length > 0 ? videos[videos.length - 1] : null;
   const gridVideos = videos.length > 1 ? videos.slice(0, -1) : [];
@@ -58,10 +68,13 @@ export default function VideosPage() {
         <VideoGrid videos={gridVideos} onPlay={setSelectedVideoId} />
 
         {selectedVideoId && (
-          <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12">
+          <div
+            className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
+            data-modal-open="true"
+          >
             <button
               onClick={() => setSelectedVideoId(null)}
-              className="absolute top-4 right-4 p-2 bg-zinc-800 rounded-full hover:bg-white hover:text-black transition-colors"
+              className="absolute top-4 right-4 p-2 bg-zinc-800 rounded-full hover:bg-white hover:text-black transition-colors z-10"
             >
               <X className="w-6 h-6" />
             </button>

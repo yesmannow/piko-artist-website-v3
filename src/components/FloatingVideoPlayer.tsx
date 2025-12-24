@@ -25,6 +25,7 @@ export function FloatingVideoPlayer() {
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          data-modal-open="true"
         >
           {/* Backdrop */}
           <div

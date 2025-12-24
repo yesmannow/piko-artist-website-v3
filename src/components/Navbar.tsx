@@ -124,6 +124,17 @@ export function Navbar() {
     // Scroll progress calculation removed (was unused)
   });
 
+  // Ensure navbar remains interactive - force pointer-events-auto on interactive elements
+  useEffect(() => {
+    // This ensures that even if something goes wrong, interactive elements stay clickable
+    const interactiveElements = navRef.current?.querySelectorAll('[class*="pointer-events-auto"]');
+    interactiveElements?.forEach((el) => {
+      if (el instanceof HTMLElement) {
+        el.style.pointerEvents = 'auto';
+      }
+    });
+  }, [pathname, isOpen]);
+
   // Close menu when route changes
   useEffect(() => {
     setIsOpen(false);

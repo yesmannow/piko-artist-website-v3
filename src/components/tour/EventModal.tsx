@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { X, Rewind, FastForward } from "lucide-react";
 import { useEventStore } from "@/stores/useEventStore";
 import { Event } from "@/lib/events";
@@ -20,6 +21,15 @@ export function EventModalWrapper({ events }: EventModalWrapperProps) {
   const setSelectedEvent = useEventStore((state) => state.setSelectedEvent);
   const modalRef = useScrollVisibility(100);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const pathname = usePathname();
+
+  // Close modal on route change to prevent overlays persisting
+  useEffect(() => {
+    if (selectedEvent) {
+      setSelectedEvent(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]); // Only depend on pathname to avoid dependency loops
 
   // Close on Escape key
   useEffect(() => {
@@ -69,6 +79,7 @@ export function EventModalWrapper({ events }: EventModalWrapperProps) {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/90 z-50 backdrop-blur-sm"
             onClick={() => setSelectedEvent(null)}
+            data-modal-open="true"
           />
 
           {/* Modal */}

@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAudio } from "./AudioContext";
 
 interface VideoContextType {
@@ -17,6 +18,15 @@ export function VideoProvider({ children }: { children: ReactNode }) {
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const { isPlaying, togglePlay } = useAudio();
+  const pathname = usePathname();
+
+  // Close video on route change to prevent overlays persisting
+  useEffect(() => {
+    if (currentVideoId) {
+      setCurrentVideoId(null);
+      setIsMinimized(false);
+    }
+  }, [pathname]); // Only depend on pathname, not currentVideoId
 
   const playVideo = (id: string) => {
     // Pause any currently playing music

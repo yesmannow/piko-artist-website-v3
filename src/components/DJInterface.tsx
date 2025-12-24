@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
@@ -44,6 +45,7 @@ interface TrackSettings {
 export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
   const triggerHaptic = useHaptic();
+  const pathname = usePathname();
 
   // Deck A state
   const [deckAData, setDeckAData] = useState<typeof tracks[0] | null>(null);
@@ -553,6 +555,13 @@ export function DJInterface() {
 
   // Artwork lightbox state
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Close lightbox on route change to prevent overlays persisting
+  useEffect(() => {
+    if (isLightboxOpen) {
+      setIsLightboxOpen(false);
+    }
+  }, [pathname]); // Only depend on pathname
 
   // Handle ESC key to close lightbox
   useEffect(() => {
@@ -1393,6 +1402,7 @@ export function DJInterface() {
               transition={{ duration: 0.2 }}
               className="fixed inset-0 z-[100] flex items-center justify-center p-4"
               onClick={() => setIsLightboxOpen(false)}
+              data-modal-open="true"
             >
               {/* Backdrop */}
               <motion.div
