@@ -10,10 +10,16 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
+      // YouTube image domains
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'i.ytimg.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      // Local development
       {
         protocol: 'http',
         hostname: 'localhost',
@@ -23,6 +29,35 @@ const nextConfig = {
         hostname: '127.0.0.1',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+    ];
   },
   experimental: {
     // Vercel deployment configuration

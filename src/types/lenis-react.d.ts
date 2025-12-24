@@ -57,7 +57,7 @@ declare module 'lenis/react' {
    * @param priority Optional priority for callback
    * @returns Lenis instance or undefined
    */
-  export function useLenis(callback?: ScrollCallback, deps?: any[], priority?: number): LenisInstance | undefined;
+  export function useLenis(callback?: ScrollCallback, deps?: React.DependencyList, priority?: number): LenisInstance | undefined;
 
   export { ReactLenis as Lenis, ReactLenis as default };
   export type { LenisContextValue, LenisProps, LenisRef };

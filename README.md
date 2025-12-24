@@ -77,7 +77,7 @@ src/
 │   ├── Navbar.tsx        # Top navigation with scroll effects
 │   ├── MobileNav.tsx     # Bottom mobile navigation
 │   ├── Player.tsx        # Wavesurfer audio player
-│   ├── VideoGrid.tsx     # YouTube video grid
+│   ├── VideoGallery.tsx  # YouTube video gallery (used on home page)
 │   ├── SectionHeader.tsx # Reusable section header
 │   └── ImageGallery.tsx  # Image gallery component
 └── lib/
