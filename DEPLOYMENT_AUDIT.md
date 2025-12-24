@@ -38,11 +38,18 @@
 - Updated `useFocusTrap` hook signature to accept `React.RefObject<HTMLElement | null>`
 - This matches actual usage in Navbar component
 
+### 6. Missing `date-fns-tz` Dependency
+**Root Cause**: `date-fns-tz` package was imported in `useEventTimezoneAmbientLight.ts` but not listed in `package.json`.
+
+**Solution**:
+- Added `date-fns-tz: ^3.0.0` to dependencies
+- Required for timezone calculations in EventGlobe component
+
 ## ✅ Build Configuration
 
 ### Files Modified
 1. **scripts/build.js** - Custom build script that unsets problematic env vars
-2. **package.json** - Updated build script, moved dependencies
+2. **package.json** - Updated build script, moved dependencies, added `date-fns-tz`
 3. **postcss.config.mjs** - Correct plugin format
 4. **tailwind.config.ts** - Added @ts-ignore for type resolution
 5. **tsconfig.json** - Already has baseUrl and correct settings
@@ -75,6 +82,7 @@ Route (app)                                 Size  First Load JS
 - ✅ `autoprefixer`: ^10.4.23
 - ✅ `postcss`: ^8.5.6
 - ✅ `tailwindcss-animate`: ^1.0.7
+- ✅ `date-fns-tz`: ^3.0.0 (for timezone calculations)
 
 ### Dev Dependencies
 - ✅ `eslint-config-next`: 15.5.9 (pinned)
