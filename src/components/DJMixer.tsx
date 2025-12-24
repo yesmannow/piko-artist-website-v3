@@ -300,7 +300,7 @@ export function DJMixer({
               {isRecording && (
                 <div className="flex items-center gap-2 text-xs text-red-500 font-barlow">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  RECORDING {recordingDuration > 0 ? `(${recordingDuration}s)` : ""}
+                  RECORDING {recordingDuration > 0 && `(${recordingDuration}s)`}
                 </div>
               )}
               {recordingError && (
@@ -440,6 +440,7 @@ export function DJMixer({
                 K
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>

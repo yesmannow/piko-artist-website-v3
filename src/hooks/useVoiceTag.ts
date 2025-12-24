@@ -356,7 +356,7 @@ export function useVoiceTag(
   }, [audioContext, masterNode, micEnabled, tagUrl, enableMic, getBestMimeType]);
 
   // Stop recording tag
-  const stopTagRecording = useCallback(() => {
+  const stopTagRecording = useCallback(async () => {
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       recorderRef.current.stop();
     }
