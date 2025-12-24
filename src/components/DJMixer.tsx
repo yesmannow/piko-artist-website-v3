@@ -106,6 +106,9 @@ export function DJMixer({
   limiterThreshold = -3,
   onLimiterThresholdChange,
 }: DJMixerProps) {
+  // Calculate limiter gradient percentage
+  const limiterPercentage = ((limiterThreshold + 12) / 12) * 100;
+  const gradientStyle = `linear-gradient(to right, #00ff00 0%, #00ff00 ${limiterPercentage}%, #0a0a0a ${limiterPercentage}%, #0a0a0a 100%)`;
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800 shadow-lg">
@@ -208,7 +211,6 @@ export function DJMixer({
               </button>
             </div>
           </div>
-          </div>
         </div>
 
         {/* Center - Spectrum Analyzer & Crossfader */}
@@ -298,7 +300,7 @@ export function DJMixer({
               {isRecording && (
                 <div className="flex items-center gap-2 text-xs text-red-500 font-barlow">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  RECORDING {recordingDuration > 0 && `(${recordingDuration}s)`}
+                  RECORDING {recordingDuration > 0 ? `(${recordingDuration}s)` : ""}
                 </div>
               )}
               {recordingError && (
@@ -328,7 +330,7 @@ export function DJMixer({
                   onChange={(e) => onLimiterThresholdChange(parseFloat(e.target.value))}
                   className="flex-1 h-2 bg-[#0a0a0a] rounded-lg appearance-none cursor-pointer accent-[#00ff00]"
                   style={{
-                    background: `linear-gradient(to right, #00ff00 0%, #00ff00 ${((limiterThreshold + 12) / 12) * 100}%, #0a0a0a ${((limiterThreshold + 12) / 12) * 100}%, #0a0a0a 100%)`,
+                    background: gradientStyle,
                   }}
                   aria-label="Master limiter threshold"
                 />
@@ -438,7 +440,6 @@ export function DJMixer({
                 K
               </button>
             </div>
-          </div>
           </div>
         </div>
       </div>
