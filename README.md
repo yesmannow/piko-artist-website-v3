@@ -1,21 +1,21 @@
 # Piko Artist Website v3
 
-A modern artist portfolio website built with Next.js 15 and optimized for Cloudflare Pages deployment.
+A modern artist portfolio website built with Next.js 15 and optimized for Vercel deployment.
 
 ## Features
 
 - ⚡ Next.js 15 with App Router and TypeScript
 - 🎨 TailwindCSS + shadcn/ui components
 - 🎬 Framer Motion animations
-- 🎵 Wavesurfer.js audio player with R2 storage
+- 🎵 Wavesurfer.js audio player
 - 📺 YouTube video embeds
-- ☁️ Cloudflare Pages deployment with R2 bindings
+- ☁️ Vercel deployment ready
 - 🧭 Modern navigation with smooth scrolling and scroll effects
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **Runtime**: @opennextjs/cloudflare
+- **Framework**: Next.js 15.5.9 (App Router)
+- **Deployment**: Vercel
 - **UI**: TailwindCSS, shadcn/ui, Framer Motion, Lenis
 - **Audio**: wavesurfer.js
 - **Node**: >=20 <21
@@ -44,11 +44,8 @@ Open [http://localhost:3000](http://localhost:3000) to view the site.
 ### Build
 
 ```bash
-# Standard Next.js build
+# Production build
 npm run build
-
-# Cloudflare Pages build
-npm run cf:build
 ```
 
 ### Validation
@@ -57,9 +54,14 @@ npm run cf:build
 # Check Node version
 node -v  # Should be 20.x
 
-# Run builds
+# Run build
 npm run build
-npm run cf:build
+
+# Type check
+npx tsc --noEmit
+
+# Lint
+npm run lint
 ```
 
 ## Project Structure
@@ -87,37 +89,41 @@ src/
 ## Configuration Files
 
 - `next.config.mjs` - Next.js configuration
-- `open-next.config.ts` - OpenNext Cloudflare configuration
-- `wrangler.jsonc` - Cloudflare Workers/Pages configuration
 - `tailwind.config.ts` - TailwindCSS configuration
+- `postcss.config.mjs` - PostCSS configuration
 - `components.json` - shadcn/ui configuration
 - `tsconfig.json` - TypeScript configuration
 
-## Cloudflare R2 Setup
+## Environment Variables
 
-The site uses Cloudflare R2 for audio storage:
+For email functionality, configure these in Vercel Dashboard:
 
-1. Create an R2 bucket named `piko-audio-assets`
-2. Upload audio files to the bucket
-3. Update the R2 binding in `wrangler.jsonc`
+- `EMAIL_USER` - Gmail account email
+- `EMAIL_PASS` - Gmail app-specific password (generate at https://myaccount.google.com/apppasswords)
+- `RECIPIENT_EMAIL` - Optional, defaults to `Manospintadas420@gmail.com`
+
+See `VERCEL_DEPLOYMENT_FINAL_AUDIT.md` for complete deployment instructions.
 
 ## Deployment
 
-Deploy to Cloudflare Pages:
+### Vercel Deployment
 
-```bash
-npm run cf:build
-npx wrangler pages deploy .open-next/worker.js
-```
+1. Push code to Git repository
+2. Import project in Vercel Dashboard
+3. Configure environment variables (see above)
+4. Deploy automatically on push
+
+**Build Command**: `npm run build`
+**Node Version**: 20.x
+**Output Directory**: `.next` (default)
 
 ## Scripts
 
 - `dev` - Start development server with Turbopack
-- `build` - Build production Next.js app
-- `cf:build` - Build for Cloudflare Pages
-- `verify:output` - Verify Cloudflare build output
+- `build` - Build production Next.js app (uses `scripts/build.js`)
 - `start` - Start production server
 - `lint` - Run ESLint
+- `check:case` - Check import path case sensitivity
 
 ## License
 
