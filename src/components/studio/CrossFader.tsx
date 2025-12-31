@@ -23,16 +23,19 @@ export function CrossFader({ position, onPositionChange, className = "" }: Cross
   const triggerHaptic = useHaptic();
   const lastPositionRef = useRef(position);
 
-  // Generate particles at 0.0 and 1.0 positions
+  // Generate particles at 0.0, 0.5, and 1.0 positions
   useEffect(() => {
-    if (position === 0 || position === 1) {
+    const isExtreme = position === 0 || position === 1;
+    const isCenter = Math.abs(position - 0.5) < 0.01;
+
+    if (isExtreme || isCenter) {
       // Trigger haptic feedback on mobile (light click: 10ms)
       triggerHaptic(10);
 
-      // Generate particle sparks
+      // Generate particle sparks at extremes or center
       const newParticles = Array.from({ length: 8 }, (_, i) => ({
         id: Date.now() + i,
-        x: position === 0 ? 0 : 100,
+        x: position === 0 ? 0 : position === 1 ? 100 : 50,
         y: 50 + (Math.random() - 0.5) * 20,
       }));
 

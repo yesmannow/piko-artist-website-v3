@@ -509,16 +509,6 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         </div>
       )}
 
-      {featuredOnly && (
-        <div className="mt-6 flex justify-center">
-          <Link
-            href="/music"
-            className="px-6 py-3 rounded-full border-2 border-black bg-toxic-lime/10 text-toxic-lime font-industrial font-bold tracking-wider hover:bg-toxic-lime/20 transition-colors shadow-hard"
-          >
-            View Full Discography
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

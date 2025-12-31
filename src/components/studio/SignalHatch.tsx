@@ -61,7 +61,7 @@ export function SignalHatch({
     try {
       await onFileUpload(file);
     } catch (err) {
-      const errorMsg = `STUDIO_CORE: Upload failed - ${err instanceof Error ? err.message : 'Unknown error'}`;
+      const errorMsg = `STUDIO_CORE: IMPORT_UNVERIFIED_SIGNAL failed - ${err instanceof Error ? err.message : 'Unknown error'}`;
       setError(errorMsg);
       addLog(errorMsg);
     }
@@ -149,7 +149,7 @@ export function SignalHatch({
 
             {/* Subtitle */}
             <p className="text-sm md:text-base font-mono text-[#E0E0E0]/70 max-w-md">
-              Drop unverified signal or click to browse
+              IMPORT_UNVERIFIED_SIGNAL or click to browse
             </p>
 
             {/* Accepted Formats */}
@@ -177,7 +177,7 @@ export function SignalHatch({
                     <div className="flex items-center gap-2 mb-2">
                       <FileAudio size={16} className="text-[#FFD700]" />
                       <span className="text-xs font-mono text-[#FFD700] uppercase">
-                        CRACKING_SIGNAL: {Math.round(processingProgress)}%
+                        CRACKING_SIGNAL_CHAIN: {Math.round(processingProgress)}%
                       </span>
                     </div>
                     {/* Progress Bar */}
@@ -188,6 +188,55 @@ export function SignalHatch({
                         animate={{ width: `${processingProgress}%` }}
                         transition={{ duration: 0.1 }}
                       />
+                    </div>
+
+                    {/* Ghost Waveforms - Four SVG skeletons with progressive fill */}
+                    <div className="mt-4 space-y-2">
+                      {['VOX', 'DRUM', 'BASS', 'OTHER'].map((stem, index) => {
+                        const fillProgress = Math.max(0, Math.min(100, (processingProgress / 100) * 100));
+                        const fillWidth = fillProgress > (index * 25) ? Math.min(100, ((fillProgress - (index * 25)) / 25) * 100) : 0;
+
+                        return (
+                          <div key={stem} className="relative">
+                            <div className="text-[8px] font-mono text-[#E0E0E0]/40 uppercase mb-1">
+                              {stem}
+                            </div>
+                            {/* Waveform skeleton - 20% opacity base */}
+                            <svg
+                              width="100%"
+                              height="24"
+                              viewBox="0 0 200 24"
+                              className="opacity-20"
+                            >
+                              <path
+                                d="M0,12 Q25,8 50,12 T100,12 T150,12 T200,12"
+                                stroke="#E0E0E0"
+                                strokeWidth="2"
+                                fill="none"
+                              />
+                            </svg>
+                            {/* Progressive fill with Safety Yellow */}
+                            <div
+                              className="absolute top-0 left-0 h-full overflow-hidden"
+                              style={{ width: `${fillWidth}%` }}
+                            >
+                              <svg
+                                width="100%"
+                                height="24"
+                                viewBox="0 0 200 24"
+                                className="opacity-100"
+                              >
+                                <path
+                                  d="M0,12 Q25,8 50,12 T100,12 T150,12 T200,12"
+                                  stroke="#FFD700"
+                                  strokeWidth="2"
+                                  fill="none"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>

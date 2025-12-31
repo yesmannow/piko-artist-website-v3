@@ -51,12 +51,13 @@ export function applyConstantPowerGains(
   gainNodeB: GainNode,
   crossfaderPosition: number,
   audioContext: AudioContext,
-  rampTime: number = 0.01
+  rampTime: number = 0.02
 ): void {
   const { gainA, gainB } = calculateConstantPowerGains(crossfaderPosition);
   const currentTime = audioContext.currentTime;
 
   // Apply gains with smooth ramping to prevent clicks/pops
+  // Using 0.02s rampTime for professional-grade smooth transitions
   gainNodeA.gain.setTargetAtTime(gainA, currentTime, rampTime);
   gainNodeB.gain.setTargetAtTime(gainB, currentTime, rampTime);
 }

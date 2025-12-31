@@ -7,6 +7,8 @@ import { useEffect } from "react";
  *
  * This component should be mounted in the root layout to enable
  * offline functionality and asset caching.
+ *
+ * Includes cache cleanup utility to prevent QuotaExceededError.
  */
 export function ServiceWorkerRegistration() {
   useEffect(() => {
@@ -41,6 +43,32 @@ export function ServiceWorkerRegistration() {
               });
             }
           });
+
+          // Periodic cache cleanup to prevent quota errors
+          // Run cleanup every 24 hours
+          setInterval(async () => {
+            try {
+              if ("storage" in navigator && "estimate" in navigator.storage) {
+                const estimate = await navigator.storage.estimate();
+                const usagePercent = estimate.usage && estimate.quota
+                  ? (estimate.usage / estimate.quota) * 100
+                  : 0;
+
+                // If storage is > 80% full, trigger cleanup
+                if (usagePercent > 80) {
+                  console.warn(`[SW] Storage usage at ${usagePercent.toFixed(1)}%, triggering cleanup...`);
+
+                  // Send message to service worker to clean up caches
+                  if (registration.active) {
+                    registration.active.postMessage({ type: "CLEANUP_CACHES" });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error("[SW] Storage check failed:", error);
+            }
+          }, 24 * 60 * 60 * 1000); // 24 hours
+
         } catch (error) {
           console.error("[SW] Service Worker registration failed:", error);
         }

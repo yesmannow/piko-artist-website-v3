@@ -11,6 +11,8 @@ import { SignalHatch } from "@/components/studio/SignalHatch";
 import { CrossFader } from "@/components/studio/CrossFader";
 import { ThermalMeter } from "@/components/studio/ThermalMeter";
 import { SessionSummary } from "@/components/studio/SessionSummary";
+import { SamplerGrid } from "@/components/studio/SamplerGrid";
+import { OrientationGuard } from "@/components/studio/OrientationGuard";
 import { audioBufferToWAV } from "@/utils/audioRenderer";
 import { tracks, MediaItem } from "@/lib/data";
 import { motion } from "framer-motion";
@@ -347,8 +349,10 @@ export default function StudioPage() {
         backgroundSize: "100% 100%, 100% 8px, 100% 100%",
       }}
     >
+      {/* Orientation Guard - Mobile Portrait Warning */}
+      <OrientationGuard />
       {/* 3D Canvas Background - Centered */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 relative w-full h-full">
         <Suspense
           fallback={
             <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#050505]">
@@ -454,9 +458,9 @@ export default function StudioPage() {
 
           {/* Center Column: 3D Visualizer & CrossFader */}
           <div className="lg:col-span-6 flex flex-col gap-4">
-            {/* 3D Canvas takes full height */}
-            <div className="flex-1 relative">
-              {/* Canvas is in background layer */}
+            {/* 3D Canvas takes full height - Visualizer is in background layer */}
+            <div className="flex-1 relative min-h-[400px]">
+              {/* Canvas renders in background via absolute positioning */}
             </div>
 
             {/* CrossFader - Prominently placed between decks */}
@@ -505,6 +509,11 @@ export default function StudioPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Sampler Bank */}
+            <div className="bg-[#111] border-4 border-[#E0E0E0] p-4">
+              <SamplerGrid />
             </div>
 
             {/* Master Console Bar */}
