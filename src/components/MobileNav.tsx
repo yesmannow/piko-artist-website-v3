@@ -3,12 +3,13 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, User, Video, MoreVertical, Music, Wrench, Calendar, Mail, X } from "lucide-react";
+import { Home, User, Video, MoreVertical, Music, Wrench, Calendar, Mail, X, Instagram, Youtube, ExternalLink } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
-import { Drawer } from "vaul";
 import { useState, useEffect, useRef } from "react";
 import Logo from "@/components/branding/Logo";
 import { useAudio } from "@/context/AudioContext";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
@@ -23,6 +24,30 @@ const moreItems = [
   { href: "/#contact", label: "Contact", icon: Mail },
 ];
 
+// Social links for mobile menu
+const socialLinks = [
+  {
+    name: "Instagram",
+    url: "https://www.instagram.com/piko289/",
+    icon: Instagram,
+  },
+  {
+    name: "YouTube",
+    url: "https://www.youtube.com/channel/UCjHQIImynicoSZuFmt6Rdig",
+    icon: Youtube,
+  },
+  {
+    name: "Spotify",
+    url: "https://open.spotify.com/artist/piko", // Placeholder - update with actual URL
+    icon: Music,
+  },
+  {
+    name: "Apple Music",
+    url: "https://music.apple.com/artist/piko", // Placeholder - update with actual URL
+    icon: Music,
+  },
+];
+
 // Grain texture - using CSS class approach
 const grainStyle = {
   backgroundImage:
@@ -34,9 +59,30 @@ export function MobileNav() {
   const triggerHaptic = useHaptic();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const logoRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const drawerContentRef = useRef<HTMLDivElement>(null);
   const { currentTrack, isPlaying } = useAudio();
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  // Body scroll lock when drawer is open
+  useBodyScrollLock(isMoreOpen);
+
+  // Focus trap for drawer
+  useFocusTrap(isMoreOpen, drawerContentRef);
 
   // Close mobile menu drawer on route change
   useEffect(() => {
@@ -47,6 +93,26 @@ export function MobileNav() {
   const handleClick = () => {
     triggerHaptic();
   };
+
+  // Handle More button click - manually toggle drawer
+  const handleMoreClick = () => {
+    triggerHaptic();
+    setIsMoreOpen(!isMoreOpen);
+  };
+
+  // Close drawer on ESC key
+  useEffect(() => {
+    if (!isMoreOpen) return;
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMoreOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isMoreOpen]);
 
   const isActive = (href: string) => {
     if (href === "/#home" || href === "/") {
@@ -198,82 +264,189 @@ export function MobileNav() {
             })}
 
             {/* More Button */}
-            <Drawer.Root open={isMoreOpen} onOpenChange={setIsMoreOpen}>
-              <Drawer.Trigger asChild>
-                <button
-                  onClick={handleClick}
-                  className="flex flex-col items-center justify-center h-full relative min-h-[44px] px-3 flex-1 touch-manipulation"
+            <button
+              onClick={handleMoreClick}
+              aria-expanded={isMoreOpen}
+              aria-controls="mobile-more-menu"
+              aria-label="More menu"
+              className="flex flex-col items-center justify-center h-full relative min-h-[44px] px-3 flex-1 touch-manipulation"
+            >
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className="flex flex-col items-center gap-1"
+              >
+                <MoreVertical
+                  className={`w-6 h-6 transition-colors ${
+                    isMoreOpen ? "text-toxic-lime" : "text-zinc-400"
+                  }`}
+                />
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider ${
+                    isMoreOpen ? "text-toxic-lime" : "text-zinc-500"
+                  }`}
                 >
-                  <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    className="flex flex-col items-center gap-1"
-                  >
-                    <MoreVertical
-                      className={`w-6 h-6 transition-colors ${
-                        isMoreOpen ? "text-toxic-lime" : "text-zinc-400"
-                      }`}
-                    />
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wider ${
-                        isMoreOpen ? "text-toxic-lime" : "text-zinc-500"
-                      }`}
-                    >
-                      More
-                    </span>
-                  </motion.div>
-                  {isMoreOpen && (
-                    <motion.div
-                      layoutId="mobileNavIndicatorMore"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(204,255,0,0.6)]"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </button>
-              </Drawer.Trigger>
-              <Drawer.Portal>
-                <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50" />
-                <Drawer.Content
-                  className="border-t-2 border-toxic-lime flex flex-col rounded-t-[10px] h-[50%] mt-24 fixed bottom-0 left-0 right-0 z-50 focus:outline-none relative bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950"
-                  style={grainStyle}
-                >
-                  {/* Drag Handle */}
-                  <div className="relative w-12 h-2 mx-auto mb-6 mt-4">
-                    <div className="w-12 h-2 bg-zinc-700 rounded-sm mx-auto border border-zinc-600" />
-                  </div>
+                  More
+                </span>
+              </motion.div>
+              {isMoreOpen && (
+                <motion.div
+                  layoutId="mobileNavIndicatorMore"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(204,255,0,0.6)]"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+            </button>
 
-                  <div className="flex-1 overflow-y-auto px-6 pb-8">
-                    <h2 className="font-header text-2xl font-bold text-toxic-lime mb-6 text-center uppercase tracking-wider">
-                      More
-                    </h2>
-                    <div className="space-y-3">
-                      {moreItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(item.href);
-                        return (
-                          <Drawer.Close key={item.href} asChild>
+            {/* More Menu Drawer */}
+            <AnimatePresence>
+              {isMoreOpen && (
+                <>
+                  {/* Backdrop Overlay */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reducedMotion ? 0.1 : 0.2 }}
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm z-overlay md:hidden"
+                    onClick={() => setIsMoreOpen(false)}
+                    aria-hidden="true"
+                  />
+
+                  {/* Drawer Content */}
+                  <motion.div
+                    ref={drawerContentRef}
+                    id="mobile-more-menu"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="more-menu-title"
+                    initial={reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }}
+                    animate={reducedMotion ? { opacity: 1, y: 0 } : { y: 0 }}
+                    exit={reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }}
+                    transition={
+                      reducedMotion
+                        ? { duration: 0.2 }
+                        : {
+                            type: "spring",
+                            damping: 30,
+                            stiffness: 300,
+                            mass: 0.8,
+                          }
+                    }
+                    className="fixed bottom-0 left-0 right-0 z-modal md:hidden bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 border-t-2 border-toxic-lime rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)] max-h-[85vh] flex flex-col"
+                    style={grainStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Glow effect at top */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-toxic-lime/50 blur-sm" />
+
+                    {/* Drag Handle */}
+                    <div className="relative w-12 h-1.5 mx-auto mt-3 mb-4">
+                      <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto border border-zinc-600" />
+                    </div>
+
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto px-6 pb-6">
+                      {/* Header */}
+                      <h2
+                        id="more-menu-title"
+                        className="font-header text-2xl font-bold text-toxic-lime mb-6 text-center uppercase tracking-wider"
+                      >
+                        More
+                      </h2>
+
+                      {/* Menu Items */}
+                      <div className="space-y-3 mb-6">
+                        {moreItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActive(item.href);
+                          return (
                             <Link
+                              key={item.href}
                               href={item.href}
-                              onClick={handleClick}
-                              className={`flex items-center gap-4 px-4 py-3 rounded-lg border-2 transition-colors ${
+                              onClick={() => {
+                                handleClick();
+                                setIsMoreOpen(false);
+                              }}
+                              className={`flex items-center gap-4 px-4 py-3 rounded-lg border-2 transition-all touch-manipulation ${
                                 active
                                   ? "bg-toxic-lime/20 text-toxic-lime border-toxic-lime shadow-[0_0_12px_rgba(204,255,0,0.3)]"
-                                  : "bg-zinc-800/50 text-white border-zinc-700 hover:bg-zinc-700/50 hover:border-zinc-600"
+                                  : "bg-zinc-800/50 text-white border-zinc-700 hover:bg-zinc-700/50 hover:border-toxic-lime/30 active:scale-[0.98]"
                               }`}
                             >
-                              <Icon className="w-5 h-5" />
+                              <Icon className="w-5 h-5 flex-shrink-0" />
                               <span className="font-bold uppercase tracking-wider">
                                 {item.label}
                               </span>
                             </Link>
-                          </Drawer.Close>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
+
+                      {/* Social Icons Row */}
+                      <div className="mb-6">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3 text-center">
+                          Connect
+                        </h3>
+                        <div className="flex items-center justify-center gap-4">
+                          {socialLinks.map((link) => {
+                            const Icon = link.icon;
+                            return (
+                              <motion.a
+                                key={link.name}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Follow on ${link.name}`}
+                                whileTap={{ scale: 0.9 }}
+                                className="group relative p-3 rounded-full bg-zinc-800/50 border border-zinc-700 hover:border-toxic-lime/50 transition-all touch-manipulation"
+                              >
+                                <div className="absolute inset-0 bg-toxic-lime/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                                <Icon className="w-5 h-5 text-zinc-400 group-hover:text-toxic-lime transition-colors relative z-10" />
+                              </motion.a>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Secondary Actions */}
+                      <div className="space-y-2 border-t border-zinc-800 pt-4">
+                        <button
+                          onClick={() => {
+                            handleClick();
+                            setIsMoreOpen(false);
+                            // Scroll to contact or open contact modal
+                            const contactEl = document.getElementById("contact");
+                            if (contactEl) {
+                              contactEl.scrollIntoView({ behavior: "smooth" });
+                            }
+                          }}
+                          className="w-full px-4 py-3 rounded-lg border-2 border-toxic-lime/30 bg-zinc-800/30 text-white hover:bg-toxic-lime/10 hover:border-toxic-lime/50 transition-all touch-manipulation active:scale-[0.98]"
+                        >
+                          <span className="font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            Book / Contact
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleClick();
+                            // Placeholder for press kit action
+                            window.open("/press-kit", "_blank");
+                          }}
+                          className="w-full px-4 py-3 rounded-lg border-2 border-zinc-700 bg-zinc-800/30 text-zinc-400 hover:bg-zinc-700/50 hover:text-white transition-all touch-manipulation active:scale-[0.98]"
+                        >
+                          <span className="font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2">
+                            <ExternalLink className="w-4 h-4" />
+                            Press Kit
+                          </span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </Drawer.Content>
-              </Drawer.Portal>
-            </Drawer.Root>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </nav>
@@ -357,3 +530,52 @@ export function MobileNav() {
     </>
   );
 }
+
+/*
+ * TEST PLAN - Mobile "More" Menu
+ *
+ * ✅ FUNCTIONALITY
+ * - [ ] Tap "More" button → drawer opens from bottom
+ * - [ ] Tap backdrop → drawer closes
+ * - [ ] Tap menu item → navigates and closes drawer
+ * - [ ] Tap social icon → opens in new tab
+ * - [ ] Tap "Book / Contact" → scrolls to contact section
+ * - [ ] Tap "Press Kit" → opens press kit page
+ * - [ ] ESC key → closes drawer
+ * - [ ] Route change → drawer closes automatically
+ *
+ * ✅ VISUAL / POLISH
+ * - [ ] Drawer animates smoothly (spring motion)
+ * - [ ] Backdrop has blur effect
+ * - [ ] Glow effect visible at top of drawer
+ * - [ ] Active menu item highlighted with toxic-lime
+ * - [ ] Social icons have hover glow effect
+ * - [ ] Tap feedback (scale down) on all interactive elements
+ * - [ ] Reduced motion preference respected
+ *
+ * ✅ ACCESSIBILITY
+ * - [ ] Focus trap works (Tab cycles through items)
+ * - [ ] ESC key closes drawer
+ * - [ ] aria-expanded updates on button
+ * - [ ] aria-controls links button to drawer
+ * - [ ] aria-modal="true" on drawer
+ * - [ ] Keyboard navigation works
+ * - [ ] Screen reader announces drawer state
+ *
+ * ✅ PERFORMANCE / STABILITY
+ * - [ ] No console errors
+ * - [ ] No layout shift when opening
+ * - [ ] No infinite re-renders
+ * - [ ] Body scroll locked when open
+ * - [ ] Z-index correct (above hero/background)
+ * - [ ] No memory leaks on route change
+ *
+ * ✅ MOBILE DEVICES
+ * - [ ] iPhone Safari (iOS 15+)
+ * - [ ] iPhone Chrome
+ * - [ ] Android Chrome
+ * - [ ] Safe-area insets work (notch/status bar)
+ * - [ ] Touch targets >= 44px
+ * - [ ] No horizontal scroll
+ * - [ ] Works in landscape orientation
+ */
