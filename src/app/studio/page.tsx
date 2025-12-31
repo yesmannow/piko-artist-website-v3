@@ -570,7 +570,7 @@ export default function StudioPage() {
             try {
               await navigator.share({ title: "Piko Studio Remix", text: message, url: window.location.href });
               addLog("STUDIO_CORE: SHARE_COMPLETE");
-            } catch (error) {
+            } catch {
               // User cancelled
             }
           } else {

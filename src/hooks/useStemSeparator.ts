@@ -33,7 +33,7 @@ export interface StemSeparatorState {
  * @returns {Object} - Stem separation utilities and state
  */
 export function useStemSeparator() {
-  const { audioContext } = useAudioStore();
+  const { audioContext: _audioContext } = useAudioStore();
   const workerRef = useRef<Worker | null>(null);
   const [state, setState] = useState<StemSeparatorState>({
     isProcessing: false,

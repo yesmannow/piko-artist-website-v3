@@ -64,9 +64,11 @@ const config: Config = {
         },
         // Urban Syndicate Palette - Street-Elite Professional
         "midnight-black": "#050505",
+        "midnight": "#050505",
         "industrial-chrome": "#E0E0E0",
+        "chrome": "#E0E0E0",
         "safety-yellow": "#FFD700",
-        // Legacy colors (backward compatibility)
+        // Legacy colors (backward compatibility - all map to Safety Yellow)
         "toxic-lime": "#FFD700", // Map to Safety Yellow
         "brushed-gold": "#FFD700", // Map to Safety Yellow
         "deep-onyx": "#050505",

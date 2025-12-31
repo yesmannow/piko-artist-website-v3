@@ -48,7 +48,7 @@ export default function Home() {
             fontSize: "clamp(12rem, 20vw, 24rem)",
             fontWeight: 900,
             fontStyle: "italic",
-            color: "rgba(224, 224, 224, 0.05)",
+            color: "rgba(224, 224, 224, 0.05)", // 5% opacity
             letterSpacing: "-0.05em",
             textTransform: "uppercase",
             lineHeight: 1,
@@ -140,15 +140,6 @@ export default function Home() {
               <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity bg-[linear-gradient(transparent_50%,rgba(255,215,0,0.1)_50%)] bg-[length:100%_4px]" />
             </div>
 
-            <div className="mt-8 flex justify-center">
-              <Link
-                href="/music"
-                className="px-8 py-4 border-2 border-[#E0E0E0] text-[#E0E0E0] font-black italic uppercase skew-x-[-12deg] hover:bg-[#FFD700] hover:text-black hover:border-[#FFD700] transition-all"
-                style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
-              >
-                VIEW FULL CATALOG
-              </Link>
-            </div>
           </motion.div>
         </div>
       </section>

@@ -27,7 +27,7 @@ export async function renderMixToWAV(
   );
 
   // Create a destination node in offline context
-  const destination = offlineContext.destination;
+  const _destination = offlineContext.destination;
 
   // Note: In a real implementation, you would need to:
   // 1. Recreate the entire audio graph in the offline context

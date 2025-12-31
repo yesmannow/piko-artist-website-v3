@@ -16,6 +16,16 @@ export function VaultVisuals() {
   const { playVideo } = useVideo();
   const videos = tracks.filter((t) => t.type === "video").slice(0, 6);
 
+  // Asset mapping for CCTV feed backgrounds
+  const cctvAssets = [
+    "/images/tracks/dj-2581269_1280.jpg", // Session 1
+    "/images/tracks/graffiti-3750912_1280.jpg", // Session 2
+    "/images/tracks/vinyl-1595847_1280.jpg", // Session 3
+    "/images/tracks/skateboard-447147_1280.jpg", // Session 4
+    "/images/tracks/street-art-1499524_1280.jpg", // Session 5
+    "/images/tracks/abstract-1846847_1280.jpg", // Session 6
+  ];
+
   return (
     <section id="recent-sightings" className="relative py-24 bg-[#050505] border-t-2 border-[#E0E0E0]/10 px-6">
       <div className="max-w-7xl mx-auto">
@@ -31,19 +41,29 @@ export function VaultVisuals() {
           </div>
         </div>
 
-        {/* Monitor Wall Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
-          {videos.map((video, index) => {
-            // Extract YouTube ID from src
-            const youtubeId = video.src.includes("youtube.com/watch?v=")
-              ? video.src.split("v=")[1]?.split("&")[0]
-              : video.src.includes("youtu.be/")
-              ? video.src.split("youtu.be/")[1]?.split("?")[0]
-              : null;
+        {/* Monitor Wall Grid - Industrial Bezel */}
+        <div className="relative p-4 bg-[#000] border-4 border-[#E0E0E0]">
+          {/* Chrome Bolts - Corners */}
+          <div className="absolute -top-2 -left-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
+          <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
+          <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
+          <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
 
-            const thumbnailUrl = youtubeId
-              ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
-              : video.coverArt || "/images/placeholder.jpg";
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
+            {videos.map((video, index) => {
+              // Use mapped assets for CCTV feed backgrounds
+              const cctvBackground = cctvAssets[index] || "/images/placeholder.jpg";
+
+              // Extract YouTube ID from src for thumbnail fallback
+              const youtubeId = video.src.includes("youtube.com/watch?v=")
+                ? video.src.split("v=")[1]?.split("&")[0]
+                : video.src.includes("youtu.be/")
+                ? video.src.split("youtu.be/")[1]?.split("?")[0]
+                : null;
+
+              const thumbnailUrl = youtubeId
+                ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
+                : cctvBackground;
 
             return (
               <motion.div
@@ -61,16 +81,30 @@ export function VaultVisuals() {
                   {new Date().toLocaleTimeString("en-US", { hour12: false })} {/* CAM_{String(index + 1).padStart(2, "0")} */}
                 </div>
 
-                {/* Video Thumbnail with Urban Filter */}
-                <div className="relative w-full h-full grayscale group-hover:grayscale-0 transition-all duration-500">
-                  <img
-                    src={thumbnailUrl}
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity"
-                    alt={video.title}
+                {/* Video Thumbnail with Urban Filter - Grayscale by default, color on hover */}
+                <div className="relative w-full h-full">
+                  {/* Background image layer */}
+                  <div
+                    className="absolute inset-0 grayscale group-hover:grayscale-0 transition-all duration-500"
                     style={{
+                      backgroundImage: `url(${cctvBackground})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
                       filter: "grayscale(1) contrast(1.2) brightness(0.8)",
                     }}
                   />
+                  {/* YouTube thumbnail overlay (if available) */}
+                  {youtubeId && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumbnailUrl}
+                      className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity grayscale group-hover:grayscale-0"
+                      alt={video.title}
+                      style={{
+                        filter: "grayscale(1) contrast(1.2) brightness(0.8)",
+                      }}
+                    />
+                  )}
                   {/* CRT Scanline Overlay */}
                   <div
                     className="absolute inset-0 pointer-events-none z-10"
@@ -89,7 +123,8 @@ export function VaultVisuals() {
                 </div>
               </motion.div>
             );
-          })}
+            })}
+          </div>
         </div>
 
         <div className="mt-12 flex justify-center">

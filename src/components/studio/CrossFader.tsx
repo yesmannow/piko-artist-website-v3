@@ -20,7 +20,7 @@ export function CrossFader({ position, onPositionChange, className = "" }: Cross
   const sliderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([]);
-  const { triggerHaptic } = useHaptic();
+  const triggerHaptic = useHaptic();
   const lastPositionRef = useRef(position);
 
   // Generate particles at 0.0 and 1.0 positions

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { useSceneCleanup } from "@/hooks/useSceneCleanup";
-import { HolographicMaterial } from "@/components/3d/materials/HolographicMaterial";
+// HolographicMaterial is used inline in TurntableModel, not imported here
 import * as THREE from "three";
 import Link from "next/link";
 
@@ -196,7 +196,7 @@ export function StudioMixerPreview() {
   // Simulate subtle audio pulse for preview (in real implementation, this would come from audio context)
   useEffect(() => {
     const interval = setInterval(() => {
-      setAudioLevel((prev) => {
+      setAudioLevel(() => {
         // Subtle pulse animation (0.1 to 0.3)
         return Math.sin(Date.now() / 1000) * 0.1 + 0.2;
       });
@@ -318,13 +318,19 @@ export function StudioMixerPreview() {
             </motion.div>
           </div>
 
-          {/* Right Side: 3D Turntable */}
-          <div className="relative h-[400px] md:h-[500px] lg:h-[600px] order-1 lg:order-2">
+          {/* Right Side: 3D Turntable - Responsive container */}
+          <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] order-1 lg:order-2">
             <Suspense fallback={<StudioSkeleton />}>
               <Canvas
                 dpr={[1, 2]} // CRITICAL: Cap DPR at 2x to prevent mobile overheating
                 camera={{ position: [0, 2, 8], fov: 50 }}
                 className="w-full h-full"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  pointerEvents: 'auto' // Only canvas has pointer events
+                }}
               >
                 {/* Lighting */}
                 <ambientLight intensity={0.6} />

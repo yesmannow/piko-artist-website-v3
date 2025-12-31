@@ -47,12 +47,12 @@ export function FieldOperations() {
                     Status: SIGNAL_LOCKED
                   </div>
                   <h3
-                    className="text-2xl font-black italic text-[#E0E0E0]"
+                    className="text-2xl font-bold italic text-[#E0E0E0]"
                     style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
                   >
                     {event.location.toUpperCase()}
                   </h3>
-                  <p className="text-sm opacity-50 font-bold uppercase font-mono">
+                  <p className="text-sm opacity-50 font-medium uppercase font-mono">
                     {event.title} — {event.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" })}
                   </p>
                 </div>

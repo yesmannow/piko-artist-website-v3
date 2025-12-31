@@ -47,10 +47,15 @@ async function processAudioFile(audioData, sampleRate) {
   isProcessing = true;
 
   try {
-    // Send status update
+    // Send status update - Syndicate telemetry
     self.postMessage({
       type: 'STATUS',
-      message: 'STUDIO_CORE: DECRYPTING_SIGNAL_CHAIN...'
+      message: 'SIGNAL_ACQUIRED'
+    });
+
+    self.postMessage({
+      type: 'STATUS',
+      message: 'DECRYPTING_SIGNAL_CHAIN...'
     });
 
     // Initialize WASM if not already loaded
@@ -62,31 +67,24 @@ async function processAudioFile(audioData, sampleRate) {
       wasmModule = await initializeWASM();
     }
 
-    // Send status update
-    self.postMessage({
-      type: 'STATUS',
-      message: 'STUDIO_CORE: CRACKING_SIGNAL: ISOLATING_FREQUENCIES...',
-      progress: 25
-    });
-
-    // Process with WASM (simulated progress)
+    // Process with WASM (simulated progress) - Syndicate telemetry
     const progressSteps = [25, 50, 75, 100];
     for (const progress of progressSteps) {
       await new Promise(resolve => setTimeout(resolve, 200));
       self.postMessage({
         type: 'PROGRESS',
         progress,
-        message: `STUDIO_CORE: CRACKING_SIGNAL: ISOLATING_FREQUENCIES... [${progress}%]`
+        message: `CRACKING_SIGNAL: ${progress}%`
       });
     }
 
     // Execute WASM inference
     const separatedStems = await wasmModule.separate(audioData);
 
-    // Send completion status
+    // Send completion status - Syndicate telemetry
     self.postMessage({
       type: 'STATUS',
-      message: 'STUDIO_CORE: SIGNAL_STRENGTH: 100% // VAULT_LOCKED'
+      message: 'VAULT_SIGNAL_LOCKED'
     });
 
     // Send results

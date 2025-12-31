@@ -56,7 +56,7 @@ export function useVaultEntrySound(shouldPlay: boolean) {
         oscillator.disconnect();
         filterNode.disconnect();
         gainNode.disconnect();
-      } catch (e) {
+      } catch {
         // Already stopped
       }
     };

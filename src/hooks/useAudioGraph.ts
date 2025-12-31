@@ -145,7 +145,7 @@ export function useAudioGraph() {
     }
 
     const currentTime = audioContext.currentTime;
-    const currentRate = sourceNode.playbackRate.value;
+      const _currentRate = sourceNode.playbackRate.value;
 
     // Exponential deceleration to near-zero (0.001 to avoid division by zero)
     // This creates the smooth "tape stop" feel
@@ -158,7 +158,7 @@ export function useAudioGraph() {
     setTimeout(() => {
       try {
         sourceNode.stop();
-      } catch (e) {
+      } catch {
         // Source may already be stopped
       }
     }, duration * 1000);
