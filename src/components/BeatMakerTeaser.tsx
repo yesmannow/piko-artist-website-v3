@@ -200,7 +200,7 @@ export function BeatMakerTeaser() {
             whileTap={{ scale: 0.98 }}
           >
             <span className="relative z-10 bg-yellow-400 px-4 py-2 inline-block">
-              LAUNCH PRO STUDIO
+              LAUNCH STUDIO_ENGINE
             </span>
           </motion.button>
         </Link>

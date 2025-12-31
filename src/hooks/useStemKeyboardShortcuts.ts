@@ -28,8 +28,8 @@ interface UseStemKeyboardShortcutsProps {
  * Console B: Q=Vocals, W=Bass, E=Drums, R=Other
  */
 export function useStemKeyboardShortcuts({
-  deckAStems,
-  deckBStems,
+  deckAStems: _deckAStems,
+  deckBStems: _deckBStems,
   onDeckAStemToggle,
   onDeckBStemToggle,
 }: UseStemKeyboardShortcutsProps) {

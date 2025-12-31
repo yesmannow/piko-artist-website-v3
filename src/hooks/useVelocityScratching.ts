@@ -94,7 +94,7 @@ export function useVelocityScratching(
       onVelocityChange?.(velocity);
     },
     [calculateVelocity, applyVelocity, onVelocityChange]
-  };
+  );
 
   /**
    * Handle drag end - apply friction deceleration

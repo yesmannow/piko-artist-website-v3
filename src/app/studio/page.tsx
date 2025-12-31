@@ -88,7 +88,13 @@ export default function StudioPage() {
 
   // Track selection state
   const [selectedTrackA, setSelectedTrackA] = useState<MediaItem | null>(null);
+  const [selectedTrackB, setSelectedTrackB] = useState<MediaItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchQueryB, setSearchQueryB] = useState("");
+
+  // Console mode toggles (Library vs Import)
+  const [consoleAMode, setConsoleAMode] = useState<"library" | "import">("library");
+  const [consoleBMode, setConsoleBMode] = useState<"library" | "import">("library");
 
   // Animation frame ref
   const animationFrameRef = useRef<number | null>(null);
@@ -109,6 +115,17 @@ export default function StudioPage() {
         track.vibe.toLowerCase().includes(query)
     );
   }, [audioTracks, searchQuery]);
+
+  const filteredTracksB = useMemo(() => {
+    if (!searchQueryB) return audioTracks;
+    const query = searchQueryB.toLowerCase();
+    return audioTracks.filter(
+      (track) =>
+        track.title.toLowerCase().includes(query) ||
+        track.artist.toLowerCase().includes(query) ||
+        track.vibe.toLowerCase().includes(query)
+    );
+  }, [audioTracks, searchQueryB]);
 
   /**
    * Visualizer Loop - Updates frequency data every frame
@@ -169,6 +186,26 @@ export default function StudioPage() {
     setSelectedTrackA(track);
     await loadDeckA(track.src, track.title);
     addLog(`STUDIO_CORE: CONSOLE_A_LOADED: ${track.title}`);
+  };
+
+  /**
+   * Handle Deck B Load - Load site-hosted track
+   */
+  const handleLoadDeckB = async (track: MediaItem) => {
+    clearDeckB();
+    setSelectedTrackB(track);
+
+    // Fetch the track and create a File object for loadDeckB
+    try {
+      const response = await fetch(track.src);
+      const blob = await response.blob();
+      const file = new File([blob], track.title, { type: blob.type || "audio/mpeg" });
+      await loadDeckB(file);
+      addLog(`STUDIO_CORE: CONSOLE_B_LOADED: ${track.title}`);
+    } catch (error) {
+      console.error("[StudioPage] Failed to load track to Deck B:", error);
+      addLog(`STUDIO_CORE: ERROR: CONSOLE_B_LOAD_FAILED`);
+    }
   };
 
   /**
@@ -311,11 +348,6 @@ export default function StudioPage() {
       window.removeEventListener("keydown", handleKeyPress);
     };
   }, [addLog]);
-    } catch (error) {
-      console.error("[StudioPage] Signal import failed:", error);
-      addLog(`STUDIO_CORE: ERROR: CRACKING_SIGNAL_CHAIN_FAILED`);
-    }
-  };
 
   /**
    * Handle Initialize - Resumes AudioContext on user interaction
@@ -514,54 +546,88 @@ export default function StudioPage() {
                 CONSOLE_A
               </h2>
 
-              {/* Track Selection */}
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="SEARCH_TRACKS..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#050505] border-2 border-[#E0E0E0]/30 text-[#E0E0E0] font-mono text-xs uppercase mb-2"
-                />
+              {/* Mode Toggle: Library vs Import */}
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <span className="text-xs font-mono text-[#E0E0E0]/70 uppercase">MODE:</span>
+                <button
+                  onClick={() => setConsoleAMode(consoleAMode === "library" ? "import" : "library")}
+                  className={`px-4 py-2 text-xs font-mono font-bold uppercase border-2 transition-all min-h-[44px] ${
+                    consoleAMode === "library"
+                      ? "bg-[#FFD700] text-black border-black"
+                      : "bg-[#050505] text-[#E0E0E0] border-[#E0E0E0]/30"
+                  }`}
+                  style={{ borderRadius: 0 }}
+                >
+                  {consoleAMode === "library" ? "LIBRARY" : "SWITCH_TO_IMPORT"}
+                </button>
+              </div>
 
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {filteredTracks.map((track) => (
-                    <motion.button
-                      key={track.id}
-                      onClick={() => handleLoadDeckA(track)}
-                      className={`w-full text-left p-2 border-2 transition-all ${
-                        selectedTrackA?.id === track.id
-                          ? "border-[#FFD700] bg-[#FFD700]/10"
-                          : "border-[#E0E0E0]/20 bg-[#050505] hover:border-[#E0E0E0]/40"
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="flex items-center gap-2">
-                        {track.coverArt.startsWith("/") ? (
-                          <Image
-                            src={track.coverArt}
-                            alt={track.title}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 object-cover"
-                          />
-                        ) : (
-                          <div className={`w-10 h-10 bg-gradient-to-r ${track.coverArt}`} />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-mono text-[#E0E0E0] uppercase truncate">
-                            {track.title}
-                          </div>
-                          <div className="text-[10px] font-mono text-[#E0E0E0]/60 uppercase truncate">
-                            {track.artist}
+              {/* Track Selection (Library Mode) */}
+              {consoleAMode === "library" && (
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="SEARCH_TRACKS..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#050505] border-2 border-[#E0E0E0]/30 text-[#E0E0E0] font-mono text-xs uppercase mb-2"
+                    style={{ borderRadius: 0 }}
+                  />
+
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {filteredTracks.map((track) => (
+                      <motion.button
+                        key={track.id}
+                        onClick={() => handleLoadDeckA(track)}
+                        className={`w-full text-left p-2 border-2 transition-all ${
+                          selectedTrackA?.id === track.id
+                            ? "border-[#FFD700] bg-[#FFD700]/10"
+                            : "border-[#E0E0E0]/20 bg-[#050505] hover:border-[#E0E0E0]/40"
+                        }`}
+                        style={{ borderRadius: 0 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="flex items-center gap-2">
+                          {track.coverArt.startsWith("/") ? (
+                            <Image
+                              src={track.coverArt}
+                              alt={track.title}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 object-cover"
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 bg-gradient-to-r ${track.coverArt}`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-mono text-[#E0E0E0] uppercase truncate">
+                              {track.title}
+                            </div>
+                            <div className="text-[10px] font-mono text-[#E0E0E0]/60 uppercase truncate">
+                              {track.artist}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </motion.button>
-                  ))}
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Signal Import (Import Mode) */}
+              {consoleAMode === "import" && (
+                <div className="mb-4">
+                  <SignalHatch
+                    onFileUpload={async (file) => {
+                      await handleSignalImport(file);
+                      addLog(`STUDIO_CORE: CONSOLE_A_IMPORT: ${file.name}`);
+                    }}
+                    isProcessing={isProcessing && consoleAMode === "import"}
+                    processingProgress={progress}
+                  />
+                </div>
+              )}
 
               {/* Deck A Controls */}
               {deckA.audioBuffer && (
@@ -598,7 +664,12 @@ export default function StudioPage() {
               >
                 SIGNAL_SPLITTER
               </h3>
-              <CrossFader position={crossfaderPosition} onPositionChange={setCrossfader} />
+              <CrossFader
+                position={crossfaderPosition}
+                onPositionChange={setCrossfader}
+                filterMode={filterMode}
+                onFilterModeChange={setFilterMode}
+              />
             </div>
           </div>
 
@@ -613,11 +684,85 @@ export default function StudioPage() {
                 CONSOLE_B
               </h2>
 
-              <SignalHatch
-                onFileUpload={handleSignalImport}
-                isProcessing={isProcessing}
-                processingProgress={progress}
-              />
+              {/* Mode Toggle: Library vs Import */}
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <span className="text-xs font-mono text-[#E0E0E0]/70 uppercase">MODE:</span>
+                <button
+                  onClick={() => setConsoleBMode(consoleBMode === "library" ? "import" : "library")}
+                  className={`px-4 py-2 text-xs font-mono font-bold uppercase border-2 transition-all min-h-[44px] ${
+                    consoleBMode === "library"
+                      ? "bg-[#FFD700] text-black border-black"
+                      : "bg-[#050505] text-[#E0E0E0] border-[#E0E0E0]/30"
+                  }`}
+                  style={{ borderRadius: 0 }}
+                >
+                  {consoleBMode === "library" ? "LIBRARY" : "SWITCH_TO_IMPORT"}
+                </button>
+              </div>
+
+              {/* Track Selection (Library Mode) */}
+              {consoleBMode === "library" && (
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="SEARCH_TRACKS..."
+                    value={searchQueryB}
+                    onChange={(e) => setSearchQueryB(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#050505] border-2 border-[#E0E0E0]/30 text-[#E0E0E0] font-mono text-xs uppercase mb-2"
+                    style={{ borderRadius: 0 }}
+                  />
+
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {filteredTracksB.map((track) => (
+                      <motion.button
+                        key={track.id}
+                        onClick={() => handleLoadDeckB(track)}
+                        className={`w-full text-left p-2 border-2 transition-all ${
+                          selectedTrackB?.id === track.id
+                            ? "border-[#FFD700] bg-[#FFD700]/10"
+                            : "border-[#E0E0E0]/20 bg-[#050505] hover:border-[#E0E0E0]/40"
+                        }`}
+                        style={{ borderRadius: 0 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="flex items-center gap-2">
+                          {track.coverArt.startsWith("/") ? (
+                            <Image
+                              src={track.coverArt}
+                              alt={track.title}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 object-cover"
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 bg-gradient-to-r ${track.coverArt}`} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-mono text-[#E0E0E0] uppercase truncate">
+                              {track.title}
+                            </div>
+                            <div className="text-[10px] font-mono text-[#E0E0E0]/60 uppercase truncate">
+                              {track.artist}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Signal Import (Import Mode) */}
+              {consoleBMode === "import" && (
+                <div className="mb-4">
+                  <SignalHatch
+                    onFileUpload={handleSignalImport}
+                    isProcessing={isProcessing && consoleBMode === "import"}
+                    processingProgress={progress}
+                  />
+                </div>
+              )}
 
               {/* Syndicate EQ - Stem Mixing Console */}
               {separatedStems && (
@@ -744,8 +889,8 @@ export default function StudioPage() {
             try {
               await navigator.clipboard.writeText(message);
               addLog("STUDIO_CORE: SHARE_LINK_COPIED");
-            } catch (error) {
-              console.error("[StudioPage] Clipboard copy failed:", error);
+            } catch (_error) {
+              console.error("[StudioPage] Clipboard copy failed:", _error);
             }
           }
         }}
