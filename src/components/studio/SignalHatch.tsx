@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { Upload, X, FileAudio, AlertCircle } from "lucide-react";
+import { FileUp, X, FileAudio, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStudioMonitor } from "@/components/ui/StudioMonitor";
 
@@ -136,7 +136,7 @@ export function SignalHatch({
               animate={isDragging ? { scale: 1.1, rotate: 5 } : {}}
               className="text-[#FFD700]"
             >
-              <Upload size={48} strokeWidth={2} />
+              <FileUp size={48} strokeWidth={2} />
             </motion.div>
 
             {/* Title */}
@@ -193,8 +193,13 @@ export function SignalHatch({
                     {/* Ghost Waveforms - Four SVG skeletons with progressive fill */}
                     <div className="mt-4 space-y-2">
                       {['VOX', 'DRUM', 'BASS', 'OTHER'].map((stem, index) => {
-                        const fillProgress = Math.max(0, Math.min(100, (processingProgress / 100) * 100));
-                        const fillWidth = fillProgress > (index * 25) ? Math.min(100, ((fillProgress - (index * 25)) / 25) * 100) : 0;
+                        // Progressive fill: Each stem fills as progress reaches 25%, 50%, 75%, 100%
+                        const stemThreshold = index * 25;
+                        const fillProgress = processingProgress;
+                        const fillWidth =
+                          fillProgress > stemThreshold
+                            ? Math.min(100, ((fillProgress - stemThreshold) / 25) * 100)
+                            : 0;
 
                         return (
                           <div key={stem} className="relative">

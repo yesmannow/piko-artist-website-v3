@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+
+export type { SeparatedStems };
 import { useStudioMonitor } from "@/components/ui/StudioMonitor";
 
 interface SeparatedStems {
@@ -160,11 +162,32 @@ export function useSignalCracker() {
     }
   }, [isProcessing]);
 
+  // Expose separated stems state
+  const [separatedStems, setSeparatedStems] = useState<SeparatedStems | null>(null);
+
+  // Update stems when processing completes - listen to all worker messages
+  useEffect(() => {
+    if (!workerRef.current) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === "COMPLETE" && event.data.stems) {
+        setSeparatedStems(event.data.stems);
+      }
+    };
+
+    workerRef.current.addEventListener("message", handleMessage);
+
+    return () => {
+      workerRef.current?.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
   return {
     processAudio,
     cancel,
     isProcessing,
     progress,
+    separatedStems,
   };
 }
 

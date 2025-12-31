@@ -95,7 +95,7 @@ export default function Home() {
 
           <motion.button
             onClick={scrollToMusic}
-            className="px-12 py-6 bg-[#E0E0E0] text-black font-black italic uppercase text-xl md:text-2xl skew-x-[-12deg] hover:bg-[#FFD700] transition-all"
+            className="px-12 py-6 bg-[#E0E0E0] text-black font-black italic uppercase text-xl md:text-2xl md:skew-x-[-12deg] skew-x-[-6deg] hover:bg-[#FFD700] transition-all"
             style={{
               fontFamily: "var(--font-lexend), system-ui, sans-serif",
               boxShadow: "8px 8px 0px #000",

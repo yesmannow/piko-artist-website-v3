@@ -5,6 +5,11 @@ import { useAudioStore } from "@/stores/useAudioStore";
 import { useAudioGraph } from "@/hooks/useAudioGraph";
 import { createConstantPowerSplitter, applyConstantPowerGains } from "@/utils/constantPowerSplitter";
 
+// SessionStorage keys
+const STORAGE_KEY_CROSSFADER = "piko_studio_crossfader";
+const STORAGE_KEY_DECK_A_TRACK = "piko_studio_deck_a_track";
+const STORAGE_KEY_DECK_B_TRACK = "piko_studio_deck_b_track";
+
 export interface DeckState {
   trackName: string | null;
   audioBuffer: AudioBuffer | null;
@@ -37,29 +42,47 @@ export function useDualDeck() {
   const deckAGainRef = useRef<GainNode | null>(null);
   const deckBGainRef = useRef<GainNode | null>(null);
 
-  // Deck states
-  const [deckA, setDeckA] = useState<DeckState>({
-    trackName: null,
-    audioBuffer: null,
-    sourceNode: null,
-    isPlaying: false,
-    gain: 1.0,
-    playbackRate: 1.0,
+  // Filter nodes for Filter Mode (HPF on outgoing, LPF on incoming)
+  const deckAHPFRef = useRef<BiquadFilterNode | null>(null);
+  const deckBLPFRef = useRef<BiquadFilterNode | null>(null);
+
+  // Deck states - Hydrate track names from sessionStorage
+  const [deckA, setDeckA] = useState<DeckState>(() => {
+    const storedTrack = typeof window !== "undefined" ? sessionStorage.getItem(STORAGE_KEY_DECK_A_TRACK) : null;
+    return {
+      trackName: storedTrack,
+      audioBuffer: null,
+      sourceNode: null,
+      isPlaying: false,
+      gain: 1.0,
+      playbackRate: 1.0,
+    };
   });
 
-  const [deckB, setDeckB] = useState<DeckState>({
-    trackName: null,
-    audioBuffer: null,
-    sourceNode: null,
-    isPlaying: false,
-    gain: 1.0,
-    playbackRate: 1.0,
+  const [deckB, setDeckB] = useState<DeckState>(() => {
+    const storedTrack = typeof window !== "undefined" ? sessionStorage.getItem(STORAGE_KEY_DECK_B_TRACK) : null;
+    return {
+      trackName: storedTrack,
+      audioBuffer: null,
+      sourceNode: null,
+      isPlaying: false,
+      gain: 1.0,
+      playbackRate: 1.0,
+    };
   });
 
   // Crossfader position (0.0 = Deck A full, 1.0 = Deck B full, 0.5 = center)
-  const [crossfaderPosition, setCrossfaderPosition] = useState(0.5);
+  // Hydrate from sessionStorage on mount
+  const [crossfaderPosition, setCrossfaderPosition] = useState(() => {
+    if (typeof window === "undefined") return 0.5;
+    const stored = sessionStorage.getItem(STORAGE_KEY_CROSSFADER);
+    return stored ? parseFloat(stored) : 0.5;
+  });
 
-  // Initialize constant-power signal splitter
+  // Filter Mode state
+  const [filterMode, setFilterMode] = useState(false);
+
+  // Initialize constant-power signal splitter and filter nodes
   useEffect(() => {
     if (!audioContext || !masterGainNode) {
       return;
@@ -74,6 +97,19 @@ export function useDualDeck() {
     deckAGainRef.current = gainNodeA;
     deckBGainRef.current = gainNodeB;
 
+    // Create filter nodes for Filter Mode
+    const hpfA = audioContext.createBiquadFilter();
+    hpfA.type = "highpass";
+    hpfA.frequency.value = 20000; // Start at max (no filtering)
+    hpfA.Q.value = 1.0;
+    deckAHPFRef.current = hpfA;
+
+    const lpfB = audioContext.createBiquadFilter();
+    lpfB.type = "lowpass";
+    lpfB.frequency.value = 20; // Start at min (no filtering)
+    lpfB.Q.value = 1.0;
+    deckBLPFRef.current = lpfB;
+
     // Apply initial crossfader position (center)
     applyConstantPowerGains(
       gainNodeA,
@@ -85,6 +121,8 @@ export function useDualDeck() {
     return () => {
       gainNodeA.disconnect();
       gainNodeB.disconnect();
+      hpfA.disconnect();
+      lpfB.disconnect();
     };
   }, [audioContext, masterGainNode, crossfaderPosition]);
 
@@ -116,6 +154,11 @@ export function useDualDeck() {
           sourceNode: null,
           isPlaying: false,
         }));
+
+        // Persist to sessionStorage
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(STORAGE_KEY_DECK_A_TRACK, trackName);
+        }
       } catch (error) {
         console.error("[useDualDeck] Failed to load Deck A:", error);
       }
@@ -150,13 +193,19 @@ export function useDualDeck() {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
+        const finalTrackName = trackName || "USER UPLOAD";
         setDeckB((prev) => ({
           ...prev,
-          trackName: trackName || "USER UPLOAD",
+          trackName: finalTrackName,
           audioBuffer,
           sourceNode: null,
           isPlaying: false,
         }));
+
+        // Persist to sessionStorage
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(STORAGE_KEY_DECK_B_TRACK, finalTrackName);
+        }
 
         return audioBuffer; // Return for potential stem separation
       } catch (error) {
@@ -184,7 +233,14 @@ export function useDualDeck() {
     const source = audioContext.createBufferSource();
     source.buffer = deckA.audioBuffer;
     source.playbackRate.value = deckA.playbackRate;
-    source.connect(deckAGainRef.current);
+
+    // Route through HPF filter if Filter Mode is enabled
+    if (filterMode && deckAHPFRef.current) {
+      source.connect(deckAHPFRef.current);
+      deckAHPFRef.current.connect(deckAGainRef.current);
+    } else {
+      source.connect(deckAGainRef.current);
+    }
 
     source.onended = () => {
       setDeckA((prev) => ({
@@ -219,7 +275,14 @@ export function useDualDeck() {
     const source = audioContext.createBufferSource();
     source.buffer = deckB.audioBuffer;
     source.playbackRate.value = deckB.playbackRate;
-    source.connect(deckBGainRef.current);
+
+    // Route through LPF filter if Filter Mode is enabled
+    if (filterMode && deckBLPFRef.current) {
+      source.connect(deckBLPFRef.current);
+      deckBLPFRef.current.connect(deckBGainRef.current);
+    } else {
+      source.connect(deckBGainRef.current);
+    }
 
     source.onended = () => {
       setDeckB((prev) => ({
@@ -306,6 +369,11 @@ export function useDualDeck() {
       gain: 1.0,
       playbackRate: 1.0,
     });
+
+    // Clear sessionStorage
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(STORAGE_KEY_DECK_A_TRACK);
+    }
   }, [stopDeckA]);
 
   /**
@@ -321,11 +389,18 @@ export function useDualDeck() {
       gain: 1.0,
       playbackRate: 1.0,
     });
+
+    // Clear sessionStorage
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(STORAGE_KEY_DECK_B_TRACK);
+    }
   }, [stopDeckB]);
 
   /**
    * Set crossfader position (0.0 to 1.0)
    * Applies constant-power curve automatically
+   * When Filter Mode is enabled, sweeps HPF on outgoing deck and LPF on incoming deck
+   * Persists to sessionStorage for session continuity
    */
   const setCrossfader = useCallback(
     (position: number) => {
@@ -340,8 +415,39 @@ export function useDualDeck() {
         position,
         audioContext
       );
+
+      // Apply filter sweeps in Filter Mode
+      if (filterMode) {
+        const currentTime = audioContext.currentTime;
+        const rampTime = 0.02; // Smooth 20ms transitions
+
+        // Deck A (outgoing): HPF sweeps from 20kHz (no filter) to 200Hz (full filter) as position moves to 1.0
+        if (deckAHPFRef.current) {
+          const hpfFreq = 20000 - position * (20000 - 200); // 20000 -> 200 Hz
+          deckAHPFRef.current.frequency.setTargetAtTime(hpfFreq, currentTime, rampTime);
+        }
+
+        // Deck B (incoming): LPF sweeps from 20Hz (no filter) to 20kHz (full filter) as position moves to 1.0
+        if (deckBLPFRef.current) {
+          const lpfFreq = 20 + position * (20000 - 20); // 20 -> 20000 Hz
+          deckBLPFRef.current.frequency.setTargetAtTime(lpfFreq, currentTime, rampTime);
+        }
+      } else {
+        // Reset filters to neutral when Filter Mode is off
+        if (deckAHPFRef.current) {
+          deckAHPFRef.current.frequency.setTargetAtTime(20000, audioContext.currentTime, 0.02);
+        }
+        if (deckBLPFRef.current) {
+          deckBLPFRef.current.frequency.setTargetAtTime(20, audioContext.currentTime, 0.02);
+        }
+      }
+
+      // Persist to sessionStorage
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEY_CROSSFADER, position.toString());
+      }
     },
-    [audioContext]
+    [audioContext, filterMode]
   );
 
   return {
@@ -359,6 +465,8 @@ export function useDualDeck() {
     clearDeckB,
     crossfaderPosition,
     setCrossfader,
+    filterMode,
+    setFilterMode,
   };
 }
 

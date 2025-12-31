@@ -74,7 +74,7 @@ async function processAudioFile(audioData, sampleRate) {
       self.postMessage({
         type: 'PROGRESS',
         progress,
-        message: `CRACKING_SIGNAL: ${progress}%`
+        message: `CRACKING_SIGNAL_CHAIN: ${progress}%`
       });
     }
 

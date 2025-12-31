@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { GlitchController } from "./GlitchController";
+import { GlitchController, BrightnessFilter } from "./GlitchController";
 import { useSpring, animated } from "@react-spring/three";
 import { HolographicDeck } from "./HolographicDeck";
 import { useOrientation } from "@/hooks/useOrientation";
@@ -20,6 +20,7 @@ interface StudioCanvasProps {
   getFrequencyData?: () => Uint8Array | null;
   playbackRate?: number; // For tape stop effect
   impactPulse?: boolean; // For session launch impact effect
+  remixIntensity?: number; // 0-1, environmental reactivity trigger
 }
 
 /**
@@ -35,7 +36,8 @@ function SceneContent({
   getFrequencyData,
   isLandscape,
   impactPulse,
-}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean; impactPulse?: boolean }) {
+  remixIntensity = 0,
+}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean; impactPulse?: boolean; remixIntensity?: number }) {
   const { scene } = useThree();
   const sceneRef = useRef(scene);
 
@@ -103,8 +105,14 @@ function SceneContent({
       <EffectComposer>
         <Bloom intensity={0.5} luminanceThreshold={0.9} />
         {getFrequencyData ? (
-          <GlitchController getFrequencyData={getFrequencyData} impactPulse={impactPulse} />
-        ) : <></>}
+          <GlitchController
+            getFrequencyData={getFrequencyData}
+            impactPulse={impactPulse}
+            remixIntensity={remixIntensity}
+          />
+        ) : (
+          <></>
+        )}
       </EffectComposer>
     </>
   );
@@ -131,6 +139,7 @@ export function StudioCanvas({
   getFrequencyData,
   playbackRate = 1.0,
   impactPulse = false,
+  remixIntensity = 0,
 }: StudioCanvasProps) {
   const isLandscape = useOrientation();
 
@@ -147,7 +156,7 @@ export function StudioCanvas({
   });
 
   return (
-    <div className="absolute inset-0 z-0" style={{ touchAction: "none" }}>
+    <div className="absolute inset-0 z-0 relative" style={{ touchAction: "none" }}>
       <Canvas
         dpr={[1, 2]} // CRITICAL: Cap DPR at 2x to prevent mobile overheating
         camera={{ position: [0, 0, 12], fov: 50 }}
@@ -164,8 +173,11 @@ export function StudioCanvas({
           getFrequencyData={getFrequencyData}
           isLandscape={isLandscape}
           impactPulse={impactPulse}
+          remixIntensity={remixIntensity}
         />
       </Canvas>
+      {/* Brightness filter for environmental reactivity */}
+      <BrightnessFilter intensity={remixIntensity} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { ChromaticAberration, Vignette } from "@react-three/postprocessing";
 interface GlitchControllerProps {
   getFrequencyData?: () => Uint8Array | null;
   impactPulse?: boolean; // For session launch impact effect
+  remixIntensity?: number; // 0-1, environmental reactivity trigger
 }
 
 /**
@@ -19,10 +20,12 @@ interface GlitchControllerProps {
  * flash effects when peaks exceed threshold, mimicking
  * professional music video editing.
  */
-export function GlitchController({ getFrequencyData, impactPulse }: GlitchControllerProps) {
+export function GlitchController({ getFrequencyData, impactPulse, remixIntensity = 0 }: GlitchControllerProps) {
   const [flashIntensity, setFlashIntensity] = useState(0);
   const [vignetteIntensity, setVignetteIntensity] = useState(0.5);
+  const [brightnessPulse, setBrightnessPulse] = useState(1.0);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const brightnessPulseRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle impact pulse effect (session launch)
   useEffect(() => {
@@ -38,6 +41,40 @@ export function GlitchController({ getFrequencyData, impactPulse }: GlitchContro
       }, 300);
     }
   }, [impactPulse]);
+
+  // Environmental Reactivity: remixIntensity > 0.7 triggers visual stress
+  useEffect(() => {
+    if (remixIntensity > 0.7) {
+      // Apply brightness pulse (1.0 to 1.2)
+      const pulseIntensity = 1.0 + (remixIntensity - 0.7) * 0.67; // Maps 0.7-1.0 to 1.0-1.2
+      setBrightnessPulse(pulseIntensity);
+
+      // Trigger screen flicker (CRT scan-line interference)
+      const flickerInterval = setInterval(() => {
+        setFlashIntensity(0.3);
+        setTimeout(() => setFlashIntensity(0), 50);
+      }, 200);
+
+      // Clear interval when intensity drops
+      const cleanup = () => {
+        clearInterval(flickerInterval);
+        setBrightnessPulse(1.0);
+      };
+
+      brightnessPulseRef.current = setTimeout(cleanup, 1000);
+
+      return () => {
+        clearInterval(flickerInterval);
+        if (brightnessPulseRef.current) {
+          clearTimeout(brightnessPulseRef.current);
+        }
+      };
+    } else {
+      // Gradual fade when intensity drops
+      setBrightnessPulse(1.0);
+      setFlashIntensity(0);
+    }
+  }, [remixIntensity]);
 
   useEffect(() => {
     if (!getFrequencyData) return;
@@ -99,12 +136,34 @@ export function GlitchController({ getFrequencyData, impactPulse }: GlitchContro
       {/* Vignette - Creates cinematic depth, intensifies on impact pulse */}
       <Vignette eskil={false} offset={0.1} darkness={vignetteIntensity} />
 
-      {/* Chromatic Aberration - Intensifies on impact pulse or treble transients */}
+      {/* Chromatic Aberration - Intensifies on impact pulse, treble transients, or remixIntensity */}
       <ChromaticAberration
-        offset={flashIntensity > 0 ? [0.002 * flashIntensity, 0.0015 * flashIntensity] : [0.0003, 0.0003]}
+        offset={
+          flashIntensity > 0 || remixIntensity > 0.7
+            ? [0.002 * Math.max(flashIntensity, remixIntensity), 0.0015 * Math.max(flashIntensity, remixIntensity)]
+            : [0.0003, 0.0003]
+        }
         radialModulation={true}
       />
     </>
+  );
+}
+
+/**
+ * Brightness filter wrapper - Applied to canvas container for remixIntensity reactivity
+ * This is a separate component to be used outside the post-processing pipeline
+ */
+export function BrightnessFilter({ intensity }: { intensity: number }) {
+  const brightness = 1.0 + (intensity > 0.7 ? (intensity - 0.7) * 0.67 : 0); // Maps 0.7-1.0 to 1.0-1.2
+
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none z-[1000]"
+      style={{
+        filter: `brightness(${brightness})`,
+        mixBlendMode: "normal",
+      }}
+    />
   );
 }
 

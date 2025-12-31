@@ -8,6 +8,8 @@ interface CrossFaderProps {
   position: number; // 0.0 to 1.0
   onPositionChange: (position: number) => void;
   className?: string;
+  filterMode?: boolean;
+  onFilterModeChange?: (enabled: boolean) => void;
 }
 
 /**
@@ -16,7 +18,7 @@ interface CrossFaderProps {
  * V3 Urban Syndicate: Brutalist crossfader with Safety Yellow particle effects
  * at 0.0 and 1.0 positions. Triggers haptic feedback on mobile.
  */
-export function CrossFader({ position, onPositionChange, className = "" }: CrossFaderProps) {
+export function CrossFader({ position, onPositionChange, className = "", filterMode = false, onFilterModeChange }: CrossFaderProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([]);
@@ -100,22 +102,46 @@ export function CrossFader({ position, onPositionChange, className = "" }: Cross
 
   return (
     <div className={`relative ${className}`}>
-      {/* Track */}
+      {/* Filter Mode Toggle */}
+      {onFilterModeChange && (
+        <div className="mb-3 flex items-center justify-between">
+          <label className="text-xs font-mono text-[#E0E0E0]/70 uppercase">FILTER_MODE</label>
+          <button
+            onClick={() => onFilterModeChange(!filterMode)}
+            className={`relative w-12 h-6 min-w-[44px] min-h-[44px] border-2 border-[#E0E0E0] transition-colors ${
+              filterMode ? "bg-[#FFD700] border-[#FFD700]" : "bg-[#111]"
+            }`}
+            style={{ borderRadius: 0 }}
+            aria-label={filterMode ? "Disable filter mode" : "Enable filter mode"}
+          >
+            <motion.div
+              className="absolute top-0.5 bottom-0.5 w-5 bg-[#111] border border-[#E0E0E0]"
+              animate={{ x: filterMode ? 20 : 2 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              style={{ borderRadius: 0 }}
+            />
+          </button>
+        </div>
+      )}
+
+      {/* Track - 44px minimum height for touch targets */}
       <div
         ref={sliderRef}
-        className="relative h-16 bg-[#111] border-4 border-[#E0E0E0] cursor-pointer"
+        className="relative h-16 min-h-[44px] bg-[#111] border-4 border-[#E0E0E0] cursor-pointer"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
+        style={{ touchAction: "none" }}
       >
         {/* Center Indicator */}
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#E0E0E0]/30" />
 
-        {/* Fader Handle - Mechanical Chrome Block */}
+        {/* Fader Handle - Mechanical Chrome Block - 44px minimum width for touch */}
         <motion.div
-          className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-[#C0C0C0] via-[#E0E0E0] to-[#C0C0C0] border-2 border-[#000] cursor-grab active:cursor-grabbing"
+          className="absolute top-0 bottom-0 w-8 min-w-[44px] bg-gradient-to-r from-[#C0C0C0] via-[#E0E0E0] to-[#C0C0C0] border-2 border-[#000] cursor-grab active:cursor-grabbing"
           style={{
             left: `${position * 100}%`,
-            marginLeft: "-16px", // Center the handle
+            marginLeft: "-22px", // Center the handle (44px / 2)
+            minHeight: "44px",
             boxShadow: "inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.5), 4px 4px 0px rgba(0,0,0,1)",
           }}
           animate={{

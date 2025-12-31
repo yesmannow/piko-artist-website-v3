@@ -13,6 +13,7 @@ import { ThermalMeter } from "@/components/studio/ThermalMeter";
 import { SessionSummary } from "@/components/studio/SessionSummary";
 import { SamplerGrid } from "@/components/studio/SamplerGrid";
 import { OrientationGuard } from "@/components/studio/OrientationGuard";
+import { SyndicateEQ } from "@/components/studio/SyndicateEQ";
 import { audioBufferToWAV } from "@/utils/audioRenderer";
 import { tracks, MediaItem } from "@/lib/data";
 import { motion } from "framer-motion";
@@ -56,8 +57,18 @@ export default function StudioPage() {
     clearDeckB,
     crossfaderPosition,
     setCrossfader,
+    filterMode,
+    setFilterMode,
   } = useDualDeck();
-  const { processAudio, isProcessing, progress } = useSignalCracker();
+  const { processAudio, isProcessing, progress, separatedStems: crackerStems } = useSignalCracker();
+
+  // Stem state for EQ control
+  const [separatedStems, setSeparatedStems] = useState<{
+    vocals?: AudioBuffer;
+    bass?: AudioBuffer;
+    drums?: AudioBuffer;
+    other?: AudioBuffer;
+  } | null>(null);
 
   // Combined ready state
   const isFullyReady = isReady && graphReady;
@@ -182,9 +193,124 @@ export default function StudioPage() {
         const stems = await processAudio(audioBuffer);
         if (stems) {
           addLog(`STUDIO_CORE: SIGNAL_CRACKED: STEMS_ISOLATED`);
+          setSeparatedStems(stems);
           setStemManipulations((prev) => prev + 1);
         }
       }
+    } catch (error) {
+      console.error("[StudioPage] Signal import failed:", error);
+      addLog(`STUDIO_CORE: ERROR: CRACKING_SIGNAL_CHAIN_FAILED`);
+    }
+  };
+
+  // Sync separatedStems from useSignalCracker hook
+  useEffect(() => {
+    if (crackerStems) {
+      setSeparatedStems(crackerStems);
+    }
+  }, [crackerStems]);
+
+  // Stem mute state for keyboard shortcuts
+  const [deckAStemMutes, setDeckAStemMutes] = useState({
+    vocals: false,
+    bass: false,
+    drums: false,
+    other: false,
+  });
+
+  const [deckBStemMutes, setDeckBStemMutes] = useState({
+    vocals: false,
+    bass: false,
+    drums: false,
+    other: false,
+  });
+
+  // Keyboard shortcuts for stem mutes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if typing in input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+
+      // Console A: Keys 1-4
+      if (key === "1") {
+        e.preventDefault();
+        setDeckAStemMutes((prev) => {
+          const newState = { ...prev, vocals: !prev.vocals };
+          addLog(`STUDIO_CORE: CONSOLE_A_VOX: ${newState.vocals ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      } else if (key === "2") {
+        e.preventDefault();
+        setDeckAStemMutes((prev) => {
+          const newState = { ...prev, bass: !prev.bass };
+          addLog(`STUDIO_CORE: CONSOLE_A_BASS: ${newState.bass ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      } else if (key === "3") {
+        e.preventDefault();
+        setDeckAStemMutes((prev) => {
+          const newState = { ...prev, drums: !prev.drums };
+          addLog(`STUDIO_CORE: CONSOLE_A_DRUM: ${newState.drums ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      } else if (key === "4") {
+        e.preventDefault();
+        setDeckAStemMutes((prev) => {
+          const newState = { ...prev, other: !prev.other };
+          addLog(`STUDIO_CORE: CONSOLE_A_OTHER: ${newState.other ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      }
+
+      // Console B: Keys Q-R
+      if (key === "q") {
+        e.preventDefault();
+        setDeckBStemMutes((prev) => {
+          const newState = { ...prev, vocals: !prev.vocals };
+          addLog(`STUDIO_CORE: CONSOLE_B_VOX: ${newState.vocals ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      } else if (key === "w") {
+        e.preventDefault();
+        setDeckBStemMutes((prev) => {
+          const newState = { ...prev, bass: !prev.bass };
+          addLog(`STUDIO_CORE: CONSOLE_B_BASS: ${newState.bass ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      } else if (key === "e") {
+        e.preventDefault();
+        setDeckBStemMutes((prev) => {
+          const newState = { ...prev, drums: !prev.drums };
+          addLog(`STUDIO_CORE: CONSOLE_B_DRUM: ${newState.drums ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      } else if (key === "r") {
+        e.preventDefault();
+        setDeckBStemMutes((prev) => {
+          const newState = { ...prev, other: !prev.other };
+          addLog(`STUDIO_CORE: CONSOLE_B_OTHER: ${newState.other ? "MUTED" : "UNMUTED"}`);
+          return newState;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [addLog]);
     } catch (error) {
       console.error("[StudioPage] Signal import failed:", error);
       addLog(`STUDIO_CORE: ERROR: CRACKING_SIGNAL_CHAIN_FAILED`);
@@ -314,13 +440,13 @@ export default function StudioPage() {
 
           <button
             onClick={handleInitialize}
-            className="px-12 py-6 bg-[#FFD700] text-black font-black italic uppercase text-xl md:text-2xl skew-x-[-12deg] hover:skew-x-[-10deg] transition-transform border-2 border-black min-h-[60px] tracking-wider"
+            className="px-12 py-6 bg-[#FFD700] text-black font-black italic uppercase text-xl md:text-2xl md:skew-x-[-12deg] md:hover:skew-x-[-10deg] skew-x-[-6deg] hover:skew-x-[-4deg] transition-transform border-2 border-black min-h-[60px] tracking-wider"
             style={{
               fontFamily: "var(--font-lexend), system-ui, sans-serif",
               boxShadow: "8px 8px 0px rgba(0,0,0,1)",
             }}
           >
-            <span className="skew-x-[12deg] block">ENTER THE BOOTH</span>
+            <span className="md:skew-x-[12deg] skew-x-[6deg] block">ENTER THE BOOTH</span>
           </button>
 
           <p className="text-[#E0E0E0]/40 font-mono text-[10px] max-w-md mx-auto uppercase tracking-wider">
@@ -370,6 +496,7 @@ export default function StudioPage() {
             getFrequencyData={getFrequencyData}
             playbackRate={playbackRate}
             impactPulse={impactPulse}
+            remixIntensity={remixIntensity}
           />
         </Suspense>
       </div>
@@ -491,6 +618,19 @@ export default function StudioPage() {
                 isProcessing={isProcessing}
                 processingProgress={progress}
               />
+
+              {/* Syndicate EQ - Stem Mixing Console */}
+              {separatedStems && (
+                <div className="mt-4">
+                  <SyndicateEQ
+                    stems={separatedStems}
+                    onStemGainChange={(stem, gain) => {
+                      addLog(`STUDIO_CORE: ${stem.toUpperCase()}_GAIN: ${Math.round(gain * 100)}%`);
+                      setStemManipulations((prev) => prev + 0.1);
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Deck B Controls */}
               {deckB.audioBuffer && (
