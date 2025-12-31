@@ -331,12 +331,12 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
       )}
 
       {featuredOnly ? (
-        // Featured Mode: Table Layout
+        // Featured Mode: Warehouse Manifest Table Layout
         <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
-          <div className="min-w-[min(100%,760px)] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden mx-4 md:mx-0">
+          <div className="min-w-[min(100%,760px)] border-2 border-white/10 bg-black/40 overflow-hidden mx-4 md:mx-0">
             {/* Sticky header */}
-            <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
-              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-industrial font-bold">
+            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b-2 border-white/10">
+              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-[#E0E0E0]/60 font-mono font-bold uppercase">
                 <div>#</div>
                 <div>TITLE</div>
                 <div>ARTIST</div>
@@ -344,9 +344,15 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 <div className="text-right">TIME</div>
               </div>
             </div>
+            {/* Section Header Update */}
+            <div className="px-4 py-2 border-b-2 border-white/10 bg-black/60">
+              <span className="text-[10px] font-mono text-[#FFD700] uppercase tracking-widest">
+                STUDIO_MANIFEST // LATEST_RELEASES
+              </span>
+            </div>
 
-            {/* Rows */}
-            <div className="divide-y divide-white/10">
+            {/* Rows with CCTV Scan-line Hover Effect */}
+            <div className="divide-y divide-white/10 relative">
               {visibleTracks.map((track, idx) => {
                 const isActive = currentTrack?.id === track.id && isPlaying;
 
@@ -355,24 +361,39 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     key={track.id}
                     track={track}
                   >
-                    <motion.button
-                      type="button"
+                    <motion.div
+                      className="group relative"
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
                       viewport={{ once: true }}
-                      onClick={() => {
-                        triggerHaptic();
-                        playTrack(track);
-                      }}
-                      className={[
-                        "group w-full text-left",
-                        "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
-                        "px-4 py-3 md:py-4",
-                        "hover:bg-foreground/5 transition-colors",
-                        isActive ? "text-toxic-lime" : "text-foreground",
-                      ].join(" ")}
                     >
+                      {/* CCTV Scan-line Hover Effect */}
+                      <motion.div
+                        className="absolute inset-0 pointer-events-none z-10 opacity-0 group-hover:opacity-100"
+                        initial={{ y: "-100%" }}
+                        whileHover={{ y: "100%" }}
+                        transition={{ duration: 0.6, ease: "linear" }}
+                        style={{
+                          background: "linear-gradient(to bottom, transparent 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)",
+                          height: "1px",
+                        }}
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic();
+                          playTrack(track);
+                        }}
+                        className={[
+                          "w-full text-left relative",
+                          "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
+                          "px-4 py-3 md:py-4",
+                          "hover:bg-white/5 transition-colors",
+                          "border-b border-white/10",
+                          isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
+                        ].join(" ")}
+                      >
                     {/* Col 1: Index / Play icon / Active Equalizer */}
                     <div className="relative flex items-center justify-center">
                       {isActive ? (
@@ -380,7 +401,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                           {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, eqIdx) => (
                             <motion.div
                               key={eqIdx}
-                              className="w-0.5 bg-toxic-lime rounded-t"
+                              className="w-0.5 bg-[#FFD700]"
                               animate={{
                                 height: `${height * 100}%`,
                               }}
@@ -391,7 +412,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                                 ease: "easeInOut",
                               }}
                               style={{
-                                boxShadow: "0 0 4px #ccff00",
+                                boxShadow: "0 0 4px #FFD700",
                               }}
                             />
                           ))}
@@ -427,7 +448,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                         <div
                           className={[
                             "truncate font-industrial font-bold uppercase tracking-wider text-sm md:text-base",
-                            isActive ? "text-toxic-lime" : "text-foreground",
+                            isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
                           ].join(" ")}
                         >
                           {track.title}
@@ -436,16 +457,16 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     </div>
 
                     {/* Col 3: Artist */}
-                    <div className={["flex items-center", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
+                    <div className={["flex items-center font-mono", isActive ? "text-[#FFD700]/80" : "text-[#E0E0E0]/60"].join(" ")}>
                       <span className="truncate text-sm">{track.artist}</span>
                     </div>
 
-                    {/* Col 4: Vibe badge */}
+                    {/* Col 4: Vibe badge - Sharp rectangles with Safety Yellow */}
                     <div className="flex items-center">
                       <span
                         className={[
-                          "px-3 py-1 rounded-full border text-[11px] font-industrial font-bold tracking-[0.2em] uppercase",
-                          vibeColors[track.vibe],
+                          "px-3 py-1 border-2 text-[11px] font-mono font-bold tracking-[0.2em] uppercase",
+                          "bg-[#FFD700] text-black border-black",
                         ].join(" ")}
                       >
                         {track.vibe}
@@ -457,6 +478,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                       3:00
                     </div>
                   </motion.button>
+                    </motion.div>
                   </TrackDrawer>
                 );
               })}

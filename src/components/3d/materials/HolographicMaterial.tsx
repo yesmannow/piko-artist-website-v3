@@ -4,7 +4,7 @@ import * as THREE from 'three'
 
 import { shaderMaterial } from '@react-three/drei'
 
-import { extend, ReactThreeFiber } from '@react-three/fiber'
+import { extend, ReactThreeFiber, type ThreeElements } from '@react-three/fiber'
 
 
 
@@ -16,13 +16,15 @@ const HolographicMaterial = shaderMaterial(
 
     uTime: 0,
 
-    uColor: new THREE.Color('#00ffff'), // Cyan default
+    uColor: new THREE.Color('#E0E0E0'), // Industrial Chrome default
 
     uAudio: 0.0, // Audio reactivity (0.0 to 1.0)
 
-    uScanlineFreq: 50.0,
+    uBrushedMetalFreq: 150.0, // Higher frequency for sharper, more reflective grooves
 
-    uFresnelPower: 2.0,
+    uFresnelPower: 3.0, // Higher power for more intense edge reflections
+
+    uImpactFlash: 0.0, // Blinding flash intensity (0.0 to 1.0)
 
   },
 
@@ -74,9 +76,11 @@ const HolographicMaterial = shaderMaterial(
 
     uniform float uAudio;
 
-    uniform float uScanlineFreq;
+    uniform float uBrushedMetalFreq;
 
     uniform float uFresnelPower;
+
+    uniform float uImpactFlash;
 
 
 
@@ -104,45 +108,85 @@ const HolographicMaterial = shaderMaterial(
 
 
 
-      // 2. Scanlines (Moving Horizontal Lines)
+      // 2. Chrome Plate - Sharp Reflective Grooves
 
-      // Uses Sine wave modulated by time
+      // Creates sharp circular groove pattern (milled aluminum platter)
 
-      float scanline = sin(vPosition.y * uScanlineFreq - uTime * 2.0);
+      vec2 center = vec2(0.0, 0.0);
 
-      // Make scanlines thinner and sharper
+      float dist = length(vPosition.xy - center);
 
-      scanline = smoothstep(0.4, 0.6, scanline);
+      // Sharp, high-frequency grooves for reflective surface
+
+      float groove = sin(dist * uBrushedMetalFreq - uTime * 0.2);
+
+      groove = abs(groove); // Sharp peaks for reflective highlights
+
+      groove = pow(groove, 0.3) * 0.4; // Sharper, more defined grooves
+
+
+
+      // Radial brushed metal texture (milling marks)
+
+      float brushedMetal = sin(vPosition.y * uBrushedMetalFreq * 0.8 + vPosition.x * 50.0 - uTime * 0.3);
+
+      brushedMetal = abs(brushedMetal);
+
+      brushedMetal = pow(brushedMetal, 0.2) * 0.3; // Sharp, reflective milling marks
+
+
+
+      // Combine groove and brushed metal for chrome plate texture
+
+      float chromeTexture = groove + brushedMetal;
 
 
 
       // 3. Audio Reactivity (Pulse)
 
-      // Modulates brightness based on audio input
-
-      float pulse = uAudio * 0.5;
+      float pulse = uAudio * 0.4;
 
 
 
-      // 4. Combine Forces
+      // 4. Impact Flash (Blinding Silver/White)
 
-      // Base color + Fresnel edge + Pulse
+      vec3 flashColor = vec3(1.0, 1.0, 1.0); // Pure white flash
 
-      vec3 finalColor = uColor + (fresnel * 2.0) + (pulse * uColor);
+      float flashIntensity = uImpactFlash * 2.0; // Intense flash
+
+
+
+      // 5. Combine Forces - High-Polish Chrome
+
+      // Base chrome color with intense Fresnel reflections
+
+      vec3 chromeBase = uColor * (1.0 + fresnel * 3.0); // High specular highlights
+
+      // Add chrome texture (grooves catch light)
+
+      chromeBase += chromeTexture * vec3(1.2, 1.2, 1.2); // Brighten grooves
+
+      // Audio pulse adds subtle brightness
+
+      chromeBase += pulse * vec3(0.3, 0.3, 0.3);
+
+      // Impact flash (blinding white)
+
+      vec3 finalColor = mix(chromeBase, flashColor, flashIntensity);
 
 
 
       // Calculate Alpha
 
-      // Center is transparent, edges are opaque, scanlines add visibility
+      // Chrome plate is mostly opaque with subtle edge transparency
 
-      float alpha = fresnel + (scanline * 0.1) + (pulse * 0.2);
+      float alpha = 0.95 + (fresnel * 0.05) + (chromeTexture * 0.1) + (pulse * 0.1) + (flashIntensity * 0.3);
 
 
 
       // Clamp alpha to avoid glitches
 
-      alpha = clamp(alpha, 0.0, 1.0);
+      alpha = clamp(alpha, 0.8, 1.0);
 
 
 
@@ -162,33 +206,7 @@ extend({ HolographicMaterial })
 
 
 
-// TypeScript support for the new element
-
-declare global {
-
-  namespace JSX {
-
-    interface IntrinsicElements {
-
-      holographicMaterial: ReactThreeFiber.Object3DNode<THREE.ShaderMaterial, typeof HolographicMaterial> & {
-
-        uTime?: number
-
-        uColor?: THREE.Color
-
-        uAudio?: number
-
-        uScanlineFreq?: number
-
-        uFresnelPower?: number
-
-      }
-
-    }
-
-  }
-
-}
+// TypeScript support is in src/types/holographic-material.d.ts
 
 
 

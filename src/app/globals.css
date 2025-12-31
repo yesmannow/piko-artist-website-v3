@@ -31,23 +31,76 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
-    /* Urban Grit Palette - Brand Colors */
+    /* Urban Syndicate Palette - Street-Elite Professional */
+    --midnight-black: 0 0% 2%; /* #050505 */
+    --industrial-chrome: 0 0% 88%; /* #E0E0E0 */
+    --safety-yellow: 51 100% 50%; /* #FFD700 */
     --spray-magenta: 318 100% 42%;
-    --toxic-lime: 75 100% 45%;
-    --safety-orange: 25 100% 50%;
-    --radius: 0.5rem;
+    --brushed-gold: 51 100% 50%; /* Map to Safety Yellow */
+    --deep-onyx: 0 0% 2%;
+    --charcoal-slate: 0 0% 10%;
+    --radius: 0px; /* Brutalist: sharp corners */
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#050505] text-[#E0E0E0];
     background-image:
-      linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)),
-      url("https://www.transparenttextures.com/patterns/concrete-wall.png");
-    background-blend-mode: overlay;
+      /* Spray Paint Streaks */
+      linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.03) 50%, transparent 70%),
+      linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.02) 50%, transparent 70%);
+    background-blend-mode: normal, normal;
     background-attachment: fixed;
     cursor: crosshair;
     padding-bottom: env(safe-area-inset-bottom, 0);
     overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Global Concrete Grit & Brutalist Overrides */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 1;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: overlay;
+  }
+
+  button, input, .card, .section-bg {
+    border-radius: 0px !important;
+  }
+
+  ::selection {
+    background: #FFD700;
+    color: #000;
+  }
+
+  /* Accent Mapping */
+  .text-toxic-lime { color: #FFD700 !important; }
+  .bg-toxic-lime { background-color: #FFD700 !important; }
+  .border-toxic-lime { border-color: #FFD700 !important; }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-marquee {
+    display: inline-block;
+    animation: marquee 20s linear infinite;
+  }
+
+  .font-urban-header {
+    font-family: var(--font-lexend);
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
   }
 
   /* Mobile bottom nav spacing */
@@ -57,9 +110,11 @@
     }
   }
 
-  /* Typography - Standardized Font Sizes */
+  /* Typography - Urban Syndicate: Lexend Black Italic for headers */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-header;
+    font-family: var(--font-lexend), system-ui, sans-serif;
+    font-weight: 900;
+    font-style: italic;
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
@@ -102,7 +157,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    @apply outline-none ring-2 ring-toxic-lime ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-brushed-gold ring-offset-2 ring-offset-background;
   }
 
   /* Torn Paper Effect for Cards */

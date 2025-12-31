@@ -3,8 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useAudioStore } from "@/stores/useAudioStore";
 import { useAudioGraph } from "@/hooks/useAudioGraph";
+import { useDualDeck } from "@/hooks/useDualDeck";
 import { StudioCanvas } from "@/components/3d/StudioCanvas";
-import { TerminalLog, useTerminalLogs } from "@/components/ui/TerminalLog";
+import { StudioMonitor, useStudioMonitor } from "@/components/ui/StudioMonitor";
+import { SessionSummary } from "@/components/studio/SessionSummary";
+import { audioBufferToWAV } from "@/utils/audioRenderer";
 
 /**
  * Studio Page - Main controller for the DJ Studio
@@ -22,7 +25,21 @@ import { TerminalLog, useTerminalLogs } from "@/components/ui/TerminalLog";
 export default function StudioPage() {
   const { audioContext, isReady, initializeAudio, setIsPlaying, isPlaying } = useAudioStore();
   const { getFrequencyData, masterGainNode, stopWithTapeEffect, isReady: graphReady } = useAudioGraph();
-  const { logs, addLog, clearLogs } = useTerminalLogs();
+  const { logs, addLog, clearLogs } = useStudioMonitor();
+  const {
+    deckA,
+    deckB,
+    loadDeckA,
+    loadDeckB,
+    playDeckA,
+    playDeckB,
+    stopDeckA,
+    stopDeckB,
+    setDeckAGain,
+    setDeckBGain,
+    clearDeckA,
+    clearDeckB,
+  } = useDualDeck();
 
   // Combined ready state (both context and graph must be ready)
   const isFullyReady = isReady && graphReady;
@@ -33,8 +50,14 @@ export default function StudioPage() {
   const [deckBAudioLevel, setDeckBAudioLevel] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1.0);
 
-  // Audio source ref (for cleanup and tape stop)
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  // Session tracking
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [sessionDuration, setSessionDuration] = useState(0);
+  const [remixIntensity, setRemixIntensity] = useState(0);
+  const [stemManipulations, setStemManipulations] = useState(0);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
+
+  // Animation frame ref
   const animationFrameRef = useRef<number | null>(null);
 
   /**
@@ -75,12 +98,16 @@ export default function StudioPage() {
 
       // Smooth the level with exponential moving average
       setVisualizerLevel((prev) => prev * 0.7 + normalizedLevel * 0.3);
+
+      // Separate levels for each deck (can be enhanced with actual deck-specific analysis)
       setDeckAAudioLevel((prev) => prev * 0.7 + normalizedLevel * 0.3);
       setDeckBAudioLevel((prev) => prev * 0.7 + normalizedLevel * 0.3);
 
-      // Update playback rate for visual sync (if source exists)
-      if (audioSourceRef.current?.playbackRate) {
-        setPlaybackRate(audioSourceRef.current.playbackRate.value);
+      // Update playback rate for visual sync (use deck A or B)
+      if (deckA.sourceNode?.playbackRate) {
+        setPlaybackRate(deckA.sourceNode.playbackRate.value);
+      } else if (deckB.sourceNode?.playbackRate) {
+        setPlaybackRate(deckB.sourceNode.playbackRate.value);
       }
 
       animationFrameRef.current = requestAnimationFrame(updateVisualizer);
@@ -96,73 +123,126 @@ export default function StudioPage() {
   }, [isFullyReady, getFrequencyData]);
 
   /**
-   * Handle File Upload - Load and play MP3 file
-   *
-   * Reads the file as ArrayBuffer, decodes it via AudioContext,
-   * creates a source node, and connects it to the master gain.
+   * Extract track name from filename
+   * Converts "el-don.mp3" -> "EL DON", "amor-sincero.mp3" -> "AMOR SINCERO"
    */
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const getTrackName = (filename: string): string => {
+    return filename
+      .replace(/\.[^/.]+$/, "") // Remove extension
+      .split(/[-_]/) // Split on hyphens/underscores
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize each word
+      .join(" ");
+  };
+
+  /**
+   * Handle Deck A Load - Load site-hosted track
+   */
+  const handleLoadDeckA = async (trackPath: string, trackName: string) => {
+    clearDeckA(); // Memory cleanup
+    await loadDeckA(trackPath, trackName);
+      addLog(`STUDIO_CORE: DECK_A_LOADED: ${trackName}`);
+  };
+
+  /**
+   * Handle Deck B Upload - Load user-uploaded file (IMPORT SESSION_B)
+   */
+  const handleDeckBUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !audioContext || !masterGainNode) {
+    if (!file || !audioContext) {
       return;
     }
 
     try {
-      // Stop any currently playing source
-      if (audioSourceRef.current) {
-        audioSourceRef.current.stop();
-        audioSourceRef.current.disconnect();
-        audioSourceRef.current = null;
+      clearDeckB(); // Memory cleanup
+
+      // Extract track name
+      const trackName = getTrackName(file.name);
+
+      // Clear logs and start sequence
+      clearLogs();
+      addLog(`PREPARING_MASTER_STEMS: ${trackName}...`);
+
+      // Load to Deck B
+      const audioBuffer = await loadDeckB(file);
+
+      if (audioBuffer) {
+        // [1.2s]: PREPARING_MASTER_STEMS
+        setTimeout(() => {
+          addLog("STUDIO_CORE: PREPARING_MASTER_STEMS: VOCALS | INSTRUMENTAL | BASS");
+        }, 1200);
+
+        // [2.5s]: COMPRESSION_CHAIN_LIVE
+        setTimeout(() => {
+          addLog("STUDIO_CORE: COMPRESSION_CHAIN_LIVE");
+        }, 2500);
+
+        // [3.5s]: SESSION_READY
+        setTimeout(() => {
+          addLog("STUDIO_CORE: SESSION_READY");
+        }, 3500);
       }
-
-      // Read file as ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-
-      // Decode audio data
-      addLog("SYSTEM_CORE: ANALYZING_WAVEFORM...");
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      addLog("SYSTEM_CORE: WAVEFORM_ANALYZED");
-
-      // Create source node
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.loop = false; // Don't loop for now
-
-      // Connect to master gain (which goes through limiter -> analyser -> destination)
-      source.connect(masterGainNode);
-
-      // Handle playback end
-      source.onended = () => {
-        setIsPlaying(false);
-        audioSourceRef.current = null;
-      };
-
-      // Start playback
-      source.start(0);
-      audioSourceRef.current = source;
-      setIsPlaying(true);
-      setPlaybackRate(1.0);
-      addLog("SYSTEM_CORE: REAL_TIME_DSP_ACTIVE");
     } catch (error) {
-      console.error("[StudioPage] Failed to load audio file:", error);
+      console.error("[StudioPage] Failed to load Deck B:", error);
+      addLog("STUDIO_CORE: ERROR: LOAD_FAILED");
     }
 
-    // Reset file input to allow re-uploading the same file
     event.target.value = "";
   };
+
+  /**
+   * Handle File Upload - Legacy single-track loading (for backward compatibility)
+   */
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Route to Deck B for user uploads
+    await handleDeckBUpload(event);
+  };
+
+  // Impact pulse state for visual effect
+  const [impactPulse, setImpactPulse] = useState(false);
 
   /**
    * Handle Initialize - Resumes AudioContext on user interaction
    *
    * This satisfies browser autoplay policies by requiring
    * explicit user interaction before audio can play.
+   *
+   * Triggers the Studio Session Launch sequence.
    */
   const handleInitialize = async () => {
-    addLog("SYSTEM_CORE: CORE_BOOT...");
+    clearLogs();
+
+    // Initialize audio context
     await initializeAudio();
+
     if (isReady) {
-      addLog("SYSTEM_CORE: AUDIO_CONTEXT_READY");
-      addLog("SYSTEM_CORE: SYSTEM_ONLINE");
+      // Studio Session Launch Sequence
+      // [0.0s]: SESSION_INITIALIZED
+      addLog("STUDIO_ENGINE: SESSION_INITIALIZED");
+
+      // [1.2s]: WELCOME TO THE PIKO V3 SUITE
+      setTimeout(() => {
+        addLog("STUDIO_ENGINE: WELCOME TO THE PIKO V3 SUITE");
+      }, 1200);
+
+      // [2.5s]: COMMAND THE MIX. OWN THE MASTER.
+      setTimeout(() => {
+        addLog("STUDIO_ENGINE: COMMAND THE MIX. OWN THE MASTER.");
+      }, 2500);
+
+      // [4.0s]: NEURAL STEMS ONLINE
+      setTimeout(() => {
+        addLog("STUDIO_ENGINE: NEURAL STEMS ONLINE");
+      }, 4000);
+
+      // [5.0s]: SELECT A TRACK TO BEGIN (triggers impact pulse)
+      setTimeout(() => {
+        addLog("STUDIO_ENGINE: SELECT A TRACK TO BEGIN");
+        // Trigger visual impact pulse
+        setImpactPulse(true);
+        setTimeout(() => {
+          setImpactPulse(false);
+        }, 300);
+      }, 5000);
     }
   };
 
@@ -170,43 +250,183 @@ export default function StudioPage() {
    * Handle Stop - Physics-based tape stop
    *
    * Uses exponential deceleration to simulate turntable stop.
+   * Also triggers session summary if session was significant.
    */
   const handleStop = () => {
-    if (audioSourceRef.current && stopWithTapeEffect) {
-      stopWithTapeEffect(audioSourceRef.current);
-      setIsPlaying(false);
-      addLog("SYSTEM_CORE: TAPE_STOP_ACTIVE");
+    if (deckA.sourceNode && stopWithTapeEffect) {
+      stopWithTapeEffect(deckA.sourceNode);
+      stopDeckA();
+    }
+    if (deckB.sourceNode && stopWithTapeEffect) {
+      stopWithTapeEffect(deckB.sourceNode);
+      stopDeckB();
+    }
+
+    setIsPlaying(false);
+      addLog("STUDIO_CORE: DECELERATING");
+
+    // Show session summary if session was significant (2+ minutes or remix activity)
+    if (sessionDuration >= 120 || remixIntensity > 0.3) {
+      setShowSessionSummary(true);
+    }
+  };
+
+  // Update isPlaying state based on deck states
+  useEffect(() => {
+    const anyPlaying = deckA.isPlaying || deckB.isPlaying;
+    setIsPlaying(anyPlaying);
+  }, [deckA.isPlaying, deckB.isPlaying]);
+
+  // Session duration tracking
+  useEffect(() => {
+    const anyPlaying = deckA.isPlaying || deckB.isPlaying;
+
+    if (anyPlaying && !sessionStartTime) {
+      setSessionStartTime(Date.now());
+    } else if (!anyPlaying && sessionStartTime) {
+      const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+      setSessionDuration((prev) => prev + duration);
+      setSessionStartTime(null);
+    }
+  }, [deckA.isPlaying, deckB.isPlaying, sessionStartTime]);
+
+  // Update session duration while playing
+  useEffect(() => {
+    const anyPlaying = deckA.isPlaying || deckB.isPlaying;
+    if (!anyPlaying || !sessionStartTime) return;
+
+    const interval = setInterval(() => {
+      const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+      setSessionDuration(duration);
+
+      // Auto-show summary after 2 minutes
+      if (duration >= 120) {
+        setShowSessionSummary(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [deckA.isPlaying, deckB.isPlaying, sessionStartTime]);
+
+  // Calculate remix intensity based on session activity
+  // Enhanced calculation: based on duration, deck usage, and future stem manipulations
+  useEffect(() => {
+    const baseIntensity = Math.min(1.0, sessionDuration / 300); // 5 minutes = 100%
+    const deckActivity = (deckA.audioBuffer ? 0.3 : 0) + (deckB.audioBuffer ? 0.3 : 0);
+    const manipulationBonus = Math.min(0.4, stemManipulations / 20.0);
+    const intensity = Math.min(1.0, baseIntensity + deckActivity + manipulationBonus);
+    setRemixIntensity(intensity);
+  }, [sessionDuration, deckA.audioBuffer, deckB.audioBuffer, stemManipulations]);
+
+  /**
+   * Handle Download - Render mix to WAV
+   */
+  const handleDownload = async () => {
+    if (!audioContext || !deckA.audioBuffer && !deckB.audioBuffer) {
+      return;
+    }
+
+    try {
+      // For now, download the primary deck's buffer
+      // Full implementation would mix both decks
+      const bufferToRender = deckA.audioBuffer || deckB.audioBuffer;
+      if (!bufferToRender) return;
+
+      const wavBlob = audioBufferToWAV(bufferToRender);
+      const url = URL.createObjectURL(wavBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `piko-studio-mix-${Date.now()}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      addLog("MIX_RENDERED: DOWNLOAD_COMPLETE");
+    } catch (error) {
+      console.error("[StudioPage] Download failed:", error);
+      addLog("ERROR: RENDER_FAILED");
+    }
+  };
+
+  /**
+   * Handle Share - Web Share API
+   */
+  const handleShare = async () => {
+    const trackName = deckA.trackName || deckB.trackName || "Track";
+    const message = `Just remixed ${trackName} at the Piko Artist Studio. Own the master. 🔥 #PikoStudio #CommandTheMix`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Piko Studio Remix",
+          text: message,
+          url: window.location.href,
+        });
+        addLog("SHARE_COMPLETE");
+      } catch (error) {
+        // User cancelled or share failed
+        console.log("[StudioPage] Share cancelled or failed:", error);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(message);
+        addLog("SHARE_LINK_COPIED");
+      } catch (error) {
+        console.error("[StudioPage] Clipboard copy failed:", error);
+      }
     }
   };
 
   // Show "Enter Studio" overlay if audio isn't ready
   if (!isReady) {
     return (
-      <div className="relative h-screen w-screen bg-background flex items-center justify-center">
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-background via-card to-background" />
+      <div
+        className="relative h-screen w-screen flex items-center justify-center"
+        style={{
+          // Concrete Bunker Background
+          background: `
+            #050505,
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(0, 0, 0, 0.3) 2px,
+              rgba(0, 0, 0, 0.3) 4px
+            ),
+            radial-gradient(circle at 50% 0%, rgba(224, 224, 224, 0.05) 0%, transparent 50%)
+          `,
+          backgroundSize: "100% 100%, 100% 8px, 100% 100%",
+        }}
+      >
 
         <div className="relative z-10 text-center space-y-8 px-4">
           <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-header text-foreground tracking-tighter">
-              STUDIO
+            <h1
+              className="text-5xl md:text-7xl font-black italic uppercase text-[#FFD700] tracking-tighter"
+              style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
+            >
+              V3 STUDIO
             </h1>
-            <p className="text-foreground/60 font-industrial text-lg md:text-xl">
-              Initialize audio system to begin
+            <p className="text-[#E0E0E0]/60 font-mono text-lg md:text-xl uppercase tracking-wider">
+              COMMAND THE MIX. OWN THE MASTER.
             </p>
           </div>
 
           <button
             onClick={handleInitialize}
-            className="px-12 py-6 bg-toxic-lime text-black font-header font-bold text-xl md:text-2xl transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black min-h-[60px]"
+            className="px-12 py-6 bg-[#FFD700] text-black font-black italic uppercase text-xl md:text-2xl skew-x-[-12deg] hover:skew-x-[-10deg] transition-transform border-2 border-black min-h-[60px] tracking-wider"
             style={{
-              boxShadow: "6px 6px 0px 0px rgba(0,0,0,1)",
+              fontFamily: "var(--font-lexend), system-ui, sans-serif",
+              boxShadow: "8px 8px 0px rgba(0,0,0,1)",
             }}
           >
-            INITIALIZE SYSTEM
+            <span className="skew-x-[12deg] block">ENTER THE BOOTH</span>
           </button>
 
-          <p className="text-foreground/40 font-mono text-xs max-w-md mx-auto">
-            Browser autoplay policy requires user interaction to start audio playback.
+          <p className="text-[#E0E0E0]/40 font-mono text-[10px] max-w-md mx-auto uppercase tracking-wider">
+            BROWSER AUTOPLAY POLICY REQUIRES USER INTERACTION TO START AUDIO PLAYBACK.
           </p>
         </div>
       </div>
@@ -214,52 +434,132 @@ export default function StudioPage() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-background">
+    <div
+      className="relative h-screen w-screen overflow-hidden"
+      style={{
+        // Concrete Bunker Background - Soundproofed concrete vault
+        background: `
+          #050505,
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.3) 2px,
+            rgba(0, 0, 0, 0.3) 4px
+          ),
+          radial-gradient(circle at 50% 0%, rgba(224, 224, 224, 0.05) 0%, transparent 50%)
+        `,
+        backgroundSize: "100% 100%, 100% 8px, 100% 100%",
+      }}
+    >
       {/* 3D Canvas Background */}
       <StudioCanvas
-        deckAIsPlaying={isPlaying}
+        deckAIsPlaying={deckA.isPlaying}
         deckAAudioLevel={deckAAudioLevel}
-        deckBIsPlaying={isPlaying}
+        deckBIsPlaying={deckB.isPlaying}
         deckBAudioLevel={deckBAudioLevel}
-        deckAColor="#ccff00" // toxic-lime
-        deckBColor="#ff0099" // spray-magenta
+        deckAColor="#E0E0E0" // Industrial Chrome
+        deckBColor="#E0E0E0" // Industrial Chrome
         getFrequencyData={getFrequencyData}
         playbackRate={playbackRate}
+        impactPulse={impactPulse}
       />
 
       {/* UI Overlay Layer */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {/* Top-left: Load Track Button */}
-        <div className="absolute top-4 left-4 pointer-events-auto">
-          <label
-            htmlFor="audio-file-input"
-            className="px-6 py-3 bg-white/90 backdrop-blur-sm text-black font-header font-bold text-sm transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black cursor-pointer inline-block min-h-[44px] flex items-center justify-center"
-            style={{
-              boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
-            }}
-          >
-            LOAD TRACK
-          </label>
-          <input
-            id="audio-file-input"
-            type="file"
-            accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+        {/* Top-left: Deck Controls */}
+        <div className="absolute top-4 left-4 pointer-events-auto flex flex-col gap-2">
+          {/* Deck A: Site Track Selector */}
+          <div className="flex gap-2">
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  const trackPath = `/audio/tracks/${e.target.value}`;
+                  const trackName = getTrackName(e.target.value);
+                  handleLoadDeckA(trackPath, trackName);
+                }
+              }}
+              className="px-4 py-2 bg-[#111111] text-[#FFD700] font-mono font-bold text-xs border-2 border-[#E0E0E0]/30 min-h-[44px] uppercase tracking-wider"
+              style={{
+                boxShadow: "inset 0 0 10px rgba(0,0,0,0.5), 4px 4px 0px rgba(0,0,0,1)",
+              }}
+              defaultValue=""
+            >
+              <option value="">SELECT DECK A</option>
+              <option value="el-don.mp3">EL DON</option>
+              <option value="amor-sincero.mp3">AMOR SINCERO</option>
+              <option value="jardin-de-rosas.mp3">JARDIN DE ROSAS</option>
+              <option value="amores-perdidos.mp3">AMORES PERDIDOS</option>
+              <option value="bungalow.mp3">BUNGALOW</option>
+              <option value="corazon-y-mente.mp3">CORAZON Y MENTE</option>
+              <option value="crussin.mp3">CRUSSIN</option>
+              <option value="dejate-llevar.mp3">DEJATE LLEVAR</option>
+              <option value="entre-humos.mp3">ENTRE HUMOS</option>
+              <option value="ganja.mp3">GANJA</option>
+            </select>
+            {deckA.audioBuffer && (
+              <button
+                onClick={deckA.isPlaying ? stopDeckA : playDeckA}
+                className="px-4 py-2 bg-[#FFD700] text-black font-mono font-bold text-xs uppercase min-h-[44px] border-2 border-black tracking-wider"
+                style={{
+                  boxShadow: "4px 4px 0px rgba(0,0,0,1)",
+                }}
+              >
+                {deckA.isPlaying ? "STOP A" : "PLAY A"}
+              </button>
+            )}
+          </div>
+
+          {/* Deck B: User Upload (IMPORT SESSION_B) */}
+          <div className="flex gap-2">
+            <label
+              htmlFor="deck-b-upload"
+              className="px-6 py-3 bg-[#FFD700] text-black font-mono font-black text-sm uppercase tracking-wider skew-x-[-12deg] hover:skew-x-[-10deg] transition-transform cursor-pointer inline-block min-h-[44px] flex items-center justify-center border-2 border-black"
+              style={{
+                fontFamily: "var(--font-lexend), system-ui, sans-serif",
+                fontStyle: "italic",
+                boxShadow: "6px 6px 0px rgba(0,0,0,1)",
+              }}
+            >
+              <span className="skew-x-[12deg]">IMPORT SESSION_B</span>
+            </label>
+            <input
+              id="deck-b-upload"
+              type="file"
+              accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg"
+              onChange={handleDeckBUpload}
+              className="hidden"
+            />
+            {deckB.audioBuffer && (
+              <button
+                onClick={deckB.isPlaying ? stopDeckB : playDeckB}
+                className="px-4 py-2 bg-[#FFD700] text-black font-mono font-bold text-xs uppercase min-h-[44px] border-2 border-black tracking-wider"
+                style={{
+                  boxShadow: "4px 4px 0px rgba(0,0,0,1)",
+                }}
+              >
+                {deckB.isPlaying ? "STOP B" : "PLAY B"}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Top-right: Status Indicator & Stop Button */}
         <div className="absolute top-4 right-4 pointer-events-auto flex flex-col gap-2">
-          <div className="px-4 py-2 bg-black/80 backdrop-blur-sm text-toxic-lime font-mono text-xs border border-toxic-lime">
+          <div
+            className="px-4 py-2 bg-[#111111] text-[#FFD700] font-mono text-[10px] border-2 border-[#E0E0E0]/30 uppercase tracking-wider"
+            style={{
+              boxShadow: "inset 0 0 10px rgba(0,0,0,0.5), 4px 4px 0px rgba(0,0,0,1)",
+            }}
+          >
             {isPlaying ? (
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-toxic-lime rounded-full animate-pulse" />
+              <span className="flex items-center gap-2 font-bold">
+                <span className="w-2 h-2 bg-[#FFD700] animate-pulse" style={{ boxShadow: "0 0 6px rgba(255, 215, 0, 0.8)" }} />
                 PLAYING
               </span>
             ) : (
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-foreground/40 rounded-full" />
+              <span className="flex items-center gap-2 font-bold">
+                <span className="w-2 h-2 bg-[#E0E0E0]/40" />
                 READY
               </span>
             )}
@@ -269,16 +569,31 @@ export default function StudioPage() {
           {isPlaying && (
             <button
               onClick={handleStop}
-              className="px-4 py-2 bg-red-600/80 backdrop-blur-sm text-white font-mono text-xs border border-red-600 hover:bg-red-600 transition-colors min-h-[44px]"
+              className="px-4 py-2 bg-red-700 text-white font-mono font-bold text-xs uppercase border-2 border-black tracking-wider min-h-[44px] hover:bg-red-600 transition-colors"
+              style={{
+                boxShadow: "4px 4px 0px rgba(0,0,0,1)",
+              }}
             >
               STOP
             </button>
           )}
         </div>
 
-        {/* Bottom: Terminal Log */}
+        {/* Session Summary Popup */}
+        <SessionSummary
+          isOpen={showSessionSummary}
+          onClose={() => setShowSessionSummary(false)}
+          deckATrack={deckA.trackName}
+          deckBTrack={deckB.trackName}
+          sessionDuration={sessionDuration}
+          remixIntensity={remixIntensity}
+          onDownload={handleDownload}
+          onShare={handleShare}
+        />
+
+        {/* Bottom: Studio Monitor */}
         <div className="absolute bottom-4 left-4 right-4 pointer-events-auto max-w-md">
-          <TerminalLog logs={logs} maxLines={8} />
+          <StudioMonitor logs={logs} maxLines={8} />
         </div>
 
         {/* Bottom: Visualizer Level Indicator (Debug) */}

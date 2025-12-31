@@ -363,56 +363,85 @@ export function Navbar() {
           />
         </div>
 
-        {/* Desktop Menu - Urban/Hip-Hop Style */}
-        <ul
-          className="hidden md:flex items-center gap-6 lg:gap-8 pointer-events-auto bg-zinc-950/80 backdrop-blur-md px-6 lg:px-8 py-3 rounded-full border border-zinc-800/50 shadow-lg"
-          role="menubar"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
-          }}
-        >
+        {/* Desktop Menu - Chrome Parallel Bar */}
+        <div className="hidden md:flex items-center gap-8 pointer-events-auto relative">
+          {/* Logo Container - Skewed */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="relative bg-[#050505] p-2 border-2 border-[#E0E0E0] skew-x-[-12deg]"
+          >
+            <Link
+              href="/"
+              className="block skew-x-[12deg]"
+              onClick={(e) => {
+                if (pathname === "/") {
+                  e.preventDefault();
+                  if (lenis) {
+                    lenis.scrollTo(0, { immediate: false, duration: 1.5 });
+                  } else {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }
+              }}
+            >
+              <Image
+                src="/images/branding/piko-logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                className="w-10 h-10 grayscale brightness-150"
+              />
+            </Link>
+          </motion.div>
+
+          {/* Navigation Links - Chrome Bar */}
+          <ul
+            className="flex items-center bg-[#050505]/90 backdrop-blur-xl border-2 border-[#E0E0E0]/30 px-6 py-2 skew-x-[-12deg]"
+            style={{
+              boxShadow: "10px 10px 0px #000",
+            }}
+            role="menubar"
+          >
           {navItems.map((item) => {
             const active = isActive(item);
             return (
-              <li key={`${item.path}-${item.anchor || ""}`} className="relative" role="none">
+              <li key={`${item.path}-${item.anchor || ""}`} className="relative group skew-x-[12deg]" role="none">
                 <Link
                   href={item.anchor ? `${item.path}#${item.anchor}` : item.path}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`text-xs font-bold uppercase tracking-widest transition-all duration-300 min-h-[44px] flex items-center px-3 py-2 rounded-md touch-manipulation relative group focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2 focus:ring-offset-black ${
+                  className={`px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors block ${
                     active
-                      ? "text-[#ccff00]"
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
+                      ? "text-[#FFD700]"
+                      : "text-[#E0E0E0] hover:text-[#FFD700]"
                   }`}
+                  style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
                   role="menuitem"
                   aria-current={active ? "page" : undefined}
                   aria-label={`Navigate to ${item.name}${item.anchor ? ` section` : ""}`}
                 >
                   {item.name}
-                  {/* Hover gradient underline effect */}
-                  {!reducedMotion && (
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#ccff00] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
-                      initial={false}
-                    />
-                  )}
                 </Link>
-                {/* Active section indicator with animated underline */}
-                {active && (
+                {/* Hover gradient underline effect */}
+                {!reducedMotion && (
                   <motion.div
-                    layoutId="nav-active-indicator"
-                    className="absolute -bottom-2 left-0 right-0 h-1 bg-[#ccff00] rounded-full shadow-[0_0_12px_#ccff00]"
+                    className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 w-full"
+                    transition={{ duration: 0.3 }}
                     initial={false}
-                    transition={
-                      reducedMotion
-                        ? { duration: 0.1 }
-                        : { type: "spring", stiffness: 500, damping: 30 }
-                    }
                   />
                 )}
               </li>
             );
           })}
         </ul>
+
+        {/* System Status - Desktop Only */}
+        <div className="hidden lg:block ml-4 border-l border-white/10 pl-4 font-mono text-[9px] text-white/30 skew-x-[-12deg]">
+          <div className="skew-x-[12deg]">
+            SYS_OP: ACTIVE<br />
+            LOC: SYNDICATE_VAULT
+          </div>
+        </div>
+      </div>
 
       </motion.nav>
 

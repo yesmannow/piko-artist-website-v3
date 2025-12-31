@@ -19,6 +19,7 @@ interface StudioCanvasProps {
   deckBColor?: string;
   getFrequencyData?: () => Uint8Array | null;
   playbackRate?: number; // For tape stop effect
+  impactPulse?: boolean; // For session launch impact effect
 }
 
 /**
@@ -33,7 +34,8 @@ function SceneContent({
   deckBColor,
   getFrequencyData,
   isLandscape,
-}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean }) {
+  impactPulse,
+}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean; impactPulse?: boolean }) {
   const { scene } = useThree();
   const sceneRef = useRef(scene);
 
@@ -58,10 +60,13 @@ function SceneContent({
 
   return (
     <>
-      {/* Lighting Setup */}
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1.2} />
-      <pointLight position={[-10, -10, -10]} intensity={0.6} color="#ff0099" />
+      {/* Industrial Lighting Setup - Harsh Top-Down Lighting */}
+      <ambientLight intensity={0.3} />
+      {/* Harsh top-down light (emphasizes metallic edges) */}
+      <directionalLight position={[0, 10, 5]} intensity={1.5} color="#E0E0E0" castShadow />
+      {/* Fill light from sides */}
+      <pointLight position={[10, 5, 10]} intensity={0.8} color="#E0E0E0" />
+      <pointLight position={[-10, 5, 10]} intensity={0.8} color="#E0E0E0" />
 
       {/* Camera Controls - Rotation only, no zoom/pan */}
       <OrbitControls
@@ -80,6 +85,7 @@ function SceneContent({
           isPlaying={deckAIsPlaying}
           audioLevel={deckAAudioLevel}
           color={deckAColor}
+          impactPulse={impactPulse}
         />
       </animated.group>
 
@@ -89,15 +95,16 @@ function SceneContent({
           isPlaying={deckBIsPlaying}
           audioLevel={deckBAudioLevel}
           color={deckBColor}
+          impactPulse={impactPulse}
         />
       </animated.group>
 
       {/* Post-Processing Effects */}
       <EffectComposer>
         <Bloom intensity={0.5} luminanceThreshold={0.9} />
-        {getFrequencyData && (
-          <GlitchController getFrequencyData={getFrequencyData} />
-        )}
+        {getFrequencyData ? (
+          <GlitchController getFrequencyData={getFrequencyData} impactPulse={impactPulse} />
+        ) : <></>}
       </EffectComposer>
     </>
   );
@@ -123,6 +130,7 @@ export function StudioCanvas({
   deckBColor = "#ff0099", // Magenta default
   getFrequencyData,
   playbackRate = 1.0,
+  impactPulse = false,
 }: StudioCanvasProps) {
   const isLandscape = useOrientation();
 
@@ -155,6 +163,7 @@ export function StudioCanvas({
           deckBColor={deckBColor}
           getFrequencyData={getFrequencyData}
           isLandscape={isLandscape}
+          impactPulse={impactPulse}
         />
       </Canvas>
     </div>

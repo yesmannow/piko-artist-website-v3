@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed } from "next/font/google";
+import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed, Inter, Lexend } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -46,6 +46,22 @@ const barlowCondensed = Barlow_Condensed({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-barlow",
+  display: "swap",
+});
+
+// 5. Cinematic Sans-Serif (Headlines - Replaces monospace)
+const inter = Inter({
+  weight: ["400", "500", "600", "700", "800", "900"],
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+// 6. Luxury Sans-Serif (Alternative headline option)
+const lexend = Lexend({
+  weight: ["400", "500", "600", "700", "800", "900"],
+  subsets: ["latin"],
+  variable: "--font-lexend",
   display: "swap",
 });
 
@@ -98,7 +114,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
+        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />

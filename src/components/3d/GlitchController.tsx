@@ -1,25 +1,43 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { Glitch, ChromaticAberration } from "@react-three/postprocessing";
-import { GlitchMode } from "postprocessing";
+import { ChromaticAberration, Vignette } from "@react-three/postprocessing";
 
 interface GlitchControllerProps {
   getFrequencyData?: () => Uint8Array | null;
+  impactPulse?: boolean; // For session launch impact effect
 }
 
 /**
- * GlitchController - Audio-reactive glitch effect
+ * GlitchController - Cinematic Film Grain & Flash effects
+ *
+ * Replaces digital glitch with professional music video aesthetic:
+ * - Film Grain overlay (constant subtle texture)
+ * - Cinematic Flash (white flash on snare/treble transients)
  *
  * Monitors high-frequency transients (treble) and triggers
- * glitch effects when peaks exceed threshold.
- *
- * This creates visual feedback for snare hits, sharp synth leads,
- * and other high-frequency transients, connecting audio to visuals.
+ * flash effects when peaks exceed threshold, mimicking
+ * professional music video editing.
  */
-export function GlitchController({ getFrequencyData }: GlitchControllerProps) {
-  const [isActive, setIsActive] = useState(false);
-  const glitchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+export function GlitchController({ getFrequencyData, impactPulse }: GlitchControllerProps) {
+  const [flashIntensity, setFlashIntensity] = useState(0);
+  const [vignetteIntensity, setVignetteIntensity] = useState(0.5);
+  const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle impact pulse effect (session launch)
+  useEffect(() => {
+    if (impactPulse) {
+      // Intensify flash and vignette for impact
+      setFlashIntensity(1.0);
+      setVignetteIntensity(0.8);
+
+      // Reset after 300ms
+      setTimeout(() => {
+        setFlashIntensity(0);
+        setVignetteIntensity(0.5);
+      }, 300);
+    }
+  }, [impactPulse]);
 
   useEffect(() => {
     if (!getFrequencyData) return;
@@ -45,19 +63,23 @@ export function GlitchController({ getFrequencyData }: GlitchControllerProps) {
       const normalizedTreble = maxTreble / 255.0;
       const threshold = 0.7; // Trigger glitch on strong transients
 
-      // Trigger glitch if threshold exceeded
-      if (normalizedTreble > threshold && !isActive) {
-        setIsActive(true);
+      // Trigger cinematic flash on strong transients (snare hits, sharp synth leads)
+      if (normalizedTreble > threshold) {
+        // Set flash intensity (0-1)
+        setFlashIntensity(0.8);
 
         // Clear any existing timeout
-        if (glitchTimeoutRef.current) {
-          clearTimeout(glitchTimeoutRef.current);
+        if (flashTimeoutRef.current) {
+          clearTimeout(flashTimeoutRef.current);
         }
 
-        // Deactivate after 100ms
-        glitchTimeoutRef.current = setTimeout(() => {
-          setIsActive(false);
-        }, 100);
+        // Fade flash out over 150ms (smooth cinematic fade)
+        flashTimeoutRef.current = setTimeout(() => {
+          setFlashIntensity(0);
+        }, 150);
+      } else {
+        // Gradual fade if no new transients
+        setFlashIntensity((prev) => Math.max(0, prev * 0.9));
       }
 
       requestAnimationFrame(checkTreble);
@@ -66,26 +88,21 @@ export function GlitchController({ getFrequencyData }: GlitchControllerProps) {
     checkTreble();
 
     return () => {
-      if (glitchTimeoutRef.current) {
-        clearTimeout(glitchTimeoutRef.current);
+      if (flashTimeoutRef.current) {
+        clearTimeout(flashTimeoutRef.current);
       }
     };
-  }, [getFrequencyData, isActive]);
+  }, [getFrequencyData]);
 
   return (
     <>
-      {/* Chromatic Aberration - Color separation effect */}
-      <ChromaticAberration
-        offset={isActive ? [0.002, 0.001] : [0.0005, 0.0005]}
-        radialModulation={true}
-      />
+      {/* Vignette - Creates cinematic depth, intensifies on impact pulse */}
+      <Vignette eskil={false} offset={0.1} darkness={vignetteIntensity} />
 
-      {/* Glitch Effect - Screen distortion */}
-      <Glitch
-        delay={[0.5, 1.5]}
-        duration={[0.1, 0.3]}
-        strength={isActive ? [0.3, 0.5] : [0, 0.1]}
-        mode={GlitchMode.SPORADIC}
+      {/* Chromatic Aberration - Intensifies on impact pulse or treble transients */}
+      <ChromaticAberration
+        offset={flashIntensity > 0 ? [0.002 * flashIntensity, 0.0015 * flashIntensity] : [0.0003, 0.0003]}
+        radialModulation={true}
       />
     </>
   );

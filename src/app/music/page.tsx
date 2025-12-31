@@ -85,7 +85,8 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
   onNext: () => void;
   onPrevious: () => void;
 }) {
-  const duration = track ? useTrackDuration(track) : 0;
+  // Always call hooks unconditionally
+  const duration = useTrackDuration(track || { type: "audio", src: "", title: "", coverArt: "", vibe: "chill" } as MediaItem);
 
   if (!track) return null;
 

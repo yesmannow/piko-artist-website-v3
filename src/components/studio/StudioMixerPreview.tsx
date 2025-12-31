@@ -18,7 +18,7 @@ useGLTF.preload("/3d/turntable-2610.glb");
  * Loads the turntable GLB model and applies HolographicMaterial
  * to the platter for visual consistency with Studio page.
  */
-function TurntableModel({ mousePosition }: { mousePosition: { x: number; y: number } }) {
+function TurntableModel({ mousePosition, audioLevel = 0 }: { mousePosition: { x: number; y: number }; audioLevel?: number }) {
   const { scene } = useGLTF("/3d/turntable-2610.glb");
   const groupRef = useRef<THREE.Group>(null);
   const platterRef = useRef<THREE.Mesh | null>(null);
@@ -54,9 +54,9 @@ function TurntableModel({ mousePosition }: { mousePosition: { x: number; y: numb
           const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
               uTime: { value: 0 },
-              uColor: { value: new THREE.Color("#00ffff") },
+              uColor: { value: new THREE.Color("#D4AF37") }, // Brushed Gold
               uAudio: { value: 0.3 },
-              uScanlineFreq: { value: 40.0 },
+              uBrushedMetalFreq: { value: 100.0 }, // Vinyl groove texture
               uFresnelPower: { value: 2.5 },
             },
             vertexShader: `
@@ -80,7 +80,7 @@ function TurntableModel({ mousePosition }: { mousePosition: { x: number; y: numb
               uniform float uTime;
               uniform vec3 uColor;
               uniform float uAudio;
-              uniform float uScanlineFreq;
+              uniform float uBrushedMetalFreq;
               uniform float uFresnelPower;
 
               varying vec3 vNormal;
@@ -93,14 +93,15 @@ function TurntableModel({ mousePosition }: { mousePosition: { x: number; y: numb
                 vec3 normal = normalize(vNormal);
                 float fresnel = pow(1.0 - abs(dot(normal, viewDir)), uFresnelPower);
 
-                float scanline = sin(vPosition.y * uScanlineFreq - uTime * 2.0);
-                scanline = smoothstep(0.4, 0.6, scanline);
+                // Brushed Metal / Vinyl Groove texture
+                float brushedMetal = sin(vPosition.y * uBrushedMetalFreq + vPosition.x * 50.0 - uTime * 0.5);
+                brushedMetal = smoothstep(0.3, 0.7, brushedMetal) * 0.3;
 
                 float pulse = uAudio * 0.5;
 
-                vec3 finalColor = uColor + (fresnel * 2.0) + (pulse * uColor);
+                vec3 finalColor = uColor + (fresnel * 2.0) + (pulse * uColor) + (brushedMetal * uColor * 0.5);
 
-                float alpha = fresnel + (scanline * 0.1) + (pulse * 0.2);
+                float alpha = fresnel + (brushedMetal * 0.15) + (pulse * 0.2);
                 alpha = clamp(alpha, 0.0, 1.0);
 
                 gl_FragColor = vec4(finalColor, alpha);
@@ -118,7 +119,7 @@ function TurntableModel({ mousePosition }: { mousePosition: { x: number; y: numb
     });
   }, [scene]);
 
-  // Animation: Slow drift rotation + mouse parallax
+  // Animation: Slow drift rotation + mouse parallax + audio bounce
   useFrame((state, delta) => {
     if (groupRef.current) {
       // Constant slow drift on Y-axis
@@ -129,12 +130,24 @@ function TurntableModel({ mousePosition }: { mousePosition: { x: number; y: numb
       const tiltZ = mousePosition.x * 0.1; // Tilt based on horizontal mouse position
       groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, tiltX, 0.05);
       groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, tiltZ, 0.05);
+
+      // Audio bounce: Scale from 1.0 to 1.05 based on audioLevel
+      const baseScale = 2.0;
+      const bounceScale = 1.0 + (audioLevel * 0.05); // 0-5% scale increase
+      const targetScale = baseScale * bounceScale;
+      groupRef.current.scale.x = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.1);
+      groupRef.current.scale.y = THREE.MathUtils.lerp(groupRef.current.scale.y, targetScale, 0.1);
+      groupRef.current.scale.z = THREE.MathUtils.lerp(groupRef.current.scale.z, targetScale, 0.1);
     }
 
-    // Update holographic material time
+    // Update holographic material time and audio reactivity
     if (materialRef.current) {
       materialRef.current.uTime = state.clock.getElapsedTime();
-      materialRef.current.uAudio = 0.3; // Subtle pulse for preview
+      materialRef.current.uAudio = THREE.MathUtils.lerp(
+        materialRef.current.uAudio,
+        audioLevel,
+        0.1
+      ); // Smooth audio reactivity
     }
   });
 
@@ -155,9 +168,9 @@ function StudioSkeleton() {
   return (
     <div className="w-full h-full bg-black/20 flex items-center justify-center">
       <div className="relative">
-        <div className="w-32 h-32 border-4 border-toxic-lime/30 border-t-toxic-lime rounded-full animate-spin" />
+        <div className="w-32 h-32 border-4 border-brushed-gold/30 border-t-brushed-gold rounded-full animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-toxic-lime/60 font-mono text-xs">LOADING...</span>
+          <span className="text-brushed-gold/60 font-sans text-xs">LOADING...</span>
         </div>
       </div>
     </div>
@@ -177,7 +190,19 @@ function StudioSkeleton() {
 export function StudioMixerPreview() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0); // For audio bounce effect
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Simulate subtle audio pulse for preview (in real implementation, this would come from audio context)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAudioLevel((prev) => {
+        // Subtle pulse animation (0.1 to 0.3)
+        return Math.sin(Date.now() / 1000) * 0.1 + 0.2;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   // Detect mobile device
   useEffect(() => {
@@ -225,12 +250,12 @@ export function StudioMixerPreview() {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
-              className="text-4xl md:text-5xl lg:text-6xl font-mono font-bold uppercase tracking-tighter text-foreground"
-              style={{ fontFamily: "monospace" }}
+              className="text-4xl md:text-5xl lg:text-6xl font-sans font-bold uppercase tracking-tighter text-foreground"
+              style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
             >
-              DECONSTRUCT
+              OWN THE
               <br />
-              THE SOUND
+              MASTER
             </motion.h2>
 
             {/* Subtext */}
@@ -241,7 +266,7 @@ export function StudioMixerPreview() {
               viewport={{ once: true }}
               className="text-base md:text-lg text-foreground/80 leading-relaxed max-w-lg"
             >
-              Isolate any vocal. Strip any beat. Piko Studio V3 leverages Neural Stem Separation and Holographic DSP to transform your library into a live instrument. Don&apos;t just listen—remix in real-time.
+              The industry&apos;s most powerful remix suite. Isolate stems, command the mix, and reinvent every beat with professional-grade AI deconstruction.
             </motion.p>
 
             {/* CTA Button */}
@@ -253,26 +278,29 @@ export function StudioMixerPreview() {
             >
               <Link href="/studio">
                 <motion.button
-                  className="relative px-8 py-4 md:px-12 md:py-6 bg-cyan-500 text-black font-mono font-bold text-lg md:text-xl uppercase tracking-wider transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black min-h-[60px] w-full md:w-auto"
+                  className="relative px-8 py-4 md:px-12 md:py-6 text-black font-sans font-bold text-lg md:text-xl uppercase tracking-wider transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black min-h-[60px] w-full md:w-auto overflow-hidden"
                   style={{
-                    boxShadow: "0 0 30px rgba(0, 255, 255, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
+                    background: "linear-gradient(135deg, #D4AF37 0%, #F4D03F 50%, #D4AF37 100%)",
+                    backgroundSize: "200% 100%",
+                    boxShadow: "0 0 30px rgba(212, 175, 55, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                   animate={{
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                     boxShadow: [
-                      "0 0 30px rgba(0, 255, 255, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
-                      "0 0 50px rgba(0, 255, 255, 0.8), 6px 6px 0px 0px rgba(0,0,0,1)",
-                      "0 0 30px rgba(0, 255, 255, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
+                      "0 0 30px rgba(212, 175, 55, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
+                      "0 0 50px rgba(212, 175, 55, 0.8), 6px 6px 0px 0px rgba(0,0,0,1)",
+                      "0 0 30px rgba(212, 175, 55, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
                     ],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 3,
                     repeat: Infinity,
-                    ease: "easeInOut",
+                    ease: "linear",
                   }}
                 >
-                  ENTER THE NERVE CENTER →
+                  <span className="relative z-10">ENTER THE BOOTH →</span>
                 </motion.button>
               </Link>
             </motion.div>
@@ -283,9 +311,10 @@ export function StudioMixerPreview() {
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               viewport={{ once: true }}
-              className="font-mono text-xs md:text-sm text-toxic-lime"
+              className="font-sans text-xs md:text-sm text-brushed-gold/80"
+              style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
             >
-              <span className="text-red-600">&gt;</span> SYSTEM_READY: NEURAL_ENGINE_ONLINE
+              STUDIO_ENGINE: CONSOLE_ONLINE
             </motion.div>
           </div>
 
@@ -304,10 +333,10 @@ export function StudioMixerPreview() {
 
                 {/* Simplified scene on mobile */}
                 {!isMobile ? (
-                  <TurntableModel mousePosition={mousePosition} />
+                  <TurntableModel mousePosition={mousePosition} audioLevel={audioLevel} />
                 ) : (
                   // Mobile: Simplified version (no parallax, just rotation)
-                  <TurntableModel mousePosition={{ x: 0, y: 0 }} />
+                  <TurntableModel mousePosition={{ x: 0, y: 0 }} audioLevel={audioLevel} />
                 )}
               </Canvas>
             </Suspense>
