@@ -19,7 +19,7 @@ const navItems = [
 
 const moreItems = [
   { href: "/music", label: "Music", icon: Music },
-  { href: "/beatmaker", label: "Studio", icon: Wrench },
+  { href: "/studio", label: "Studio", icon: Wrench },
   { href: "/events", label: "Tour", icon: Calendar },
   { href: "/#contact", label: "Contact", icon: Mail },
 ];

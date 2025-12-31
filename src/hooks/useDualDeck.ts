@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useAudioStore } from "@/stores/useAudioStore";
 import { useAudioGraph } from "@/hooks/useAudioGraph";
+import { createConstantPowerSplitter, applyConstantPowerGains } from "@/utils/constantPowerSplitter";
 
 export interface DeckState {
   trackName: string | null;
@@ -55,31 +56,37 @@ export function useDualDeck() {
     playbackRate: 1.0,
   });
 
-  // Initialize gain nodes
+  // Crossfader position (0.0 = Deck A full, 1.0 = Deck B full, 0.5 = center)
+  const [crossfaderPosition, setCrossfaderPosition] = useState(0.5);
+
+  // Initialize constant-power signal splitter
   useEffect(() => {
     if (!audioContext || !masterGainNode) {
       return;
     }
 
-    // Create gain nodes for each deck
-    const deckAGain = audioContext.createGain();
-    const deckBGain = audioContext.createGain();
+    // Create constant-power splitter with professional routing
+    const { gainNodeA, gainNodeB } = createConstantPowerSplitter(
+      audioContext,
+      masterGainNode
+    );
 
-    deckAGain.gain.value = 1.0;
-    deckBGain.gain.value = 1.0;
+    deckAGainRef.current = gainNodeA;
+    deckBGainRef.current = gainNodeB;
 
-    // Connect both decks to master gain
-    deckAGain.connect(masterGainNode);
-    deckBGain.connect(masterGainNode);
-
-    deckAGainRef.current = deckAGain;
-    deckBGainRef.current = deckBGain;
+    // Apply initial crossfader position (center)
+    applyConstantPowerGains(
+      gainNodeA,
+      gainNodeB,
+      crossfaderPosition,
+      audioContext
+    );
 
     return () => {
-      deckAGain.disconnect();
-      deckBGain.disconnect();
+      gainNodeA.disconnect();
+      gainNodeB.disconnect();
     };
-  }, [audioContext, masterGainNode]);
+  }, [audioContext, masterGainNode, crossfaderPosition]);
 
   /**
    * Load track to Deck A (site-hosted track)
@@ -316,6 +323,27 @@ export function useDualDeck() {
     });
   }, [stopDeckB]);
 
+  /**
+   * Set crossfader position (0.0 to 1.0)
+   * Applies constant-power curve automatically
+   */
+  const setCrossfader = useCallback(
+    (position: number) => {
+      if (!audioContext || !deckAGainRef.current || !deckBGainRef.current) {
+        return;
+      }
+
+      setCrossfaderPosition(position);
+      applyConstantPowerGains(
+        deckAGainRef.current,
+        deckBGainRef.current,
+        position,
+        audioContext
+      );
+    },
+    [audioContext]
+  );
+
   return {
     deckA,
     deckB,
@@ -329,6 +357,8 @@ export function useDualDeck() {
     setDeckBGain,
     clearDeckA,
     clearDeckB,
+    crossfaderPosition,
+    setCrossfader,
   };
 }
 

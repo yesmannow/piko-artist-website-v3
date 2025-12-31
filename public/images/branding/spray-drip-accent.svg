@@ -1,0 +1,25 @@
+<svg width="24" height="40" viewBox="0 0 24 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Spray Drip Accent - Yellow SVG drips for active navigation/hover highlights -->
+
+  <!-- Drip Shape -->
+  <path d="M 12 0
+           Q 16 4 16 12
+           Q 16 20 14 28
+           Q 12 36 8 40
+           Q 4 36 2 28
+           Q 0 20 0 12
+           Q 0 4 4 0 Z"
+        fill="#FFD700"
+        opacity="0.9" />
+
+  <!-- Highlight -->
+  <ellipse cx="10" cy="8" rx="3" ry="4" fill="#FFF" opacity="0.3" />
+
+  <!-- Drip Details -->
+  <path d="M 6 20 Q 8 22 10 20 Q 12 18 14 20"
+        stroke="#000"
+        stroke-width="0.5"
+        fill="none"
+        opacity="0.2" />
+</svg>
+

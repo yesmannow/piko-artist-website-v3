@@ -9,6 +9,7 @@ import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
+import { TacticalBar } from "@/components/navigation/TacticalBar";
 import { InstallApp } from "@/components/InstallApp";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { SmoothScroll } from "@/components/SmoothScroll";
@@ -130,6 +131,7 @@ export default function RootLayout({
             <FloatingVideoPlayer />
             <PersistentPlayer />
             <MobileNav />
+            <TacticalBar />
             <InstallApp />
             <InstallPrompt />
           </VideoProvider>

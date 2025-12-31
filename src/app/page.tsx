@@ -61,7 +61,7 @@ export default function Home() {
           <motion.img
             src="/images/branding/piko-logo.png"
             alt="Piko FG logo"
-            className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
+            className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] cursor-pointer"
             style={{
               filter: "grayscale(1) brightness(1.5)",
             }}
@@ -71,6 +71,10 @@ export default function Home() {
               scale: 1,
               filter: "blur(0px) grayscale(1) brightness(1.5)",
               y: [0, -10, 0],
+            }}
+            whileHover={{
+              scale: 1.05,
+              filter: "blur(0px) grayscale(0.8) brightness(1.6)",
             }}
             transition={{
               type: "spring",

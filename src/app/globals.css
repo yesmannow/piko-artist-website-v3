@@ -45,18 +45,27 @@
   body {
     @apply bg-[#050505] text-[#E0E0E0];
     background-image:
-      /* Spray Paint Streaks */
-      linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.03) 50%, transparent 70%),
-      linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.02) 50%, transparent 70%);
-    background-blend-mode: normal, normal;
+      /* Spray Paint Streaks - V3 Urban Syndicate */
+      linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.04) 50%, transparent 70%),
+      linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.03) 50%, transparent 70%),
+      /* Concrete texture overlay */
+      repeating-linear-gradient(
+        0deg,
+        rgba(224, 224, 224, 0.01) 0px,
+        transparent 1px,
+        transparent 2px,
+        rgba(224, 224, 224, 0.01) 3px
+      );
+    background-blend-mode: normal, normal, overlay;
     background-attachment: fixed;
     cursor: crosshair;
     padding-bottom: env(safe-area-inset-bottom, 0);
     overflow-x: hidden;
     position: relative;
+    user-select: none; /* Prevent text selection for app-like feel */
   }
 
-  /* Global Concrete Grit & Brutalist Overrides */
+  /* Global Concrete Grit & Brutalist Overrides - V3 Urban Syndicate */
   body::before {
     content: "";
     position: fixed;
@@ -64,15 +73,38 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     opacity: 1;
     pointer-events: none;
     z-index: 9999;
     mix-blend-mode: overlay;
   }
 
-  button, input, .card, .section-bg {
+  /* Brutalist: 0px radius enforced globally */
+  button, input, .card, .section-bg, [class*="rounded"], * {
     border-radius: 0px !important;
+  }
+
+  /* Urban Syndicate: -12deg skew for buttons and bars (desktop) */
+  @media (min-width: 769px) {
+    button, .bar, .nav-item, [data-urban="skew"] {
+      transform: skew(-12deg);
+    }
+
+    button > *, .bar > *, .nav-item > *, [data-urban="skew"] > * {
+      transform: skew(12deg); /* Counter-skew content */
+    }
+  }
+
+  /* Mobile: -6deg skew (reduced for touch targets) */
+  @media (max-width: 768px) {
+    button, .bar, .nav-item, [data-urban="skew"] {
+      transform: skew(-6deg);
+    }
+
+    button > *, .bar > *, .nav-item > *, [data-urban="skew"] > * {
+      transform: skew(6deg);
+    }
   }
 
   ::selection {

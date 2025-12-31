@@ -1,0 +1,170 @@
+"use client";
+
+import { useRef, useState, useCallback, useEffect } from "react";
+import { useStudioMonitor } from "@/components/ui/StudioMonitor";
+
+interface SeparatedStems {
+  vocals: AudioBuffer;
+  drums: AudioBuffer;
+  bass: AudioBuffer;
+  other: AudioBuffer;
+}
+
+/**
+ * useSignalCracker - Hook for WASM-based AI stem separation
+ *
+ * Manages the Web Worker that processes audio files using WebAssembly
+ * to isolate stems (vocals, drums, bass, other) in real-time.
+ *
+ * Features:
+ * - Background processing via Web Worker
+ * - Real-time progress updates to StudioMonitor
+ * - Zero-latency WASM inference
+ * - Professional studio operation telemetry
+ */
+export function useSignalCracker() {
+  const workerRef = useRef<Worker | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { addLog } = useStudioMonitor();
+
+  // Initialize worker
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const worker = new Worker("/worklets/v3-separator-worker.js");
+      workerRef.current = worker;
+
+      // Handle worker messages
+      worker.onmessage = (event) => {
+        const { type, message, progress: msgProgress } = event.data;
+
+        switch (type) {
+          case "READY":
+            addLog(message);
+            break;
+
+          case "STATUS":
+            if (message) {
+              addLog(message);
+            }
+            break;
+
+          case "PROGRESS":
+            if (msgProgress !== undefined) {
+              setProgress(msgProgress);
+            }
+            if (message) {
+              addLog(message);
+            }
+            break;
+
+          case "COMPLETE":
+            setIsProcessing(false);
+            setProgress(100);
+            if (message) {
+              addLog(message);
+            }
+            break;
+
+          case "ERROR":
+            setIsProcessing(false);
+            setProgress(0);
+            if (message) {
+              addLog(message);
+            }
+            break;
+        }
+      };
+
+      worker.onerror = (error) => {
+        console.error("[useSignalCracker] Worker error:", error);
+        addLog(`STUDIO_CORE: Worker error - ${error.message}`);
+        setIsProcessing(false);
+        setProgress(0);
+      };
+    } catch (error) {
+      console.error("[useSignalCracker] Failed to create worker:", error);
+      addLog(`STUDIO_CORE: Failed to initialize signal cracker worker`);
+    }
+
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, [addLog]);
+
+  /**
+   * Process audio file for stem separation
+   */
+  const processAudio = useCallback(
+    async (audioBuffer: AudioBuffer): Promise<SeparatedStems | null> => {
+      if (!workerRef.current || isProcessing) {
+        return null;
+      }
+
+      setIsProcessing(true);
+      setProgress(0);
+
+      return new Promise((resolve, reject) => {
+        if (!workerRef.current) {
+          reject(new Error("Worker not initialized"));
+          return;
+        }
+
+        // Set up one-time completion handler
+        const handleComplete = (event: MessageEvent) => {
+          if (event.data.type === "COMPLETE") {
+            workerRef.current?.removeEventListener("message", handleComplete);
+            resolve(event.data.stems);
+          } else if (event.data.type === "ERROR") {
+            workerRef.current?.removeEventListener("message", handleComplete);
+            reject(new Error(event.data.message));
+          }
+        };
+
+        workerRef.current.addEventListener("message", handleComplete);
+
+        // Send audio data to worker
+        // Note: AudioBuffer cannot be transferred directly, so we send raw audio data
+        const channelData = audioBuffer.getChannelData(0); // Mono for now
+        const audioData = new Float32Array(channelData);
+
+        workerRef.current.postMessage({
+          type: "PROCESS_AUDIO",
+          data: {
+            audioBuffer: audioData.buffer,
+            sampleRate: audioBuffer.sampleRate,
+            numberOfChannels: audioBuffer.numberOfChannels,
+            length: audioBuffer.length,
+          },
+        }, [audioData.buffer]);
+      });
+    },
+    [isProcessing]
+  );
+
+  /**
+   * Cancel current processing
+   */
+  const cancel = useCallback(() => {
+    if (workerRef.current && isProcessing) {
+      workerRef.current.postMessage({ type: "CANCEL" });
+      setIsProcessing(false);
+      setProgress(0);
+    }
+  }, [isProcessing]);
+
+  return {
+    processAudio,
+    cancel,
+    isProcessing,
+    progress,
+  };
+}
+

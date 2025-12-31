@@ -188,7 +188,7 @@ export function BeatMakerTeaser() {
         </div>
 
         {/* Caution Tape Button */}
-        <Link href="/beatmaker" className="block mt-6 md:mt-8">
+        <Link href="/studio" className="block mt-6 md:mt-8">
           <motion.button
             className="w-full py-4 md:py-5 font-header text-lg md:text-xl font-bold text-black border-2 border-black relative overflow-hidden"
             style={{

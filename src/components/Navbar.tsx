@@ -17,7 +17,7 @@ const navItems = [
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
   { name: "Tour", path: "/tour", anchor: null },
-  { name: "Studio", path: "/beatmaker", anchor: null },
+  { name: "Studio", path: "/studio", anchor: null },
   { name: "Contact", path: "/", anchor: "contact" },
 ];
 
@@ -389,7 +389,7 @@ export function Navbar() {
                 alt="Logo"
                 width={40}
                 height={40}
-                className="w-10 h-10 grayscale brightness-150"
+                className="w-10 h-10"
               />
             </Link>
           </motion.div>

@@ -60,11 +60,18 @@ export function StudioMonitor({ logs, maxLines = 10, className = "" }: StudioMon
         <div className="font-mono text-[11px] space-y-1">
           <AnimatePresence mode="popLayout">
             {displayedLogs.map((log, index) => {
-              // Remove > prefix and normalize (keep STUDIO_ENGINE for launch sequence)
+              // Remove > prefix and normalize to V3 professional studio language
+              // Remove all hacker/game vernacular, use professional studio operations
               const cleanLog = log
                 .replace(/^>\s*/, "")
                 .replace(/SYSTEM_CORE/g, "STUDIO_CORE")
-                .replace(/NEURAL_ENGINE/g, "STUDIO_CORE");
+                .replace(/NEURAL_ENGINE/g, "STUDIO_CORE")
+                .replace(/HACK|CRACK|BREACH|INTRUSION|EXPLOIT/gi, "PROCESS")
+                .replace(/VIRUS|MALWARE|TROJAN/gi, "SIGNAL")
+                .replace(/TERMINAL|CONSOLE|COMMAND/gi, "STUDIO")
+                .replace(/BOOT|INIT|LOAD/gi, "INITIALIZE")
+                .replace(/ERROR|FAIL|CRASH/gi, "STATUS")
+                .replace(/SUCCESS|COMPLETE/gi, "OPERATION_COMPLETE");
 
               // Determine text color: Safety Yellow for status, White for info
               const isStatus = cleanLog.includes("STUDIO_ENGINE:") || cleanLog.includes("STUDIO_CORE:");

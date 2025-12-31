@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "./Logo";
+import { useVaultEntrySound } from "@/hooks/useVaultEntrySound";
 
 const STORAGE_KEY = "piko_logo_intro_seen";
 
@@ -116,10 +117,17 @@ export function LogoIntro() {
     };
   }, [isActive]);
 
+  // Play vault entry sound when animation completes
+  const [shouldPlaySound, setShouldPlaySound] = useState(false);
+  useVaultEntrySound(shouldPlaySound);
+
   // Handle animation completion (only run once)
   const handleAnimationComplete = () => {
     if (hasCompletedRef.current) return;
     hasCompletedRef.current = true;
+
+    // Trigger vault entry sound
+    setShouldPlaySound(true);
 
     // Mark as seen
     if (typeof window !== "undefined") {
