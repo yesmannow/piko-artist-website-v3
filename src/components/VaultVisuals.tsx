@@ -85,12 +85,11 @@ export function VaultVisuals() {
                 <div className="relative w-full h-full">
                   {/* Background image layer */}
                   <div
-                    className="absolute inset-0 grayscale group-hover:grayscale-0 transition-all duration-500"
+                    className="absolute inset-0 transition-all duration-500 [filter:grayscale(100%)_contrast(1.2)_brightness(0.8)] group-hover:[filter:grayscale(0%)_contrast(1.2)_brightness(0.8)]"
                     style={{
                       backgroundImage: `url(${cctvBackground})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
-                      filter: "grayscale(1) contrast(1.2) brightness(0.8)",
                     }}
                   />
                   {/* YouTube thumbnail overlay (if available) */}
@@ -98,11 +97,8 @@ export function VaultVisuals() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={thumbnailUrl}
-                      className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity grayscale group-hover:grayscale-0"
+                      className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity [filter:grayscale(100%)_contrast(1.2)_brightness(0.8)] group-hover:[filter:grayscale(0%)_contrast(1.2)_brightness(0.8)]"
                       alt={video.title}
-                      style={{
-                        filter: "grayscale(1) contrast(1.2) brightness(0.8)",
-                      }}
                     />
                   )}
                   {/* CRT Scanline Overlay */}

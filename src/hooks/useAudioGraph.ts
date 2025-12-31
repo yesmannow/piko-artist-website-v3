@@ -58,17 +58,25 @@ export function useAudioGraph() {
 
       // 4. Create AudioWorkletNode for sidechain processing
       // This runs on the audio thread (not main thread) for zero-latency DSP
-      const sidechainNode = new AudioWorkletNode(audioContext, "sidechain-processor", {
-        numberOfInputs: 2, // Music input + Trigger input
-        numberOfOutputs: 1, // Processed output
-        channelCount: 2, // Stereo
-      });
+      // Note: AudioWorklet may fail if worklet module isn't loaded yet - make it optional
+      try {
+        const sidechainNode = new AudioWorkletNode(audioContext, "sidechain-processor", {
+          numberOfInputs: 2, // Music input + Trigger input
+          numberOfOutputs: 1, // Processed output
+          channelCount: 2, // Stereo
+        });
 
-      // Set default sidechain parameters
-      sidechainNode.parameters.get("threshold")!.value = 0.5;
-      sidechainNode.parameters.get("ratio")!.value = 4.0;
-      sidechainNode.parameters.get("release")!.value = 0.1;
-      sidechainNodeRef.current = sidechainNode;
+        // Set default sidechain parameters
+        sidechainNode.parameters.get("threshold")!.value = 0.5;
+        sidechainNode.parameters.get("ratio")!.value = 4.0;
+        sidechainNode.parameters.get("release")!.value = 0.1;
+        sidechainNodeRef.current = sidechainNode;
+      } catch (workletError) {
+        // AudioWorklet may not be available or module not loaded yet
+        // This is non-critical - the audio graph will still work without sidechain
+        console.warn("[useAudioGraph] AudioWorklet not available, continuing without sidechain:", workletError);
+        sidechainNodeRef.current = null;
+      }
 
       // 5. Wire the audio graph:
       // MasterGain -> Limiter -> Analyser -> destination

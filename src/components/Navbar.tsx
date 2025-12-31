@@ -365,35 +365,6 @@ export function Navbar() {
 
         {/* Desktop Menu - Chrome Parallel Bar */}
         <div className="hidden md:flex items-center gap-8 pointer-events-auto relative">
-          {/* Logo Container - Skewed */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="relative bg-[#050505] p-2 border-2 border-[#E0E0E0] skew-x-[-12deg]"
-          >
-            <Link
-              href="/"
-              className="block skew-x-[12deg]"
-              onClick={(e) => {
-                if (pathname === "/") {
-                  e.preventDefault();
-                  if (lenis) {
-                    lenis.scrollTo(0, { immediate: false, duration: 1.5 });
-                  } else {
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }
-                }
-              }}
-            >
-              <Image
-                src="/images/branding/piko-logo.png"
-                alt="Logo"
-                width={40}
-                height={40}
-                className="w-10 h-10"
-              />
-            </Link>
-          </motion.div>
-
           {/* Navigation Links - Chrome Bar */}
           <ul
             className="flex items-center bg-[#050505]/90 backdrop-blur-xl border-2 border-[#E0E0E0]/30 px-6 py-2 skew-x-[-12deg]"

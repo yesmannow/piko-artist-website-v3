@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useAudioStore } from "@/stores/useAudioStore";
 import { useAudioGraph } from "@/hooks/useAudioGraph";
 import { useDualDeck } from "@/hooks/useDualDeck";
 import { useSignalCracker } from "@/hooks/useSignalCracker";
-import { StudioCanvas } from "@/components/3d/StudioCanvas";
 import { StudioMonitor, useStudioMonitor } from "@/components/ui/StudioMonitor";
 import { SignalHatch } from "@/components/studio/SignalHatch";
 import { CrossFader } from "@/components/studio/CrossFader";
@@ -15,6 +15,16 @@ import { audioBufferToWAV } from "@/utils/audioRenderer";
 import { tracks, MediaItem } from "@/lib/data";
 import { motion } from "framer-motion";
 import Image from "next/image";
+
+// Dynamic import with ssr: false to prevent server-side rendering of WebGL canvas
+const StudioCanvas = dynamic(() => import("@/components/3d/StudioCanvas").then((mod) => ({ default: mod.StudioCanvas })), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#050505]">
+      <div className="text-[#E0E0E0]/40 font-mono text-xs uppercase">LOADING_3D_CANVAS...</div>
+    </div>
+  ),
+});
 
 /**
  * Studio Page - V3 Urban Syndicate Widescreen Console
@@ -339,17 +349,25 @@ export default function StudioPage() {
     >
       {/* 3D Canvas Background - Centered */}
       <div className="absolute inset-0 z-0">
-        <StudioCanvas
-          deckAIsPlaying={deckA.isPlaying}
-          deckAAudioLevel={deckAAudioLevel}
-          deckBIsPlaying={deckB.isPlaying}
-          deckBAudioLevel={deckBAudioLevel}
-          deckAColor="#E0E0E0"
-          deckBColor="#E0E0E0"
-          getFrequencyData={getFrequencyData}
-          playbackRate={playbackRate}
-          impactPulse={impactPulse}
-        />
+        <Suspense
+          fallback={
+            <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#050505]">
+              <div className="text-[#E0E0E0]/40 font-mono text-xs uppercase">LOADING_3D_CANVAS...</div>
+            </div>
+          }
+        >
+          <StudioCanvas
+            deckAIsPlaying={deckA.isPlaying}
+            deckAAudioLevel={deckAAudioLevel}
+            deckBIsPlaying={deckB.isPlaying}
+            deckBAudioLevel={deckBAudioLevel}
+            deckAColor="#E0E0E0"
+            deckBColor="#E0E0E0"
+            getFrequencyData={getFrequencyData}
+            playbackRate={playbackRate}
+            impactPulse={impactPulse}
+          />
+        </Suspense>
       </div>
 
       {/* Widescreen Console Layout */}
