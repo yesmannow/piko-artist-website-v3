@@ -5,7 +5,7 @@
 @layer base {
   html,
   body {
-    overscroll-behavior-y: none;
+    overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
   }
 

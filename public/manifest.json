@@ -1,17 +1,23 @@
 {
-  "name": "PIKO | Pro DJ Console",
-  "short_name": "PIKO",
-  "description": "Music artist portfolio and DJ console",
-  "start_url": "/",
+  "name": "Piko Artist Studio",
+  "short_name": "Piko Studio",
+  "description": "High-performance holographic DJ mixer and artist platform.",
+  "categories": ["music", "entertainment"],
+  "start_url": "/studio",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#ccff00",
-  "orientation": "any",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#00ffff",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }

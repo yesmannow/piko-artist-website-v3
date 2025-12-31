@@ -10,10 +10,12 @@ import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallApp } from "@/components/InstallApp";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ScrollRestorationManager } from "@/components/ScrollRestorationManager";
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
 import { LogoIntro } from "@/components/branding/LogoIntro";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -48,13 +50,36 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Piko Artist Portfolio",
-  description: "Music artist portfolio and showcase",
+  title: "Piko Artist Studio",
+  description: "High-performance holographic DJ mixer and artist platform",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Piko",
+    title: "Piko Studio",
+    startupImage: [
+      {
+        url: "/icons/apple-touch-startup-image.png",
+        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/icons/apple-touch-startup-image.png",
+        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/icons/apple-touch-startup-image.png",
+        media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
+      },
+    ],
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
@@ -76,6 +101,7 @@ export default function RootLayout({
         className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >
         <ProdRuntimeGuards />
+        <ServiceWorkerRegistration />
         <LogoIntro />
         <AudioProvider>
           <VideoProvider>
@@ -89,6 +115,7 @@ export default function RootLayout({
             <PersistentPlayer />
             <MobileNav />
             <InstallApp />
+            <InstallPrompt />
           </VideoProvider>
         </AudioProvider>
       </body>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,11 +8,12 @@ import { VideoGallery } from "@/components/VideoGallery";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { GlitchText } from "@/components/GlitchText";
-import { BeatMakerTeaser } from "@/components/BeatMakerTeaser";
 import { EventList } from "@/components/EventList";
+import { StudioMixerPreview } from "@/components/studio/StudioMixerPreview";
 
 export default function Home() {
   const scrollToMusic = () => {
+    if (typeof window === "undefined") return;
     const musicSection = document.getElementById("latest-drops");
     if (musicSection) {
       musicSection.scrollIntoView({ behavior: "smooth" });
@@ -108,6 +110,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Studio Mixer Preview - Conversion Funnel */}
+      <StudioMixerPreview />
+
       {/* Section 2: RECENT SIGHTINGS (Videos) */}
       <section id="recent-sightings" className="relative py-12 md:py-20 px-4 md:px-8 bg-card">
         <div className="max-w-7xl mx-auto">
@@ -194,27 +199,7 @@ export default function Home() {
         />
       </section>
 
-      {/* Section 4: THE LAB (Beat Maker) */}
-      <section id="the-lab" className="relative py-12 md:py-20 px-4 md:px-8 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            {/* Desk Mat Background */}
-            <div className="bg-zinc-800 p-6 md:p-8 lg:p-12 border-2 border-black shadow-hard rounded-lg">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-header mb-6 md:mb-8 lg:mb-12 text-center text-foreground">
-                THE LAB
-              </h2>
-              <BeatMakerTeaser />
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Section 5: RAP SHEET (Bio) */}
+      {/* Section 4: RAP SHEET (Bio) */}
       <section id="rap-sheet" className="relative py-12 md:py-20 px-4 md:px-8 bg-card">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
