@@ -2,7 +2,7 @@
 
 import { useAudio } from "@/context/AudioContext";
 import { tracks, MediaItem } from "@/lib/data";
-import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack, Volume2 } from "lucide-react";
+import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -145,7 +145,7 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
             <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-header mb-3 text-foreground">
               {track.title}
             </h1>
-            <p className="text-xl md:text-2xl font-industrial text-foreground/70 mb-4">
+            <p className="text-xl md:text-2xl font-industrial text-foreground/80 mb-4 font-medium">
               {track.artist}
             </p>
             {duration > 0 && (
@@ -282,7 +282,7 @@ function TableRowItem({ track, index, isActive, onPlay }: {
         <div className="min-w-0">
           <div
             className={[
-              "truncate font-industrial font-bold uppercase tracking-wider text-sm md:text-base",
+              "truncate font-industrial font-semibold uppercase tracking-tight text-sm md:text-base",
               isActive ? "text-toxic-lime" : "text-foreground",
             ].join(" ")}
           >
@@ -292,8 +292,8 @@ function TableRowItem({ track, index, isActive, onPlay }: {
       </div>
 
       {/* Col 3: Artist */}
-      <div className={["flex items-center", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
-        <span className="truncate text-sm">{track.artist}</span>
+      <div className={["flex items-center", isActive ? "text-toxic-lime/80" : "text-foreground/80"].join(" ")}>
+        <span className="truncate text-sm font-medium">{track.artist}</span>
       </div>
 
       {/* Col 4: Vibe badge */}
@@ -309,7 +309,7 @@ function TableRowItem({ track, index, isActive, onPlay }: {
       </div>
 
       {/* Col 5: Duration */}
-      <div className={["flex items-center justify-end text-sm", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
+      <div className={["flex items-center justify-end text-sm font-mono", isActive ? "text-toxic-lime/80" : "text-foreground/70"].join(" ")}>
         {duration > 0 ? formatDuration(duration) : "0:00"}
       </div>
     </motion.button>
@@ -427,13 +427,13 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
       {/* Track Info */}
       <div className="p-3 md:p-4 bg-zinc-900 rounded-b-lg border-t-2 border-zinc-800/50">
         <h3
-          className={`font-header font-bold text-sm md:text-base mb-1 truncate ${
+          className={`font-header font-semibold text-sm md:text-base mb-1 truncate tracking-tight ${
             isActive ? "text-toxic-lime" : "text-white"
           }`}
         >
           {track.title}
         </h3>
-        <p className="font-industrial text-zinc-400 text-xs md:text-sm truncate mb-2">
+        <p className="font-industrial text-zinc-300 text-xs md:text-sm truncate mb-2">
           {track.artist}
         </p>
         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -445,7 +445,7 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
             {track.vibe}
           </span>
           {duration > 0 && (
-            <span className="flex items-center gap-1 text-zinc-500 text-xs font-industrial">
+            <span className="flex items-center gap-1 text-zinc-400 text-xs font-industrial">
               <Clock className="w-3 h-3" />
               {formatDuration(duration)}
             </span>
@@ -497,13 +497,13 @@ function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem;
         {isActive ? (
           <div className="w-4 h-4 bg-toxic-lime rounded-full animate-pulse" />
         ) : (
-          <span className="text-zinc-500 text-xs font-industrial group-hover:hidden">
+          <span className="text-zinc-400 text-xs font-industrial group-hover:hidden">
             {index + 1}
           </span>
         )}
         <Play
           className={`w-4 h-4 hidden group-hover:block ${
-            isActive ? "text-toxic-lime" : "text-zinc-400"
+            isActive ? "text-toxic-lime" : "text-zinc-300"
           }`}
           fill={isActive ? "currentColor" : "none"}
         />
@@ -527,20 +527,20 @@ function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem;
       {/* Track Info */}
       <div className="flex-1 min-w-0">
         <h3
-          className={`font-header font-bold text-sm truncate ${
+          className={`font-header font-semibold text-sm truncate tracking-tight ${
             isActive ? "text-toxic-lime" : "text-white"
           }`}
         >
           {track.title}
         </h3>
-        <p className="font-industrial text-zinc-400 text-xs truncate">
+        <p className="font-industrial text-zinc-300 text-xs truncate">
           {track.artist} • {track.vibe}
         </p>
       </div>
 
       {/* Duration */}
       {duration > 0 && (
-        <div className="flex-shrink-0 text-zinc-500 text-xs font-industrial">
+        <div className="flex-shrink-0 text-zinc-400 text-xs font-industrial">
           {formatDuration(duration)}
         </div>
       )}
@@ -605,7 +605,7 @@ export default function MusicPage() {
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-header mb-3 md:mb-4 text-foreground">
                 MUSIC LIBRARY
               </h1>
-              <p className="text-foreground/60 font-industrial text-sm md:text-base tracking-wider">
+              <p className="text-foreground/70 font-industrial text-sm md:text-base tracking-normal font-medium">
                 STREAMING • DOWNLOAD • SHARE
               </p>
             </div>

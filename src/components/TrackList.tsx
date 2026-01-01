@@ -239,7 +239,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           initial={false}
         >
           <div className="text-white">
-            <div className="font-header text-sm font-bold truncate mb-1">{track.title}</div>
+            <div className="font-header text-sm font-semibold truncate mb-1 tracking-tight">{track.title}</div>
             <div className="font-industrial text-xs text-white/80 truncate mb-1">{track.artist}</div>
             <div className="flex items-center gap-2">
               <span className={[
@@ -258,7 +258,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
       <div className="p-3 md:p-4 bg-[#e5e5e5] border-t-2 border-black/10">
         <div
           className={[
-            "font-header text-sm md:text-base mb-1 line-clamp-2 font-bold",
+            "font-header text-sm md:text-base mb-1 line-clamp-2 font-semibold tracking-tight",
             isActive ? "text-toxic-lime" : "text-black",
           ].join(" ")}
         >
@@ -447,7 +447,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                       <div className="min-w-0">
                         <div
                           className={[
-                            "truncate font-industrial font-bold uppercase tracking-wider text-sm md:text-base",
+                            "truncate font-industrial font-semibold uppercase tracking-tight text-sm md:text-base",
                             isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
                           ].join(" ")}
                         >

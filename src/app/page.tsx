@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { VaultVisuals } from "@/components/VaultVisuals";
 import { FieldOperations } from "@/components/FieldOperations";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
-import { GlitchText } from "@/components/GlitchText";
-import { StudioMixerPreview } from "@/components/studio/StudioMixerPreview";
+import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -144,8 +141,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Studio Mixer Preview - Conversion Funnel */}
-      <StudioMixerPreview />
+      {/* Studio Engine Section */}
+      <StudioEngineSection />
 
       {/* Section 2: VAULT VISUALS (CCTV Monitor Wall) */}
       <VaultVisuals />
