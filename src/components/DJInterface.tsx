@@ -6,7 +6,7 @@ import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
 import { tracks } from "@/lib/data";
-import { HelpCircle, ArrowUpDown, Filter, X, ExternalLink, Upload, FileAudio } from "lucide-react";
+import { HelpCircle, ArrowUpDown, Filter, X, ExternalLink, Upload, FileAudio, ChevronLeft, ChevronRight } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 import Image from "next/image";
@@ -76,6 +76,9 @@ export function DJInterface() {
 
   // Track history
   const [trackHistory, setTrackHistory] = useState<Array<{ track: typeof tracks[0]; deck: "A" | "B"; timestamp: number }>>([]);
+
+  // Sidebar collapse state
+  const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
   // Mixer state
   const [crossfader, setCrossfader] = useState(0.5);
@@ -1144,36 +1147,65 @@ export function DJInterface() {
       }}
     >
       {/* Left Sidebar - Track Library */}
-      <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0 border-r border-gray-800 bg-[#0a0a0a] overflow-y-auto h-screen sticky top-0">
-        <div className="p-4 md:p-6 space-y-6" data-tour="library">
+      <aside
+        className={`hidden lg:block flex-shrink-0 border-r border-gray-800 bg-[#0a0a0a] overflow-hidden h-screen sticky top-0 transition-all duration-300 ease-in-out ${
+          isSidebarMinimized ? "w-16" : "w-80 xl:w-96"
+        }`}
+      >
+        <div className="h-full flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
-              TRACK LIBRARY
-            </h2>
-            <div className="flex items-center gap-2">
+          <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-800 flex-shrink-0 ${isSidebarMinimized ? "flex-col gap-2" : ""}`}>
+            {!isSidebarMinimized && (
+              <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
+                TRACK LIBRARY
+              </h2>
+            )}
+            <div className={`flex items-center gap-2 ${isSidebarMinimized ? "flex-col" : ""}`}>
+              {!isSidebarMinimized && (
+                <>
+                  <button
+                    onClick={toggleHelp}
+                    className={`p-2 rounded border-2 transition-all ${
+                      isHelpMode
+                        ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
+                        : "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
+                    }`}
+                    title={isHelpMode ? "Exit Help Mode" : "Enable Help Mode"}
+                    aria-label="Toggle help mode"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={triggerTour}
+                    className="px-3 py-2 text-xs font-barlow uppercase tracking-wider rounded border-2 border-gray-700 text-gray-400 hover:border-[#00ff00] hover:text-[#00ff00] transition-all"
+                    title="Replay Onboarding Tour"
+                    aria-label="Replay tour"
+                  >
+                    Tour
+                  </button>
+                </>
+              )}
               <button
-                onClick={toggleHelp}
-                className={`p-2 rounded border-2 transition-all ${
-                  isHelpMode
-                    ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
-                    : "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
-                }`}
-                title={isHelpMode ? "Exit Help Mode" : "Enable Help Mode"}
-                aria-label="Toggle help mode"
+                onClick={() => {
+                  triggerHaptic();
+                  setIsSidebarMinimized(!isSidebarMinimized);
+                }}
+                className="p-2 rounded border-2 border-gray-700 text-gray-400 hover:border-[#00ff00] hover:text-[#00ff00] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                title={isSidebarMinimized ? "Expand sidebar" : "Minimize sidebar"}
+                aria-label={isSidebarMinimized ? "Expand sidebar" : "Minimize sidebar"}
               >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button
-                onClick={triggerTour}
-                className="px-3 py-2 text-xs font-barlow uppercase tracking-wider rounded border-2 border-gray-700 text-gray-400 hover:border-[#00ff00] hover:text-[#00ff00] transition-all"
-                title="Replay Onboarding Tour"
-                aria-label="Replay tour"
-              >
-                Tour
+                {isSidebarMinimized ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
+
+          {/* Sidebar Content - Hidden when minimized */}
+          {!isSidebarMinimized && (
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6" data-tour="library">
 
           {/* File Upload Section */}
           <div className="mb-6">
@@ -1363,12 +1395,14 @@ export function DJInterface() {
             )}
           </div>
 
-          {/* Track Count */}
-          <div className="mt-4 text-xs font-barlow text-gray-500 text-center pt-4 border-t border-gray-800">
-            {audioTracks.length} track{audioTracks.length !== 1 ? "s" : ""}
-            {vibeFilter !== "all" && ` • ${vibeFilter}`}
-            {debouncedSearchQuery && ` • "${debouncedSearchQuery}"`}
-          </div>
+              {/* Track Count */}
+              <div className="mt-4 text-xs font-barlow text-gray-500 text-center pt-4 border-t border-gray-800">
+                {audioTracks.length} track{audioTracks.length !== 1 ? "s" : ""}
+                {vibeFilter !== "all" && ` • ${vibeFilter}`}
+                {debouncedSearchQuery && ` • "${debouncedSearchQuery}"`}
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
