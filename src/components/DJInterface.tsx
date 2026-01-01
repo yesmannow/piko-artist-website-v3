@@ -2095,7 +2095,7 @@ export function DJInterface() {
           </div>
 
           {/* Voice Tag Panel - Moved outside grid */}
-          <div className="mt-6 lg:mt-8">
+          <div className="mt-6 lg:mt-8" data-tour="voice-tags">
             <VoiceTagPanel
               micEnabled={voiceTag.micEnabled}
               isRecording={voiceTag.isRecording}

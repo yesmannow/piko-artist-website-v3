@@ -129,7 +129,7 @@ export function DJMixer({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left Strip - Deck A */}
-        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
+        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50" data-tour="mixer-deck-a">
           <div className="text-sm font-barlow uppercase text-[#00d9ff] mb-1 font-bold tracking-wider">
             DECK A
           </div>
@@ -226,7 +226,7 @@ export function DJMixer({
         <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
           {/* Stereo VU Meters */}
           {(vuAnalyserLeft || vuAnalyserRight) && (
-            <div className="w-full">
+            <div className="w-full" data-tour="vu-meters">
               <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
                 VU METERS
               </div>
@@ -257,7 +257,7 @@ export function DJMixer({
           </div>
 
           {/* Crossfader */}
-          <div className="w-full" data-tour="master-out">
+          <div className="w-full" data-tour="crossfader">
             <div className="text-xs font-barlow uppercase text-gray-400 mb-2 text-center tracking-wider">
               CROSSFADER
             </div>
@@ -298,7 +298,7 @@ export function DJMixer({
 
           {/* Recording Controls */}
           {(onStartRecording || onStopRecording || onDownloadRecording) && (
-            <div className="w-full flex flex-col items-center gap-2 mt-2">
+            <div className="w-full flex flex-col items-center gap-2 mt-2" data-tour="recording">
               <div className="text-xs font-barlow uppercase text-gray-400 mb-1 tracking-wider">
                 RECORD MIX
               </div>
@@ -365,7 +365,7 @@ export function DJMixer({
 
           {/* Master Limiter Control */}
           {onLimiterThresholdChange && (
-            <div className="w-full flex flex-col items-center gap-2 mt-2">
+            <div className="w-full flex flex-col items-center gap-2 mt-2" data-tour="master-limiter">
               <div className="text-xs font-barlow uppercase text-gray-400 mb-1 tracking-wider">
                 MASTER LIMITER
               </div>
@@ -396,7 +396,7 @@ export function DJMixer({
         </div>
 
         {/* Right Strip - Deck B */}
-        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50">
+        <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a1a]/50 rounded-lg border border-gray-800/50" data-tour="mixer-deck-b">
           <div className="text-sm font-barlow uppercase text-[#ff00d9] mb-1 font-bold tracking-wider">
             DECK B
           </div>
