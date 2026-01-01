@@ -83,8 +83,8 @@ export function AudioReactiveOverlay({
               0deg,
               transparent,
               transparent 2px,
-              rgba(204, 255, 0, ${bass * 0.2}) 2px,
-              rgba(204, 255, 0, ${bass * 0.2}) 4px
+              rgb(204 255 0 / ${bass * 0.2}) 2px,
+              rgb(204 255 0 / ${bass * 0.2}) 4px
             )`,
             mixBlendMode: "screen",
             clipPath: `polygon(0 ${50 + tearOffset}%, 100% ${50 + tearOffset}%, 100% ${55 + tearOffset}%, 0 ${55 + tearOffset}%)`,

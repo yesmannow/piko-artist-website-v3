@@ -101,7 +101,7 @@ export function Waveform({
     <div
       className="w-full"
       style={{
-        boxShadow: "0 0 15px rgba(204, 255, 0, 0.1)",
+        boxShadow: "0 0 15px rgb(204 255 0 / 0.1)",
       }}
     >
       <div ref={containerRef} className="w-full" />

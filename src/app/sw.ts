@@ -39,8 +39,8 @@ const customRuntimeCaching: RuntimeCaching[] = [
       cacheName: "audio-tracks",
       plugins: [
         new ExpirationPlugin({
-          maxEntries: 8, // CRITICAL: Reduced from 32 to prevent quota errors
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days (reduced from 30)
+          maxEntries: 25, // CRITICAL: Strict limit to prevent QuotaExceededError
+          maxAgeSeconds: 86400, // 24 hours (optimal for social sharing)
           maxAgeFrom: "last-used",
         }),
         new RangeRequestsPlugin(), // Support audio seeking
@@ -174,4 +174,14 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// Cache cleanup on service worker activation
+self.addEventListener("activate", async (event) => {
+  event.waitUntil(
+    (async () => {
+      // Clean up old caches on activation
+      await cleanupOldCaches();
+    })()
+  );
+});
 

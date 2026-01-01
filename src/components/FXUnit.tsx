@@ -111,6 +111,9 @@ interface FXUnitProps {
   echoFeedbackB?: number;
   onEchoTimeChangeB?: (val: number) => void;
   onEchoFeedbackChangeB?: (val: number) => void;
+  // Session Recorder props
+  audioContext?: AudioContext | null;
+  masterLimiterNode?: AudioNode | null;
 }
 
 export function FXUnit({
@@ -118,6 +121,8 @@ export function FXUnit({
   reverbDryWetA, onReverbDryWetChangeA,
   delayTimeA, delayFeedbackA, onDelayTimeChangeA, onDelayFeedbackChangeA,
   distortionAmountA, onDistortionChangeA,
+  audioContext,
+  masterLimiterNode,
   filterFreqB, filterTypeB, onFilterFreqChangeB, onFilterTypeChangeB,
   reverbDryWetB, onReverbDryWetChangeB,
   delayTimeB, delayFeedbackB, onDelayTimeChangeB, onDelayFeedbackChangeB,
@@ -232,6 +237,14 @@ export function FXUnit({
           >
             CLEAR ALL
           </button>
+        )}
+        {/* Session Recorder (Desktop) */}
+        {typeof window !== "undefined" && window.innerWidth >= 768 && audioContext && masterLimiterNode && (
+          <SessionRecorder
+            canvasSelector="canvas"
+            audioContext={audioContext}
+            audioDestination={masterLimiterNode}
+          />
         )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6">

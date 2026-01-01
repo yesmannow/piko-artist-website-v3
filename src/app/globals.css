@@ -309,4 +309,31 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* View Transitions API - Smooth animations for PersistentPlayer */
+  @supports (view-transition-name: none) {
+    ::view-transition-old(persistent-player),
+    ::view-transition-new(persistent-player) {
+      animation-duration: 0.3s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    ::view-transition-old(player-album-art),
+    ::view-transition-new(player-album-art) {
+      animation-duration: 0.4s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    ::view-transition-old(player-track-info),
+    ::view-transition-new(player-track-info) {
+      animation-duration: 0.3s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    ::view-transition-old(player-visualization),
+    ::view-transition-new(player-visualization) {
+      animation-duration: 0.5s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
 }

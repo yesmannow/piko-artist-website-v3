@@ -1870,6 +1870,9 @@ export function DJInterface() {
         {/* FX Rack */}
         <div data-tour="fx-unit">
         <FXUnit
+          // Session Recorder props
+          audioContext={audioContextRef.current}
+          masterLimiterNode={masterLimiterRef.current}
           // Deck A FX
           filterFreqA={filterFreqA}
           filterTypeA={filterTypeA}
@@ -2074,6 +2077,7 @@ export function DJInterface() {
             onCrossfaderCurveChange={setCrossfaderCurve}
             audioContext={audioContextRef.current || undefined}
             masterGainNode={masterGainRef.current || undefined}
+            masterLimiterNode={masterLimiterRef.current || undefined}
             vuAnalyserLeft={vuAnalyserLeftRef.current || undefined}
             vuAnalyserRight={vuAnalyserRightRef.current || undefined}
             isRecording={mixRecorder.isRecording}

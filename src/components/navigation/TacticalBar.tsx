@@ -18,7 +18,6 @@ export function TacticalBar() {
     { href: "/", icon: Home, label: "HOME" },
     { href: "/music", icon: Music, label: "MUSIC" },
     { href: "/videos", icon: Video, label: "VIDEOS" },
-    { href: "/tour", icon: Calendar, label: "TOUR" },
     { href: "/studio", icon: Settings, label: "STUDIO" },
   ];
 

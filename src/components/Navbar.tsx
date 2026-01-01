@@ -16,7 +16,6 @@ const navItems = [
   { name: "About", path: "/", anchor: "rap-sheet" },
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
-  { name: "Tour", path: "/tour", anchor: null },
   { name: "Studio", path: "/studio", anchor: null },
   { name: "Contact", path: "/", anchor: "contact" },
 ];
@@ -338,7 +337,7 @@ export function Navbar() {
                 : "rgba(0, 0, 0, 0)",
           backdropFilter: isScrolled ? (reducedMotion ? "blur(8px)" : "blur(12px)") : "blur(0px)",
           borderBottom: isScrolled
-            ? "1px solid rgba(204, 255, 0, 0.15)"
+            ? "1px solid rgb(204 255 0 / 0.15)"
             : "1px solid transparent",
           boxShadow: isScrolled
             ? scrollDirection === "down"

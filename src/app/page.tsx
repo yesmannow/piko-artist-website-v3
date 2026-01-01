@@ -7,6 +7,7 @@ import { FieldOperations } from "@/components/FieldOperations";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
+import { FluidVaporBackground } from "@/components/FluidVaporBackground";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -24,6 +25,9 @@ export default function Home() {
         id="home"
         className="relative h-screen flex items-center justify-center overflow-hidden bg-[#050505]"
       >
+        {/* Fluid Vapor Background */}
+        <FluidVaporBackground />
+
         {/* Background Image with Urban Filter */}
         <Image
           src="/images/hero/hero-white.jpg"

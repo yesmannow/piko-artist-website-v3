@@ -123,7 +123,7 @@ export function XYPad({
     <div className={`flex flex-col gap-2 ${className}`}>
       {/* Header */}
       <div className="flex justify-between items-end px-1">
-        <span className="text-xs font-black italic text-[#FFD700] uppercase tracking-wider">
+        <span className="text-xs font-black italic text-toxic-lime uppercase tracking-wider">
           {label}
         </span>
         <div className="flex gap-2 text-[9px] font-mono text-zinc-500">
@@ -136,11 +136,11 @@ export function XYPad({
       <div
         ref={containerRef}
         {...bind()}
-        className="relative w-full aspect-square bg-[#080808] border-2 border-zinc-800 overflow-hidden touch-none cursor-crosshair active:border-[#FFD700] transition-colors duration-200"
+        className="relative w-full aspect-square bg-[#080808] border-2 border-zinc-800 overflow-hidden touch-none cursor-crosshair active:border-toxic-lime transition-colors duration-200"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255, 215, 0, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 215, 0, 0.03) 1px, transparent 1px)
+            linear-gradient(rgb(204 255 0 / 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(204 255 0 / 0.03) 1px, transparent 1px)
           `,
           backgroundSize: "20px 20px",
           touchAction: "none",
@@ -156,8 +156,9 @@ export function XYPad({
               cx={`${point.x * 100}%`}
               cy={`${(1 - point.y) * 100}%`}
               r={active ? 3 + point.opacity * 4 : 2} // Pulse size
-              fill="#FFD700"
+              fill="rgb(204 255 0)"
               fillOpacity={point.opacity * 0.4}
+              className="stroke-toxic-lime"
             />
           ))}
           {/* Optional: Connect points with a line for a smooth look */}
@@ -165,9 +166,10 @@ export function XYPad({
             <polyline
               points={trail.map((p) => `${p.x * 100},${(1 - p.y) * 100}`).join(" ")}
               fill="none"
-              stroke="#FFD700"
+              stroke="rgb(204 255 0)"
               strokeWidth="2"
               strokeOpacity="0.3"
+              className="stroke-toxic-lime"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke" // Keeps line thin regardless of scale
             />
@@ -176,24 +178,24 @@ export function XYPad({
 
         {/* The Reticle / Cursor */}
         <motion.div
-          className="absolute w-6 h-6 border-2 border-[#FFD700] z-10 pointer-events-none"
+          className="absolute w-6 h-6 border-2 border-toxic-lime z-10 pointer-events-none"
           style={{
             left: cursorLeft,
             top: cursorTop,
             x: "-50%",
             y: "-50%",
-            boxShadow: active ? "0 0 15px #FFD700, inset 0 0 5px #FFD700" : "none",
-            backgroundColor: active ? "rgba(255, 215, 0, 0.1)" : "transparent",
+            boxShadow: active ? "0 0 15px rgb(204 255 0), inset 0 0 5px rgb(204 255 0)" : "none",
+            backgroundColor: active ? "rgb(204 255 0 / 0.1)" : "transparent",
             borderRadius: 0, // Brutalist design
           }}
         >
           {/* Crosshairs inside reticle */}
-          <div className="absolute top-1/2 left-0 right-0 h-px bg-[#FFD700]/50" />
-          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#FFD700]/50" />
+          <div className="absolute top-1/2 left-0 right-0 h-px bg-toxic-lime/50" />
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-toxic-lime/50" />
         </motion.div>
 
         {/* Axis Indicators */}
-        <div className="absolute bottom-2 right-2 text-[10px] font-mono text-[#FFD700] opacity-50 pointer-events-none">
+        <div className="absolute bottom-2 right-2 text-[10px] font-mono text-toxic-lime opacity-50 pointer-events-none">
           {x.get().toFixed(2)}, {y.get().toFixed(2)}
         </div>
       </div>

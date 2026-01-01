@@ -65,7 +65,10 @@ export function MobileLayout({
       {/* Middle Section: Deck Swiper */}
       <section
         className="relative h-screen snap-start flex-shrink-0 flex items-center justify-center"
-        style={{ scrollSnapAlign: "start" }}
+        style={{
+          scrollSnapAlign: "start",
+          touchAction: "none", // Prevent scroll interference during scratching
+        }}
       >
         <MobileDeckSwiper
           deckA={deckA}

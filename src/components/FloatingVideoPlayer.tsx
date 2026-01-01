@@ -39,13 +39,14 @@ export function FloatingVideoPlayer() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* YouTube Embed */}
-            <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+            <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl z-10">
               <iframe
-                src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`}
                 title={video.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                className="w-full h-full"
+                className="w-full h-full absolute inset-0"
+                style={{ zIndex: 10 }}
               />
             </div>
 

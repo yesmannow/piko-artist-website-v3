@@ -1,21 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ReactNode, useEffect, useState } from "react";
+import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import { useHaptic } from "@/hooks/useHaptic";
 
 interface MobileDeckSwiperProps {
-  deckA: React.ReactNode;
-  deckB: React.ReactNode;
+  deckA: ReactNode;
+  deckB: ReactNode;
   activeDeck: "A" | "B";
   onDeckChange: (deck: "A" | "B") => void;
 }
 
 /**
- * MobileDeckSwiper - Expert-level "Swiper/Stack" Hybrid Interface
+ * MobileDeckSwiper - Heavy industrial snap transition between Console A and B
  *
- * Replaces the grid layout on mobile with a heavy, industrial gesture container
- * that snaps between Console A and Console B with blur effects and haptic feedback.
+ * Features:
+ * - Gesture-driven swipe left/right to toggle decks
+ * - Industrial "snap" transition with framer-motion
+ * - Active deck indicator using border-toxic-lime
+ * - Touch-optimized with passive event listeners
+ * - Client-side only rendering to prevent hydration issues
  */
 export function MobileDeckSwiper({
   deckA,
@@ -23,135 +27,117 @@ export function MobileDeckSwiper({
   activeDeck,
   onDeckChange,
 }: MobileDeckSwiperProps) {
-  const [direction, setDirection] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  const { triggerHaptic } = useHaptic();
+  const x = useMotionValue(activeDeck === "A" ? 0 : -100);
 
-  // Swipe threshold needed to trigger a change
-  const swipeConfidenceThreshold = 10000;
+  // Map x position to deck (0 = A, -100 = B)
+  const deckIndex = useTransform(x, (latest) => (latest < -50 ? "B" : "A"));
 
-  const swipePower = (offset: number, velocity: number) => {
-    return Math.abs(offset) * velocity;
-  };
+  // Handle mount (client-side only)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const handleDragEnd = (e: any, { offset, velocity }: PanInfo) => {
-    const swipe = swipePower(offset.x, velocity.x);
+  // Sync x position with activeDeck prop changes
+  useEffect(() => {
+    if (isMounted) {
+      x.set(activeDeck === "A" ? 0 : -100);
+    }
+  }, [activeDeck, isMounted, x]);
 
-    if (swipe < -swipeConfidenceThreshold) {
-      // Swiped Left -> Go to B
-      if (activeDeck === "A") {
-        setDirection(1);
-        onDeckChange("B");
-      }
-    } else if (swipe > swipeConfidenceThreshold) {
-      // Swiped Right -> Go to A
-      if (activeDeck === "B") {
-        setDirection(-1);
-        onDeckChange("A");
-      }
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const threshold = 30; // Minimum drag distance to trigger switch
+    const velocity = info.velocity.x;
+
+    // Determine target deck based on drag direction and velocity
+    let targetDeck: "A" | "B" = activeDeck;
+
+    if (Math.abs(velocity) > 500) {
+      // Fast swipe - switch based on velocity direction
+      targetDeck = velocity < 0 ? "B" : "A";
+    } else if (Math.abs(info.offset.x) > threshold) {
+      // Slow drag - switch based on offset
+      targetDeck = info.offset.x < 0 ? "B" : "A";
+    } else {
+      // Snap back to current deck
+      targetDeck = activeDeck;
+    }
+
+    // Animate to target position
+    x.set(targetDeck === "A" ? 0 : -100);
+
+    // Trigger haptic feedback and update state
+    if (targetDeck !== activeDeck) {
+      triggerHaptic();
+      onDeckChange(targetDeck);
     }
   };
 
-  const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-    },
-    exit: (direction: number) => ({
-      zIndex: 0,
-      x: direction < 0 ? 300 : -300,
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
-    }),
-  };
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!isMounted) {
+    return (
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div className="w-full h-full">{deckA}</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative w-full overflow-hidden flex flex-col gap-2">
-      {/* Console Indicator Tabs */}
-      <div className="flex justify-center items-center gap-4 mb-2">
-        <button
-          onClick={() => {
-            setDirection(-1);
-            onDeckChange("A");
-          }}
-          className={`text-xs font-black italic uppercase tracking-wider px-4 py-2 border-b-2 transition-all min-h-[44px] min-w-[44px] ${
-            activeDeck === "A"
-              ? "text-[#00d9ff] border-[#00d9ff]"
-              : "text-zinc-600 border-transparent"
+    <div className="relative w-full h-full overflow-hidden touch-none" style={{ touchAction: "none" }}>
+      {/* Deck Container with Pan Gesture */}
+      <motion.div
+        className="flex w-[200%] h-full"
+        style={{
+          x,
+        }}
+        drag="x"
+        dragConstraints={{ left: -100, right: 0 }}
+        dragElastic={0.1}
+        onDragEnd={handleDragEnd}
+        transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 30,
+          mass: 0.8,
+        }}
+      >
+        {/* Console A */}
+        <div
+          className={`w-1/2 h-full flex-shrink-0 border-2 transition-colors duration-200 ${
+            activeDeck === "A" ? "border-toxic-lime" : "border-zinc-800"
           }`}
+          style={{ borderRadius: 0 }}
         >
-          CONSOLE_A
-        </button>
-
-        {/* Swipe Hint Arrow */}
-        <div className="text-zinc-700">
-          {activeDeck === "A" ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {deckA}
         </div>
 
-        <button
-          onClick={() => {
-            setDirection(1);
-            onDeckChange("B");
-          }}
-          className={`text-xs font-black italic uppercase tracking-wider px-4 py-2 border-b-2 transition-all min-h-[44px] min-w-[44px] ${
-            activeDeck === "B"
-              ? "text-[#ff00d9] border-[#ff00d9]"
-              : "text-zinc-600 border-transparent"
+        {/* Console B */}
+        <div
+          className={`w-1/2 h-full flex-shrink-0 border-2 transition-colors duration-200 ${
+            activeDeck === "B" ? "border-toxic-lime" : "border-zinc-800"
           }`}
+          style={{ borderRadius: 0 }}
         >
-          CONSOLE_B
-        </button>
-      </div>
+          {deckB}
+        </div>
+      </motion.div>
 
-      {/* The Swiper Container */}
-      <div className="relative w-full aspect-square md:aspect-[4/3] bg-[#050505] border-y-2 border-zinc-900">
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={activeDeck}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragEnd={handleDragEnd}
-            className="absolute inset-0 w-full h-full touch-pan-y"
-            style={{ touchAction: "none" }}
-          >
-            {/* Render the Active Deck
-              We wrap it in a container that prevents vertical scroll propagation
-              if the user is actively scratching
-            */}
-            <div className="w-full h-full p-4 flex items-center justify-center">
-              {activeDeck === "A" ? deckA : deckB}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+      {/* Deck Indicator Dots */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10 pointer-events-none">
+        <div
+          className={`w-2 h-2 transition-all duration-200 ${
+            activeDeck === "A" ? "bg-toxic-lime scale-125" : "bg-zinc-600"
+          }`}
+          style={{ borderRadius: 0 }}
+        />
+        <div
+          className={`w-2 h-2 transition-all duration-200 ${
+            activeDeck === "B" ? "bg-toxic-lime scale-125" : "bg-zinc-600"
+          }`}
+          style={{ borderRadius: 0 }}
+        />
       </div>
-
-      {/* Haptic "Underglow" Feedback */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-1 transition-colors duration-300"
-        style={{
-          background: activeDeck === "A" ? "#00d9ff" : "#ff00d9",
-          boxShadow: `0 0 20px ${activeDeck === "A" ? "#00d9ff" : "#ff00d9"}`,
-        }}
-      />
     </div>
   );
 }
-

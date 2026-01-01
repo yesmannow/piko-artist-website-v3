@@ -5,6 +5,7 @@ import { Fader } from "./dj-ui/Fader";
 import { Crossfader } from "./dj-ui/Crossfader";
 import { AudioReactiveVisualizer } from "./dj-ui/AudioReactiveVisualizer";
 import { VUMeter } from "./dj-ui/VUMeter";
+import { SessionRecorder } from "./studio/SessionRecorder";
 import { Circle, Square, Download, Trash2 } from "lucide-react";
 
 interface DJMixerProps {
@@ -65,6 +66,9 @@ interface DJMixerProps {
   // Master limiter
   limiterThreshold?: number;
   onLimiterThresholdChange?: (value: number) => void;
+
+  // Session Recorder (canvas + audio)
+  masterLimiterNode?: AudioNode | null;
 }
 
 export function DJMixer({
@@ -114,6 +118,7 @@ export function DJMixer({
   onClearRecording,
   limiterThreshold = -3,
   onLimiterThresholdChange,
+  masterLimiterNode,
 }: DJMixerProps) {
   // Calculate limiter gradient percentage
   const limiterPercentage = ((limiterThreshold + 12) / 12) * 100;
@@ -295,6 +300,17 @@ export function DJMixer({
               )}
             </div>
           </div>
+
+          {/* Session Recorder (Mobile - Canvas + Audio) */}
+          {typeof window !== "undefined" && window.innerWidth < 768 && audioContext && masterLimiterNode && (
+            <div className="w-full flex justify-center mb-4">
+              <SessionRecorder
+                canvasSelector="canvas"
+                audioContext={audioContext}
+                audioDestination={masterLimiterNode}
+              />
+            </div>
+          )}
 
           {/* Recording Controls */}
           {(onStartRecording || onStopRecording || onDownloadRecording) && (

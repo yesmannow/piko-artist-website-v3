@@ -69,7 +69,7 @@ const config: Config = {
         "chrome": "#E0E0E0",
         "safety-yellow": "#FFD700",
         // Legacy colors (backward compatibility - all map to Safety Yellow)
-        "toxic-lime": "#FFD700", // Map to Safety Yellow
+        "toxic-lime": "#ccff00", // Brand color: Toxic Lime
         "brushed-gold": "#FFD700", // Map to Safety Yellow
         "deep-onyx": "#050505",
         "charcoal-slate": "#1a1a1a",

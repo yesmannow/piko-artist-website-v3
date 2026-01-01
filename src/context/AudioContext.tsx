@@ -19,6 +19,7 @@ interface AudioContextType {
   setProgress: (progress: number) => void;
   seek: (time: number) => void;
   duration: number;
+  stop: () => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -91,6 +92,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       setProgress((time / audioRef.current.duration) * 100);
     }
   };
+
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentTrack(null);
+    setProgress(0);
+  }, []);
 
   // Helper to check if coverArt is an image path
   const isImagePath = (coverArt: string): boolean => {
@@ -190,6 +201,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setProgress,
         seek,
         duration,
+        stop,
       }}
     >
       {children}

@@ -20,7 +20,6 @@ const navItems = [
 const moreItems = [
   { href: "/music", label: "Music", icon: Music },
   { href: "/studio", label: "Studio", icon: Wrench },
-  { href: "/events", label: "Tour", icon: Calendar },
   { href: "/#contact", label: "Contact", icon: Mail },
 ];
 
@@ -509,17 +508,6 @@ export function MobileNav() {
                   >
                     <Video className="w-5 h-5" />
                     <span className="font-bold uppercase tracking-wider">Videos</span>
-                  </Link>
-                  <Link
-                    href="/events"
-                    onClick={() => {
-                      setIsAboutOpen(false);
-                      handleClick();
-                    }}
-                    className="flex items-center gap-4 px-4 py-3 rounded-lg border-2 border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-700/50 hover:border-toxic-lime/50 transition-colors touch-manipulation"
-                  >
-                    <Calendar className="w-5 h-5" />
-                    <span className="font-bold uppercase tracking-wider">Tour</span>
                   </Link>
                 </div>
               </div>

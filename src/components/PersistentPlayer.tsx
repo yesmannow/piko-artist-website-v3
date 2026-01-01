@@ -1,11 +1,12 @@
 "use client";
 
 import { useAudio } from "@/context/AudioContext";
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHaptic } from "@/hooks/useHaptic";
 import Image from "next/image";
 import { Waveform } from "@/components/dj-ui/Waveform";
+import { EnhancedAudioVisualizer } from "@/components/EnhancedAudioVisualizer";
 
 export function PersistentPlayer() {
   const { triggerHaptic } = useHaptic();
@@ -22,6 +23,7 @@ export function PersistentPlayer() {
     audioRef,
     progress,
     seek,
+    stop,
   } = useAudio();
 
   const [isMobile, setIsMobile] = useState(false);
@@ -94,14 +96,20 @@ export function PersistentPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 w-full z-50 bg-[#0a0a0a] border-t border-zinc-800">
+    <div
+      className="fixed bottom-0 w-full z-50 bg-[#0a0a0a] border-t border-zinc-800"
+      style={{ viewTransitionName: "persistent-player" }}
+    >
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
         <div className="flex items-center gap-4 md:gap-6">
           {/* Left: Album Art, Track Title, Artist */}
           <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
             {/* Album Art */}
             {isImagePath(currentTrack.coverArt) ? (
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden flex-shrink-0 relative">
+              <div
+                className="w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden flex-shrink-0 relative"
+                style={{ viewTransitionName: "player-album-art" }}
+              >
                 <Image
                   src={currentTrack.coverArt}
                   alt={currentTrack.title}
@@ -113,11 +121,15 @@ export function PersistentPlayer() {
             ) : (
               <div
                 className={`w-12 h-12 md:w-16 md:h-16 rounded bg-gradient-to-r ${currentTrack.coverArt} flex-shrink-0`}
+                style={{ viewTransitionName: "player-album-art" }}
               />
             )}
 
             {/* Track Info */}
-            <div className="flex-1 min-w-0">
+            <div
+              className="flex-1 min-w-0"
+              style={{ viewTransitionName: "player-track-info" }}
+            >
               <div className="font-bold text-white text-sm md:text-base truncate">
                 {currentTrack.title}
               </div>
@@ -169,9 +181,15 @@ export function PersistentPlayer() {
               </button>
             </div>
 
-            {/* Waveform (Desktop only) */}
+            {/* Enhanced Audio Visualization (Desktop only) */}
             {!isMobile && currentTrack && currentTrack.type === "audio" && (
-              <div className="w-full px-2">
+              <div
+                className="w-full px-2 space-y-2"
+                style={{ viewTransitionName: "player-visualization" }}
+              >
+                {/* Frequency Bars */}
+                <EnhancedAudioVisualizer height={40} />
+                {/* Waveform */}
                 <Waveform
                   audioUrl={currentTrack.src}
                   progress={progress}
@@ -180,7 +198,7 @@ export function PersistentPlayer() {
                     triggerHaptic();
                     seek(time);
                   }}
-                  height={60}
+                  height={40}
                 />
               </div>
             )}
@@ -196,7 +214,7 @@ export function PersistentPlayer() {
             )}
           </div>
 
-          {/* Right: Volume Slider (0-100) */}
+          {/* Right: Volume Slider (0-100) and Close Button */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
@@ -234,6 +252,16 @@ export function PersistentPlayer() {
                 accentColor: "#ffffff",
               }}
             />
+            <button
+              onClick={() => {
+                triggerHaptic();
+                stop();
+              }}
+              className="p-2 hover:bg-zinc-800 rounded transition-colors ml-2"
+              aria-label="Close player"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
           </div>
         </div>
       </div>

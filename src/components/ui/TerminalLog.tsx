@@ -61,7 +61,7 @@ export function TerminalLog({ logs, maxLines = 10, className = "" }: TerminalLog
     <div
       className={`bg-black/90 backdrop-blur-sm border-2 border-toxic-lime/30 p-4 font-mono text-xs overflow-y-auto max-h-64 ${className}`}
       style={{
-        boxShadow: "inset 0 0 20px rgba(204, 255, 0, 0.1)",
+        boxShadow: "inset 0 0 20px rgb(204 255 0 / 0.1)",
       }}
     >
       <AnimatePresence mode="popLayout">

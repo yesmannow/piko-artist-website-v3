@@ -9,13 +9,46 @@ import { X, Play } from "lucide-react";
 
 // Thumbnail component with fallback strategy
 function VideoThumbnail({ videoId, title, className }: { videoId: string; title: string; className?: string }) {
+  // Get fallback images from public/images/tracks directory
+  const trackImages = [
+    "/images/tracks/abstract-1846847_1280.jpg",
+    "/images/tracks/architecture-3189972_1280.jpg",
+    "/images/tracks/aurora-borealis-9267515_1280.jpg",
+    "/images/tracks/background-1833056_1280.jpg",
+    "/images/tracks/bicycle-3045580_1280.jpg",
+    "/images/tracks/dj-2581269_1280.jpg",
+    "/images/tracks/gong-8255081_1280.jpg",
+    "/images/tracks/graffiti-1476119_1280.jpg",
+    "/images/tracks/graffiti-3750912_1280.jpg",
+    "/images/tracks/hamburg-2718329_1280.jpg",
+    "/images/tracks/love-2724141_1280.png",
+    "/images/tracks/skateboard-447147_1280.jpg",
+    "/images/tracks/skull-and-crossbones-414207_1280.jpg",
+    "/images/tracks/starry-sky-1655503_1280.jpg",
+    "/images/tracks/street-art-1499524_1280.jpg",
+    "/images/tracks/tube-7260586_1280.jpg",
+    "/images/tracks/vinyl-1595847_1280.jpg",
+    "/images/tracks/wall-2583885_1280.jpg",
+    "/images/tracks/wallpaper-5928106_1280.png",
+    "/images/tracks/woman-3633737_1280.jpg",
+  ];
+
+  // Use videoId to deterministically select a fallback image
+  const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
+  const fallbackImage = trackImages[fallbackIndex];
+
   const [imgSrc, setImgSrc] = useState(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
-  const [hasError, setHasError] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
 
   const handleError = () => {
-    if (!hasError) {
-      setHasError(true);
+    if (errorCount === 0) {
+      // First fallback: try hqdefault
+      setErrorCount(1);
       setImgSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
+    } else if (errorCount === 1) {
+      // Second fallback: use track image
+      setErrorCount(2);
+      setImgSrc(fallbackImage);
     }
   };
 

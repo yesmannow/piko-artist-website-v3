@@ -59,7 +59,7 @@ export function FieldOperations() {
 
                 {/* Perforated Ticket Style Button */}
                 <Link
-                  href={event.ticketLink || "/tour"}
+                  href={event.ticketLink || "#"}
                   className="relative px-6 py-3 bg-[#FFD700] text-black font-black italic uppercase text-xs border-r-4 border-dashed border-black/30 hover:bg-white transition-colors inline-block"
                   style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
                 >
