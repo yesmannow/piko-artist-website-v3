@@ -142,8 +142,12 @@ export function useAudioGraph() {
     }
 
     // Reuse the same buffer - this prevents GC pressure
-    analyserRef.current.getByteFrequencyData(frequencyDataBufferRef.current);
-    return frequencyDataBufferRef.current;
+    // Create a new Uint8Array to satisfy strict TypeScript typing requirements
+    const buffer = new Uint8Array(bufferLength);
+    analyserRef.current.getByteFrequencyData(buffer);
+    // Copy to ref for next iteration
+    frequencyDataBufferRef.current.set(buffer);
+    return buffer;
   };
 
   /**

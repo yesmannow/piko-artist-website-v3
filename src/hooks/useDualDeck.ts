@@ -248,10 +248,10 @@ export function useDualDeck() {
     source.playbackRate.value = deckA.playbackRate;
 
     // Route through HPF filter if Filter Mode is enabled
-    if (filterMode && deckAHPFRef.current) {
+    if (filterMode && deckAHPFRef.current && deckAGainRef.current) {
       source.connect(deckAHPFRef.current);
       deckAHPFRef.current.connect(deckAGainRef.current);
-    } else {
+    } else if (deckAGainRef.current) {
       source.connect(deckAGainRef.current);
     }
 
@@ -516,10 +516,10 @@ export function useDualDeck() {
     source.buffer = deckA.audioBuffer;
     source.playbackRate.value = deckA.playbackRate;
 
-    if (filterMode && deckAHPFRef.current) {
+    if (filterMode && deckAHPFRef.current && deckAGainRef.current) {
       source.connect(deckAHPFRef.current);
       deckAHPFRef.current.connect(deckAGainRef.current);
-    } else {
+    } else if (deckAGainRef.current) {
       source.connect(deckAGainRef.current);
     }
 
@@ -556,10 +556,10 @@ export function useDualDeck() {
     source.buffer = deckB.audioBuffer;
     source.playbackRate.value = deckB.playbackRate;
 
-    if (filterMode && deckBLPFRef.current) {
+    if (filterMode && deckBLPFRef.current && deckBGainRef.current) {
       source.connect(deckBLPFRef.current);
       deckBLPFRef.current.connect(deckBGainRef.current);
-    } else {
+    } else if (deckBGainRef.current) {
       source.connect(deckBGainRef.current);
     }
 
