@@ -14,7 +14,7 @@ interface EnhancedAudioVisualizerProps {
 export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const { audioRef, isPlaying, currentTrack } = useAudio();
   const [colors, setColors] = useState<{ primary: string; secondary: string }>({
     primary: "#FFD700",

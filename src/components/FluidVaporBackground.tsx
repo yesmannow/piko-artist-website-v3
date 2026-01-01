@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
  */
 export function FluidVaporBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -9,6 +9,11 @@ import { Serwist, CacheFirst, NetworkOnly, StaleWhileRevalidate, ExpirationPlugi
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  }
+  
+  interface ExtendableEvent extends Event {
+    waitUntil(f: Promise<unknown>): void;
   }
 }
 
@@ -176,8 +181,9 @@ const serwist = new Serwist({
 serwist.addEventListeners();
 
 // Cache cleanup on service worker activation
-self.addEventListener("activate", async (event) => {
-  event.waitUntil(
+self.addEventListener("activate", async (event: Event) => {
+  const extendableEvent = event as ExtendableEvent;
+  extendableEvent.waitUntil(
     (async () => {
       // Clean up old caches on activation
       await cleanupOldCaches();

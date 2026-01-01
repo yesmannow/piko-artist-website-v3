@@ -2,6 +2,7 @@
 
 import { Knob } from "./dj-ui/Knob";
 import { XYPad } from "./dj-ui/XYPad";
+import { SessionRecorder } from "./studio/SessionRecorder";
 
 // Map 20Hz-20kHz range to a 0-1 logarithmic knob travel
 const FILTER_LOG_OFFSET = 1.3;
