@@ -76,6 +76,40 @@ interface FXUnitProps {
   onDelayBypassChangeB?: (bypass: boolean) => void;
   onDistortionBypassChangeA?: (bypass: boolean) => void;
   onDistortionBypassChangeB?: (bypass: boolean) => void;
+  // Additional FX for Deck A
+  flangerRateA?: number;
+  flangerDepthA?: number;
+  onFlangerRateChangeA?: (val: number) => void;
+  onFlangerDepthChangeA?: (val: number) => void;
+  phaserRateA?: number;
+  phaserDepthA?: number;
+  onPhaserRateChangeA?: (val: number) => void;
+  onPhaserDepthChangeA?: (val: number) => void;
+  chorusRateA?: number;
+  chorusDepthA?: number;
+  onChorusRateChangeA?: (val: number) => void;
+  onChorusDepthChangeA?: (val: number) => void;
+  echoTimeA?: number;
+  echoFeedbackA?: number;
+  onEchoTimeChangeA?: (val: number) => void;
+  onEchoFeedbackChangeA?: (val: number) => void;
+  // Additional FX for Deck B
+  flangerRateB?: number;
+  flangerDepthB?: number;
+  onFlangerRateChangeB?: (val: number) => void;
+  onFlangerDepthChangeB?: (val: number) => void;
+  phaserRateB?: number;
+  phaserDepthB?: number;
+  onPhaserRateChangeB?: (val: number) => void;
+  onPhaserDepthChangeB?: (val: number) => void;
+  chorusRateB?: number;
+  chorusDepthB?: number;
+  onChorusRateChangeB?: (val: number) => void;
+  onChorusDepthChangeB?: (val: number) => void;
+  echoTimeB?: number;
+  echoFeedbackB?: number;
+  onEchoTimeChangeB?: (val: number) => void;
+  onEchoFeedbackChangeB?: (val: number) => void;
 }
 
 export function FXUnit({
@@ -97,6 +131,15 @@ export function FXUnit({
   onReverbBypassChangeA, onReverbBypassChangeB,
   onDelayBypassChangeA, onDelayBypassChangeB,
   onDistortionBypassChangeA, onDistortionBypassChangeB,
+  // Additional FX
+  flangerRateA = 0.5, flangerDepthA = 0, onFlangerRateChangeA, onFlangerDepthChangeA,
+  phaserRateA = 0.5, phaserDepthA = 0, onPhaserRateChangeA, onPhaserDepthChangeA,
+  chorusRateA = 1.5, chorusDepthA = 0, onChorusRateChangeA, onChorusDepthChangeA,
+  echoTimeA = 0.25, echoFeedbackA = 0, onEchoTimeChangeA, onEchoFeedbackChangeA,
+  flangerRateB = 0.5, flangerDepthB = 0, onFlangerRateChangeB, onFlangerDepthChangeB,
+  phaserRateB = 0.5, phaserDepthB = 0, onPhaserRateChangeB, onPhaserDepthChangeB,
+  chorusRateB = 1.5, chorusDepthB = 0, onChorusRateChangeB, onChorusDepthChangeB,
+  echoTimeB = 0.25, echoFeedbackB = 0, onEchoTimeChangeB, onEchoFeedbackChangeB,
 }: FXUnitProps) {
   // Select active deck's values
   const filterFreq = activeDeck === "A" ? filterFreqA : filterFreqB;
@@ -121,6 +164,24 @@ export function FXUnit({
   const onReverbBypassChange = activeDeck === "A" ? onReverbBypassChangeA : onReverbBypassChangeB;
   const onDelayBypassChange = activeDeck === "A" ? onDelayBypassChangeA : onDelayBypassChangeB;
   const onDistortionBypassChange = activeDeck === "A" ? onDistortionBypassChangeA : onDistortionBypassChangeB;
+
+  // Additional FX values for active deck
+  const flangerRate = activeDeck === "A" ? flangerRateA : flangerRateB;
+  const flangerDepth = activeDeck === "A" ? flangerDepthA : flangerDepthB;
+  const onFlangerRateChange = activeDeck === "A" ? onFlangerRateChangeA : onFlangerRateChangeB;
+  const onFlangerDepthChange = activeDeck === "A" ? onFlangerDepthChangeA : onFlangerDepthChangeB;
+  const phaserRate = activeDeck === "A" ? phaserRateA : phaserRateB;
+  const phaserDepth = activeDeck === "A" ? phaserDepthA : phaserDepthB;
+  const onPhaserRateChange = activeDeck === "A" ? onPhaserRateChangeA : onPhaserRateChangeB;
+  const onPhaserDepthChange = activeDeck === "A" ? onPhaserDepthChangeA : onPhaserDepthChangeB;
+  const chorusRate = activeDeck === "A" ? chorusRateA : chorusRateB;
+  const chorusDepth = activeDeck === "A" ? chorusDepthA : chorusDepthB;
+  const onChorusRateChange = activeDeck === "A" ? onChorusRateChangeA : onChorusRateChangeB;
+  const onChorusDepthChange = activeDeck === "A" ? onChorusDepthChangeA : onChorusDepthChangeB;
+  const echoTime = activeDeck === "A" ? echoTimeA : echoTimeB;
+  const echoFeedback = activeDeck === "A" ? echoFeedbackA : echoFeedbackB;
+  const onEchoTimeChange = activeDeck === "A" ? onEchoTimeChangeA : onEchoTimeChangeB;
+  const onEchoFeedbackChange = activeDeck === "A" ? onEchoFeedbackChangeA : onEchoFeedbackChangeB;
 
   const filterButtonClasses = (type: "lowpass" | "highpass" | "bandpass") =>
     `px-2 py-1 text-[10px] rounded border transition-colors ${
@@ -172,7 +233,7 @@ export function FXUnit({
           </button>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6">
         {/* FILTER */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
@@ -278,6 +339,102 @@ export function FXUnit({
           <div className="flex gap-3 md:gap-4">
             <Knob value={delayTime} onChange={onDelayTimeChange} label="TIME" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />
             <Knob value={delayFeedback} onChange={onDelayFeedbackChange} label="FDBK" min={0} max={DELAY_FEEDBACK_MAX} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />
+          </div>
+        </div>
+
+        {/* FLANGER */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-xs text-gray-400 uppercase tracking-widest">FLANGER</span>
+          <div className="h-[26px]"></div>
+          <div className="flex gap-3 md:gap-4">
+            <Knob
+              value={flangerRate || 0.5}
+              onChange={onFlangerRateChange || (() => {})}
+              label="RATE"
+              min={0}
+              max={5}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+            <Knob
+              value={flangerDepth || 0}
+              onChange={onFlangerDepthChange || (() => {})}
+              label="DEPTH"
+              min={0}
+              max={1}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+          </div>
+        </div>
+
+        {/* PHASER */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-xs text-gray-400 uppercase tracking-widest">PHASER</span>
+          <div className="h-[26px]"></div>
+          <div className="flex gap-3 md:gap-4">
+            <Knob
+              value={phaserRate || 0.5}
+              onChange={onPhaserRateChange || (() => {})}
+              label="RATE"
+              min={0}
+              max={5}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+            <Knob
+              value={phaserDepth || 0}
+              onChange={onPhaserDepthChange || (() => {})}
+              label="DEPTH"
+              min={0}
+              max={1}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+          </div>
+        </div>
+
+        {/* CHORUS */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-xs text-gray-400 uppercase tracking-widest">CHORUS</span>
+          <div className="h-[26px]"></div>
+          <div className="flex gap-3 md:gap-4">
+            <Knob
+              value={chorusRate || 1.5}
+              onChange={onChorusRateChange || (() => {})}
+              label="RATE"
+              min={0}
+              max={5}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+            <Knob
+              value={chorusDepth || 0}
+              onChange={onChorusDepthChange || (() => {})}
+              label="DEPTH"
+              min={0}
+              max={1}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+          </div>
+        </div>
+
+        {/* ECHO */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-xs text-gray-400 uppercase tracking-widest">ECHO</span>
+          <div className="h-[26px]"></div>
+          <div className="flex gap-3 md:gap-4">
+            <Knob
+              value={echoTime || 0.25}
+              onChange={onEchoTimeChange || (() => {})}
+              label="TIME"
+              min={0}
+              max={2}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
+            <Knob
+              value={echoFeedback || 0}
+              onChange={onEchoFeedbackChange || (() => {})}
+              label="FDBK"
+              min={0}
+              max={0.9}
+              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+            />
           </div>
         </div>
       </div>

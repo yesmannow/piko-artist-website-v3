@@ -6,7 +6,7 @@ import { DJDeck, DJDeckRef } from "./DJDeck";
 import { DJMixer } from "./DJMixer";
 import { FXUnit } from "./FXUnit";
 import { tracks } from "@/lib/data";
-import { HelpCircle, ArrowUpDown, Filter, X, ExternalLink } from "lucide-react";
+import { HelpCircle, ArrowUpDown, Filter, X, ExternalLink, Upload, FileAudio } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
 import Image from "next/image";
@@ -54,21 +54,28 @@ export function DJInterface() {
 
   // Deck A state
   const [deckAData, setDeckAData] = useState<typeof tracks[0] | null>(null);
+  const [deckAAudioBuffer, setDeckAAudioBuffer] = useState<AudioBuffer | null>(null);
   const [deckAPlaying, setDeckAPlaying] = useState(false);
   const [deckAVolume, setDeckAVolume] = useState(0.7);
   const [deckASpeed, setDeckASpeed] = useState(1.0); // 1.0 = 0%, range 0.92-1.08 for +/- 8%
   const [deckAHigh, setDeckAHigh] = useState(0);
   const [deckAMid, setDeckAMid] = useState(0);
   const [deckALow, setDeckALow] = useState(0);
+  const [deckAReversed, setDeckAReversed] = useState(false);
 
   // Deck B state
   const [deckBData, setDeckBData] = useState<typeof tracks[0] | null>(null);
+  const [deckBAudioBuffer, setDeckBAudioBuffer] = useState<AudioBuffer | null>(null);
   const [deckBPlaying, setDeckBPlaying] = useState(false);
   const [deckBVolume, setDeckBVolume] = useState(0.7);
   const [deckBSpeed, setDeckBSpeed] = useState(1.0); // 1.0 = 0%, range 0.92-1.08 for +/- 8%
   const [deckBHigh, setDeckBHigh] = useState(0);
   const [deckBMid, setDeckBMid] = useState(0);
   const [deckBLow, setDeckBLow] = useState(0);
+  const [deckBReversed, setDeckBReversed] = useState(false);
+
+  // Track history
+  const [trackHistory, setTrackHistory] = useState<Array<{ track: typeof tracks[0]; deck: "A" | "B"; timestamp: number }>>([]);
 
   // Mixer state
   const [crossfader, setCrossfader] = useState(0.5);
@@ -193,6 +200,38 @@ export function DJInterface() {
   const fxDelayFeedbackBRef = useRef<GainNode | null>(null);
   const fxDistortionBRef = useRef<WaveShaperNode | null>(null);
   const preFxGainBRef = useRef<GainNode | null>(null);
+
+  // Additional FX nodes for Deck A
+  const fxFlangerARef = useRef<ReturnType<typeof import("@/utils/fxUtils").createFlanger> | null>(null);
+  const fxPhaserARef = useRef<ReturnType<typeof import("@/utils/fxUtils").createPhaser> | null>(null);
+  const fxChorusARef = useRef<ReturnType<typeof import("@/utils/fxUtils").createChorus> | null>(null);
+  const fxEchoARef = useRef<ReturnType<typeof import("@/utils/fxUtils").createEcho> | null>(null);
+
+  // Additional FX nodes for Deck B
+  const fxFlangerBRef = useRef<ReturnType<typeof import("@/utils/fxUtils").createFlanger> | null>(null);
+  const fxPhaserBRef = useRef<ReturnType<typeof import("@/utils/fxUtils").createPhaser> | null>(null);
+  const fxChorusBRef = useRef<ReturnType<typeof import("@/utils/fxUtils").createChorus> | null>(null);
+  const fxEchoBRef = useRef<ReturnType<typeof import("@/utils/fxUtils").createEcho> | null>(null);
+
+  // Additional FX state for Deck A
+  const [flangerRateA, setFlangerRateA] = useState(0.5);
+  const [flangerDepthA, setFlangerDepthA] = useState(0);
+  const [phaserRateA, setPhaserRateA] = useState(0.5);
+  const [phaserDepthA, setPhaserDepthA] = useState(0);
+  const [chorusRateA, setChorusRateA] = useState(1.5);
+  const [chorusDepthA, setChorusDepthA] = useState(0);
+  const [echoTimeA, setEchoTimeA] = useState(0.25);
+  const [echoFeedbackA, setEchoFeedbackA] = useState(0);
+
+  // Additional FX state for Deck B
+  const [flangerRateB, setFlangerRateB] = useState(0.5);
+  const [flangerDepthB, setFlangerDepthB] = useState(0);
+  const [phaserRateB, setPhaserRateB] = useState(0.5);
+  const [phaserDepthB, setPhaserDepthB] = useState(0);
+  const [chorusRateB, setChorusRateB] = useState(1.5);
+  const [chorusDepthB, setChorusDepthB] = useState(0);
+  const [echoTimeB, setEchoTimeB] = useState(0.25);
+  const [echoFeedbackB, setEchoFeedbackB] = useState(0);
 
   // 1. INITIALIZATION (Run ONCE - Empty dependency array)
   useEffect(() => {
@@ -745,9 +784,67 @@ export function DJInterface() {
     };
   }, [isMounted]);
 
+  // Uploaded tracks state
+  const [uploadedTracks, setUploadedTracks] = useState<typeof tracks[0][]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file upload
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!audioContextRef.current) return;
+
+    // Validate file type
+    const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac'];
+    const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+
+    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+      alert('Invalid file format. Accepted: MP3, WAV, OGG, M4A, AAC');
+      return;
+    }
+
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      alert('File exceeds maximum size (50MB)');
+      return;
+    }
+
+    try {
+      // Create object URL for the file
+      const objectUrl = URL.createObjectURL(file);
+
+      // Extract track name from filename
+      const trackName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .split(/[-_]/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+
+      // Create a new track entry
+      const newTrack: typeof tracks[0] = {
+        id: `uploaded-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: trackName || "Uploaded Track",
+        artist: "Local File",
+        type: "audio",
+        src: objectUrl,
+        coverArt: "from-purple-500 to-pink-500", // Default gradient for uploaded tracks
+        vibe: "chill", // Default vibe
+      };
+
+      setUploadedTracks((prev) => [...prev, newTrack]);
+      triggerHaptic();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Failed to upload file. Please try again.");
+    }
+  }, []);
+
+  // Combine original tracks with uploaded tracks
+  const allTracks = useMemo(() => [...tracks, ...uploadedTracks], [uploadedTracks]);
+
   // Memoize audio tracks filtering and sorting for performance
   const audioTracks = useMemo(() => {
-    return tracks
+    return allTracks
       .filter((t) => t.type === "audio")
       .filter((t) =>
         debouncedSearchQuery === "" ||
@@ -770,20 +867,54 @@ export function DJInterface() {
         }
         return sortOrder === "asc" ? comparison : -comparison;
       });
-  }, [debouncedSearchQuery, vibeFilter, sortBy, sortOrder]);
+  }, [allTracks, debouncedSearchQuery, vibeFilter, sortBy, sortOrder]);
 
   // Memoize track loading handlers to prevent unnecessary re-renders
-  const loadTrackToDeckA = useCallback((track: typeof tracks[0]) => {
-    if (track.type === "audio") {
+  const loadTrackToDeckA = useCallback(async (track: typeof tracks[0]) => {
+    if (track.type === "audio" && audioContextRef.current) {
       setDeckAData(track);
       setDeckAPlaying(false);
+
+      // Load audio buffer for BPM detection
+      try {
+        const response = await fetch(track.src);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+        setDeckAAudioBuffer(audioBuffer);
+      } catch (error) {
+        console.warn("Failed to load audio buffer for BPM detection:", error);
+        setDeckAAudioBuffer(null);
+      }
+
+      // Add to history
+      setTrackHistory((prev) => [
+        { track, deck: "A", timestamp: Date.now() },
+        ...prev.slice(0, 19), // Keep last 20 tracks
+      ]);
     }
   }, []);
 
-  const loadTrackToDeckB = useCallback((track: typeof tracks[0]) => {
-    if (track.type === "audio") {
+  const loadTrackToDeckB = useCallback(async (track: typeof tracks[0]) => {
+    if (track.type === "audio" && audioContextRef.current) {
       setDeckBData(track);
       setDeckBPlaying(false);
+
+      // Load audio buffer for BPM detection
+      try {
+        const response = await fetch(track.src);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+        setDeckBAudioBuffer(audioBuffer);
+      } catch (error) {
+        console.warn("Failed to load audio buffer for BPM detection:", error);
+        setDeckBAudioBuffer(null);
+      }
+
+      // Add to history
+      setTrackHistory((prev) => [
+        { track, deck: "B", timestamp: Date.now() },
+        ...prev.slice(0, 19), // Keep last 20 tracks
+      ]);
     }
   }, []);
 
@@ -998,7 +1129,7 @@ export function DJInterface() {
       )}
       <ConsoleTour />
       <div
-        className="min-h-screen p-3 md:p-6"
+        className="min-h-screen flex"
         style={{
         background: "#121212",
         backgroundImage: `
@@ -1012,9 +1143,344 @@ export function DJInterface() {
         `,
       }}
     >
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Library/Browser */}
-        <div className="bg-[#0a0a0a] rounded-lg border border-gray-800 p-4" data-tour="library">
+      {/* Left Sidebar - Track Library */}
+      <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0 border-r border-gray-800 bg-[#0a0a0a] overflow-y-auto h-screen sticky top-0">
+        <div className="p-4 md:p-6 space-y-6" data-tour="library">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
+              TRACK LIBRARY
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleHelp}
+                className={`p-2 rounded border-2 transition-all ${
+                  isHelpMode
+                    ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
+                    : "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
+                }`}
+                title={isHelpMode ? "Exit Help Mode" : "Enable Help Mode"}
+                aria-label="Toggle help mode"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+              <button
+                onClick={triggerTour}
+                className="px-3 py-2 text-xs font-barlow uppercase tracking-wider rounded border-2 border-gray-700 text-gray-400 hover:border-[#00ff00] hover:text-[#00ff00] transition-all"
+                title="Replay Onboarding Tour"
+                aria-label="Replay tour"
+              >
+                Tour
+              </button>
+            </div>
+          </div>
+
+          {/* File Upload Section */}
+          <div className="mb-6">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleFileUpload(file);
+                }
+                // Reset input to allow same file to be selected again
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full px-4 py-3 bg-[#1a1a1a] border-2 border-dashed border-gray-700 hover:border-[#00ff00] rounded-lg transition-all flex items-center justify-center gap-3 group"
+            >
+              <Upload className="w-5 h-5 text-gray-400 group-hover:text-[#00ff00] transition-colors" />
+              <span className="text-sm font-barlow uppercase text-gray-400 group-hover:text-[#00ff00] transition-colors">
+                Upload Audio
+              </span>
+            </button>
+          </div>
+
+          {/* Search and Filter Controls */}
+          <div className="space-y-3">
+            {/* Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search tracks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search tracks"
+                className="w-full px-4 py-2.5 bg-[#1a1a1a] border border-gray-800 rounded text-white placeholder-gray-500 font-barlow text-sm focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-[#00ff00] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-gray-700 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff00] focus-visible:ring-offset-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              )}
+            </div>
+
+            {/* Filters Row */}
+            <div className="flex gap-2">
+              {/* Vibe Filter */}
+              <div className="flex items-center gap-2 flex-1">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={vibeFilter}
+                  onChange={(e) => setVibeFilter(e.target.value as typeof vibeFilter)}
+                  className="flex-1 px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-[#00ff00] transition-colors"
+                  aria-label="Filter by vibe"
+                >
+                  <option value="all">All Vibes</option>
+                  <option value="chill">Chill</option>
+                  <option value="hype">Hype</option>
+                  <option value="storytelling">Storytelling</option>
+                  <option value="classic">Classic</option>
+                </select>
+              </div>
+
+              {/* Sort Controls */}
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-[#00ff00] transition-colors"
+                  aria-label="Sort by"
+                >
+                  <option value="title">Title</option>
+                  <option value="artist">Artist</option>
+                  <option value="vibe">Vibe</option>
+                </select>
+                <button
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  className="px-2 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-white font-barlow text-xs hover:border-gray-600 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff00] focus-visible:ring-offset-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label={`Sort ${sortOrder === "asc" ? "descending" : "ascending"}`}
+                  title={sortOrder === "asc" ? "Sort Descending" : "Sort Ascending"}
+                >
+                  {sortOrder === "asc" ? "↑" : "↓"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Track List */}
+          <div className="space-y-2 mt-6">
+            {audioTracks.length === 0 ? (
+              <div className="text-center text-gray-500 font-barlow py-8">
+                No tracks found
+              </div>
+            ) : (
+              audioTracks.map((track) => (
+                <motion.div
+                  key={track.id}
+                  draggable={isMounted}
+                  onDragStart={(e) => {
+                    const dragEvent = e as unknown as React.DragEvent;
+                    handleDragStart(track)(dragEvent);
+                  }}
+                  onDragEnd={() => {
+                    handleDragEnd();
+                  }}
+                  onClick={(e) => {
+                    // Only open drawer if clicking the card body, not A/B buttons
+                    if ((e.target as HTMLElement).closest('button') === null) {
+                      triggerHaptic();
+                      setSelectedTrack(track);
+                      setIsDrawerOpen(true);
+                    }
+                  }}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className={`group relative flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-lg border transition-all cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-[#00ff00] focus-within:ring-offset-2 focus-within:ring-offset-[#0a0a0a] ${
+                    draggedTrack?.id === track.id
+                      ? "opacity-50 scale-95 border-[#00ff00] cursor-grabbing"
+                      : "border-gray-800 hover:border-gray-600 hover:shadow-[0_0_12px_rgba(0,255,0,0.15)]"
+                  }`}
+                  style={{ cursor: draggedTrack?.id === track.id ? 'grabbing' : 'pointer' }}
+                  tabIndex={0}
+                >
+                  {/* Cover Art Thumbnail */}
+                  <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded bg-[#0a0a0a]">
+                    {isImagePath(track.coverArt) ? (
+                      <Image
+                        src={track.coverArt}
+                        alt={track.title}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+                    )}
+                  </div>
+
+                  {/* Track Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-barlow uppercase text-gray-300 truncate" title={track.title}>
+                      {track.title}
+                    </div>
+                    <div className="text-xs font-barlow text-gray-500 truncate" title={track.artist}>
+                      {track.artist}
+                    </div>
+                  </div>
+
+                  {/* A/B Load Buttons */}
+                  <div className="flex gap-2 z-10 flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic();
+                        loadTrackToDeckA(track);
+                      }}
+                      aria-label={`Load ${track.title} to Deck A`}
+                      className="px-3 py-1.5 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#00d9ff] text-gray-400 hover:text-white rounded transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d9ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] min-h-[44px] active:scale-95"
+                    >
+                      A
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic();
+                        loadTrackToDeckB(track);
+                      }}
+                      aria-label={`Load ${track.title} to Deck B`}
+                      className="px-3 py-1.5 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#ff00d9] text-gray-400 hover:text-white rounded transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff00d9] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] min-h-[44px] active:scale-95"
+                    >
+                      B
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+
+          {/* Track Count */}
+          <div className="mt-4 text-xs font-barlow text-gray-500 text-center pt-4 border-t border-gray-800">
+            {audioTracks.length} track{audioTracks.length !== 1 ? "s" : ""}
+            {vibeFilter !== "all" && ` • ${vibeFilter}`}
+            {debouncedSearchQuery && ` • "${debouncedSearchQuery}"`}
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto w-full lg:w-auto">
+        <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8">
+          {/* Mobile Track Library Toggle - Only show on mobile */}
+          <div className="lg:hidden mb-6">
+            <div className="bg-[#0a0a0a] rounded-lg border border-gray-800 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-barlow uppercase tracking-wider text-gray-300">
+                  TRACK LIBRARY
+                </h2>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded border-2 border-gray-700 text-gray-400 hover:border-[#00ff00] hover:text-[#00ff00] transition-all"
+                  aria-label="Upload audio"
+                >
+                  <Upload className="w-5 h-5" />
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleFileUpload(file);
+                  }
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
+                }}
+                className="hidden"
+              />
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {audioTracks.slice(0, 5).map((track) => (
+                  <motion.div
+                    key={track.id}
+                    draggable={isMounted}
+                    onDragStart={(e) => {
+                      const dragEvent = e as unknown as React.DragEvent;
+                      handleDragStart(track)(dragEvent);
+                    }}
+                    onDragEnd={handleDragEnd}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button') === null) {
+                        triggerHaptic();
+                        setSelectedTrack(track);
+                        setIsDrawerOpen(true);
+                      }
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 p-2 bg-[#1a1a1a] rounded border border-gray-800 hover:border-gray-600 transition-all cursor-pointer"
+                  >
+                    <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden rounded bg-[#0a0a0a]">
+                      {isImagePath(track.coverArt) ? (
+                        <Image
+                          src={track.coverArt}
+                          alt={track.title}
+                          fill
+                          className="object-cover"
+                          sizes="48px"
+                        />
+                      ) : (
+                        <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-barlow uppercase text-gray-300 truncate">
+                        {track.title}
+                      </div>
+                      <div className="text-[10px] font-barlow text-gray-500 truncate">
+                        {track.artist}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerHaptic();
+                          loadTrackToDeckA(track);
+                        }}
+                        className="px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#00d9ff] text-gray-400 hover:text-white rounded transition-all"
+                      >
+                        A
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerHaptic();
+                          loadTrackToDeckB(track);
+                        }}
+                        className="px-2 py-1 text-xs font-barlow uppercase bg-[#2a2a2a] hover:bg-[#ff00d9] text-gray-400 hover:text-white rounded transition-all"
+                      >
+                        B
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+                {audioTracks.length > 5 && (
+                  <div className="text-xs font-barlow text-gray-500 text-center pt-2">
+                    +{audioTracks.length - 5} more tracks
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* FX Rack */}
+          <div data-tour="fx-unit">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-barlow uppercase tracking-wider text-gray-300">
@@ -1657,11 +2123,45 @@ export function DJInterface() {
             setDistortionBypassB(bypass);
             if (bypass) setDistortionAmountB(0);
           }}
+          // Additional FX for Deck A
+          flangerRateA={flangerRateA}
+          flangerDepthA={flangerDepthA}
+          onFlangerRateChangeA={setFlangerRateA}
+          onFlangerDepthChangeA={setFlangerDepthA}
+          phaserRateA={phaserRateA}
+          phaserDepthA={phaserDepthA}
+          onPhaserRateChangeA={setPhaserRateA}
+          onPhaserDepthChangeA={setPhaserDepthA}
+          chorusRateA={chorusRateA}
+          chorusDepthA={chorusDepthA}
+          onChorusRateChangeA={setChorusRateA}
+          onChorusDepthChangeA={setChorusDepthA}
+          echoTimeA={echoTimeA}
+          echoFeedbackA={echoFeedbackA}
+          onEchoTimeChangeA={setEchoTimeA}
+          onEchoFeedbackChangeA={setEchoFeedbackA}
+          // Additional FX for Deck B
+          flangerRateB={flangerRateB}
+          flangerDepthB={flangerDepthB}
+          onFlangerRateChangeB={setFlangerRateB}
+          onFlangerDepthChangeB={setFlangerDepthB}
+          phaserRateB={phaserRateB}
+          phaserDepthB={phaserDepthB}
+          onPhaserRateChangeB={setPhaserRateB}
+          onPhaserDepthChangeB={setPhaserDepthB}
+          chorusRateB={chorusRateB}
+          chorusDepthB={chorusDepthB}
+          onChorusRateChangeB={setChorusRateB}
+          onChorusDepthChangeB={setChorusDepthB}
+          echoTimeB={echoTimeB}
+          echoFeedbackB={echoFeedbackB}
+          onEchoTimeChangeB={setEchoTimeB}
+          onEchoFeedbackChangeB={setEchoFeedbackB}
         />
         </div>
 
-        {/* Main Console */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Main Console */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Deck A */}
           <div
             data-tour="deck-a"
@@ -1687,6 +2187,9 @@ export function DJInterface() {
               outputNode={deckAFiltersRef.current?.low || undefined}
               title={deckAData?.title}
               coverArt={deckAData?.coverArt}
+              audioBuffer={deckAAudioBuffer}
+              onReverse={setDeckAReversed}
+              isReversed={deckAReversed}
             />
             {/* Enhanced Drop indicator */}
             <div
@@ -1780,6 +2283,9 @@ export function DJInterface() {
               outputNode={deckBFiltersRef.current?.low || undefined}
               title={deckBData?.title}
               coverArt={deckBData?.coverArt}
+              audioBuffer={deckBAudioBuffer}
+              onReverse={setDeckBReversed}
+              isReversed={deckBReversed}
             />
             {/* Enhanced Drop indicator */}
             <div
@@ -1798,35 +2304,35 @@ export function DJInterface() {
           </div>
         </div>
 
-        {/* Mic Input - Monitor Only */}
-        <div className="mt-4 md:mt-6">
-          <MicInput
-            audioContext={audioContextRef.current || undefined}
-            masterGainNode={masterGainRef.current || undefined}
-          />
-        </div>
+          {/* Mic Input - Monitor Only */}
+          <div className="mt-6 lg:mt-8">
+            <MicInput
+              audioContext={audioContextRef.current || undefined}
+              masterGainNode={masterGainRef.current || undefined}
+            />
+          </div>
 
-        {/* Voice Tag Panel - Moved outside grid */}
-        <div className="mt-4 md:mt-6">
-          <VoiceTagPanel
-            micEnabled={voiceTag.micEnabled}
-            isRecording={voiceTag.isRecording}
-            tagUrl={voiceTag.tagUrl}
-            tagDurationMs={voiceTag.tagDurationMs}
-            level={voiceTag.level}
-            error={voiceTag.error}
-            tagVolume={tagVolume}
-            onEnableMic={voiceTag.enableMic}
-            onDisableMic={voiceTag.disableMic}
-            onStartRecording={voiceTag.startTagRecording}
-            onStopRecording={voiceTag.stopTagRecording}
-            onPlayTag={voiceTag.playTag}
-            onDownloadTag={handleDownloadTag}
-            onClearTag={voiceTag.clearTag}
-            onTagVolumeChange={handleTagVolumeChange}
-          />
+          {/* Voice Tag Panel - Moved outside grid */}
+          <div className="mt-6 lg:mt-8">
+            <VoiceTagPanel
+              micEnabled={voiceTag.micEnabled}
+              isRecording={voiceTag.isRecording}
+              tagUrl={voiceTag.tagUrl}
+              tagDurationMs={voiceTag.tagDurationMs}
+              level={voiceTag.level}
+              error={voiceTag.error}
+              tagVolume={tagVolume}
+              onEnableMic={voiceTag.enableMic}
+              onDisableMic={voiceTag.disableMic}
+              onStartRecording={voiceTag.startTagRecording}
+              onStopRecording={voiceTag.stopTagRecording}
+              onPlayTag={voiceTag.playTag}
+              onDownloadTag={handleDownloadTag}
+              onClearTag={voiceTag.clearTag}
+              onTagVolumeChange={handleTagVolumeChange}
+            />
+          </div>
         </div>
-
       </div>
     </div>
     </>

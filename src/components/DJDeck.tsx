@@ -8,7 +8,9 @@ import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
 import { TrackTransition } from "./dj-ui/TrackTransition";
-import { Play, Pause, RotateCcw, Link2, Repeat } from "lucide-react";
+import { Play, Pause, RotateCcw, Link2, Repeat, RotateCw, Music, Grid3x3 } from "lucide-react";
+import { useBPMDetection } from "@/hooks/useBPMDetection";
+import { reverseAudioBuffer, calculateBeatPositions, snapToBeat, quantizeLoop } from "@/utils/audioUtils";
 
 interface DJDeckProps {
   trackUrl: string | null;
@@ -26,6 +28,10 @@ interface DJDeckProps {
   outputNode?: AudioNode;
   title?: string; // Track title to display
   coverArt?: string; // Cover art image URL for vinyl label
+  audioBuffer?: AudioBuffer | null; // Audio buffer for BPM detection
+  onReverse?: (reverse: boolean) => void; // Callback for reverse playback
+  isReversed?: boolean; // Whether track is playing in reverse
+  quantize?: boolean; // Whether to snap to beat grid
 }
 
 export interface DJDeckRef {
@@ -56,14 +62,25 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       outputNode,
       title,
       coverArt,
+      audioBuffer,
+      onReverse,
+      isReversed = false,
+      quantize = false,
     },
     ref
   ) => {
     const waveformRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
     const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const bufferSourceRef = useRef<AudioBufferSourceNode | null>(null);
+    const reversedBufferRef = useRef<AudioBuffer | null>(null);
+    const reverseGainRef = useRef<GainNode | null>(null);
+    const reversePositionRef = useRef<number>(0);
+    const reverseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const reverseStartTimeRef = useRef<number>(0);
     const [rotation, setRotation] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [currentPosition, setCurrentPosition] = useState(0);
     const [cuePoint, setCuePoint] = useState<number | null>(null);
     const [isScrubbing, setIsScrubbing] = useState(false);
     const wasPlayingBeforeScrubRef = useRef(false);
@@ -73,6 +90,48 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const loopIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const [previousTrackUrl, setPreviousTrackUrl] = useState<string | null>(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [showBeatGrid, setShowBeatGrid] = useState(false);
+    const [beatPositions, setBeatPositions] = useState<number[]>([]);
+    const [quantizeEnabled, setQuantizeEnabled] = useState(false);
+    const [isReversedState, setIsReversedState] = useState(isReversed || false);
+
+    // Use internal state for isReversed, sync with prop if it changes
+    useEffect(() => {
+      if (isReversed !== undefined) {
+        setIsReversedState(isReversed);
+      }
+    }, [isReversed]);
+
+    // BPM Detection
+    const { bpm, confidence, isDetecting: isDetectingBPM } = useBPMDetection({
+      audioBuffer,
+      trackTitle: title || "",
+      trackArtist: "",
+      enabled: !!trackUrl,
+    });
+
+    // Calculate beat positions when BPM is available
+    useEffect(() => {
+      if (bpm && duration > 0) {
+        const beats = calculateBeatPositions(duration, bpm);
+        setBeatPositions(beats);
+      } else {
+        setBeatPositions([]);
+      }
+    }, [bpm, duration]);
+
+    // Create reversed buffer when audio buffer is available
+    useEffect(() => {
+      if (audioBuffer && audioContext) {
+        try {
+          reversedBufferRef.current = reverseAudioBuffer(audioBuffer, audioContext);
+        } catch {
+          reversedBufferRef.current = null;
+        }
+      } else {
+        reversedBufferRef.current = null;
+      }
+    }, [audioBuffer, audioContext]);
 
     // Initialize WaveSurfer
     useEffect(() => {
@@ -153,7 +212,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
       ws.on("timeupdate", (time: number) => {
         const d = ws.getDuration();
-        if (d > 0) setRotation((time / d) * 360);
+        if (d > 0) {
+          setRotation((time / d) * 360);
+          setCurrentPosition(time);
+        }
       });
 
       return () => {
@@ -192,6 +254,98 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     // Volume is now controlled by the mixer chain in DJInterface
     // No need to update gain node here
 
+    // Handle reverse playback
+    const handleReversePlayback = useCallback(async () => {
+      if (!audioContext || !reversedBufferRef.current || !outputNode) {
+        return;
+      }
+
+      // Stop any existing reverse playback
+      if (bufferSourceRef.current) {
+        try {
+          bufferSourceRef.current.stop();
+        } catch {
+          // Already stopped
+        }
+        bufferSourceRef.current = null;
+      }
+
+      if (reverseIntervalRef.current) {
+        clearInterval(reverseIntervalRef.current);
+        reverseIntervalRef.current = null;
+      }
+
+      // Get current position (from wavesurfer or use 0)
+      const currentTime = wavesurferRef.current?.getCurrentTime() || 0;
+      const totalDuration = reversedBufferRef.current.duration;
+      reversePositionRef.current = Math.max(0, Math.min(totalDuration - currentTime, totalDuration));
+
+      // Create gain node for reverse playback
+      if (!reverseGainRef.current) {
+        reverseGainRef.current = audioContext.createGain();
+        reverseGainRef.current.gain.value = 1.0;
+        reverseGainRef.current.connect(outputNode);
+      }
+
+      // Create buffer source
+      const source = audioContext.createBufferSource();
+      source.buffer = reversedBufferRef.current;
+      source.playbackRate.value = speed;
+      source.connect(reverseGainRef.current);
+
+      // Start playback from reversed position
+      const startOffset = totalDuration - reversePositionRef.current;
+      reverseStartTimeRef.current = audioContext.currentTime;
+      source.start(0, startOffset);
+
+      bufferSourceRef.current = source;
+
+      // Update position as it plays
+      const updateInterval = 100; // Update every 100ms
+      reverseIntervalRef.current = setInterval(() => {
+        if (bufferSourceRef.current && reversedBufferRef.current && audioContext) {
+          const elapsed = audioContext.currentTime - reverseStartTimeRef.current;
+          reversePositionRef.current = Math.max(0, totalDuration - (startOffset + elapsed * speed));
+
+          // Update wavesurfer position for visualization
+          if (wavesurferRef.current && totalDuration > 0) {
+            const normalPosition = totalDuration - reversePositionRef.current;
+            wavesurferRef.current.seekTo(normalPosition / totalDuration);
+          }
+
+          // Stop when we reach the beginning
+          if (reversePositionRef.current <= 0) {
+            if (bufferSourceRef.current) {
+              try {
+                bufferSourceRef.current.stop();
+              } catch {
+                // Already stopped
+              }
+              bufferSourceRef.current = null;
+            }
+            if (reverseIntervalRef.current) {
+              clearInterval(reverseIntervalRef.current);
+              reverseIntervalRef.current = null;
+            }
+            setIsReversedState(false);
+            onReverse?.(false);
+          }
+        }
+      }, updateInterval);
+
+      // Handle when source ends
+      source.onended = () => {
+        if (reverseIntervalRef.current) {
+          clearInterval(reverseIntervalRef.current);
+          reverseIntervalRef.current = null;
+        }
+        bufferSourceRef.current = null;
+        reversePositionRef.current = 0;
+        setIsReversedState(false);
+        onReverse?.(false);
+      };
+    }, [audioContext, outputNode, speed, onReverse]);
+
     // Handle play/pause
     const handlePlayPause = async () => {
       // FORCE WAKE UP
@@ -199,6 +353,33 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         await audioContext.resume();
       }
 
+      // If reverse is enabled, use buffer playback
+      if (isReversedState && reversedBufferRef.current) {
+        if (bufferSourceRef.current) {
+          // Pause reverse playback
+          try {
+            bufferSourceRef.current.stop();
+          } catch {
+            // Already stopped
+          }
+          bufferSourceRef.current = null;
+          if (reverseIntervalRef.current) {
+            clearInterval(reverseIntervalRef.current);
+            reverseIntervalRef.current = null;
+          }
+          setIsReversedState(false);
+          onReverse?.(false);
+        } else {
+          // Start reverse playback
+          setIsReversedState(true);
+          onReverse?.(true);
+          await handleReversePlayback();
+        }
+        onPlayPause();
+        return;
+      }
+
+      // Normal forward playback
       if (wavesurferRef.current) {
         wavesurferRef.current.playPause();
       }
@@ -242,16 +423,55 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       }
     }, [isPlaying, audioContext, outputNode]);
 
-    // Handle cue button
+    // Cleanup reverse playback on unmount
+    useEffect(() => {
+      return () => {
+        // Stop reverse playback if active
+        if (bufferSourceRef.current) {
+          try {
+            bufferSourceRef.current.stop();
+          } catch {
+            // Already stopped
+          }
+          bufferSourceRef.current = null;
+        }
+
+        // Clear reverse interval
+        if (reverseIntervalRef.current) {
+          clearInterval(reverseIntervalRef.current);
+          reverseIntervalRef.current = null;
+        }
+
+        // Disconnect reverse gain node
+        if (reverseGainRef.current) {
+          try {
+            reverseGainRef.current.disconnect();
+          } catch {
+            // Already disconnected
+          }
+          reverseGainRef.current = null;
+        }
+      };
+    }, []);
+
+    // Handle cue button with quantize support
     const handleCue = () => {
       if (wavesurferRef.current) {
         if (cuePoint === null) {
-          // Set cue point at current position
-          const currentTime = wavesurferRef.current.getCurrentTime();
+          // Set cue point at current position (with quantize if enabled)
+          let currentTime = wavesurferRef.current.getCurrentTime();
+          if (quantizeEnabled && bpm) {
+            currentTime = snapToBeat(currentTime, bpm, 1.0);
+            wavesurferRef.current.seekTo(currentTime / (wavesurferRef.current.getDuration() || 1));
+          }
           setCuePoint(currentTime);
         } else {
-          // Jump to cue point
-          wavesurferRef.current.seekTo(cuePoint / (wavesurferRef.current.getDuration() || 1));
+          // Jump to cue point (with quantize if enabled)
+          let seekTime = cuePoint;
+          if (quantizeEnabled && bpm) {
+            seekTime = snapToBeat(cuePoint, bpm, 1.0);
+          }
+          wavesurferRef.current.seekTo(seekTime / (wavesurferRef.current.getDuration() || 1));
         }
         onCue?.();
       }
@@ -347,10 +567,17 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const handleLoop = useCallback((beats: number) => {
       if (!wavesurferRef.current || !duration) return;
 
-      // Assuming 120 BPM average (2 beats per second) - fallback if BPM unknown
-      const beatsPerSecond = 2;
+      // Use detected BPM if available, otherwise fallback to 120 BPM
+      const effectiveBPM = bpm || 120;
+      const beatsPerSecond = effectiveBPM / 60;
       const loopDuration = beats / beatsPerSecond;
-      const currentTime = wavesurferRef.current.getCurrentTime();
+      let currentTime = wavesurferRef.current.getCurrentTime();
+
+      // Quantize loop start if quantize is enabled
+      if (quantizeEnabled && bpm) {
+        currentTime = snapToBeat(currentTime, bpm, 1.0);
+        wavesurferRef.current.seekTo(currentTime / duration);
+      }
 
       if (isLooping && loopBeats === beats && loopIn !== null) {
         // Disable loop
@@ -493,8 +720,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             onScrub={handleScrub}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            bpm={120} // Default BPM - can be made configurable in the future
-            playbackRate={speed}
+            bpm={bpm || 120}
+            playbackRate={speed * (isReversedState ? -1 : 1)}
             coverArt={coverArt}
           />
         </div>
@@ -555,7 +782,101 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               <Link2 className="w-6 h-6" style={{ color: isSynced ? "#22c55e" : deckColor }} />
             </button>
           </Tooltip>
+
+          {/* Reverse Button */}
+          <Tooltip content="Play track in reverse">
+            <button
+              onClick={async () => {
+                const newReversed = !isReversedState;
+                if (newReversed) {
+                  // Start reverse playback
+                  setIsReversedState(true);
+                  onReverse?.(true);
+                  await handleReversePlayback();
+                } else {
+                  // Stop reverse playback and resume normal
+                  if (bufferSourceRef.current) {
+                    try {
+                      bufferSourceRef.current.stop();
+                    } catch {
+                      // Already stopped
+                    }
+                    bufferSourceRef.current = null;
+                  }
+                  if (reverseIntervalRef.current) {
+                    clearInterval(reverseIntervalRef.current);
+                    reverseIntervalRef.current = null;
+                  }
+                  // Resume normal playback from current position
+                  if (wavesurferRef.current && duration > 0) {
+                    const currentPos = reversePositionRef.current;
+                    wavesurferRef.current.seekTo(currentPos / duration);
+                    if (isPlaying) {
+                      wavesurferRef.current.play();
+                    }
+                  }
+                  setIsReversedState(false);
+                  onReverse?.(false);
+                }
+              }}
+              aria-label={isReversedState ? "Play forward" : "Play in reverse"}
+              className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500 touch-manipulation ${
+                isReversedState ? "border-purple-500" : "border-gray-700"
+              }`}
+              style={{
+                boxShadow: isReversedState
+                  ? `0 0 15px rgba(168, 85, 247, 0.3), inset 0 0 8px rgba(168, 85, 247, 0.1)`
+                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
+              }}
+              title="Reverse Playback"
+            >
+              <RotateCw className="w-6 h-6" style={{ color: isReversedState ? "#a855f7" : deckColor }} />
+            </button>
+          </Tooltip>
         </div>
+
+          {/* BPM Display and Beat Grid Toggle */}
+        {bpm && (
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <div className="flex items-center gap-2">
+              <Music className="w-4 h-4 text-gray-400" />
+              <span className="text-sm font-barlow font-bold text-gray-300">
+                {bpm} BPM
+              </span>
+              {confidence < 0.5 && (
+                <span className="text-xs text-gray-500" title="Low confidence BPM detection">
+                  ~
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setShowBeatGrid(!showBeatGrid)}
+              className={`p-1.5 rounded border transition-all ${
+                showBeatGrid
+                  ? "border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]"
+                  : "border-gray-700 text-gray-400 hover:border-gray-600"
+              }`}
+              title="Toggle Beat Grid"
+              aria-label="Toggle beat grid visualization"
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setQuantizeEnabled(!quantizeEnabled);
+              }}
+              className={`px-2 py-1 text-xs font-barlow uppercase rounded border transition-all ${
+                quantizeEnabled
+                  ? "border-[#00ff00] bg-[#00ff00]/10 text-[#00ff00]"
+                  : "border-gray-700 text-gray-400 hover:border-gray-600"
+              }`}
+              title="Quantize (Snap to Beat)"
+              aria-label="Toggle quantize"
+            >
+              Q
+            </button>
+          </div>
+        )}
 
         {/* Pitch Fader (Vertical, +/- 8%) */}
         <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
@@ -672,10 +993,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           </div>
         )}
 
-        {/* Waveform with Dark Grid Background */}
+        {/* Waveform with Beat Grid and Dark Grid Background */}
         <div
           ref={waveformRef}
-          className="w-full rounded border border-gray-800 p-2 cursor-pointer"
+          className="relative w-full rounded border border-gray-800 p-2 cursor-pointer"
           style={{
             minHeight: typeof window !== "undefined" && window.innerWidth < 768 ? 80 : 100,
             background: `
@@ -686,7 +1007,23 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             backgroundSize: "20px 20px",
           }}
           title="Click or drag to scrub through the track"
-        />
+        >
+          {/* Beat Grid Overlay */}
+          {showBeatGrid && beatPositions.length > 0 && duration > 0 && (
+            <div className="absolute inset-0 pointer-events-none z-10" style={{ padding: "8px" }}>
+              {beatPositions.map((beatTime, index) => {
+                const position = (beatTime / duration) * 100;
+                return (
+                  <div
+                    key={index}
+                    className="absolute top-0 bottom-0 w-px bg-[#FFD700]/30"
+                    style={{ left: `${position}%` }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Performance Pads */}
         <div data-tour="performance-pads">
