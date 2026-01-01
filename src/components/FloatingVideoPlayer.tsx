@@ -41,12 +41,14 @@ export function FloatingVideoPlayer() {
             {/* YouTube Embed */}
             <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl z-10">
               <iframe
-                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`}
+                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                 title={video.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
                 className="w-full h-full absolute inset-0"
                 style={{ zIndex: 10 }}
+                referrerPolicy="no-referrer-when-downgrade"
+                loading="lazy"
               />
             </div>
 

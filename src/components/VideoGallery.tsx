@@ -280,10 +280,12 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
             <div className="relative w-full h-full">
               <iframe
                 title={`${video.title} - CCTV Preview`}
-                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&start=10&controls=0&modestbranding=1&rel=0&loop=1&playlist=${video.id}`}
+                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&start=10&controls=0&modestbranding=1&rel=0&loop=1&playlist=${video.id}&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                 className="absolute inset-0 w-full h-full"
-                allow="autoplay; encrypted-media"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+                loading="lazy"
                 style={{
                   filter: "grayscale(100%) sepia(100%) hue-rotate(80deg) contrast(150%)",
                   border: "none",

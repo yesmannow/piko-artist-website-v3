@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { VaultVisuals } from "@/components/VaultVisuals";
-import { FieldOperations } from "@/components/FieldOperations";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
@@ -151,10 +150,7 @@ export default function Home() {
       {/* Section 2: VAULT VISUALS (CCTV Monitor Wall) */}
       <VaultVisuals />
 
-      {/* Section 3: FIELD OPERATIONS (Tactical Dispatch Board) */}
-      <FieldOperations />
-
-      {/* Section 4: RAP SHEET (Bio) - Paper Texture with Spray Paint */}
+      {/* Section 3: RAP SHEET (Bio) - Paper Texture with Spray Paint */}
       <section
         id="rap-sheet"
         className="relative py-12 md:py-20 px-4 md:px-8 bg-[#0a0a0a]"
