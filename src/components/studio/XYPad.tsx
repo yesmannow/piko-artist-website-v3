@@ -19,6 +19,10 @@ interface XYPadProps {
   yLabel?: string;
   /** Whether the pad is active */
   isActive?: boolean;
+  /** Latch Mode: If true, position stays when released. If false, snaps back to (0.5, 0) */
+  latchMode?: boolean;
+  /** Callback when latch mode changes */
+  onLatchModeChange?: (enabled: boolean) => void;
   className?: string;
 }
 
@@ -49,14 +53,20 @@ export function XYPad({
   xLabel = "FILTER",
   yLabel = "FX_WET",
   isActive = true,
+  latchMode = false,
+  onLatchModeChange,
   className = "",
 }: XYPadProps) {
   const padRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x, y });
   const [trail, setTrail] = useState<TrailPoint[]>([]);
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const trailIdRef = useRef(0);
+
+  // Neutral position (snap-back target)
+  const NEUTRAL_X = 0.5;
+  const NEUTRAL_Y = 0;
 
   // Sync external position changes
   useEffect(() => {
@@ -141,6 +151,35 @@ export function XYPad({
     const handleEnd = () => {
       setIsDragging(false);
       triggerHaptic(5);
+
+      // Snap-back to neutral position unless latch mode is enabled
+      if (!latchMode) {
+        // Smooth snap-back animation
+        const startX = position.x;
+        const startY = position.y;
+        const startTime = Date.now();
+        const duration = 300; // 300ms snap-back
+
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+
+          // Ease-out cubic for smooth deceleration
+          const eased = 1 - Math.pow(1 - progress, 3);
+
+          const newX = startX + (NEUTRAL_X - startX) * eased;
+          const newY = startY + (NEUTRAL_Y - startY) * eased;
+
+          setPosition({ x: newX, y: newY });
+          onPositionChange?.(newX, newY);
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          }
+        };
+
+        requestAnimationFrame(animate);
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -163,9 +202,29 @@ export function XYPad({
         <span className="text-xs font-mono font-bold uppercase text-[#FFD700]">
           KAOSS_PAD
         </span>
-        <span className="text-[10px] font-mono text-[#E0E0E0]/50 uppercase">
-          X: {Math.round(position.x * 100)}% | Y: {Math.round(position.y * 100)}%
-        </span>
+        <div className="flex items-center gap-3">
+          {/* Latch Mode Toggle */}
+          {onLatchModeChange && (
+            <button
+              onClick={() => {
+                triggerHaptic(10);
+                onLatchModeChange(!latchMode);
+              }}
+              className={`text-[9px] font-mono uppercase px-2 py-1 border transition-all min-h-[32px] min-w-[32px] ${
+                latchMode
+                  ? "border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10"
+                  : "border-zinc-600 text-zinc-500"
+              }`}
+              style={{ borderRadius: 0 }}
+              aria-label={latchMode ? "Disable latch mode" : "Enable latch mode"}
+            >
+              LATCH
+            </button>
+          )}
+          <span className="text-[10px] font-mono text-[#E0E0E0]/50 uppercase">
+            X: {Math.round(position.x * 100)}% | Y: {Math.round(position.y * 100)}%
+          </span>
+        </div>
       </div>
 
       {/* XY Pad Surface */}

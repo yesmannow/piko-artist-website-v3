@@ -14,7 +14,7 @@ export function InstallApp() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
 
   useEffect(() => {
     // Check if already installed

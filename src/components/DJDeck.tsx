@@ -32,6 +32,11 @@ interface DJDeckProps {
   onReverse?: (reverse: boolean) => void; // Callback for reverse playback
   isReversed?: boolean; // Whether track is playing in reverse
   quantize?: boolean; // Whether to snap to beat grid
+  // Slip Mode props
+  isSlipMode?: boolean; // Whether Slip Mode is active
+  onSlipModeToggle?: () => void; // Callback to toggle Slip Mode
+  onScratch?: (velocity: number, isTouching: boolean) => void; // Callback for scratch/velocity
+  deckId?: "A" | "B"; // Deck identifier for scratch callback
 }
 
 export interface DJDeckRef {
@@ -66,6 +71,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       onReverse,
       isReversed = false,
       quantize = false,
+      isSlipMode = false,
+      onSlipModeToggle,
+      onScratch,
+      deckId = "A",
     },
     ref
   ) => {
@@ -718,8 +727,28 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             isPlaying={isPlaying && !isScrubbing}
             size={Math.min(180, typeof window !== "undefined" ? window.innerWidth * 0.3 : 180)}
             onScrub={handleScrub}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+            onDragStart={() => {
+              handleDragStart();
+              // Notify scratch start
+              if (onScratch) {
+                onScratch(0, true);
+              }
+            }}
+            onDragEnd={() => {
+              handleDragEnd();
+              // Notify scratch end
+              if (onScratch) {
+                onScratch(0, false);
+              }
+            }}
+            onVelocityChange={(velocity) => {
+              // Map velocity to normalized range for handleScratch
+              // JogWheel provides angular velocity, convert to playbackRate offset
+              const normalizedVelocity = (velocity - 1.0) * 10; // Convert to -5 to 5 range
+              if (onScratch) {
+                onScratch(normalizedVelocity, true);
+              }
+            }}
             bpm={bpm || 120}
             playbackRate={speed * (isReversedState ? -1 : 1)}
             coverArt={coverArt}
@@ -782,6 +811,33 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               <Link2 className="w-6 h-6" style={{ color: isSynced ? "#22c55e" : deckColor }} />
             </button>
           </Tooltip>
+
+          {/* Slip Mode Button */}
+          {onSlipModeToggle && (
+            <Tooltip content="Slip Mode: Maintains virtual playhead during scratching">
+              <button
+                onClick={onSlipModeToggle}
+                aria-label={isSlipMode ? "Disable Slip Mode" : "Enable Slip Mode"}
+                className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#FFD700] touch-manipulation ${
+                  isSlipMode ? "border-[#FFD700]" : "border-gray-700"
+                } ${isSlipMode ? "animate-pulse" : ""}`}
+                style={{
+                  boxShadow: isSlipMode
+                    ? `0 0 15px rgba(255, 215, 0, 0.3), inset 0 0 8px rgba(255, 215, 0, 0.1)`
+                    : "inset 0 2px 4px rgba(0,0,0,0.5)",
+                }}
+                title={isSlipMode ? "Slip Mode: ON" : "Slip Mode: OFF"}
+              >
+                <span
+                  className={`text-xs font-black italic uppercase tracking-wider ${
+                    isSlipMode ? "text-[#FFD700]" : "text-gray-400"
+                  }`}
+                >
+                  SLIP
+                </span>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Reverse Button */}
           <Tooltip content="Play track in reverse">

@@ -30,7 +30,7 @@ const vibeTooltips = {
 };
 
 export function Player() {
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);

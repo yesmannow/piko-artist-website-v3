@@ -12,6 +12,13 @@ interface CrossFaderProps {
   onFilterModeChange?: (enabled: boolean) => void;
 }
 
+interface TouchTrail {
+  id: number;
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
 /**
  * CrossFader - Mechanical Chrome Block with Particle Sparks
  *
@@ -22,8 +29,10 @@ export function CrossFader({ position, onPositionChange, className = "", filterM
   const sliderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([]);
-  const triggerHaptic = useHaptic();
+  const [touchTrails, setTouchTrails] = useState<TouchTrail[]>([]);
+  const { triggerHaptic } = useHaptic();
   const lastPositionRef = useRef(position);
+  const lastTouchXRef = useRef<number | null>(null);
 
   // Generate particles at 0.0, 0.5, and 1.0 positions
   useEffect(() => {
@@ -51,36 +60,60 @@ export function CrossFader({ position, onPositionChange, className = "", filterM
     lastPositionRef.current = position;
   }, [position, triggerHaptic]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    setIsDragging(true);
-    handleMove(e.clientX);
-  }, []);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    setIsDragging(true);
-    handleMove(e.touches[0].clientX);
-  }, []);
-
-  const handleMove = useCallback((clientX: number) => {
+  const handleMove = useCallback((clientX: number, isTouch: boolean = false) => {
     if (!sliderRef.current) return;
 
     const rect = sliderRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const newPosition = Math.max(0, Math.min(1, x / rect.width));
 
+    // Add Safety Yellow touch trail on mobile
+    if (isTouch && typeof window !== "undefined" && window.innerWidth < 768) {
+      const relativeX = (x / rect.width) * 100;
+      const relativeY = 50; // Center of slider
+
+      const newTrail: TouchTrail = {
+        id: Date.now() + Math.random(),
+        x: relativeX,
+        y: relativeY,
+        timestamp: Date.now(),
+      };
+
+      setTouchTrails((prev) => [...prev, newTrail].slice(-20)); // Keep last 20 trails
+
+      // Remove trails after 500ms
+      setTimeout(() => {
+        setTouchTrails((prev) => prev.filter((t) => t.id !== newTrail.id));
+      }, 500);
+    }
+
     onPositionChange(newPosition);
   }, [onPositionChange]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDragging(true);
+    handleMove(e.clientX, false);
+  }, [handleMove]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setIsDragging(true);
+    const touchX = e.touches[0].clientX;
+    lastTouchXRef.current = touchX;
+    handleMove(touchX, true);
+  }, [handleMove]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      handleMove(e.clientX);
+      handleMove(e.clientX, false);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
-      handleMove(e.touches[0].clientX);
+      if (e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, true);
+      }
     };
 
     const handleEnd = () => {
@@ -201,6 +234,37 @@ export function CrossFader({ position, onPositionChange, className = "", filterM
           />
         ))}
       </AnimatePresence>
+
+      {/* Safety Yellow Touch Trails (Mobile Only) */}
+      {typeof window !== "undefined" && window.innerWidth < 768 && (
+        <AnimatePresence>
+          {touchTrails.map((trail) => (
+            <motion.div
+              key={trail.id}
+              className="absolute w-2 h-2 rounded-full bg-[#FFD700]"
+              initial={{
+                x: `${trail.x}%`,
+                y: `${trail.y}%`,
+                opacity: 0.8,
+                scale: 1,
+              }}
+              animate={{
+                opacity: 0,
+                scale: 0,
+              }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: 0.5,
+                ease: "easeOut",
+              }}
+              style={{
+                transform: `translate(-50%, -50%)`,
+                boxShadow: "0 0 12px #FFD700, 0 0 24px #FFD700",
+              }}
+            />
+          ))}
+        </AnimatePresence>
+      )}
     </div>
   );
 }

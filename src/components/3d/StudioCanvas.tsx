@@ -9,6 +9,8 @@ import { useSpring, animated } from "@react-spring/three";
 import { HolographicDeck } from "./HolographicDeck";
 import { useOrientation } from "@/hooks/useOrientation";
 import { useSceneCleanup } from "@/hooks/useSceneCleanup";
+import { useGyroLighting } from "@/hooks/useGyroLighting";
+import * as THREE from "three";
 
 interface StudioCanvasProps {
   deckAIsPlaying?: boolean;
@@ -39,10 +41,19 @@ function SceneContent({
   impactPulse,
   remixIntensity = 0,
   visualizerLevel = 0,
-}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean; impactPulse?: boolean; remixIntensity?: number; visualizerLevel?: number }) {
+  gyroOrientation,
+}: Omit<StudioCanvasProps, "playbackRate"> & {
+  isLandscape: boolean;
+  impactPulse?: boolean;
+  remixIntensity?: number;
+  visualizerLevel?: number;
+  gyroOrientation?: { x: number; y: number };
+}) {
   const { scene, camera } = useThree();
   const sceneRef = useRef(scene);
   const baseCameraYRef = useRef(camera.position.y);
+  const pointLight1Ref = useRef<THREE.PointLight>(null);
+  const pointLight2Ref = useRef<THREE.PointLight>(null);
 
   // Update scene ref when scene changes
   useEffect(() => {
@@ -82,9 +93,27 @@ function SceneContent({
       <ambientLight intensity={0.3} />
       {/* Harsh top-down light (emphasizes metallic edges) */}
       <directionalLight position={[0, 10, 5]} intensity={1.5} color="#E0E0E0" castShadow />
-      {/* Fill light from sides */}
-      <pointLight position={[10, 5, 10]} intensity={0.8} color="#E0E0E0" />
-      <pointLight position={[-10, 5, 10]} intensity={0.8} color="#E0E0E0" />
+      {/* Fill light from sides - Gyro-controlled on mobile */}
+      <pointLight
+        ref={pointLight1Ref}
+        position={[
+          gyroOrientation ? gyroOrientation.x * 10 : 10,
+          5,
+          gyroOrientation ? gyroOrientation.y * 10 + 10 : 10
+        ]}
+        intensity={0.8}
+        color="#E0E0E0"
+      />
+      <pointLight
+        ref={pointLight2Ref}
+        position={[
+          gyroOrientation ? -gyroOrientation.x * 10 : -10,
+          5,
+          gyroOrientation ? -gyroOrientation.y * 10 + 10 : 10
+        ]}
+        intensity={0.8}
+        color="#E0E0E0"
+      />
 
       {/* Camera Controls - Rotation only, no zoom/pan */}
       <OrbitControls
@@ -159,6 +188,8 @@ export function StudioCanvas({
   visualizerLevel = 0,
 }: StudioCanvasProps) {
   const isLandscape = useOrientation();
+  // Gyro-lighting with intensity multiplier (2.0 = more responsive)
+  const { x: gyroX, y: gyroY } = useGyroLighting(2.0);
 
   // Spring animation for smooth position transitions
   // Landscape: side-by-side, Portrait: vertical stack
@@ -172,6 +203,10 @@ export function StudioCanvas({
     config: { mass: 1, tension: 120, friction: 26 },
   });
 
+  // Battery saver: only render when needed
+  const shouldRender = deckAIsPlaying || deckBIsPlaying || visualizerLevel > 0;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
   return (
     <div className="absolute inset-0 z-0 relative" style={{ touchAction: "none" }}>
       <Canvas
@@ -179,6 +214,7 @@ export function StudioCanvas({
         camera={{ position: [0, 0, 12], fov: 50 }}
         className="touch-none"
         style={{ touchAction: "none" }}
+        frameloop={isMobile && !shouldRender ? "demand" : "always"}
       >
         <SceneContent
           deckAIsPlaying={deckAIsPlaying}
@@ -192,6 +228,7 @@ export function StudioCanvas({
           impactPulse={impactPulse}
           remixIntensity={remixIntensity}
           visualizerLevel={visualizerLevel}
+          gyroOrientation={{ x: gyroX, y: gyroY }}
         />
       </Canvas>
       {/* Brightness filter for environmental reactivity */}

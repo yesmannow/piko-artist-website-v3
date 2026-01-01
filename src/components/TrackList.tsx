@@ -72,7 +72,7 @@ interface TrackCardProps {
 }
 
 function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const [isLoaded, setIsLoaded] = useState(false);
   // Random rotation between -1deg and 1deg for pasted-on-wall effect
   const rotation = (Math.random() * 2 - 1).toFixed(2);
@@ -285,7 +285,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
 export function TrackList({ featuredOnly = false }: TrackListProps) {
   const { playTrack, currentTrack, isPlaying } = useAudio();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
 
   const audioTracks = useMemo(

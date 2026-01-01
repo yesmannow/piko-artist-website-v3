@@ -570,7 +570,7 @@ function CompactView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; cu
 
 export default function MusicPage() {
   const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious } = useAudio();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const [viewType, setViewType] = useState<ViewType>("list");
 
   // Filter to only audio tracks

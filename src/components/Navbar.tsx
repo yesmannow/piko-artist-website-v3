@@ -125,7 +125,7 @@ export function Navbar() {
   const navRef = useRef<HTMLElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const scrollDirection = useScrollDirection(50);
   const [reducedMotion, setReducedMotion] = useState(false);
 

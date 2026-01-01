@@ -27,7 +27,7 @@ interface SamplerPad {
  */
 export function SamplerGrid() {
   const { audioContext } = useAudioStore();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
   const samplerGainRef = useRef<GainNode | null>(null);
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map());

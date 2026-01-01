@@ -13,6 +13,14 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Ignore ESLint warnings during build (warnings are non-blocking)
+  eslint: {
+    ignoreDuringBuilds: false, // Keep false to catch real errors, but warnings won't block
+  },
+  // Ignore TypeScript errors during build (should be false for production)
+  typescript: {
+    ignoreBuildErrors: false, // Keep false to catch type errors
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

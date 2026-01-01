@@ -21,7 +21,7 @@ const isImagePath = (coverArt: string): boolean => {
 
 export function TrackDrawer({ track, children }: TrackDrawerProps) {
   const { playTrack } = useAudio();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {

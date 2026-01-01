@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Waveform } from "@/components/dj-ui/Waveform";
 
 export function PersistentPlayer() {
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const {
     currentTrack,
     isPlaying,

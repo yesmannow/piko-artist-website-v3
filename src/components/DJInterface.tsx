@@ -20,6 +20,7 @@ import { useVoiceTag } from "@/hooks/useVoiceTag";
 import { VoiceTagPanel } from "./VoiceTagPanel";
 import { MicInput } from "./MicInput";
 import { OverlayShell } from "./ui/OverlayShell";
+import { useDualDeck } from "@/hooks/useDualDeck";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -49,7 +50,7 @@ interface TrackSettings {
 
 export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const pathname = usePathname();
 
   // Deck A state
@@ -148,6 +149,15 @@ export function DJInterface() {
   // Sync state
   const [deckASynced, setDeckASynced] = useState(false);
   const [deckBSynced, setDeckBSynced] = useState(false);
+
+  // Dual Deck hook for Slip Mode and velocity scratching
+  const {
+    handleScratch,
+    isSlipModeA,
+    setIsSlipModeA,
+    isSlipModeB,
+    setIsSlipModeB,
+  } = useDualDeck();
 
   // Refs
   const deckARef = useRef<DJDeckRef>(null);
@@ -2006,6 +2016,10 @@ export function DJInterface() {
               audioBuffer={deckAAudioBuffer}
               onReverse={setDeckAReversed}
               isReversed={deckAReversed}
+              isSlipMode={isSlipModeA}
+              onSlipModeToggle={() => setIsSlipModeA(!isSlipModeA)}
+              onScratch={(velocity, isTouching) => handleScratch(velocity, isTouching, "A")}
+              deckId="A"
             />
             {/* Enhanced Drop indicator */}
             <div
@@ -2102,6 +2116,10 @@ export function DJInterface() {
               audioBuffer={deckBAudioBuffer}
               onReverse={setDeckBReversed}
               isReversed={deckBReversed}
+              isSlipMode={isSlipModeB}
+              onSlipModeToggle={() => setIsSlipModeB(!isSlipModeB)}
+              onScratch={(velocity, isTouching) => handleScratch(velocity, isTouching, "B")}
+              deckId="B"
             />
             {/* Enhanced Drop indicator */}
             <div

@@ -56,7 +56,7 @@ const grainStyle = {
 
 export function MobileNav() {
   const pathname = usePathname();
-  const triggerHaptic = useHaptic();
+  const { triggerHaptic } = useHaptic();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);

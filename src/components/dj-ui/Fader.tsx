@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Tooltip } from "./Tooltip";
 
 interface FaderProps {
@@ -12,9 +12,39 @@ interface FaderProps {
   helpText?: string;
 }
 
+/**
+ * Fader with Elastic Boundaries
+ *
+ * When user drags to 0% or 100%, visual elements "stretch" 5px past the limit
+ * and snap back to simulate rubber gaskets.
+ */
 export function Fader({ value, onChange, label, height = 200, helpText }: FaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
+
+  // Motion values for elastic boundaries
+  const rawPosition = useMotionValue((1 - value) * height);
+  const springPosition = useSpring(rawPosition, {
+    stiffness: 300,
+    damping: 30,
+    restDelta: 0.01,
+  });
+
+  // Calculate elastic stretch when at boundaries
+  const displayPosition = useTransform(springPosition, (pos) => {
+    const clamped = Math.max(0, Math.min(height, pos));
+    const stretch = pos - clamped;
+    // Limit stretch to 5px
+    const limitedStretch = Math.max(-5, Math.min(5, stretch));
+    return clamped + limitedStretch;
+  });
+
+  // Update raw position when value prop changes (but not while dragging)
+  useEffect(() => {
+    if (!isDragging) {
+      rawPosition.set((1 - value) * height);
+    }
+  }, [value, height, isDragging, rawPosition]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -33,6 +63,11 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
       if (!faderRef.current) return;
       const rect = faderRef.current.getBoundingClientRect();
       const y = clientY - rect.top;
+
+      // Allow stretching past boundaries during drag
+      rawPosition.set(y - 12); // Offset by half cap height
+
+      // Calculate actual value (clamped) for onChange
       const newValue = 1 - Math.max(0, Math.min(1, y / rect.height));
       onChange(newValue);
     };
@@ -49,10 +84,18 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      // Snap back to clamped position
+      const currentPos = rawPosition.get();
+      const clampedPos = Math.max(0, Math.min(height, currentPos));
+      rawPosition.set(clampedPos);
     };
 
     const handleTouchEnd = () => {
       setIsDragging(false);
+      // Snap back to clamped position
+      const currentPos = rawPosition.get();
+      const clampedPos = Math.max(0, Math.min(height, currentPos));
+      rawPosition.set(clampedPos);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -66,9 +109,9 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [isDragging, onChange]);
+  }, [isDragging, onChange, height, rawPosition]);
 
-  const position = (1 - value) * height;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   const faderContent = (
     <div className="flex flex-col items-center gap-2">
@@ -80,7 +123,11 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
       <div
         ref={faderRef}
         className="relative cursor-pointer select-none touch-manipulation"
-        style={{ height, width: typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40 }}
+        style={{
+          height,
+          width: isMobile ? 50 : 40,
+          touchAction: "none",
+        }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
@@ -92,15 +139,17 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
           <div className="absolute inset-x-0 bottom-0 h-px bg-gray-700" />
         </div>
 
-        {/* Fader cap */}
+        {/* Fader cap with elastic boundaries */}
         <motion.div
           className="absolute left-1/2 -translate-x-1/2 bg-[#2a2a2a] border border-gray-600 rounded-sm shadow-lg cursor-grab active:cursor-grabbing touch-manipulation"
           style={{
-            top: position - 12,
-            width: typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 32,
-            height: typeof window !== "undefined" && window.innerWidth < 768 ? 20 : 24,
+            top: displayPosition,
+            width: isMobile ? 44 : 32,
+            height: isMobile ? 20 : 24,
+            minWidth: isMobile ? 44 : 32,
+            minHeight: isMobile ? 20 : 24,
           }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={!isMobile ? { scale: 1.05 } : {}}
           whileTap={{ scale: 0.95 }}
         >
           {/* Cap detail lines */}

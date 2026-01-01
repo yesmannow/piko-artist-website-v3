@@ -95,6 +95,12 @@ export function useDualDeck() {
   const lastActualTimeARef = useRef<number>(0);
   const lastActualTimeBRef = useRef<number>(0);
 
+  // Virtual start time and offset for Slip Mode (AudioContext time)
+  const virtualStartTimeARef = useRef<number>(0);
+  const virtualStartTimeBRef = useRef<number>(0);
+  const virtualOffsetARef = useRef<number>(0);
+  const virtualOffsetBRef = useRef<number>(0);
+
   // Initialize constant-power signal splitter and filter nodes
   useEffect(() => {
     if (!audioContext || !masterGainNode) {
@@ -264,12 +270,23 @@ export function useDualDeck() {
     };
 
     source.start(0);
+
+    // Initialize virtual playhead for Slip Mode
+    const now = audioContext.currentTime;
+    if (isSlipModeA) {
+      virtualPlayheadARef.current = 0;
+      playheadStartTimeARef.current = now;
+      lastActualTimeARef.current = 0;
+      virtualStartTimeARef.current = now;
+      virtualOffsetARef.current = 0;
+    }
+
     setDeckA((prev) => ({
       ...prev,
       isPlaying: true,
       sourceNode: source,
     }));
-  }, [audioContext, deckA.audioBuffer, deckA.playbackRate, deckA.sourceNode]);
+  }, [audioContext, deckA.audioBuffer, deckA.playbackRate, deckA.sourceNode, isSlipModeA]);
 
   /**
    * Play Deck B
@@ -308,10 +325,13 @@ export function useDualDeck() {
     source.start(0);
 
     // Initialize virtual playhead for Slip Mode
+    const now = audioContext.currentTime;
     if (isSlipModeB) {
       virtualPlayheadBRef.current = 0;
-      playheadStartTimeBRef.current = audioContext.currentTime;
+      playheadStartTimeBRef.current = now;
       lastActualTimeBRef.current = 0;
+      virtualStartTimeBRef.current = now;
+      virtualOffsetBRef.current = 0;
     }
 
     setDeckB((prev) => ({
@@ -581,6 +601,67 @@ export function useDualDeck() {
     }));
   }, [audioContext, deckB.sourceNode, deckB.audioBuffer, deckB.playbackRate, isSlipModeB, filterMode]);
 
+  /**
+   * Handle Scratch / Jog Wheel Interaction with Slip Mode support
+   *
+   * @param velocity - Normalized speed of rotation (-5 to 5, maps to playbackRate)
+   * @param isTouching - Boolean, user is holding the platter
+   * @param deck - "A" or "B" to specify which deck
+   */
+  const handleScratch = useCallback(
+    (velocity: number, isTouching: boolean, deck: "A" | "B") => {
+      if (!audioContext) return;
+
+      const now = audioContext.currentTime;
+      const isSlipMode = deck === "A" ? isSlipModeA : isSlipModeB;
+      const sourceNode = deck === "A" ? deckA.sourceNode : deckB.sourceNode;
+      const audioBuffer = deck === "A" ? deckA.audioBuffer : deckB.audioBuffer;
+      const playbackRate = deck === "A" ? deckA.playbackRate : deckB.playbackRate;
+
+      if (!sourceNode || !audioBuffer) return;
+
+      if (isTouching) {
+        // 1. Apply scratch velocity to pitch
+        // Base rate is 1.0. Velocity adds/subtracts from it.
+        // Clamp velocity to reasonable range (-5 to 5)
+        const clampedVelocity = Math.max(-5, Math.min(5, velocity));
+        sourceNode.playbackRate.value = playbackRate + clampedVelocity * 0.1;
+
+        // 2. If Slip Mode is ON, we do NOTHING to the virtualPlayhead
+        // The song naturally continues "playing" in time mathematically
+        // Virtual playhead continues advancing in the background
+      } else {
+        // RELEASE EVENT
+
+        if (isSlipMode) {
+          // 3. SLIP MODE RELEASE:
+          // Calculate where we SHOULD be
+          // Current Time - Start Time = How long the track has been running theoretically
+          const virtualStartTime = deck === "A" ? virtualStartTimeARef.current : virtualStartTimeBRef.current;
+          const virtualOffset = deck === "A" ? virtualOffsetARef.current : virtualOffsetBRef.current;
+          const timeElapsed = now - virtualStartTime;
+          const targetPosition = (timeElapsed * playbackRate + virtualOffset) % audioBuffer.duration;
+
+          // Update virtual playhead refs before seeking
+          if (deck === "A") {
+            virtualPlayheadARef.current = targetPosition;
+            lastActualTimeARef.current = targetPosition;
+            seekToVirtualPlayheadA();
+          } else {
+            virtualPlayheadBRef.current = targetPosition;
+            lastActualTimeBRef.current = targetPosition;
+            seekToVirtualPlayheadB();
+          }
+        } else {
+          // 4. STANDARD RELEASE:
+          // Just return to normal speed (playbackRate) slowly (friction)
+          sourceNode.playbackRate.setTargetAtTime(playbackRate, now, 0.1);
+        }
+      }
+    },
+    [audioContext, isSlipModeA, isSlipModeB, deckA.sourceNode, deckA.audioBuffer, deckA.playbackRate, deckB.sourceNode, deckB.audioBuffer, deckB.playbackRate, seekToVirtualPlayheadA, seekToVirtualPlayheadB]
+  );
+
   return {
     deckA,
     deckB,
@@ -604,6 +685,7 @@ export function useDualDeck() {
     setIsSlipModeB,
     seekToVirtualPlayheadA,
     seekToVirtualPlayheadB,
+    handleScratch,
     virtualPlayheadA: virtualPlayheadARef.current,
     virtualPlayheadB: virtualPlayheadBRef.current,
   };

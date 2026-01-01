@@ -7,12 +7,14 @@ import { JogWheel3D } from "./JogWheel3D";
 import { DeskProps } from "./DeskProps";
 import { Expand, Music } from "lucide-react";
 import { OverlayShell } from "../ui/OverlayShell";
+import { useHaptic } from "@/hooks/useHaptic";
 
 interface JogWheelProps {
   rotation: number; // Rotation in degrees
   isPlaying: boolean;
   size?: number;
   onScrub?: (delta: number) => void; // Delta rotation for scrubbing
+  onVelocityChange?: (velocity: number) => void; // Angular velocity for playbackRate control
   onDragStart?: () => void;
   onDragEnd?: () => void;
   bpm?: number; // Track BPM (default 120)
@@ -25,6 +27,7 @@ export function JogWheel({
   isPlaying,
   size = 200,
   onScrub,
+  onVelocityChange,
   onDragStart,
   onDragEnd,
   bpm = 120,
@@ -37,6 +40,15 @@ export function JogWheel({
   const [previousCoverArt, setPreviousCoverArt] = useState<string | undefined>(coverArt);
   const wheelRef = useRef<HTMLDivElement>(null);
   const lastAngleRef = useRef<number | null>(null);
+  const lastHapticTimeRef = useRef<number>(0);
+  const { triggerHaptic, stopHaptic } = useHaptic();
+
+  // Velocity-based scratch physics
+  const angularVelocityRef = useRef<number>(0); // Current angular velocity (degrees per ms)
+  const lastDeltaAngleRef = useRef<number>(0);
+  const lastDeltaTimeRef = useRef<number>(0);
+  const inertiaAnimationRef = useRef<number | null>(null);
+  const FRICTION_COEFFICIENT = 0.95; // Per frame friction
 
   // Handle smooth cover art transitions
   useEffect(() => {
@@ -84,7 +96,35 @@ export function JogWheel({
       // Update drag rotation
       setDragRotation((prev) => prev + deltaAngle);
 
-      // Call scrub callback
+      // Calculate angular velocity (degrees per millisecond)
+      const now = Date.now();
+      const timeDelta = now - lastDeltaTimeRef.current;
+
+      if (timeDelta > 0) {
+        // Angular velocity: degrees per millisecond
+        const velocity = deltaAngle / timeDelta;
+        angularVelocityRef.current = velocity;
+
+        // Map velocity to playbackRate: fast forward = +2.0x, backward = -1.5x
+        // Scale factor: 1 degree/ms ≈ 0.01x playback rate
+        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, velocity * 0.01));
+        const targetPlaybackRate = isPlaying ? 1.0 + playbackRateMultiplier : playbackRateMultiplier;
+
+        // Notify parent component of velocity change
+        if (onVelocityChange) {
+          onVelocityChange(targetPlaybackRate);
+        }
+
+        // Haptic feedback based on velocity
+        const absVelocity = Math.abs(velocity);
+        triggerHaptic(undefined, absVelocity);
+      }
+
+      lastDeltaAngleRef.current = deltaAngle;
+      lastDeltaTimeRef.current = now;
+      lastHapticTimeRef.current = now;
+
+      // Call scrub callback (for position-based seeking)
       if (onScrub) {
         onScrub(deltaAngle);
       }
@@ -114,7 +154,35 @@ export function JogWheel({
       // Update drag rotation
       setDragRotation((prev) => prev + deltaAngle);
 
-      // Call scrub callback
+      // Calculate angular velocity (degrees per millisecond)
+      const now = Date.now();
+      const timeDelta = now - lastDeltaTimeRef.current;
+
+      if (timeDelta > 0) {
+        // Angular velocity: degrees per millisecond
+        const velocity = deltaAngle / timeDelta;
+        angularVelocityRef.current = velocity;
+
+        // Map velocity to playbackRate: fast forward = +2.0x, backward = -1.5x
+        // Scale factor: 1 degree/ms ≈ 0.01x playback rate
+        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, velocity * 0.01));
+        const targetPlaybackRate = isPlaying ? 1.0 + playbackRateMultiplier : playbackRateMultiplier;
+
+        // Notify parent component of velocity change
+        if (onVelocityChange) {
+          onVelocityChange(targetPlaybackRate);
+        }
+
+        // Haptic feedback based on velocity
+        const absVelocity = Math.abs(velocity);
+        triggerHaptic(undefined, absVelocity);
+      }
+
+      lastDeltaAngleRef.current = deltaAngle;
+      lastDeltaTimeRef.current = now;
+      lastHapticTimeRef.current = now;
+
+      // Call scrub callback (for position-based seeking)
       if (onScrub) {
         onScrub(deltaAngle);
       }
@@ -124,8 +192,46 @@ export function JogWheel({
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      setDragRotation(0);
       lastAngleRef.current = null;
+      stopHaptic(); // Stop continuous haptics
+
+      // Apply inertia: spin down to 1.0x (or 0.0x if paused) naturally
+      if (inertiaAnimationRef.current) {
+        cancelAnimationFrame(inertiaAnimationRef.current);
+      }
+
+      const applyInertia = () => {
+        const currentVelocity = angularVelocityRef.current;
+
+        // Apply friction
+        angularVelocityRef.current = currentVelocity * FRICTION_COEFFICIENT;
+
+        // Map to playbackRate
+        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, angularVelocityRef.current * 0.01));
+        const targetPlaybackRate = isPlaying
+          ? 1.0 + playbackRateMultiplier
+          : Math.max(0, playbackRateMultiplier); // Don't go below 0 when paused
+
+        if (onVelocityChange) {
+          onVelocityChange(targetPlaybackRate);
+        }
+
+        // Continue until velocity is negligible
+        if (Math.abs(angularVelocityRef.current) > 0.01) {
+          inertiaAnimationRef.current = requestAnimationFrame(applyInertia);
+        } else {
+          // Snap to neutral playback rate
+          if (onVelocityChange) {
+            onVelocityChange(isPlaying ? 1.0 : 0.0);
+          }
+          angularVelocityRef.current = 0;
+          inertiaAnimationRef.current = null;
+        }
+      };
+
+      // Start inertia animation
+      inertiaAnimationRef.current = requestAnimationFrame(applyInertia);
+
       onDragEnd?.();
     };
 
@@ -139,8 +245,14 @@ export function JogWheel({
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleMouseUp);
+
+      // Cleanup inertia animation
+      if (inertiaAnimationRef.current) {
+        cancelAnimationFrame(inertiaAnimationRef.current);
+        inertiaAnimationRef.current = null;
+      }
     };
-  }, [isDragging, onScrub, onDragEnd]);
+  }, [isDragging, onScrub, onDragEnd, isPlaying, onVelocityChange, stopHaptic]);
 
   // Calculate display rotation: use drag rotation when dragging, otherwise use rotation prop
   const displayRotation = isDragging ? dragRotation : (isPlaying ? rotation : 0);

@@ -1,6 +1,7 @@
 "use client";
 
 import { Knob } from "./dj-ui/Knob";
+import { XYPad } from "./dj-ui/XYPad";
 
 // Map 20Hz-20kHz range to a 0-1 logarithmic knob travel
 const FILTER_LOG_OFFSET = 1.3;
@@ -340,6 +341,30 @@ export function FXUnit({
             <Knob value={delayTime} onChange={onDelayTimeChange} label="TIME" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />
             <Knob value={delayFeedback} onChange={onDelayFeedbackChange} label="FDBK" min={0} max={DELAY_FEEDBACK_MAX} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />
           </div>
+        </div>
+
+        {/* XY KAOSS PAD - CENTER PIECE */}
+        <div className="col-span-2 md:col-span-2 lg:col-span-2 flex flex-col items-center justify-center gap-3 border-2 border-[#E0E0E0] p-4 bg-[#050505]">
+          <XYPad
+            label="KAOSS_FX"
+            xLabel="FILTER"
+            yLabel="REVERB"
+            onChange={(x, y) => {
+              // X maps to Filter Frequency (0-1) -> 20Hz to 20kHz (logarithmic)
+              const minFreq = 20;
+              const maxFreq = 20000;
+              const logMin = Math.log10(minFreq);
+              const logMax = Math.log10(maxFreq);
+              const logValue = logMin + (logMax - logMin) * x;
+              const filterFreq = Math.pow(10, logValue);
+              onFilterFreqChange(filterFreq);
+
+              // Y maps to Reverb Wet/Dry (0-1) -> 0% to 50%
+              const reverbWet = y * 0.5;
+              onReverbDryWetChange(reverbWet);
+            }}
+            className="w-full max-w-[200px]"
+          />
         </div>
 
         {/* FLANGER */}
