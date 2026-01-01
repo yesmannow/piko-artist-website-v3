@@ -594,7 +594,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 onClick={handleSetLoopIn}
                 className={`px-2 py-1 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation min-h-[44px] ${
                   loopIn !== null
-                    ? "bg-[#1a1a1a] border-[#ccff00] text-[#ccff00]"
+                    ? "bg-[#1a1a1a] border-[#FFD700] text-[#FFD700]"
                     : "bg-[#0a0a0a] border-gray-700 text-gray-500 hover:border-gray-600"
                 }`}
                 aria-label="Set loop in point"
@@ -607,7 +607,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 disabled={loopIn === null}
                 className={`px-2 py-1 text-[10px] font-barlow uppercase rounded border transition-all touch-manipulation min-h-[44px] ${
                   loopOut !== null
-                    ? "bg-[#1a1a1a] border-[#ccff00] text-[#ccff00]"
+                    ? "bg-[#1a1a1a] border-[#FFD700] text-[#FFD700]"
                     : loopIn === null
                     ? "bg-[#0a0a0a] border-gray-700 text-gray-500 opacity-50 cursor-not-allowed"
                     : "bg-[#0a0a0a] border-gray-700 text-gray-500 hover:border-gray-600"
@@ -625,15 +625,15 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   key={beats}
                   onClick={() => handleLoop(beats)}
                   aria-label={isLooping && loopBeats === beats ? `${beats} beat loop active. Click to disable.` : `Enable ${beats} beat loop`}
-                  className={`relative w-14 h-12 md:w-12 md:h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#ccff00] touch-manipulation min-h-[44px] ${
+                  className={`relative w-14 h-12 md:w-12 md:h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#FFD700] touch-manipulation min-h-[44px] ${
                     isLooping && loopBeats === beats
-                      ? "bg-[#1a1a1a] border-[#ccff00]"
+                      ? "bg-[#1a1a1a] border-[#FFD700]"
                       : "bg-[#0a0a0a] border-gray-700"
                   }`}
                   style={{
                     boxShadow:
                       isLooping && loopBeats === beats
-                        ? `0 0 15px rgba(204, 255, 0, 0.3), inset 0 0 8px rgba(204, 255, 0, 0.1)`
+                        ? `0 0 15px rgba(255, 215, 0, 0.3), inset 0 0 8px rgba(255, 215, 0, 0.1)`
                         : "inset 0 2px 4px rgba(0,0,0,0.5)",
                   }}
                   title={`${beats} Beat Loop`}
@@ -641,12 +641,12 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   <Repeat
                     className="w-4 h-4"
                     style={{
-                      color: isLooping && loopBeats === beats ? "#ccff00" : deckColor,
+                      color: isLooping && loopBeats === beats ? "#FFD700" : deckColor,
                     }}
                   />
                   <span
                     className={`absolute bottom-0.5 text-[8px] font-barlow font-bold ${
-                      isLooping && loopBeats === beats ? "text-[#ccff00]" : "text-gray-500"
+                      isLooping && loopBeats === beats ? "text-[#FFD700]" : "text-gray-500"
                     }`}
                   >
                     {beats}
@@ -656,7 +656,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             </div>
             {/* Loop Status Display */}
             {isLooping && loopIn !== null && loopOut !== null && (
-              <div className="text-[10px] font-barlow text-[#ccff00] text-center mt-1">
+              <div className="text-[10px] font-barlow text-[#FFD700] text-center mt-1">
                 {loopIn.toFixed(1)}s - {loopOut.toFixed(1)}s
               </div>
             )}
@@ -666,7 +666,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         {/* Track Title */}
         {title && (
           <div className="w-full text-center">
-            <h4 className="text-xl md:text-2xl font-bold text-[#ccff00] uppercase tracking-wider truncate px-4">
+            <h4 className="text-xl md:text-2xl font-bold text-[#FFD700] uppercase tracking-wider truncate px-4">
               {title}
             </h4>
           </div>

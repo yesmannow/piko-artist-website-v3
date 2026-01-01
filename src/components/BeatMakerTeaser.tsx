@@ -25,7 +25,7 @@ const getColorValue = (color: "spray-magenta" | "toxic-lime" | "safety-orange") 
     case "spray-magenta":
       return "#ff0099";
     case "toxic-lime":
-      return "#ccff00";
+      return "#FFD700"; // Safety Yellow
     case "safety-orange":
       return "#ff6600";
   }

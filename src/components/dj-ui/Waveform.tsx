@@ -30,7 +30,7 @@ export function Waveform({
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: "#3f3f46", // Zinc 700 - unplayed
-      progressColor: "#ccff00", // Toxic Lime - played
+      progressColor: "#FFD700", // Safety Yellow - played
       cursorColor: "rgba(255, 255, 255, 0.3)", // Thin white cursor
       barWidth: 2,
       barGap: 1,

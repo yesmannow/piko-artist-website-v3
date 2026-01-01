@@ -21,6 +21,7 @@ interface StudioCanvasProps {
   playbackRate?: number; // For tape stop effect
   impactPulse?: boolean; // For session launch impact effect
   remixIntensity?: number; // 0-1, environmental reactivity trigger
+  visualizerLevel?: number; // 0-1, bass intensity for reactive camera shake
 }
 
 /**
@@ -37,9 +38,11 @@ function SceneContent({
   isLandscape,
   impactPulse,
   remixIntensity = 0,
-}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean; impactPulse?: boolean; remixIntensity?: number }) {
-  const { scene } = useThree();
+  visualizerLevel = 0,
+}: Omit<StudioCanvasProps, "playbackRate"> & { isLandscape: boolean; impactPulse?: boolean; remixIntensity?: number; visualizerLevel?: number }) {
+  const { scene, camera } = useThree();
   const sceneRef = useRef(scene);
+  const baseCameraYRef = useRef(camera.position.y);
 
   // Update scene ref when scene changes
   useEffect(() => {
@@ -48,6 +51,19 @@ function SceneContent({
 
   // Attach memory cleanup hook
   useSceneCleanup(sceneRef);
+
+  // Reactive Camera Shake - Simulates speaker vibration when bass intensity > 0.7
+  useFrame(() => {
+    if (visualizerLevel > 0.7) {
+      // Subtle vertical shake based on bass intensity
+      const shakeIntensity = (visualizerLevel - 0.7) * 0.3; // Max 0.09 units of shake
+      const shake = (Math.random() - 0.5) * shakeIntensity;
+      camera.position.y = baseCameraYRef.current + shake;
+    } else {
+      // Smooth return to base position
+      camera.position.y = baseCameraYRef.current;
+    }
+  });
 
   // Spring animation for smooth position transitions
   const deckAPosition = useSpring({
@@ -140,6 +156,7 @@ export function StudioCanvas({
   playbackRate = 1.0,
   impactPulse = false,
   remixIntensity = 0,
+  visualizerLevel = 0,
 }: StudioCanvasProps) {
   const isLandscape = useOrientation();
 
@@ -174,6 +191,7 @@ export function StudioCanvas({
           isLandscape={isLandscape}
           impactPulse={impactPulse}
           remixIntensity={remixIntensity}
+          visualizerLevel={visualizerLevel}
         />
       </Canvas>
       {/* Brightness filter for environmental reactivity */}

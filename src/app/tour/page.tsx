@@ -63,10 +63,10 @@ export default function TourPage() {
           <div
             className="w-full h-full relative"
             style={{
-              background: 'linear-gradient(135deg, rgba(204,255,0,0.1) 0%, rgba(204,255,0,0.05) 100%)',
-              border: '2px solid rgba(204,255,0,0.3)',
+              background: 'linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,215,0,0.05) 100%)',
+              border: '2px solid rgba(255,215,0,0.3)',
               borderRadius: '4px',
-              boxShadow: '0 0 20px rgba(204,255,0,0.2), inset 0 0 20px rgba(204,255,0,0.1)',
+              boxShadow: '0 0 20px rgba(255,215,0,0.2), inset 0 0 20px rgba(255,215,0,0.1)',
             }}
           >
             {/* Graffiti texture overlay */}
@@ -79,7 +79,7 @@ export default function TourPage() {
             />
             {/* Tag text effect */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[#ccff00] font-black text-xs md:text-sm uppercase tracking-widest blur-[0.5px]">
+              <span className="text-[#FFD700] font-black text-xs md:text-sm uppercase tracking-widest blur-[0.5px]">
                 PIKO
               </span>
             </div>
@@ -108,7 +108,7 @@ export default function TourPage() {
           >
             {/* Beat-synced flash effect */}
             <motion.div
-              className="absolute inset-0 bg-[#ccff00] opacity-0 pointer-events-none"
+              className="absolute inset-0 bg-[#FFD700] opacity-0 pointer-events-none"
               animate={{
                 opacity: [0, 0.1, 0],
               }}
@@ -160,7 +160,7 @@ export default function TourPage() {
           >
             {/* Beat-synced flash effect */}
             <motion.div
-              className="absolute inset-0 bg-[#ccff00] opacity-0 pointer-events-none"
+              className="absolute inset-0 bg-[#FFD700] opacity-0 pointer-events-none"
               animate={{
                 opacity: [0, 0.1, 0],
               }}
@@ -217,7 +217,7 @@ export default function TourPage() {
           >
             {/* Beat-synced flash effect */}
             <motion.div
-              className="absolute inset-0 bg-[#ccff00] opacity-0 pointer-events-none"
+              className="absolute inset-0 bg-[#FFD700] opacity-0 pointer-events-none"
               animate={{
                 opacity: [0, 0.1, 0],
               }}

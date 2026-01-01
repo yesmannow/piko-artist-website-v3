@@ -43,7 +43,7 @@ export function BackdropFX({ className = "" }: BackdropFXProps) {
       <motion.div
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(180deg, transparent 0%, rgba(204,255,0,0.02) 50%, transparent 100%)',
+          background: 'linear-gradient(180deg, transparent 0%, rgba(255,215,0,0.02) 50%, transparent 100%)',
         }}
         animate={{
           opacity: [0, 0.03, 0],
@@ -59,7 +59,7 @@ export function BackdropFX({ className = "" }: BackdropFXProps) {
       <motion.div
         className="absolute inset-0 pointer-events-none"
         style={{
-          boxShadow: 'inset 0 0 40px rgba(204,255,0,0.1), 0 0 60px rgba(204,255,0,0.05)',
+          boxShadow: 'inset 0 0 40px rgba(255,215,0,0.1), 0 0 60px rgba(255,215,0,0.05)',
         }}
         animate={{
           opacity: [0.3, 0.5, 0.3],

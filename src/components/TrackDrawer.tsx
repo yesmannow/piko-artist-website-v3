@@ -67,7 +67,7 @@ export function TrackDrawer({ track, children }: TrackDrawerProps) {
             <div
               className="w-full h-full rounded-full"
               style={{
-                background: "linear-gradient(90deg, #ccff00 0%, #ccff00 25%, #000 25%, #000 50%, #ccff00 50%, #ccff00 75%, #000 75%, #000 100%)",
+                background: "linear-gradient(90deg, #FFD700 0%, #FFD700 25%, #000 25%, #000 50%, #FFD700 50%, #FFD700 75%, #000 75%, #000 100%)",
                 boxShadow: "0 0 8px rgba(204, 255, 0, 0.5)",
               }}
             />

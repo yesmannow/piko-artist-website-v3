@@ -37,7 +37,7 @@ export function StemDeck({
   onSolo,
   onVolumeChange,
   onSidechainToggle,
-  color = "#ccff00",
+  color = "#FFD700", // Safety Yellow
 }: StemDeckProps) {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
@@ -311,7 +311,7 @@ export function StemDeckContainer({
         onMute={() => onMute("other")}
         onSolo={() => onSolo("other")}
         onVolumeChange={(vol) => onVolumeChange("other", vol)}
-        color="#ccff00"
+        color="#FFD700"
       />
     </motion.div>
   );

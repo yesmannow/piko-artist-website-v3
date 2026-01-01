@@ -61,7 +61,7 @@ function VideoCard({ video, onPlay }: { video: MediaItem; onPlay: (id: string) =
 
       {/* Play Overlay */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
-        <div className="w-12 h-12 bg-[#ccff00] rounded-full flex items-center justify-center shadow-[0_0_20px_#ccff00]">
+        <div className="w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center shadow-[0_0_20px_#FFD700]">
           <Play className="w-5 h-5 text-black fill-current" />
         </div>
       </div>
@@ -69,7 +69,7 @@ function VideoCard({ video, onPlay }: { video: MediaItem; onPlay: (id: string) =
       {/* Info Overlay */}
       <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
         <h3 className="text-white font-bold truncate">{video.title}</h3>
-        <p className="text-[#ccff00] text-xs font-mono uppercase tracking-wider mt-1">{video.vibe}</p>
+        <p className="text-[#FFD700] text-xs font-mono uppercase tracking-wider mt-1">{video.vibe}</p>
       </div>
     </div>
   );
@@ -109,7 +109,7 @@ function FeaturedVideoHero({ video, onPlay }: { video: MediaItem; onPlay: (id: s
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 p-8 md:p-16 w-full md:w-2/3">
-        <span className="inline-block px-3 py-1 mb-4 text-xs font-bold text-black bg-[#ccff00] rounded-full uppercase tracking-widest">
+        <span className="inline-block px-3 py-1 mb-4 text-xs font-bold text-black bg-[#FFD700] rounded-full uppercase tracking-widest">
           Latest Drop
         </span>
         <h1 className="text-4xl md:text-6xl font-black text-white mb-4 uppercase leading-none tracking-tighter">
@@ -265,7 +265,7 @@ export default function VideosPage() {
           <div className="mb-12">
             <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter mb-2">
               VISUAL{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-green-500">
                 ARCHIVE
               </span>
             </h1>

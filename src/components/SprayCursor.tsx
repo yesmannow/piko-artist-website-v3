@@ -25,7 +25,7 @@ export function SprayCursor() {
     // New "Street" palette colors
     const colors = [
       "#ff0099", // spray-magenta
-      "#ccff00", // toxic-lime
+      "#FFD700", // Safety Yellow
       "#ff6600", // safety-orange
     ];
 

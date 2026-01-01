@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { useFrame, ThreeEvent } from "@react-three/fiber";
+import { useFrame, ThreeEvent, extend } from "@react-three/fiber";
 import { useSpring, animated } from "@react-spring/three";
 import { useDrag } from "@use-gesture/react";
 import * as THREE from "three";
 import { HolographicMaterial } from "./materials/HolographicMaterial";
+
+// Ensure HolographicMaterial is registered in R3F namespace
+// This must be called before JSX usage
+extend({ HolographicMaterial });
 
 interface HolographicDeckProps {
   isPlaying?: boolean;

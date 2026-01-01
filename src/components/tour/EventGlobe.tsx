@@ -96,10 +96,10 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
           <mesh ref={ringRef}>
             <ringGeometry args={[0.08, 0.12, 32]} />
             <meshStandardMaterial
-              color="#ccff00"
+              color="#FFD700"
               transparent
               opacity={0.3}
-              emissive="#ccff00"
+              emissive="#FFD700"
               emissiveIntensity={0.5}
               side={THREE.DoubleSide}
             />
@@ -108,10 +108,10 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
           <mesh ref={glowRef}>
             <ringGeometry args={[0.12, 0.18, 32]} />
             <meshStandardMaterial
-              color="#ccff00"
+              color="#FFD700"
               transparent
               opacity={0.15}
-              emissive="#ccff00"
+              emissive="#FFD700"
               emissiveIntensity={0.3}
               side={THREE.DoubleSide}
             />
@@ -138,8 +138,8 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
         {/* Main marker - spray paint dot style */}
         <sphereGeometry args={[0.05, 16, 16]} />
         <meshStandardMaterial
-          color={isUpcoming ? "#ccff00" : isSelected ? "#ccff00" : "#888888"}
-          emissive={isSelected ? "#ccff00" : isHovered ? "#ccff00" : isUpcoming ? "#ccff00" : "#000000"}
+          color={isUpcoming ? "#FFD700" : isSelected ? "#FFD700" : "#888888"}
+          emissive={isSelected ? "#FFD700" : isHovered ? "#FFD700" : isUpcoming ? "#FFD700" : "#000000"}
           emissiveIntensity={isSelected ? 1.5 : isHovered ? 1 : isUpcoming ? 0.8 : 0}
         />
       </mesh>
@@ -162,8 +162,8 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
               >
                 <sphereGeometry args={[0.01, 8, 8]} />
                 <meshStandardMaterial
-                  color="#ccff00"
-                  emissive="#ccff00"
+              color="#FFD700"
+              emissive="#FFD700"
                   emissiveIntensity={0.5}
                   transparent
                   opacity={0.6}
@@ -178,10 +178,10 @@ function EventMarker({ event, position }: { event: Event; position: THREE.Vector
         <mesh>
           <sphereGeometry args={[0.08, 16, 16]} />
           <meshStandardMaterial
-            color={isUpcoming ? "#ccff00" : "#888888"}
+            color={isUpcoming ? "#FFD700" : "#888888"}
             transparent
             opacity={0.3}
-            emissive="#ccff00"
+            emissive="#FFD700"
             emissiveIntensity={0.5}
           />
         </mesh>
@@ -515,7 +515,7 @@ export function EventGlobe({ events }: EventGlobeProps) {
         <ScrollCameraController />
         <AmbientLightController />
         <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ccff00" />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#FFD700" />
         <Earth events={events} />
         <AutoRotateOrbitControls />
       </Canvas>

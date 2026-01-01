@@ -118,9 +118,9 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
                 />
                 <h3 className="font-header text-2xl text-foreground relative z-10 flex items-center gap-2">
                   {/* Graffiti icon between month and year */}
-                  <span className="text-[#ccff00] text-lg">✱</span>
+                  <span className="text-[#FFD700] text-lg">✱</span>
                   {monthNames[group.month]} {group.year}
-                  <span className="text-[#ccff00] text-lg">✱</span>
+                  <span className="text-[#FFD700] text-lg">✱</span>
                 </h3>
               </div>
 
@@ -151,12 +151,12 @@ export function TimelineCarousel({ events }: TimelineCarouselProps) {
                       onClick={handleClick}
                       className={`relative p-4 bg-concrete border-2 cursor-pointer transition-all hover:scale-105 rounded-lg shadow-lg ${
                         isSelected
-                          ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.5)] ring-2 ring-toxic-lime"
+                          ? "border-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.5)] ring-2 ring-toxic-lime"
                           : "border-black hover:shadow-xl hover:border-toxic-lime/30"
                       } ${isLive ? "ring-2 ring-safety-orange ring-opacity-50" : ""}`}
                       style={{
                         boxShadow: isSelected
-                          ? "2px 2px 0px 0px rgba(0,0,0,1), 0 0 30px rgba(204,255,0,0.4)"
+                          ? "2px 2px 0px 0px rgba(0,0,0,1), 0 0 30px rgba(255,215,0,0.4)"
                           : "2px 2px 0px 0px rgba(0,0,0,1)",
                       }}
                     >

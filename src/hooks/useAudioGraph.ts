@@ -28,6 +28,10 @@ export function useAudioGraph() {
   const limiterRef = useRef<DynamicsCompressorNode | null>(null);
   const sidechainNodeRef = useRef<AudioWorkletNode | null>(null);
 
+  // Persistent buffer for frequency data (zero-allocation visualizer loop)
+  // This prevents GC stuttering by reusing the same buffer every frame
+  const frequencyDataBufferRef = useRef<Uint8Array | null>(null);
+
   // Initialize audio graph when context is ready
   useEffect(() => {
     if (!audioContext || !isReady) {
@@ -120,6 +124,9 @@ export function useAudioGraph() {
    * of a frequency bin (0-255). This is used by visualizers to display
    * audio-reactive graphics.
    *
+   * OPTIMIZATION: Uses a persistent buffer via useRef to prevent GC stuttering.
+   * The buffer is reused every frame instead of allocating a new Uint8Array.
+   *
    * @returns {Uint8Array | null} - Frequency data array or null if not ready
    */
   const getFrequencyData = (): Uint8Array | null => {
@@ -128,9 +135,15 @@ export function useAudioGraph() {
     }
 
     const bufferLength = analyserRef.current.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyserRef.current.getByteFrequencyData(dataArray);
-    return dataArray;
+
+    // Initialize or resize buffer if needed (only when bufferLength changes)
+    if (!frequencyDataBufferRef.current || frequencyDataBufferRef.current.length !== bufferLength) {
+      frequencyDataBufferRef.current = new Uint8Array(bufferLength);
+    }
+
+    // Reuse the same buffer - this prevents GC pressure
+    analyserRef.current.getByteFrequencyData(frequencyDataBufferRef.current);
+    return frequencyDataBufferRef.current;
   };
 
   /**

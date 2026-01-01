@@ -229,7 +229,7 @@ export function PerformancePads({
               isStuttering
                 ? "bg-red-600 border-red-400"
                 : isSet
-                ? "bg-[#1a1a1a] border-[#ccff00]"
+                ? "bg-[#1a1a1a] border-[#FFD700]"
                 : "bg-[#0a0a0a] border-gray-700 hover:border-gray-600"
             }`}
             whileHover={{ scale: 1.05 }}
@@ -238,7 +238,7 @@ export function PerformancePads({
               boxShadow: isStuttering
                 ? `0 0 20px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.3)`
                 : isSet
-                ? `0 0 20px rgba(204, 255, 0, 0.4), inset 0 0 10px rgba(204, 255, 0, 0.1)`
+                ? `0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.1)`
                 : "inset 0 2px 4px rgba(0,0,0,0.5)",
             }}
             aria-label={
@@ -255,7 +255,7 @@ export function PerformancePads({
                 isStuttering
                   ? "text-white"
                   : isSet
-                  ? "text-[#ccff00]"
+                  ? "text-[#FFD700]"
                   : "text-gray-500"
               }`}
             >
@@ -269,7 +269,7 @@ export function PerformancePads({
                 style={{
                   background: isStuttering
                     ? `radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 70%)`
-                    : `radial-gradient(circle, rgba(204, 255, 0, 0.2) 0%, transparent 70%)`,
+                    : `radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%)`,
                 }}
                 animate={{
                   opacity: isStuttering ? [0.8, 1, 0.8] : [0.5, 1, 0.5],
@@ -283,7 +283,7 @@ export function PerformancePads({
 
             {/* Cue point indicator */}
             {isSet && !isStuttering && (
-              <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-[#ccff00]" />
+              <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-[#FFD700]" />
             )}
 
             {/* Stutter indicator */}

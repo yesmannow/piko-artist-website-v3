@@ -216,7 +216,7 @@ export function ConsoleTour() {
           {/* Spotlight Box */}
           <motion.div
             layoutId="tour-spotlight"
-            className="absolute border-2 border-[#ccff00] rounded-lg shadow-[0_0_100px_rgba(204,255,0,0.3)] bg-transparent"
+            className="absolute border-2 border-[#FFD700] rounded-lg shadow-[0_0_100px_rgba(255,215,0,0.3)] bg-transparent"
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             style={{
               top: targetRect.top - 5,
@@ -237,7 +237,7 @@ export function ConsoleTour() {
           >
             <div className="flex justify-between items-start mb-3">
               <div>
-                <span className="text-[10px] font-bold text-[#ccff00] tracking-widest uppercase block mb-1">
+                <span className="text-[10px] font-bold text-[#FFD700] tracking-widest uppercase block mb-1">
                   STEP {currentStep + 1} / {tourSteps.length}
                 </span>
                 <h3 className="text-lg font-bold text-white leading-none uppercase">{step.title}</h3>
@@ -260,7 +260,7 @@ export function ConsoleTour() {
 
               <button
                 onClick={handleNext}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#ccff00] text-black font-bold text-xs uppercase tracking-wider hover:bg-[#b3ff00] transition-colors shadow-[0_0_15px_rgba(204,255,0,0.3)]"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#FFD700] text-black font-bold text-xs uppercase tracking-wider hover:bg-[#e6c200] transition-colors shadow-[0_0_15px_rgba(255,215,0,0.3)]"
               >
                 {currentStep === tourSteps.length - 1 ? "FINISH" : "NEXT"}
                 {currentStep !== tourSteps.length - 1 && <ChevronRight className="w-3 h-3" />}

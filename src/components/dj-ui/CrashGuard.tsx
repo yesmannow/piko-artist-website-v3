@@ -35,10 +35,10 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-[#1a1a1a] border-2 border-[#ccff00] rounded-lg p-6 shadow-lg">
+          <div className="max-w-md w-full bg-[#1a1a1a] border-2 border-[#FFD700] rounded-lg p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-8 h-8 text-[#ccff00]" />
-              <h1 className="text-2xl font-header uppercase tracking-wider text-[#ccff00]">
+              <AlertTriangle className="w-8 h-8 text-[#FFD700]" />
+              <h1 className="text-2xl font-header uppercase tracking-wider text-[#FFD700]">
                 SYSTEM FAILURE
               </h1>
             </div>
@@ -58,7 +58,7 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
                   window.location.reload();
                 }}
                 aria-label="Retry loading the DJ console"
-                className="mt-4 w-full px-4 py-2 bg-[#ccff00] text-black font-industrial font-bold uppercase tracking-wider rounded border-2 border-black shadow-hard hover:bg-[#b8e600] transition-colors focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2"
+                className="mt-4 w-full px-4 py-2 bg-[#FFD700] text-black font-industrial font-bold uppercase tracking-wider rounded border-2 border-black shadow-hard hover:bg-[#e6c200] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2"
               >
                 Retry
               </button>

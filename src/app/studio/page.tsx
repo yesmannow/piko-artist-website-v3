@@ -14,6 +14,7 @@ import { SessionSummary } from "@/components/studio/SessionSummary";
 import { SamplerGrid } from "@/components/studio/SamplerGrid";
 import { OrientationGuard } from "@/components/studio/OrientationGuard";
 import { SyndicateEQ } from "@/components/studio/SyndicateEQ";
+import { XYPad } from "@/components/studio/XYPad";
 import { audioBufferToWAV } from "@/utils/audioRenderer";
 import { tracks, MediaItem } from "@/lib/data";
 import { motion } from "framer-motion";
@@ -59,6 +60,10 @@ export default function StudioPage() {
     setCrossfader,
     filterMode,
     setFilterMode,
+    isSlipModeA,
+    setIsSlipModeA,
+    isSlipModeB,
+    setIsSlipModeB,
   } = useDualDeck();
   const { processAudio, isProcessing, progress, separatedStems: crackerStems } = useSignalCracker();
 
@@ -78,6 +83,68 @@ export default function StudioPage() {
   const [deckAAudioLevel, setDeckAAudioLevel] = useState(0);
   const [deckBAudioLevel, setDeckBAudioLevel] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1.0);
+
+  // XYPad state - FX control
+  const [xyPadPosition, setXYPadPosition] = useState({ x: 0.5, y: 0.5 });
+  const fxFilterRef = useRef<BiquadFilterNode | null>(null);
+  const fxReverbGainRef = useRef<GainNode | null>(null);
+  const fxReverbConvolverRef = useRef<ConvolverNode | null>(null);
+  const fxDryGainRef = useRef<GainNode | null>(null);
+
+  // Initialize FX nodes for XYPad
+  useEffect(() => {
+    if (!audioContext || !isFullyReady || !masterGainNode) return;
+
+    // Create filter for X-axis control (20Hz to 20kHz)
+    const filter = audioContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 10000; // Start at center
+    filter.Q.value = 1.0;
+    fxFilterRef.current = filter;
+
+    // Create reverb for Y-axis control
+    const createReverbImpulse = () => {
+      const impulseLength = audioContext.sampleRate * 2; // 2 seconds
+      const impulse = audioContext.createBuffer(2, impulseLength, audioContext.sampleRate);
+      const impulseL = impulse.getChannelData(0);
+      const impulseR = impulse.getChannelData(1);
+
+      for (let i = 0; i < impulseLength; i++) {
+        const n = impulseLength - i;
+        impulseL[i] = (Math.random() * 2 - 1) * Math.pow(n / impulseLength, 2);
+        impulseR[i] = (Math.random() * 2 - 1) * Math.pow(n / impulseLength, 2);
+      }
+      return impulse;
+    };
+
+    const convolver = audioContext.createConvolver();
+    convolver.buffer = createReverbImpulse();
+    convolver.normalize = true;
+    fxReverbConvolverRef.current = convolver;
+
+    // Dry/Wet mix for reverb
+    const dryGain = audioContext.createGain();
+    dryGain.gain.value = 1.0;
+    fxDryGainRef.current = dryGain;
+
+    const wetGain = audioContext.createGain();
+    wetGain.gain.value = 0.0; // Start dry
+    fxReverbGainRef.current = wetGain;
+
+    // Connect: filter -> [dryGain -> master] + [wetGain -> convolver -> master]
+    filter.connect(dryGain);
+    filter.connect(wetGain);
+    wetGain.connect(convolver);
+    dryGain.connect(masterGainNode);
+    convolver.connect(masterGainNode);
+
+    return () => {
+      filter.disconnect();
+      dryGain.disconnect();
+      wetGain.disconnect();
+      convolver.disconnect();
+    };
+  }, [audioContext, isFullyReady, masterGainNode]);
 
   // Session tracking
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -342,11 +409,12 @@ export default function StudioPage() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyPress);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", handleKeyPress);
+      return () => {
+        window.removeEventListener("keydown", handleKeyPress);
+      };
+    }
   }, [addLog]);
 
   /**
@@ -529,6 +597,7 @@ export default function StudioPage() {
             playbackRate={playbackRate}
             impactPulse={impactPulse}
             remixIntensity={remixIntensity}
+            visualizerLevel={visualizerLevel}
           />
         </Suspense>
       </div>
@@ -783,17 +852,61 @@ export default function StudioPage() {
                   <div className="text-xs font-mono text-[#E0E0E0]/60 uppercase">
                     LOADED: {deckB.trackName}
                   </div>
+
+                  {/* Slip Mode Toggle */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-[#E0E0E0]/70 uppercase">SLIP_MODE:</span>
+                    <button
+                      onClick={() => setIsSlipModeB(!isSlipModeB)}
+                      className={`px-3 py-1.5 text-[10px] font-mono font-bold uppercase border-2 transition-all min-h-[44px] min-w-[44px] ${
+                        isSlipModeB
+                          ? "bg-[#FFD700] text-black border-black"
+                          : "bg-[#050505] text-[#E0E0E0] border-[#E0E0E0]/30"
+                      }`}
+                      style={{ borderRadius: 0 }}
+                    >
+                      {isSlipModeB ? "ON" : "OFF"}
+                    </button>
+                  </div>
+
                   <div className="flex gap-2">
                     <button
                       onClick={deckB.isPlaying ? stopDeckB : playDeckB}
-                      className="flex-1 px-4 py-2 bg-[#FFD700] text-black font-mono font-bold text-xs uppercase border-2 border-black"
-                      style={{ boxShadow: "4px 4px 0px rgba(0,0,0,1)" }}
+                      className="flex-1 px-4 py-2 bg-[#FFD700] text-black font-mono font-bold text-xs uppercase border-2 border-black min-h-[44px]"
+                      style={{ boxShadow: "4px 4px 0px rgba(0,0,0,1)", borderRadius: 0 }}
                     >
                       {deckB.isPlaying ? "STOP" : "PLAY"}
                     </button>
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* XY Kaoss Pad - Tactile FX Control */}
+            <div className="bg-[#111] border-4 border-[#E0E0E0] p-4">
+              <XYPad
+                x={xyPadPosition.x}
+                y={xyPadPosition.y}
+                onPositionChange={(x, y) => {
+                  setXYPadPosition({ x, y });
+                  // Map X-axis to Filter Frequency (20Hz to 20kHz)
+                  if (fxFilterRef.current && audioContext) {
+                    const freq = 20 + x * (20000 - 20);
+                    fxFilterRef.current.frequency.setTargetAtTime(freq, audioContext.currentTime, 0.02);
+                  }
+                  // Map Y-axis to Reverb Wet/Dry (0 to 1.0)
+                  if (fxDryGainRef.current && fxReverbGainRef.current && audioContext) {
+                    const dry = 1.0 - y;
+                    const wet = y;
+                    fxDryGainRef.current.gain.setTargetAtTime(dry, audioContext.currentTime, 0.02);
+                    fxReverbGainRef.current.gain.setTargetAtTime(wet, audioContext.currentTime, 0.02);
+                  }
+                }}
+                size={200}
+                xLabel="FILTER"
+                yLabel="FX_WET"
+                isActive={isFullyReady}
+              />
             </div>
 
             {/* Sampler Bank */}
@@ -866,13 +979,15 @@ export default function StudioPage() {
           if (!bufferToRender) return;
           const wavBlob = audioBufferToWAV(bufferToRender);
           const url = URL.createObjectURL(wavBlob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `piko-studio-mix-${Date.now()}.wav`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          if (typeof document !== "undefined") {
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `piko-studio-mix-${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
           addLog("STUDIO_CORE: MIX_RENDERED: DOWNLOAD_COMPLETE");
         }}
         onShare={async () => {
@@ -880,7 +995,9 @@ export default function StudioPage() {
           const message = `Just remixed ${trackName} at the Piko Artist Studio. Own the master. 🔥 #PikoStudio #CommandTheMix`;
           if (navigator.share) {
             try {
-              await navigator.share({ title: "Piko Studio Remix", text: message, url: window.location.href });
+              if (typeof navigator !== "undefined" && navigator.share && typeof window !== "undefined") {
+                await navigator.share({ title: "Piko Studio Remix", text: message, url: window.location.href });
+              }
               addLog("STUDIO_CORE: SHARE_COMPLETE");
             } catch {
               // User cancelled

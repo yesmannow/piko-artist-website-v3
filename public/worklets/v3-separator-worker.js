@@ -38,6 +38,8 @@ async function initializeWASM() {
 
 /**
  * Process audio file for stem separation
+ *
+ * CRITICAL: Implements strict memory cleanup protocol to prevent WASM memory leaks
  */
 async function processAudioFile(audioData, sampleRate) {
   if (isProcessing) {
@@ -45,6 +47,9 @@ async function processAudioFile(audioData, sampleRate) {
   }
 
   isProcessing = true;
+
+  // Store reference for cleanup
+  let inputBuffer = audioData;
 
   try {
     // Send status update - Syndicate telemetry
@@ -94,6 +99,16 @@ async function processAudioFile(audioData, sampleRate) {
       message: 'STUDIO_CORE: Signal processing complete'
     });
 
+    // CRITICAL: Memory cleanup - WASM memory is linear and does not GC automatically
+    // Explicitly nullify large input buffers to prevent memory leaks
+    // This is essential for repeated processing sessions
+    inputBuffer = null;
+    audioData = null;
+    if (wasmModule && typeof wasmModule.free === 'function') {
+      // If WASM module has a free() method, call it to release memory
+      wasmModule.free();
+    }
+
   } catch (error) {
     self.postMessage({
       type: 'ERROR',
@@ -101,6 +116,9 @@ async function processAudioFile(audioData, sampleRate) {
     });
   } finally {
     isProcessing = false;
+    // Final cleanup: ensure all references are cleared
+    inputBuffer = null;
+    audioData = null;
   }
 }
 

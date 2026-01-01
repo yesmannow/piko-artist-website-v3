@@ -120,13 +120,13 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
         "bg-[#e5e5e5] overflow-hidden rounded-lg",
         "border-2 border-black",
         "transition-all duration-300",
-        isActive ? "ring-2 ring-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.3)]" : "shadow-lg hover:shadow-xl",
+        isActive ? "ring-2 ring-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.3)]" : "shadow-lg hover:shadow-xl",
       ].join(" ")}
       style={{
         transform: `rotate(${rotation}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
         transformStyle: "preserve-3d",
         boxShadow: isActive
-          ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px rgba(204,255,0,0.3)"
+          ? "4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px rgba(255,215,0,0.3)"
           : "4px 4px 0px 0px rgba(0,0,0,1), 0 4px 6px rgba(0,0,0,0.1)",
       }}
     >
@@ -203,7 +203,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
               className="relative w-12 h-12 md:w-16 md:h-16 text-white"
               fill="currentColor"
               style={{
-                filter: `drop-shadow(0 0 15px #ccff00)`,
+                filter: `drop-shadow(0 0 15px #FFD700)`,
               }}
             />
           </motion.div>
@@ -226,7 +226,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
                   ease: "easeInOut",
                 }}
                 style={{
-                  boxShadow: "0 0 4px #ccff00",
+                  boxShadow: "0 0 4px #FFD700",
                 }}
               />
             ))}

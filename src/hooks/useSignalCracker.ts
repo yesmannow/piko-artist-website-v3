@@ -132,20 +132,27 @@ export function useSignalCracker() {
 
         workerRef.current.addEventListener("message", handleComplete);
 
-        // Send audio data to worker
-        // Note: AudioBuffer cannot be transferred directly, so we send raw audio data
+        // Send audio data to worker using Zero-Copy Transfer
+        // OPTIMIZATION: Use Transferable objects to move ownership instead of copying
+        // This prevents doubling RAM usage (critical for 50MB+ audio files)
         const channelData = audioBuffer.getChannelData(0); // Mono for now
         const audioData = new Float32Array(channelData);
 
-        workerRef.current.postMessage({
-          type: "PROCESS_AUDIO",
-          data: {
-            audioBuffer: audioData.buffer,
-            sampleRate: audioBuffer.sampleRate,
-            numberOfChannels: audioBuffer.numberOfChannels,
-            length: audioBuffer.length,
+        // Zero-copy transfer: Pass buffer in transfer list to move ownership
+        // After this call, audioData.buffer is detached and cannot be used in main thread
+        // The worker now owns the memory, preventing duplication
+        workerRef.current.postMessage(
+          {
+            type: "PROCESS_AUDIO",
+            data: {
+              audioBuffer: audioData.buffer,
+              sampleRate: audioBuffer.sampleRate,
+              numberOfChannels: audioBuffer.numberOfChannels,
+              length: audioBuffer.length,
+            },
           },
-        }, [audioData.buffer]);
+          [audioData.buffer] // Transfer list: moves ownership, zero-copy
+        );
       });
     },
     [isProcessing]

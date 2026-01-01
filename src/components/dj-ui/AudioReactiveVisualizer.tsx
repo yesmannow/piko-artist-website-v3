@@ -202,7 +202,7 @@ export function AudioReactiveVisualizer({
           <div
             className="w-2 h-8 rounded-full"
             style={{
-              background: `linear-gradient(to top, #ccff0040, #ccff00)`,
+              background: `linear-gradient(to top, #FFD70040, #FFD700)`,
               height: `${Math.max(frequencyData.high * 32, 4)}px`,
             }}
           />

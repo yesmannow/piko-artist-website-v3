@@ -86,7 +86,7 @@ export function HeroScene() {
 
   // New "Street" palette colors
   const colors = [
-    "#ccff00", // toxic-lime
+    "#FFD700", // Safety Yellow
     "#ff0099", // spray-magenta
     "#ff6600", // safety-orange
   ];

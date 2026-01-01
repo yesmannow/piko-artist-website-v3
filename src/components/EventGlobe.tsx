@@ -75,8 +75,8 @@ export function EventGlobe({ events }: EventGlobeProps) {
           md:hidden
         `}
         style={{
-          backgroundColor: interactionEnabled ? "#ccff00" : "#2a2a2a",
-          color: interactionEnabled ? "#000" : "#ccff00",
+          backgroundColor: interactionEnabled ? "#FFD700" : "#2a2a2a",
+          color: interactionEnabled ? "#000" : "#FFD700",
           boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)",
         }}
       >
@@ -135,10 +135,10 @@ export function EventGlobe({ events }: EventGlobeProps) {
             // Currently using unpkg CDN - download earth-dark.jpg and place in public/images/textures/
             globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
             backgroundColor="rgba(0,0,0,0)"
-            atmosphereColor="#ccff00"
+            atmosphereColor="#FFD700"
             atmosphereAltitude={0.15}
             pointsData={pointsData}
-            pointColor={() => "#ccff00"}
+            pointColor={() => "#FFD700"}
             pointRadius={0.5}
             pointResolution={8}
             pointLabel={(d: object) => {
@@ -175,12 +175,12 @@ export function EventGlobe({ events }: EventGlobeProps) {
               div.style.width = isSelected || isHovered ? "16px" : "12px";
               div.style.height = isSelected || isHovered ? "16px" : "12px";
               div.style.borderRadius = "50%";
-              div.style.backgroundColor = isUpcoming ? "#ccff00" : "#888888";
+              div.style.backgroundColor = isUpcoming ? "#FFD700" : "#888888";
               div.style.border = "2px solid #000";
               div.style.boxShadow = isSelected
-                ? "0 0 12px #ccff00, 0 0 20px #ccff00"
+                ? "0 0 12px #FFD700, 0 0 20px #FFD700"
                 : isHovered
-                ? "0 0 8px #ccff00"
+                ? "0 0 8px #FFD700"
                 : "none";
               div.style.transition = "all 0.2s ease";
               div.style.cursor = "pointer";
@@ -194,7 +194,7 @@ export function EventGlobe({ events }: EventGlobeProps) {
               return div;
             }}
             arcsData={arcsData}
-            arcColor={() => "#ccff00"}
+            arcColor={() => "#FFD700"}
             arcDashLength={0.4}
             arcDashGap={0.2}
             arcDashAnimateTime={2000}
@@ -211,10 +211,10 @@ export function EventGlobe({ events }: EventGlobeProps) {
             // Currently using unpkg CDN - download earth-dark.jpg and place in public/images/textures/
             globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
             backgroundColor="rgba(0,0,0,0)"
-            atmosphereColor="#ccff00"
+            atmosphereColor="#FFD700"
             atmosphereAltitude={0.15}
             pointsData={pointsData}
-            pointColor={() => "#ccff00"}
+            pointColor={() => "#FFD700"}
             pointRadius={0.5}
             pointResolution={8}
             pointLabel={(d: object) => {
@@ -251,12 +251,12 @@ export function EventGlobe({ events }: EventGlobeProps) {
               div.style.width = isSelected || isHovered ? "16px" : "12px";
               div.style.height = isSelected || isHovered ? "16px" : "12px";
               div.style.borderRadius = "50%";
-              div.style.backgroundColor = isUpcoming ? "#ccff00" : "#888888";
+              div.style.backgroundColor = isUpcoming ? "#FFD700" : "#888888";
               div.style.border = "2px solid #000";
               div.style.boxShadow = isSelected
-                ? "0 0 12px #ccff00, 0 0 20px #ccff00"
+                ? "0 0 12px #FFD700, 0 0 20px #FFD700"
                 : isHovered
-                ? "0 0 8px #ccff00"
+                ? "0 0 8px #FFD700"
                 : "none";
               div.style.transition = "all 0.2s ease";
               div.style.cursor = "pointer";
@@ -270,7 +270,7 @@ export function EventGlobe({ events }: EventGlobeProps) {
               return div;
             }}
             arcsData={arcsData}
-            arcColor={() => "#ccff00"}
+            arcColor={() => "#FFD700"}
             arcDashLength={0.4}
             arcDashGap={0.2}
             arcDashAnimateTime={2000}

@@ -29,7 +29,7 @@ export function StemControl({
   isSolo,
   onMute,
   onSolo,
-  color = "#ccff00",
+  color = "#FFD700", // Safety Yellow
 }: StemControlProps) {
   return (
     <motion.div
@@ -155,7 +155,7 @@ export function StemControls({ stems, onMute, onSolo }: StemControlsProps) {
         isSolo={stems.other.isSolo}
         onMute={() => onMute("other")}
         onSolo={() => onSolo("other")}
-        color="#ccff00"
+        color="#FFD700"
       />
     </motion.div>
   );

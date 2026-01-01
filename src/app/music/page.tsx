@@ -167,7 +167,7 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
             </button>
             <button
               onClick={isPlaying ? onPause : onPlay}
-              className="relative p-6 rounded-full bg-toxic-lime text-black hover:scale-110 transition-transform shadow-[0_0_20px_rgba(204,255,0,0.5)]"
+              className="relative p-6 rounded-full bg-toxic-lime text-black hover:scale-110 transition-transform shadow-[0_0_20px_rgba(255,215,0,0.5)]"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? (
@@ -196,7 +196,7 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
             exit={{ opacity: 0 }}
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "radial-gradient(circle at center, rgba(204,255,0,0.1) 0%, transparent 70%)",
+              background: "radial-gradient(circle at center, rgba(255,215,0,0.1) 0%, transparent 70%)",
             }}
           />
         )}
@@ -247,7 +247,7 @@ function TableRowItem({ track, index, isActive, onPlay }: {
                   ease: "easeInOut",
                 }}
                 style={{
-                  boxShadow: "0 0 4px #ccff00",
+                  boxShadow: "0 0 4px #FFD700",
                 }}
               />
             ))}
@@ -369,7 +369,7 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
       onClick={onPlay}
       className={`group relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-300 shadow-lg ${
         isActive
-          ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.3)] ring-2 ring-toxic-lime"
+          ? "border-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.3)] ring-2 ring-toxic-lime"
           : "border-zinc-800 hover:border-toxic-lime/50 hover:shadow-xl"
       }`}
     >
@@ -410,7 +410,7 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
               className="relative w-16 h-16 text-white"
               fill="currentColor"
               style={{
-                filter: `drop-shadow(0 0 15px #ccff00)`,
+                filter: `drop-shadow(0 0 15px #FFD700)`,
               }}
             />
           </motion.div>
@@ -419,7 +419,7 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
         {/* Active Indicator */}
         {isActive && (
           <div className="absolute top-2 right-2 z-30">
-            <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse shadow-[0_0_8px_#ccff00]" />
+            <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse shadow-[0_0_8px_#FFD700]" />
           </div>
         )}
       </div>
@@ -622,7 +622,7 @@ export default function MusicPage() {
                     onClick={() => setViewType(view)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all duration-200 font-industrial text-sm uppercase tracking-wider ${
                       isActive
-                        ? "border-toxic-lime bg-toxic-lime/10 text-toxic-lime shadow-[0_0_10px_rgba(204,255,0,0.2)]"
+                        ? "border-toxic-lime bg-toxic-lime/10 text-toxic-lime shadow-[0_0_10px_rgba(255,215,0,0.2)]"
                         : "border-zinc-800 text-foreground/70 hover:border-zinc-700 hover:text-foreground"
                     }`}
                     aria-label={`Switch to ${view} view`}

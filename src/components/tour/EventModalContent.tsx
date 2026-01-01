@@ -75,7 +75,7 @@ export function EventModalContent({ event, onVideoElementReady }: EventModalCont
                     rgba(204, 255, 0, 0.15) 4px
                   )`,
                   mixBlendMode: "screen",
-                  boxShadow: 'inset 0 0 20px rgba(204,255,0,0.1)',
+                  boxShadow: 'inset 0 0 20px rgba(255,215,0,0.1)',
                 }}
               />
 

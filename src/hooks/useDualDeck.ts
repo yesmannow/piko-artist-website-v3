@@ -82,6 +82,19 @@ export function useDualDeck() {
   // Filter Mode state
   const [filterMode, setFilterMode] = useState(false);
 
+  // Slip Mode state - Professional DJ utility
+  // When active, maintains a virtual playhead that continues advancing even during scratching/looping
+  const [isSlipModeA, setIsSlipModeA] = useState(false);
+  const [isSlipModeB, setIsSlipModeB] = useState(false);
+
+  // Virtual playhead timestamps (in seconds) - tracks where the track "should be" playing
+  const virtualPlayheadARef = useRef<number>(0);
+  const virtualPlayheadBRef = useRef<number>(0);
+  const playheadStartTimeARef = useRef<number>(0);
+  const playheadStartTimeBRef = useRef<number>(0);
+  const lastActualTimeARef = useRef<number>(0);
+  const lastActualTimeBRef = useRef<number>(0);
+
   // Initialize constant-power signal splitter and filter nodes
   useEffect(() => {
     if (!audioContext || !masterGainNode) {
@@ -293,12 +306,20 @@ export function useDualDeck() {
     };
 
     source.start(0);
+
+    // Initialize virtual playhead for Slip Mode
+    if (isSlipModeB) {
+      virtualPlayheadBRef.current = 0;
+      playheadStartTimeBRef.current = audioContext.currentTime;
+      lastActualTimeBRef.current = 0;
+    }
+
     setDeckB((prev) => ({
       ...prev,
       isPlaying: true,
       sourceNode: source,
     }));
-  }, [audioContext, deckB.audioBuffer, deckB.playbackRate, deckB.sourceNode]);
+  }, [audioContext, deckB.audioBuffer, deckB.playbackRate, deckB.sourceNode, isSlipModeB]);
 
   /**
    * Stop Deck A
@@ -450,6 +471,116 @@ export function useDualDeck() {
     [audioContext, filterMode]
   );
 
+  /**
+   * Update virtual playhead for Slip Mode
+   * Called continuously while playing to track where the track "should be"
+   */
+  useEffect(() => {
+    if (!audioContext || (!isSlipModeA && !isSlipModeB)) return;
+
+    const updatePlayheads = () => {
+      const currentTime = audioContext.currentTime;
+
+      // Update Deck A virtual playhead
+      if (isSlipModeA && deckA.isPlaying && deckA.audioBuffer) {
+        const elapsed = currentTime - playheadStartTimeARef.current;
+        virtualPlayheadARef.current = (lastActualTimeARef.current + elapsed * deckA.playbackRate) % deckA.audioBuffer.duration;
+      }
+
+      // Update Deck B virtual playhead
+      if (isSlipModeB && deckB.isPlaying && deckB.audioBuffer) {
+        const elapsed = currentTime - playheadStartTimeBRef.current;
+        virtualPlayheadBRef.current = (lastActualTimeBRef.current + elapsed * deckB.playbackRate) % deckB.audioBuffer.duration;
+      }
+    };
+
+    const interval = setInterval(updatePlayheads, 16); // ~60fps updates
+    return () => clearInterval(interval);
+  }, [audioContext, isSlipModeA, isSlipModeB, deckA.isPlaying, deckA.audioBuffer, deckA.playbackRate, deckB.isPlaying, deckB.audioBuffer, deckB.playbackRate]);
+
+  /**
+   * Seek to virtual playhead (called when releasing scratch/loop in Slip Mode)
+   */
+  const seekToVirtualPlayheadA = useCallback(() => {
+    if (!audioContext || !deckA.sourceNode || !deckA.audioBuffer || !isSlipModeA) return;
+
+    const targetTime = virtualPlayheadARef.current;
+    const currentTime = audioContext.currentTime;
+
+    // Stop current playback
+    deckA.sourceNode.stop();
+    deckA.sourceNode.disconnect();
+
+    // Create new source at virtual playhead position
+    const source = audioContext.createBufferSource();
+    source.buffer = deckA.audioBuffer;
+    source.playbackRate.value = deckA.playbackRate;
+
+    if (filterMode && deckAHPFRef.current) {
+      source.connect(deckAHPFRef.current);
+      deckAHPFRef.current.connect(deckAGainRef.current);
+    } else {
+      source.connect(deckAGainRef.current);
+    }
+
+    source.onended = () => {
+      setDeckA((prev) => ({
+        ...prev,
+        isPlaying: false,
+        sourceNode: null,
+      }));
+    };
+
+    source.start(0, targetTime);
+    lastActualTimeARef.current = targetTime;
+    playheadStartTimeARef.current = currentTime;
+
+    setDeckA((prev) => ({
+      ...prev,
+      sourceNode: source,
+    }));
+  }, [audioContext, deckA.sourceNode, deckA.audioBuffer, deckA.playbackRate, isSlipModeA, filterMode]);
+
+  const seekToVirtualPlayheadB = useCallback(() => {
+    if (!audioContext || !deckB.sourceNode || !deckB.audioBuffer || !isSlipModeB) return;
+
+    const targetTime = virtualPlayheadBRef.current;
+    const currentTime = audioContext.currentTime;
+
+    // Stop current playback
+    deckB.sourceNode.stop();
+    deckB.sourceNode.disconnect();
+
+    // Create new source at virtual playhead position
+    const source = audioContext.createBufferSource();
+    source.buffer = deckB.audioBuffer;
+    source.playbackRate.value = deckB.playbackRate;
+
+    if (filterMode && deckBLPFRef.current) {
+      source.connect(deckBLPFRef.current);
+      deckBLPFRef.current.connect(deckBGainRef.current);
+    } else {
+      source.connect(deckBGainRef.current);
+    }
+
+    source.onended = () => {
+      setDeckB((prev) => ({
+        ...prev,
+        isPlaying: false,
+        sourceNode: null,
+      }));
+    };
+
+    source.start(0, targetTime);
+    lastActualTimeBRef.current = targetTime;
+    playheadStartTimeBRef.current = currentTime;
+
+    setDeckB((prev) => ({
+      ...prev,
+      sourceNode: source,
+    }));
+  }, [audioContext, deckB.sourceNode, deckB.audioBuffer, deckB.playbackRate, isSlipModeB, filterMode]);
+
   return {
     deckA,
     deckB,
@@ -467,6 +598,14 @@ export function useDualDeck() {
     setCrossfader,
     filterMode,
     setFilterMode,
+    isSlipModeA,
+    setIsSlipModeA,
+    isSlipModeB,
+    setIsSlipModeB,
+    seekToVirtualPlayheadA,
+    seekToVirtualPlayheadB,
+    virtualPlayheadA: virtualPlayheadARef.current,
+    virtualPlayheadB: virtualPlayheadBRef.current,
   };
 }
 

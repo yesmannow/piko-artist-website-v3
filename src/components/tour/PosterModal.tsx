@@ -98,7 +98,7 @@ export function PosterModal({ event, isOpen, onClose, onBackToEvent }: PosterMod
             onClick={(e) => e.stopPropagation()}
           >
             {/* Urban Glow Border - Hip-Hop Style */}
-            <div className="absolute inset-0 border-4 border-toxic-lime shadow-[0_0_40px_rgba(204,255,0,0.5),inset_0_0_40px_rgba(204,255,0,0.1)] pointer-events-none rounded-lg" />
+            <div className="absolute inset-0 border-4 border-toxic-lime shadow-[0_0_40px_rgba(255,215,0,0.5),inset_0_0_40px_rgba(255,215,0,0.1)] pointer-events-none rounded-lg" />
 
             {/* Content Container */}
             <div

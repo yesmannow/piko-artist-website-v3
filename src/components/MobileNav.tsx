@@ -214,7 +214,7 @@ export function MobileNav() {
                 aria-label="Go to Home"
               >
                 <motion.div whileTap={{ scale: 0.9 }}>
-                  <Logo size={32} className="drop-shadow-[0_0_8px_rgba(204,255,0,0.3)]" />
+                  <Logo size={32} className="drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]" />
                 </motion.div>
               </Link>
             </div>
@@ -254,7 +254,7 @@ export function MobileNav() {
                   {active && (
                     <motion.div
                       layoutId="mobileNavIndicator"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(204,255,0,0.6)]"
+                      className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(255,215,0,0.6)]"
                       initial={false}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
@@ -291,7 +291,7 @@ export function MobileNav() {
               {isMoreOpen && (
                 <motion.div
                   layoutId="mobileNavIndicatorMore"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(204,255,0,0.6)]"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(255,215,0,0.6)]"
                   initial={false}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
@@ -370,7 +370,7 @@ export function MobileNav() {
                               }}
                               className={`flex items-center gap-4 px-4 py-3 rounded-lg border-2 transition-all touch-manipulation ${
                                 active
-                                  ? "bg-toxic-lime/20 text-toxic-lime border-toxic-lime shadow-[0_0_12px_rgba(204,255,0,0.3)]"
+                                  ? "bg-toxic-lime/20 text-toxic-lime border-toxic-lime shadow-[0_0_12px_rgba(255,215,0,0.3)]"
                                   : "bg-zinc-800/50 text-white border-zinc-700 hover:bg-zinc-700/50 hover:border-toxic-lime/30 active:scale-[0.98]"
                               }`}
                             >

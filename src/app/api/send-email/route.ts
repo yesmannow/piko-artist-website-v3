@@ -180,10 +180,10 @@ Reply to this email to contact the promoter directly.
 
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #ccff00; border-bottom: 2px solid #ccff00; padding-bottom: 10px;">
+          <h2 style="color: #FFD700; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">
             New Contact Message
           </h2>
-          <div style="background: #f5f5f5; padding: 20px; margin: 20px 0; border-left: 4px solid #ccff00;">
+          <div style="background: #f5f5f5; padding: 20px; margin: 20px 0; border-left: 4px solid #FFD700;">
             <p><strong>Name:</strong> ${sanitizedData.name || "N/A"}</p>
             <p><strong>Email:</strong> ${sanitizedData.email || "N/A"}</p>
             <p><strong>Message:</strong></p>

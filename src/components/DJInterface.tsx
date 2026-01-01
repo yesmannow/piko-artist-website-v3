@@ -987,7 +987,7 @@ export function DJInterface() {
     <>
       {showLandscapeHint && (
         <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center p-8 text-center">
-          <div className="w-16 h-16 mb-6 border-2 border-[#ccff00] rounded-lg animate-spin" />
+          <div className="w-16 h-16 mb-6 border-2 border-[#FFD700] rounded-lg animate-spin" />
           <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-widest">
             Rotate Device
           </h2>

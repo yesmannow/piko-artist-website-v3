@@ -60,10 +60,10 @@ function EventCard({ event, index, onEventClick }: { event: Event; index: number
         <div
           className="w-full h-full relative"
           style={{
-            background: 'linear-gradient(135deg, rgba(204,255,0,0.15) 0%, rgba(204,255,0,0.05) 100%)',
-            border: '2px solid rgba(204,255,0,0.4)',
+            background: 'linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0.05) 100%)',
+            border: '2px solid rgba(255,215,0,0.4)',
             borderRadius: '2px',
-            boxShadow: '0 0 10px rgba(204,255,0,0.3)',
+            boxShadow: '0 0 10px rgba(255,215,0,0.3)',
           }}
         >
           <div
@@ -79,7 +79,7 @@ function EventCard({ event, index, onEventClick }: { event: Event; index: number
       {/* Poster Card */}
       <div
         className={`bg-concrete overflow-hidden border-2 transition-all hover:scale-[1.02] relative torn-edge rounded-lg shadow-lg ${
-          isSelected ? "border-toxic-lime shadow-[0_0_20px_rgba(204,255,0,0.5)] ring-2 ring-toxic-lime" : "border-black hover:shadow-xl"
+          isSelected ? "border-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.5)] ring-2 ring-toxic-lime" : "border-black hover:shadow-xl"
         }`}
         style={{
           boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",

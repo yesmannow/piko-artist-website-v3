@@ -82,7 +82,7 @@ const AnimatedLogo = ({
           <motion.div
             className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"
             style={{
-              background: "radial-gradient(circle, rgba(204,255,0,0.3) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)",
             }}
             animate={{
               scale: [1, 1.2, 1],
@@ -106,7 +106,7 @@ const AnimatedLogo = ({
             alt="Piko Logo"
             width={48}
             height={48}
-            className="w-12 h-12 md:w-14 md:h-14 transition-all duration-300 drop-shadow-[0_0_10px_rgba(204,255,0,0.2)]"
+            className="w-12 h-12 md:w-14 md:h-14 transition-all duration-300 drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]"
             priority
           />
         </Link>
@@ -522,9 +522,9 @@ export function Navbar() {
                             triggerHaptic();
                             handleNavClick(e, item);
                           }}
-                          className={`block text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#ccff00] focus:ring-offset-2 focus:ring-offset-transparent ${
+                          className={`block text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-transparent ${
                             active
-                              ? "text-[#ccff00] bg-[#ccff00]/15 shadow-[0_0_20px_rgba(204,255,0,0.3)]"
+                              ? "text-[#FFD700] bg-[#FFD700]/15 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
                               : "text-zinc-400 hover:text-white hover:bg-white/10"
                           }`}
                           aria-current={active ? "page" : undefined}
@@ -535,7 +535,7 @@ export function Navbar() {
                             <>
                               <motion.div
                                 layoutId="mobile-menu-active-bg"
-                                className="absolute inset-0 bg-[#ccff00]/10 rounded-xl"
+                                className="absolute inset-0 bg-[#FFD700]/10 rounded-xl"
                                 initial={false}
                                 transition={
                                   reducedMotion
@@ -545,7 +545,7 @@ export function Navbar() {
                               />
                               <motion.div
                                 layoutId="mobile-menu-active-underline"
-                                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-[#ccff00] rounded-full shadow-[0_0_12px_#ccff00]"
+                                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-[#FFD700] rounded-full shadow-[0_0_12px_#FFD700]"
                                 initial={false}
                                 transition={
                                   reducedMotion
@@ -572,7 +572,7 @@ export function Navbar() {
                           {/* Active dot indicator */}
                           {active && (
                             <motion.div
-                              className="absolute right-4 w-2 h-2 rounded-full bg-[#ccff00] shadow-[0_0_10px_#ccff00]"
+                              className="absolute right-4 w-2 h-2 rounded-full bg-[#FFD700] shadow-[0_0_10px_#FFD700]"
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
                               transition={reducedMotion ? { duration: 0.1 } : { delay: 0.2 }}

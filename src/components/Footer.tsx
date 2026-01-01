@@ -80,7 +80,7 @@ export function Footer() {
                   className="group relative"
                 >
                   <div className="absolute inset-0 bg-toxic-lime blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300 rounded-full" />
-                  <Icon className="w-6 h-6 text-zinc-400 group-hover:text-toxic-lime transition-all duration-300 transform group-hover:scale-110 group-hover:drop-shadow-[0_0_5px_rgba(204,255,0,0.8)]" />
+                  <Icon className="w-6 h-6 text-zinc-400 group-hover:text-toxic-lime transition-all duration-300 transform group-hover:scale-110 group-hover:drop-shadow-[0_0_5px_rgba(255,215,0,0.8)]" />
                 </a>
               );
             })}
