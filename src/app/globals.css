@@ -11,7 +11,7 @@
 
   :root {
     /* Base Color Palette - Dark Theme */
-    --background: 240 5% 8%;
+    --background: 240 5% 8% / 0.9;
     --foreground: 60 5% 90%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -43,7 +43,7 @@
   }
 
   body {
-    @apply bg-[#050505] text-[#E0E0E0];
+    @apply bg-[#050505]/90 text-[#E0E0E0];
     background-image:
       /* Spray Paint Streaks - V3 Urban Syndicate */
       linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.04) 50%, transparent 70%),
@@ -63,6 +63,39 @@
     overflow-x: hidden;
     position: relative;
     user-select: none; /* Prevent text selection for app-like feel */
+  }
+
+  /* Particles.js background - must be behind all content */
+  #particles-js,
+  #particles-js canvas {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+  }
+
+  /* Make main content areas slightly transparent to show particles */
+  .bg-background {
+    background-color: rgba(19, 19, 21, 0.9) !important;
+  }
+  
+  .bg-\[#050505\] {
+    background-color: rgba(5, 5, 5, 0.9) !important;
+  }
+  
+  .bg-\[#121212\] {
+    background-color: rgba(18, 18, 18, 0.9) !important;
+  }
+  
+  .bg-\[#121214\] {
+    background-color: rgba(18, 18, 20, 0.9) !important;
+  }
+  
+  .bg-\[#131315\] {
+    background-color: rgba(19, 19, 21, 0.9) !important;
   }
 
   /* Global Concrete Grit & Brutalist Overrides - V3 Urban Syndicate */

@@ -32,6 +32,18 @@ export function ProdRuntimeGuards() {
 
     // Unhandled rejection handler
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Filter out expected audio loading AbortErrors
+      const isAbortError = 
+        event.reason?.name === "AbortError" ||
+        event.reason?.message?.includes("aborted") ||
+        event.reason?.message?.includes("The user aborted a request");
+      
+      // Silently ignore AbortErrors from audio loading
+      if (isAbortError) {
+        event.preventDefault(); // Prevent default error logging
+        return;
+      }
+      
       console.error("[UNHANDLED_REJECTION]", {
         reason: event.reason,
         error: event.reason instanceof Error ? {

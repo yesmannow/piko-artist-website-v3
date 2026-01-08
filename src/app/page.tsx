@@ -6,8 +6,6 @@ import { VaultVisuals } from "@/components/VaultVisuals";
 import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
-import { FluidVaporBackground } from "@/components/FluidVaporBackground";
-import DynamicHeroBackground from "@/components/DynamicHeroBackground";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -25,12 +23,6 @@ export default function Home() {
         id="home"
         className="relative h-screen flex items-center justify-center overflow-hidden bg-[#050505]"
       >
-        {/* Fluid Vapor Background */}
-        <FluidVaporBackground />
-
-        {/* Dynamic Background Slideshow (Pexels/Unsplash/Pixabay) */}
-        <DynamicHeroBackground />
-        <div className="absolute inset-0 bg-[#050505]/80 z-10" />
 
         {/* Ghosted Stencil "V3 SYNDICATE" Backdrop */}
         <h1

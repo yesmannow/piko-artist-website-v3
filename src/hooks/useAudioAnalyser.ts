@@ -73,6 +73,8 @@ export function useAudioAnalyser(
       try {
         const source = getOrCreateMediaSourceFor(videoElement);
         source.connect(analyser);
+        // CRITICAL: Connect analyser to destination so audio is actually heard
+        analyser.connect(audioContext.destination);
         sourceRef.current = source;
       } catch (error) {
         console.warn("Audio source already connected or unavailable:", error);

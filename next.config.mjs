@@ -14,6 +14,7 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  ...(process.env.VERCEL ? {} : { distDir: 'dist' }),
   // Ignore ESLint warnings during build (warnings are non-blocking)
   eslint: {
     ignoreDuringBuilds: false, // Keep false to catch real errors, but warnings won't block

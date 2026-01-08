@@ -6,7 +6,7 @@
  */
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, dirname, resolve, relative } from 'path';
+import { join, dirname, resolve, relative, parse, sep } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,23 +89,30 @@ function resolveImportPath(importPath) {
  * Get actual filesystem path with exact casing
  */
 function getExactCasePath(filePath) {
-  const parts = filePath.split(/[/\\]/);
-  let currentPath = parts[0] || '/';
+  try {
+    const normalized = resolve(filePath);
+    const { root } = parse(normalized);
+    let currentPath = root; // e.g., 'C:\\' on Windows or '/' on POSIX
 
-  for (let i = 1; i < parts.length; i++) {
-    const dir = readdirSync(currentPath);
-    const exactName = dir.find(name =>
-      name.toLowerCase() === parts[i].toLowerCase()
-    );
+    // Build relative segments from the filesystem root
+    const rel = relative(root, normalized);
+    const parts = rel.split(sep).filter(Boolean);
 
-    if (!exactName) {
-      return null;
+    for (const part of parts) {
+      const dirEntries = readdirSync(currentPath);
+      const exactName = dirEntries.find(
+        (name) => name.toLowerCase() === part.toLowerCase()
+      );
+      if (!exactName) {
+        return null;
+      }
+      currentPath = join(currentPath, exactName);
     }
 
-    currentPath = join(currentPath, exactName);
+    return currentPath;
+  } catch {
+    return null;
   }
-
-  return currentPath;
 }
 
 /**

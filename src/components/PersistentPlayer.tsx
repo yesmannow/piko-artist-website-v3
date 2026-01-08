@@ -7,9 +7,11 @@ import { useHaptic } from "@/hooks/useHaptic";
 import Image from "next/image";
 import { Waveform } from "@/components/dj-ui/Waveform";
 import { EnhancedAudioVisualizer } from "@/components/EnhancedAudioVisualizer";
+import { usePathname } from "next/navigation";
 
 export function PersistentPlayer() {
   const { triggerHaptic } = useHaptic();
+  const pathname = usePathname();
   const {
     currentTrack,
     isPlaying,
@@ -99,8 +101,8 @@ export function PersistentPlayer() {
   }, [currentTrack, isPlaying, skipNext, skipPrevious, audioRef]);
 
 
-  // Show player only when a track is selected
-  if (!currentTrack) return null;
+  // Hide player on studio page or when no track is selected
+  if (!currentTrack || pathname === '/studio') return null;
 
   return (
     <div

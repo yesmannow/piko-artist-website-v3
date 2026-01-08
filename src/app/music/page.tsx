@@ -6,8 +6,7 @@ import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack } 
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
-import { useState, useEffect, useMemo, useRef } from "react";
-import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
+import { useState, useEffect, useMemo } from "react";
 
 // Helper to check if coverArt is an image path
 const isImagePath = (coverArt: string): boolean => {
@@ -104,175 +103,6 @@ function CoverArt({ coverArt, className }: { coverArt: string; className?: strin
   );
 }
 
-// Audio‑reactive Neon Dust overlay (graffiti neon gold with gentle swirl)
-function NeonDust() {
-  const { audioRef, isPlaying } = useAudio();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
-  const sourceCreatedRef = useRef(false);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const resize = () => {
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      canvas.width = Math.floor(canvas.clientWidth * dpr);
-      canvas.height = Math.floor(canvas.clientHeight * dpr);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
-    };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, []);
-
-  useEffect(() => {
-    const audioEl = audioRef.current;
-    if (!audioEl || sourceCreatedRef.current) return;
-
-    const ac = getSharedAudioContext();
-    const analyser = ac.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.85;
-
-    try {
-      const src = getOrCreateMediaSourceFor(audioEl);
-      src.connect(analyser);
-      // Do NOT connect analyser to destination to avoid duplicate audio
-      sourceCreatedRef.current = true;
-    } catch {
-      // MediaElementSource may already be created; ignore
-    }
-
-    analyserRef.current = analyser;
-    dataRef.current = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount)) as Uint8Array<ArrayBuffer>;
-
-    return () => {
-      analyserRef.current = null;
-      dataRef.current = null;
-      // Do not close shared audio context
-      sourceCreatedRef.current = false;
-    };
-  }, [audioRef]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const analyser = analyserRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const maxParticles = prefersReduced ? 0 : Math.min(3000, Math.floor(window.innerWidth * 1.5));
-    const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const count = mobile ? Math.min(800, Math.max(300, Math.floor(maxParticles * 0.35))) : Math.max(1200, Math.floor(maxParticles * 0.6));
-
-    type P = { x: number; y: number; vx: number; vy: number; s: number; a: number; t: number };
-    const particles: P[] = new Array(count).fill(0).map(() => ({
-      x: Math.random() * canvas.clientWidth,
-      y: Math.random() * canvas.clientHeight,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      s: 0.6 + Math.random() * 1.6,
-      a: 0.1 + Math.random() * 0.25,
-      t: Math.random() * Math.PI * 2,
-    }));
-
-    let running = true;
-    const onVis = () => {
-      running = !document.hidden;
-      if (running && rafRef.current == null) loop();
-    };
-    document.addEventListener('visibilitychange', onVis);
-
-    const gold = { r: 255, g: 215, b: 0 };
-    ctx.globalCompositeOperation = 'lighter';
-
-    const levels = () => {
-      const arr = dataRef.current;
-      const an = analyserRef.current;
-      if (!arr || !an) return { bass: 0, mid: 0, high: 0, overall: 0 };
-      an.getByteFrequencyData(arr);
-      const len = arr.length;
-      const lowEnd = Math.floor((200 / 22050) * len);
-      const midEnd = Math.floor((2000 / 22050) * len);
-      let lb=0, mb=0, hb=0, ob=0;
-      for (let i = 0; i < len; i++) {
-        const v = arr[i] / 255;
-        ob += v;
-        if (i < lowEnd) lb += v; else if (i < midEnd) mb += v; else hb += v;
-      }
-      const bass = Math.min(1, (lb / Math.max(1, lowEnd)) * 2);
-      const mid = Math.min(1, (mb / Math.max(1, midEnd - lowEnd)) * 2);
-      const high = Math.min(1, (hb / Math.max(1, len - midEnd)) * 2);
-      const overall = Math.min(1, (ob / len) * 2);
-      return { bass, mid, high, overall };
-    };
-
-    const loop = () => {
-      rafRef.current = requestAnimationFrame(loop);
-      if (!running) return;
-
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      ctx.clearRect(0, 0, w, h);
-
-      const { bass, mid, overall } = levels();
-
-      // Gentle trails backdrop
-      ctx.fillStyle = 'rgba(5,5,5,0.15)';
-      ctx.fillRect(0, 0, w, h);
-
-      // Motion parameters
-      const swirl = 0.001 + (mid || 0) * 0.005;
-      const speed = 0.06 + (overall || 0) * 0.35;
-      const alphaBoost = 0.08 + (bass || 0) * 0.5;
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.t += swirl;
-        p.vx += Math.cos(p.t) * 0.02;
-        p.vy += Math.sin(p.t) * 0.02;
-        p.x += p.vx * speed;
-        p.y += p.vy * speed;
-
-        // Wrap edges
-        if (p.x < -10) p.x = w + 10; else if (p.x > w + 10) p.x = -10;
-        if (p.y < -10) p.y = h + 10; else if (p.y > h + 10) p.y = -10;
-
-        const a = Math.min(0.9, p.a + alphaBoost);
-        ctx.fillStyle = `rgba(${gold.r}, ${gold.g}, ${gold.b}, ${a})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.s + overall * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    };
-
-    const loopStartIf = () => {
-      if (prefersReduced) return;
-      loop();
-    };
-
-    loopStartIf();
-
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      document.removeEventListener('visibilitychange', onVis);
-      rafRef.current = null;
-    };
-  }, [isPlaying]);
-
-  return (
-    <div className="pointer-events-none absolute inset-0 z-0">
-      <canvas ref={canvasRef} className="w-full h-full" />
-    </div>
-  );
-}
 
 // Hero Section for Currently Playing Track
 function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
@@ -803,9 +633,7 @@ export default function MusicPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
-      <NeonDust />
-      <div className="absolute inset-0 bg-[#121214cc] z-10 pointer-events-none" />
-      <section className="relative z-20 py-12 md:py-20 px-4 md:px-8">
+      <section className="relative py-12 md:py-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8 md:mb-12">

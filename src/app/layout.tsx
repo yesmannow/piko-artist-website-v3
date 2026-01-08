@@ -17,6 +17,7 @@ import { ScrollRestorationManager } from "@/components/ScrollRestorationManager"
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
 import { LogoIntro } from "@/components/branding/LogoIntro";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { ParticlesBackground } from "@/components/ParticlesBackground";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -115,6 +116,7 @@ export default function RootLayout({
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />
         <LogoIntro />
+        <ParticlesBackground />
         <AudioProvider>
           <VideoProvider>
             <Navbar />

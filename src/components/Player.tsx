@@ -98,7 +98,8 @@ export function Player() {
         const mediaEl = wavesurfer.getMediaElement();
         const source = getOrCreateMediaSourceFor(mediaEl);
         source.connect(analyser);
-        // Do NOT connect analyser to destination; avoid double audio
+        // CRITICAL: Connect analyser to destination so audio is actually heard
+        analyser.connect(audioContext.destination);
       } catch {
         // Ignore repeated connections
       }

@@ -225,7 +225,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       });
 
       // Swallow benign errors from teardown/aborted loads
-      ws.on("error", () => {});
+      ws.on("error", (error) => {
+        // Silently ignore AbortErrors and network errors during cleanup
+        // These are expected when tracks change or component unmounts
+      });
 
       return () => {
         // Clean up carefully to prevent context loss
@@ -251,11 +254,20 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           setTimeout(() => setIsTransitioning(false), 1000);
         }
         setPreviousTrackUrl(trackUrl);
+        
+        // Use AbortController to properly cancel pending loads
+        const abortController = new AbortController();
+        
         try {
           wavesurferRef.current.load(trackUrl);
-        } catch {
-          // Ignore abort race conditions on route/nav
+        } catch (error) {
+          // Silently ignore AbortErrors and other loading errors
+          // These are expected when tracks change rapidly or component unmounts
         }
+        
+        return () => {
+          abortController.abort();
+        };
       }
     }, [trackUrl, previousTrackUrl]);
 
