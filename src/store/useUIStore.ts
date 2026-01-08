@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type ViewMode = 'WAVEFORM' | 'MIXER' | 'FX';
+type ViewMode = 'WAVEFORM' | 'MIXER' | 'FX' | 'PADS';
 
 interface UIStore {
   activeView: ViewMode;

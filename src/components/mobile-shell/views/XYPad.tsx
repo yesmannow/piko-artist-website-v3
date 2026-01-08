@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDrag } from '@use-gesture/react';
 import { useSpring, animated } from '@react-spring/web';
 import { getAudioEngine } from '@/engine/AudioEngine';
 
 export const XYPad = () => {
-  const [position, setPosition] = useState({ x: 0.5, y: 0.5 }); // Center position (normalized 0-1)
+  // REMEDIATION: Use ref for high-frequency position tracking (no re-renders during drag)
+  const positionRef = useRef({ x: 0.5, y: 0.5 });
+  
+  // Only use state for display values (updated on drag end for efficiency)
+  const [displayPosition, setDisplayPosition] = useState({ x: 0.5, y: 0.5 });
 
   // Animate puck position
   const [springProps, api] = useSpring(() => ({
@@ -28,8 +32,8 @@ export const XYPad = () => {
     const normalizedX = clampedX / size;
     const normalizedY = 1 - (clampedY / size); // Invert Y (top = 1, bottom = 0)
     
-    // Update position state
-    setPosition({ x: normalizedX, y: normalizedY });
+    // REMEDIATION: Update ref (no re-render, main thread stays free)
+    positionRef.current = { x: normalizedX, y: normalizedY };
     
     // Update spring animation (convert back to percentage for CSS)
     api.start({
@@ -37,8 +41,18 @@ export const XYPad = () => {
       y: (1 - normalizedY) * 100 // Invert back for visual positioning
     });
     
-    // Apply filter to audio engine (hardcoded to deckA)
-    getAudioEngine().setFilter('deckA', normalizedX, normalizedY);
+    // Apply filter to audio engine (direct access, no state)
+    try {
+      getAudioEngine().setFilter('deckA', normalizedX, normalizedY);
+    } catch (error) {
+      // Engine might not be initialized yet
+      console.warn('AudioEngine not ready');
+    }
+    
+    // REMEDIATION: Only update display state on drag end (reduces re-renders)
+    if (last) {
+      setDisplayPosition({ x: normalizedX, y: normalizedY });
+    }
     
     return memo;
   }, {
@@ -94,13 +108,13 @@ export const XYPad = () => {
         <div className="bg-gray-900 p-3 rounded border border-gray-700">
           <div className="text-xs text-gray-500 uppercase mb-1">Frequency</div>
           <div className="text-lg font-mono text-cyan-400">
-            {Math.round(20 * Math.pow(1000, position.x))} Hz
+            {Math.round(20 * Math.pow(1000, displayPosition.x))} Hz
           </div>
         </div>
         <div className="bg-gray-900 p-3 rounded border border-gray-700">
           <div className="text-xs text-gray-500 uppercase mb-1">Resonance</div>
           <div className="text-lg font-mono text-blue-400">
-            {(position.y * 20).toFixed(1)}
+            {(displayPosition.y * 20).toFixed(1)}
           </div>
         </div>
       </div>

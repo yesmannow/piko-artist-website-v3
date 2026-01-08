@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from 'next/dynamic';
+import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
 
 // Dynamically import with no SSR
 const MobileStudioLayout = dynamic(
@@ -12,11 +13,22 @@ const MobileStudioLayout = dynamic(
 );
 
 /**
- * Studio V2 - Mobile PWA DJ Workstation
+ * Studio V2 Page
  * 
- * Landscape-only, gesture-locked, full-screen PWA.
+ * Professional mobile DJ workstation with:
+ * - Dual deck audio engine
+ * - Real-time waveform visualization
+ * - Loop & hot cue system
+ * - WebMIDI hardware support
+ * 
  * Uses headless audio engine architecture for maximum performance.
+ * 
+ * PHASE 10: Wrapped in error boundary for production hardening.
  */
 export default function StudioV2Page() {
-  return <MobileStudioLayout />;
+  return (
+    <StudioErrorBoundary>
+      <MobileStudioLayout />
+    </StudioErrorBoundary>
+  );
 }

@@ -82,7 +82,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // Critical: Prevents pinch-zoom
+  userScalable: false, // Critical: Prevents pinch-zoom for "App" feel
+  viewportFit: "cover", // REMEDIATION: Uses the notch area on iOS
   themeColor: "#000000",
 };
 
@@ -93,6 +94,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* PHASE 10: Asset Preloading - Preconnect to audio CDN */}
+        <link rel="preconnect" href="https://archive.org" />
+        <link rel="dns-prefetch" href="https://archive.org" />
+      </head>
       <body
         className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >

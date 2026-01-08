@@ -4,6 +4,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { WaveformView } from './views/WaveformView';
 import { MixerView } from './views/MixerView';
 import { FXView } from './views/FXView';
+import { PerformancePads } from './controls/PerformancePads';
 
 export const MainDeckContainer = () => {
   const activeView = useUIStore((state) => state.activeView);
@@ -18,6 +19,15 @@ export const MainDeckContainer = () => {
         return <MixerView />;
       case 'FX':
         return <FXView />;
+      case 'PADS':
+        return (
+          <div className="h-full w-full flex flex-col">
+            <div className="flex-1 flex flex-col justify-center gap-4 p-4">
+              <PerformancePads deckId="deckA" />
+              <PerformancePads deckId="deckB" />
+            </div>
+          </div>
+        );
       default:
         return <WaveformView />;
     }
@@ -74,10 +84,10 @@ export const MainDeckContainer = () => {
         </span>
       </button>
 
-      {/* Navigation Tabs - Right Edge (Bottom Half - FX) */}
+      {/* Navigation Tabs - Right Edge (Middle - FX) */}
       <button
         onClick={() => setActiveView('FX')}
-        className={`absolute right-0 bottom-0 h-1/2 w-10 flex items-center justify-center transition-all border-t ${
+        className={`absolute right-0 top-1/3 h-1/3 w-10 flex items-center justify-center transition-all border-t border-b ${
           activeView === 'FX' 
             ? 'bg-purple-500/30 border-l-2 border-purple-500' 
             : 'bg-gray-900/50 border-l border-gray-700'
@@ -93,6 +103,28 @@ export const MainDeckContainer = () => {
           }`}
         >
           FX
+        </span>
+      </button>
+
+      {/* Navigation Tabs - Right Edge (Bottom - PADS) */}
+      <button
+        onClick={() => setActiveView('PADS')}
+        className={`absolute right-0 bottom-0 h-1/3 w-10 flex items-center justify-center transition-all ${
+          activeView === 'PADS' 
+            ? 'bg-yellow-500/30 border-l-2 border-yellow-500' 
+            : 'bg-gray-900/50 border-l border-gray-700'
+        }`}
+        style={{
+          writingMode: 'vertical-rl',
+          textOrientation: 'mixed'
+        }}
+      >
+        <span 
+          className={`text-xs font-barlow uppercase tracking-wider font-bold ${
+            activeView === 'PADS' ? 'text-yellow-400' : 'text-gray-500'
+          }`}
+        >
+          PADS
         </span>
       </button>
     </div>

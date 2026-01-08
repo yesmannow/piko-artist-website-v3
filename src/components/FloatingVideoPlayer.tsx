@@ -18,24 +18,24 @@ export function FloatingVideoPlayer() {
   return (
     <AnimatePresence>
       {!isMinimized ? (
-        // Full-size player (centered)
+        // Full-size player (centered) - REMEDIATION: pointer-events-none wrapper
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
           data-modal-open="true"
         >
-          {/* Backdrop */}
+          {/* Backdrop - REMEDIATION: pointer-events-auto for interaction */}
           <div
-            className="absolute inset-0 bg-black/95 backdrop-blur-md"
+            className="absolute inset-0 bg-black/95 backdrop-blur-md pointer-events-auto"
             onClick={closeVideo}
           />
 
-          {/* Player Container */}
+          {/* Player Container - REMEDIATION: pointer-events-auto for interaction */}
           <motion.div
-            className="relative z-10 w-full max-w-5xl mx-4"
+            className="relative z-10 w-full max-w-5xl mx-4 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* YouTube Embed */}

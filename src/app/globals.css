@@ -3,18 +3,25 @@
 @tailwind utilities;
 
 @layer base {
+  /* REMEDIATION: Unlock Box Model for Lenis */
   html,
   body {
-    height: 100%;
     width: 100%;
-    overflow-x: hidden; 
-    overflow-y: auto; /* Allow vertical scrolling */
+    min-height: 100vh;
+    overscroll-behavior-y: none; /* iOS Rubber-banding fix */
     touch-action: auto; /* Allow standard touch gestures */
-    overscroll-behavior: none; /* Prevents bounce effect on iOS */
     -webkit-user-select: none; /* Safari */
     user-select: none; /* Prevent text highlighting */
     background-color: black;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  html.lenis {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
   }
 
   :root {
@@ -68,7 +75,6 @@
     background-attachment: fixed;
     cursor: crosshair;
     padding-bottom: env(safe-area-inset-bottom, 0);
-    overflow-x: hidden;
     position: relative;
     user-select: none; /* Prevent text selection for app-like feel */
   }
@@ -349,6 +355,14 @@
   .touch-manipulation {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* OVERLAY UTILITIES - Pointer Event Layering */
+  .pointer-events-none-wrapper {
+    pointer-events: none;
+  }
+  .pointer-events-auto-child {
+    pointer-events: auto;
   }
 
   /* View Transitions API - Smooth animations for PersistentPlayer */

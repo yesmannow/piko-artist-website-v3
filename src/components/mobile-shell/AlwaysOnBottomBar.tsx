@@ -56,6 +56,39 @@ export const AlwaysOnBottomBar = () => {
     // TODO: Apply crossfader logic to audio engine
   };
 
+  // PHASE 8: Sync handlers
+  const handleSyncA = () => {
+    triggerHaptic(HAPTIC_PATTERNS.CLICK);
+    const engine = getAudioEngine();
+    const playbackRate = engine.getPlaybackRate('deckA');
+    
+    if (playbackRate !== 1.0) {
+      // Already synced, unsync
+      engine.unsync('deckA');
+    } else {
+      // Sync to Deck B
+      engine.sync('deckA', 'deckB');
+    }
+  };
+
+  const handleSyncB = () => {
+    triggerHaptic(HAPTIC_PATTERNS.CLICK);
+    const engine = getAudioEngine();
+    const playbackRate = engine.getPlaybackRate('deckB');
+    
+    if (playbackRate !== 1.0) {
+      // Already synced, unsync
+      engine.unsync('deckB');
+    } else {
+      // Sync to Deck A
+      engine.sync('deckB', 'deckA');
+    }
+  };
+
+  // Get playback rates for sync button states
+  const deckAPlaybackRate = getAudioEngine().getPlaybackRate('deckA');
+  const deckBPlaybackRate = getAudioEngine().getPlaybackRate('deckB');
+
   return (
     <div className="h-20 bg-gray-900 border-t border-gray-800 flex items-center justify-between px-4 gap-4">
       {/* Deck A Controls */}
@@ -65,6 +98,17 @@ export const AlwaysOnBottomBar = () => {
           className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-xs font-barlow uppercase font-bold transition-all active:scale-95"
         >
           Load A
+        </button>
+        <button
+          onClick={handleSyncA}
+          disabled={!deckAState.url || !deckBState.url}
+          className="px-3 py-2 rounded text-xs font-barlow uppercase font-bold transition-all active:scale-95 disabled:opacity-30"
+          style={{
+            backgroundColor: deckAPlaybackRate !== 1.0 ? '#3b82f6' : '#374151',
+            color: deckAPlaybackRate !== 1.0 ? '#ffffff' : '#9ca3af'
+          }}
+        >
+          SYNC
         </button>
         <button
           onClick={handleDeckAPlayPause}
@@ -118,6 +162,17 @@ export const AlwaysOnBottomBar = () => {
           ) : (
             <Play className="w-6 h-6 text-white ml-0.5" />
           )}
+        </button>
+        <button
+          onClick={handleSyncB}
+          disabled={!deckAState.url || !deckBState.url}
+          className="px-3 py-2 rounded text-xs font-barlow uppercase font-bold transition-all active:scale-95 disabled:opacity-30"
+          style={{
+            backgroundColor: deckBPlaybackRate !== 1.0 ? '#3b82f6' : '#374151',
+            color: deckBPlaybackRate !== 1.0 ? '#ffffff' : '#9ca3af'
+          }}
+        >
+          SYNC
         </button>
         <button
           onClick={handleLoadDeckB}

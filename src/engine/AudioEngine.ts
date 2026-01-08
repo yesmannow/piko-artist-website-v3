@@ -8,31 +8,80 @@ interface DeckNode {
   buffer: AudioBuffer | null;
   startTime: number; // When playback started (context time)
   pauseTime: number; // Where playback paused (track time)
+  // PHASE 6: Loop System
+  loopActive: boolean;
+  loopStart: number; // Loop start time in seconds
+  loopEnd: number; // Loop end time in seconds
+  // PHASE 6: Hot Cue System
+  hotCues: Map<number, number>; // Cue index (1-4) -> timestamp in seconds
+  // PHASE 8: BPM & Sync
+  bpm: number; // Detected tempo
+  gridOffset: number; // Time of first beat in seconds
+  playbackRate: number; // Current playback speed (1.0 = normal)
 }
 
 class AudioEngine {
-  context: AudioContext;
-  masterGain: GainNode;
+  context: AudioContext | null = null;
+  masterGain: GainNode | null = null;
   decks: Map<string, DeckNode> = new Map();
   // Reusable buffer for analyser data (avoid GC)
   private analyserDataBuffer: Uint8Array<ArrayBuffer> = new Uint8Array(new ArrayBuffer(32));
+  private initialized: boolean = false;
+  state: 'Uninitialized' | 'Initializing' | 'Running' | 'Error' = 'Uninitialized';
 
   constructor() {
-    // Initialize with low latency for fast touch response
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    this.context = new AudioContextClass({
-      latencyHint: 'interactive'
-    });
+    // REMEDIATION: Do NOT initialize AudioContext in constructor
+    // Safari's autoplay policy requires user interaction
+  }
 
-    this.masterGain = this.context.createGain();
-    this.masterGain.connect(this.context.destination);
+  /**
+   * REMEDIATION: "Unlock" Audio Pattern
+   * Initialize AudioContext only via user interaction (tap)
+   * This prevents Safari from suspending the audio and iOS from killing the context
+   */
+  async initialize(): Promise<boolean> {
+    if (this.initialized) {
+      console.warn('AudioEngine already initialized');
+      return true;
+    }
 
-    // Initialize Decks A and B
-    this.initDeck('deckA');
-    this.initDeck('deckB');
+    try {
+      this.state = 'Initializing';
+
+      // Initialize with low latency for fast touch response
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      this.context = new AudioContextClass({
+        latencyHint: 'interactive'
+      });
+
+      // CRITICAL: Safari Autoplay Fix - Resume if suspended
+      if (this.context.state === 'suspended') {
+        await this.context.resume();
+      }
+
+      this.masterGain = this.context.createGain();
+      this.masterGain.connect(this.context.destination);
+
+      // Initialize Decks A and B
+      this.initDeck('deckA');
+      this.initDeck('deckB');
+
+      this.initialized = true;
+      this.state = 'Running';
+      console.log('✅ AudioEngine initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ AudioEngine initialization failed:', error);
+      this.state = 'Error';
+      return false;
+    }
   }
 
   private initDeck(id: string) {
+    if (!this.context || !this.masterGain) {
+      throw new Error('AudioEngine not initialized. Call initialize() first.');
+    }
+
     // Create filter node
     const filter = this.context.createBiquadFilter();
     filter.type = 'lowpass';
@@ -59,13 +108,25 @@ class AudioEngine {
       analyser: analyser,
       buffer: null,
       startTime: 0,
-      pauseTime: 0
+      pauseTime: 0,
+      loopActive: false,
+      loopStart: 0,
+      loopEnd: 0,
+      hotCues: new Map(),
+      bpm: 120,
+      gridOffset: 0,
+      playbackRate: 1.0
     });
   }
 
   // --- Public API called by UI ---
 
   async loadTrack(deckId: string, url: string) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
     const deck = this.decks.get(deckId);
     if (!deck) return;
 
@@ -89,6 +150,11 @@ class AudioEngine {
   }
 
   play(deckId: string) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
     // Resume context if browser suspended it (AutoPlay policy)
     if (this.context.state === 'suspended') {
       this.context.resume();
@@ -100,6 +166,17 @@ class AudioEngine {
     // Create new source node (they are one-time use)
     deck.source = this.context.createBufferSource();
     deck.source.buffer = deck.buffer;
+    
+    // PHASE 6: Apply loop settings if active
+    if (deck.loopActive && deck.loopEnd > deck.loopStart) {
+      deck.source.loop = true;
+      deck.source.loopStart = deck.loopStart;
+      deck.source.loopEnd = deck.loopEnd;
+    }
+    
+    // PHASE 8: Apply playback rate (for sync)
+    deck.source.playbackRate.value = deck.playbackRate;
+    
     // Route: source -> filter -> gain
     deck.source.connect(deck.filter);
 
@@ -111,6 +188,11 @@ class AudioEngine {
   }
 
   pause(deckId: string) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
     const deck = this.decks.get(deckId);
     if (!deck || !deck.source) return;
 
@@ -122,7 +204,43 @@ class AudioEngine {
     useAudioStore.getState().setDeckState(deckId, { isPlaying: false });
   }
 
+  /**
+   * PHASE 5: Seek to specific time in track
+   * Restarts playback from the specified position
+   */
+  seek(deckId: string, time: number) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
+    const deck = this.decks.get(deckId);
+    if (!deck || !deck.buffer) return;
+
+    const wasPlaying = useAudioStore.getState().decks[deckId].isPlaying;
+
+    // Stop current playback if playing
+    if (deck.source) {
+      deck.source.stop();
+      deck.source = null;
+    }
+
+    // Clamp time to valid range
+    const clampedTime = Math.max(0, Math.min(time, deck.buffer.duration));
+    deck.pauseTime = clampedTime;
+
+    // If was playing, restart from new position
+    if (wasPlaying) {
+      this.play(deckId);
+    }
+  }
+
   setVolume(deckId: string, value: number) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
     const deck = this.decks.get(deckId);
     if (deck) {
       // Smooth transition to prevent clicking
@@ -132,6 +250,11 @@ class AudioEngine {
   }
 
   setFilter(deckId: string, x: number, y: number) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
     const deck = this.decks.get(deckId);
     if (!deck) return;
 
@@ -170,6 +293,310 @@ class AudioEngine {
     
     // Return normalized 0-1 value
     return Math.min(1, rms * 2); // Multiply by 2 for better visual range
+  }
+
+  // PHASE 6: Loop System Methods
+
+  /**
+   * Set loop points for a deck
+   * @param deckId - Deck identifier
+   * @param start - Loop start time in seconds
+   * @param end - Loop end time in seconds (optional, calculates 4-beat loop if not provided)
+   */
+  setLoop(deckId: string, start: number, end?: number) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
+    const deck = this.decks.get(deckId);
+    if (!deck || !deck.buffer) return;
+
+    // If end not provided, calculate 4-beat loop
+    // Assume 120 BPM: 0.5s per beat * 4 = 2s loop
+    // Or use duration/16 as fallback for shorter tracks
+    if (end === undefined) {
+      const defaultLoopLength = Math.min(2.0, deck.buffer.duration / 16);
+      end = start + defaultLoopLength;
+    }
+
+    // Clamp to valid range
+    deck.loopStart = Math.max(0, start);
+    deck.loopEnd = Math.min(end, deck.buffer.duration);
+
+    console.log(`Loop set: ${deck.loopStart.toFixed(2)}s - ${deck.loopEnd.toFixed(2)}s`);
+  }
+
+  /**
+   * Activate loop on a deck
+   */
+  enableLoop(deckId: string) {
+    const deck = this.decks.get(deckId);
+    if (!deck) return;
+
+    deck.loopActive = true;
+
+    // If playing, restart with loop enabled
+    const isPlaying = useAudioStore.getState().decks[deckId].isPlaying;
+    if (isPlaying) {
+      this.pause(deckId);
+      this.play(deckId);
+    }
+
+    console.log(`Loop enabled on ${deckId}`);
+  }
+
+  /**
+   * Deactivate loop on a deck
+   */
+  disableLoop(deckId: string) {
+    const deck = this.decks.get(deckId);
+    if (!deck) return;
+
+    deck.loopActive = false;
+
+    // If playing, restart without loop
+    const isPlaying = useAudioStore.getState().decks[deckId].isPlaying;
+    if (isPlaying) {
+      this.pause(deckId);
+      this.play(deckId);
+    }
+
+    console.log(`Loop disabled on ${deckId}`);
+  }
+
+  /**
+   * Check if loop is active
+   */
+  isLoopActive(deckId: string): boolean {
+    const deck = this.decks.get(deckId);
+    return deck ? deck.loopActive : false;
+  }
+
+  // PHASE 6: Hot Cue System Methods
+
+  /**
+   * Set a hot cue at current playback position
+   * @param deckId - Deck identifier
+   * @param index - Cue index (1-4)
+   */
+  setHotCue(deckId: string, index: number) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
+    const deck = this.decks.get(deckId);
+    if (!deck || !deck.buffer) return;
+
+    // Calculate current playback position
+    const currentTime = this.context.currentTime - deck.startTime + deck.pauseTime;
+    const clampedTime = Math.max(0, Math.min(currentTime, deck.buffer.duration));
+
+    deck.hotCues.set(index, clampedTime);
+    console.log(`Hot cue ${index} set at ${clampedTime.toFixed(2)}s`);
+  }
+
+  /**
+   * Trigger a hot cue (jump to cue point)
+   * @param deckId - Deck identifier
+   * @param index - Cue index (1-4)
+   */
+  triggerHotCue(deckId: string, index: number) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
+    const deck = this.decks.get(deckId);
+    if (!deck || !deck.buffer) return;
+
+    // If cue exists, jump to it
+    if (deck.hotCues.has(index)) {
+      const cueTime = deck.hotCues.get(index)!;
+      this.seek(deckId, cueTime);
+      console.log(`Hot cue ${index} triggered: ${cueTime.toFixed(2)}s`);
+    } else {
+      // If cue doesn't exist, set it at current position
+      this.setHotCue(deckId, index);
+    }
+  }
+
+  /**
+   * Delete a hot cue
+   * @param deckId - Deck identifier
+   * @param index - Cue index (1-4)
+   */
+  deleteHotCue(deckId: string, index: number) {
+    const deck = this.decks.get(deckId);
+    if (!deck) return;
+
+    deck.hotCues.delete(index);
+    console.log(`Hot cue ${index} deleted`);
+  }
+
+  /**
+   * Check if a hot cue is set
+   * @param deckId - Deck identifier
+   * @param index - Cue index (1-4)
+   */
+  hasHotCue(deckId: string, index: number): boolean {
+    const deck = this.decks.get(deckId);
+    return deck ? deck.hotCues.has(index) : false;
+  }
+
+  // PHASE 8: BPM & Sync Methods
+
+  /**
+   * Set BPM and grid offset for a deck (called after BPM detection)
+   * @param deckId - Deck identifier
+   * @param bpm - Detected tempo
+   * @param gridOffset - Time of first beat in seconds
+   */
+  setBPM(deckId: string, bpm: number, gridOffset: number = 0) {
+    const deck = this.decks.get(deckId);
+    if (!deck) return;
+
+    deck.bpm = bpm;
+    deck.gridOffset = gridOffset;
+    console.log(`🎵 ${deckId} BPM set: ${bpm} (offset: ${gridOffset.toFixed(3)}s)`);
+  }
+
+  /**
+   * Get BPM for a deck
+   */
+  getBPM(deckId: string): number {
+    const deck = this.decks.get(deckId);
+    return deck ? deck.bpm : 120;
+  }
+
+  /**
+   * Get grid offset for a deck
+   */
+  getGridOffset(deckId: string): number {
+    const deck = this.decks.get(deckId);
+    return deck ? deck.gridOffset : 0;
+  }
+
+  /**
+   * Get playback rate for a deck
+   */
+  getPlaybackRate(deckId: string): number {
+    const deck = this.decks.get(deckId);
+    return deck ? deck.playbackRate : 1.0;
+  }
+
+  /**
+   * Sync source deck to target deck's tempo
+   * @param sourceDeckId - Deck to adjust
+   * @param targetDeckId - Deck to match
+   */
+  sync(sourceDeckId: string, targetDeckId: string) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
+    const sourceDeck = this.decks.get(sourceDeckId);
+    const targetDeck = this.decks.get(targetDeckId);
+
+    if (!sourceDeck || !targetDeck) {
+      console.error('Invalid deck IDs for sync');
+      return;
+    }
+
+    if (targetDeck.bpm === 0 || sourceDeck.bpm === 0) {
+      console.warn('Cannot sync: BPM not detected for one or both decks');
+      return;
+    }
+
+    // Calculate playback rate to match target BPM
+    const playbackRate = targetDeck.bpm / sourceDeck.bpm;
+    sourceDeck.playbackRate = playbackRate;
+
+    // Apply to source node if playing
+    if (sourceDeck.source) {
+      sourceDeck.source.playbackRate.setTargetAtTime(
+        playbackRate,
+        this.context.currentTime,
+        0.05 // 50ms smooth transition
+      );
+    }
+
+    console.log(`🔄 Sync: ${sourceDeckId} (${sourceDeck.bpm} BPM) -> ${targetDeckId} (${targetDeck.bpm} BPM)`);
+    console.log(`   Playback rate: ${playbackRate.toFixed(3)}x`);
+
+    // BONUS: Phase alignment (align beats)
+    this.alignPhase(sourceDeckId, targetDeckId);
+  }
+
+  /**
+   * Align beats between two decks (phase matching)
+   * @param sourceDeckId - Deck to adjust
+   * @param targetDeckId - Deck to match
+   */
+  private alignPhase(sourceDeckId: string, targetDeckId: string) {
+    if (!this.context) return;
+
+    const sourceDeck = this.decks.get(sourceDeckId);
+    const targetDeck = this.decks.get(targetDeckId);
+
+    if (!sourceDeck || !targetDeck || !sourceDeck.buffer || !targetDeck.buffer) return;
+
+    // Calculate current playback positions
+    const sourceTime = this.context.currentTime - sourceDeck.startTime + sourceDeck.pauseTime;
+    const targetTime = this.context.currentTime - targetDeck.startTime + targetDeck.pauseTime;
+
+    // Calculate beat positions relative to grid
+    const sourceBeatLength = 60 / sourceDeck.bpm;
+    const targetBeatLength = 60 / targetDeck.bpm;
+
+    const sourcePhase = (sourceTime - sourceDeck.gridOffset) % sourceBeatLength;
+    const targetPhase = (targetTime - targetDeck.gridOffset) % targetBeatLength;
+
+    // Calculate phase difference
+    const phaseDiff = targetPhase - sourcePhase;
+
+    // If phase difference is significant, nudge the source deck
+    if (Math.abs(phaseDiff) > 0.05) { // 50ms threshold
+      const nudgeAmount = phaseDiff / sourceDeck.playbackRate;
+      const newPauseTime = sourceDeck.pauseTime + nudgeAmount;
+
+      // Restart playback at aligned position
+      if (useAudioStore.getState().decks[sourceDeckId].isPlaying) {
+        this.pause(sourceDeckId);
+        sourceDeck.pauseTime = newPauseTime;
+        this.play(sourceDeckId);
+        console.log(`   Phase aligned: nudged ${(nudgeAmount * 1000).toFixed(0)}ms`);
+      }
+    }
+  }
+
+  /**
+   * Reset playback rate to normal (unsync)
+   * @param deckId - Deck identifier
+   */
+  unsync(deckId: string) {
+    if (!this.context) {
+      console.error('AudioEngine not initialized');
+      return;
+    }
+
+    const deck = this.decks.get(deckId);
+    if (!deck) return;
+
+    deck.playbackRate = 1.0;
+
+    // Apply to source node if playing
+    if (deck.source) {
+      deck.source.playbackRate.setTargetAtTime(
+        1.0,
+        this.context.currentTime,
+        0.05
+      );
+    }
+
+    console.log(`🔄 Unsync: ${deckId} reset to 1.0x`);
   }
 }
 

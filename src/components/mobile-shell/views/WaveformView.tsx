@@ -1,10 +1,15 @@
 "use client";
 
 import { useUIStore } from '@/store/useUIStore';
+import { useAudioStore } from '@/store/useAudioStore';
 import { Music } from 'lucide-react';
+import { WaveformCanvas } from './WaveformCanvas';
+import { ScrubLayer } from './ScrubLayer';
 
 export const WaveformView = () => {
   const openLibrary = useUIStore((state) => state.openLibrary);
+  const deckAState = useAudioStore((state) => state.decks.deckA);
+  const deckBState = useAudioStore((state) => state.decks.deckB);
 
   return (
     <div className="h-full w-full flex flex-col">
@@ -15,73 +20,99 @@ export const WaveformView = () => {
         </h2>
       </div>
 
-      {/* Deck Placeholders */}
-      <div className="flex-1 flex gap-2 p-2">
+      {/* Deck Waveforms */}
+      <div className="flex-1 flex flex-col gap-2 p-2">
         {/* Deck A */}
-        <div 
-          className="flex-1 rounded-lg border-2 flex items-center justify-center relative"
-          style={{ 
-            backgroundColor: 'rgba(0, 217, 255, 0.1)',
-            borderColor: '#00d9ff'
-          }}
-        >
-          <div className="text-center">
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="flex items-center justify-between px-2">
             <div 
-              className="text-4xl font-barlow uppercase tracking-wider font-bold mb-4"
+              className="text-lg font-barlow uppercase tracking-wider font-bold"
               style={{ color: '#00d9ff' }}
             >
               DECK A
             </div>
-            <div className="text-xs text-gray-500 mb-6">
-              Waveform visualization coming soon
-            </div>
-            
-            {/* Load Button */}
             <button
               onClick={() => openLibrary('deckA')}
-              className="px-8 py-4 rounded-lg font-barlow uppercase text-lg font-bold transition-all active:scale-95 flex items-center gap-2 mx-auto"
+              className="px-4 py-2 rounded-lg font-barlow uppercase text-sm font-bold transition-all active:scale-95 flex items-center gap-2"
               style={{
                 backgroundColor: '#00d9ff',
                 color: '#000'
               }}
             >
-              <Music className="w-5 h-5" />
-              LOAD TRACK
+              <Music className="w-4 h-4" />
+              LOAD
             </button>
+          </div>
+          
+          {/* Waveform Container */}
+          <div 
+            className="relative flex-1 rounded-lg border-2 overflow-hidden"
+            style={{ 
+              backgroundColor: 'rgba(0, 217, 255, 0.05)',
+              borderColor: '#00d9ff',
+              minHeight: '80px'
+            }}
+          >
+            {deckAState.url ? (
+              <>
+                <WaveformCanvas deckId="deckA" color="#00d9ff" />
+                <ScrubLayer deckId="deckA" />
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-gray-600">
+                  <Music className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <div className="text-xs">No track loaded</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Deck B */}
-        <div 
-          className="flex-1 rounded-lg border-2 flex items-center justify-center relative"
-          style={{ 
-            backgroundColor: 'rgba(255, 0, 217, 0.1)',
-            borderColor: '#ff00d9'
-          }}
-        >
-          <div className="text-center">
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="flex items-center justify-between px-2">
             <div 
-              className="text-4xl font-barlow uppercase tracking-wider font-bold mb-4"
+              className="text-lg font-barlow uppercase tracking-wider font-bold"
               style={{ color: '#ff00d9' }}
             >
               DECK B
             </div>
-            <div className="text-xs text-gray-500 mb-6">
-              Waveform visualization coming soon
-            </div>
-            
-            {/* Load Button */}
             <button
               onClick={() => openLibrary('deckB')}
-              className="px-8 py-4 rounded-lg font-barlow uppercase text-lg font-bold transition-all active:scale-95 flex items-center gap-2 mx-auto"
+              className="px-4 py-2 rounded-lg font-barlow uppercase text-sm font-bold transition-all active:scale-95 flex items-center gap-2"
               style={{
                 backgroundColor: '#ff00d9',
                 color: '#000'
               }}
             >
-              <Music className="w-5 h-5" />
-              LOAD TRACK
+              <Music className="w-4 h-4" />
+              LOAD
             </button>
+          </div>
+          
+          {/* Waveform Container */}
+          <div 
+            className="relative flex-1 rounded-lg border-2 overflow-hidden"
+            style={{ 
+              backgroundColor: 'rgba(255, 0, 217, 0.05)',
+              borderColor: '#ff00d9',
+              minHeight: '80px'
+            }}
+          >
+            {deckBState.url ? (
+              <>
+                <WaveformCanvas deckId="deckB" color="#ff00d9" />
+                <ScrubLayer deckId="deckB" />
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-gray-600">
+                  <Music className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <div className="text-xs">No track loaded</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

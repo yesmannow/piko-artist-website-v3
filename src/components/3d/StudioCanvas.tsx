@@ -10,6 +10,7 @@ import { HolographicDeck } from "./HolographicDeck";
 import { useOrientation } from "@/hooks/useOrientation";
 import { useSceneCleanup } from "@/hooks/useSceneCleanup";
 import { useGyroLighting } from "@/hooks/useGyroLighting";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import * as THREE from "three";
 
 interface StudioCanvasProps {
@@ -42,12 +43,14 @@ function SceneContent({
   remixIntensity = 0,
   visualizerLevel = 0,
   gyroOrientation,
+  isMobile,
 }: Omit<StudioCanvasProps, "playbackRate"> & {
   isLandscape: boolean;
   impactPulse?: boolean;
   remixIntensity?: number;
   visualizerLevel?: number;
   gyroOrientation?: { x: number; y: number };
+  isMobile: boolean;
 }) {
   const { scene, camera } = useThree();
   const sceneRef = useRef(scene);
@@ -146,19 +149,21 @@ function SceneContent({
         />
       </animated.group>
 
-      {/* Post-Processing Effects */}
-      <EffectComposer>
-        <Bloom intensity={0.5} luminanceThreshold={0.9} />
-        {getFrequencyData ? (
-          <GlitchController
-            getFrequencyData={getFrequencyData}
-            impactPulse={impactPulse}
-            remixIntensity={remixIntensity}
-          />
-        ) : (
-          <></>
-        )}
-      </EffectComposer>
+      {/* Post-Processing Effects - REMEDIATION: Disabled on mobile for performance */}
+      {!isMobile && (
+        <EffectComposer>
+          <Bloom intensity={0.5} luminanceThreshold={0.9} />
+          {getFrequencyData ? (
+            <GlitchController
+              getFrequencyData={getFrequencyData}
+              impactPulse={impactPulse}
+              remixIntensity={remixIntensity}
+            />
+          ) : (
+            <></>
+          )}
+        </EffectComposer>
+      )}
     </>
   );
 }
@@ -203,14 +208,22 @@ export function StudioCanvas({
     config: { mass: 1, tension: 120, friction: 26 },
   });
 
+  // REMEDIATION: Mobile detection for WebGL optimizations
+  const isMobile = useIsMobile();
+  
   // Battery saver: only render when needed
   const shouldRender = deckAIsPlaying || deckBIsPlaying || visualizerLevel > 0;
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
-    <div className="absolute inset-0 z-0 relative" style={{ touchAction: "none" }}>
+    <div className="absolute inset-0 z-0" style={{ touchAction: "none" }}>
       <Canvas
-        dpr={[1, 2]} // CRITICAL: Cap DPR at 2x to prevent mobile overheating
+        // REMEDIATION: Mobile WebGL Optimization
+        dpr={isMobile ? [1, 1.5] : [1, 2]} // Cap at 1.5 on mobile (Retina 3.0 DPR crashes WebGL)
+        gl={{
+          antialias: !isMobile, // Disable antialiasing on mobile
+          powerPreference: "high-performance",
+          preserveDrawingBuffer: false, // Memory optimization
+        }}
         camera={{ position: [0, 0, 12], fov: 50 }}
         className="touch-none"
         style={{ touchAction: "none" }}
@@ -229,6 +242,7 @@ export function StudioCanvas({
           remixIntensity={remixIntensity}
           visualizerLevel={visualizerLevel}
           gyroOrientation={{ x: gyroX, y: gyroY }}
+          isMobile={isMobile}
         />
       </Canvas>
       {/* Brightness filter for environmental reactivity */}
