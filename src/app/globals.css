@@ -7,8 +7,9 @@
   body {
     height: 100%;
     width: 100%;
-    overflow-x: hidden; overflow-y: auto; /* No scrolling allowed */
-    touch-action: auto; /* Disables standard gestures like pull-to-refresh */
+    overflow-x: hidden; 
+    overflow-y: auto; /* Allow vertical scrolling */
+    touch-action: auto; /* Allow standard touch gestures */
     overscroll-behavior: none; /* Prevents bounce effect on iOS */
     -webkit-user-select: none; /* Safari */
     user-select: none; /* Prevent text highlighting */

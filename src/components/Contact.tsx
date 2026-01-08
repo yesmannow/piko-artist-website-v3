@@ -110,6 +110,7 @@ export function Contact() {
                   required
                   minLength={2}
                   maxLength={100}
+                  autoComplete="name"
                   aria-label="Your name"
                   aria-required="true"
                   className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600"
@@ -136,6 +137,7 @@ export function Contact() {
                   onChange={handleChange}
                   required
                   maxLength={254}
+                  autoComplete="email"
                   aria-label="Your email address"
                   aria-required="true"
                   className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600"

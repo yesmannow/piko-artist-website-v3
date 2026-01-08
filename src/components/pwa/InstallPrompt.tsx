@@ -80,16 +80,27 @@ export function InstallPrompt() {
 
   const handleInstall = async () => {
     if (deferredPromptRef.current) {
-      // Android/Chrome install
-      await deferredPromptRef.current.prompt();
-      const { outcome } = await deferredPromptRef.current.userChoice;
+      try {
+        // Android/Chrome install - call prompt() to show the native install dialog
+        await deferredPromptRef.current.prompt();
+        const { outcome } = await deferredPromptRef.current.userChoice;
 
-      if (outcome === "accepted") {
-        setIsInstalled(true);
+        if (outcome === "accepted") {
+          setIsInstalled(true);
+          setShowPrompt(false);
+        } else {
+          // User dismissed the prompt
+          setShowPrompt(false);
+          dismissedRef.current = true;
+        }
+
+        deferredPromptRef.current = null;
+      } catch (error) {
+        // Handle prompt() errors gracefully
+        console.warn("[PWA] Install prompt error:", error);
         setShowPrompt(false);
+        dismissedRef.current = true;
       }
-
-      deferredPromptRef.current = null;
     } else {
       // iOS - show instructions (could open a modal)
       setShowPrompt(false);

@@ -126,6 +126,7 @@ export function BookingForm() {
               required
               minLength={2}
               maxLength={100}
+              autoComplete="organization"
               aria-label="Promoter or entity name"
               aria-required="true"
               className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
@@ -152,6 +153,7 @@ export function BookingForm() {
               onChange={handleChange}
               required
               maxLength={254}
+              autoComplete="email"
               aria-label="Email address"
               aria-required="true"
               className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
@@ -231,6 +233,7 @@ export function BookingForm() {
               required
               min="1"
               max="1000000"
+              autoComplete="off"
               aria-label="Venue capacity"
               aria-required="true"
               className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
@@ -257,6 +260,7 @@ export function BookingForm() {
               onChange={handleChange}
               required
               maxLength={100}
+              autoComplete="off"
               aria-label="Budget or offer amount"
               aria-required="true"
               className="w-full px-4 py-3 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-lg focus:outline-none focus:ring-2 focus:ring-safety-orange transition-all placeholder:text-gray-600"
