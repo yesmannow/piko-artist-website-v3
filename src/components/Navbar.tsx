@@ -521,7 +521,7 @@ export function Navbar() {
                             triggerHaptic();
                             handleNavClick(e, item);
                           }}
-                          className={`block text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-transparent ${
+                          className={`text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-transparent ${
                             active
                               ? "text-[#FFD700] bg-[#FFD700]/15 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
                               : "text-zinc-400 hover:text-white hover:bg-white/10"

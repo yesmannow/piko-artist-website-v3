@@ -53,8 +53,9 @@ interface TrackSettings {
 
 export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
-  const { triggerHaptic } = useHaptic();
+  const { triggerHaptic: baseTriggerHaptic } = useHaptic();
   const pathname = usePathname();
+  const [audioGraphReady, setAudioGraphReady] = useState(false);
 
   // Deck A state
   const [deckAData, setDeckAData] = useState<typeof tracks[0] | null>(null);
@@ -95,8 +96,23 @@ export function DJInterface() {
   // Active deck for FX control
   const [activeDeck, setActiveDeck] = useState<"A" | "B">("A");
 
+  // Headphone cue monitoring
+  const [deckACue, setDeckACue] = useState(false);
+  const [deckBCue, setDeckBCue] = useState(false);
+  const [cueEnabled, setCueEnabled] = useState(false);
+  const [cueLevel, setCueLevel] = useState(0.3);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [theme, setTheme] = useState<"default" | "high-contrast" | "oled">("default");
+
+  // Gate haptics behind user toggle
+  const triggerHaptic = useCallback(() => {
+    if (hapticsEnabled) {
+      baseTriggerHaptic();
+    }
+  }, [hapticsEnabled, baseTriggerHaptic]);
+
   // FX state for Deck A
-  const [filterFreqA, setFilterFreqA] = useState(1000);
+  const [filterFreqA, setFilterFreqA] = useState(20000);
   const [filterTypeA, setFilterTypeA] = useState<"lowpass" | "highpass" | "bandpass">("lowpass");
   const [reverbDryWetA, setReverbDryWetA] = useState(0);
   const [delayTimeA, setDelayTimeA] = useState(0);
@@ -110,7 +126,7 @@ export function DJInterface() {
   const [distortionBypassA, setDistortionBypassA] = useState(false);
 
   // FX state for Deck B
-  const [filterFreqB, setFilterFreqB] = useState(1000);
+  const [filterFreqB, setFilterFreqB] = useState(20000);
   const [filterTypeB, setFilterTypeB] = useState<"lowpass" | "highpass" | "bandpass">("lowpass");
   const [reverbDryWetB, setReverbDryWetB] = useState(0);
   const [delayTimeB, setDelayTimeB] = useState(0);
@@ -187,6 +203,9 @@ export function DJInterface() {
   const masterLimiterRef = useRef<DynamicsCompressorNode | null>(null);
   const vuAnalyserLeftRef = useRef<AnalyserNode | null>(null);
   const vuAnalyserRightRef = useRef<AnalyserNode | null>(null);
+  const cueMasterGainRef = useRef<GainNode | null>(null);
+  const deckACueSendRef = useRef<GainNode | null>(null);
+  const deckBCueSendRef = useRef<GainNode | null>(null);
   const [limiterThreshold, setLimiterThreshold] = useState(-3); // dB threshold
 
   // Recording hook - records from limiter output (post-master FX, what listener hears)
@@ -453,6 +472,27 @@ export function DJInterface() {
     delayB.connect(delayFeedbackGainB);
     delayFeedbackGainB.connect(delayB);
 
+    // ========= CUE MONITOR BUS =========
+    const cueMaster = ctx.createGain();
+    cueMaster.gain.value = 1.0;
+    cueMasterGainRef.current = cueMaster;
+
+    const cueSendA = ctx.createGain();
+    cueSendA.gain.value = 0;
+    deckACueSendRef.current = cueSendA;
+
+    const cueSendB = ctx.createGain();
+    cueSendB.gain.value = 0;
+    deckBCueSendRef.current = cueSendB;
+
+    // tap pre‑FX signals into cue sends
+    preFxGainA.connect(cueSendA);
+    preFxGainB.connect(cueSendB);
+    cueSendA.connect(cueMaster);
+    cueSendB.connect(cueMaster);
+    // route headphones monitor to device output (separate from master chain)
+    cueMaster.connect(ctx.destination);
+
     // Connect filter chains: Low -> Mid -> High -> Gain (Volume)
     deckALowFilter.connect(deckAMidFilter);
     deckAMidFilter.connect(deckAHighFilter);
@@ -518,6 +558,9 @@ export function DJInterface() {
     limiter.connect(vuAnalyserRight);
     analyser.connect(ctx.destination);
 
+    // Flag graph as ready so children receive valid nodes
+    setAudioGraphReady(true);
+
     return () => {
       // Cleanup ONLY on unmount
       if (audioContextRef.current) {
@@ -534,6 +577,20 @@ export function DJInterface() {
       }
     };
   }, []); // <--- EMPTY DEPENDENCY ARRAY (Crucial!)
+
+  // Default-condense sidebar on mobile
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setIsSidebarMinimized(true);
+    }
+  }, []);
+
+  // Update cue send levels
+  useEffect(() => {
+    const level = cueEnabled ? cueLevel : 0;
+    if (deckACueSendRef.current) deckACueSendRef.current.gain.value = deckACue ? level : 0;
+    if (deckBCueSendRef.current) deckBCueSendRef.current.gain.value = deckBCue ? level : 0;
+  }, [cueEnabled, cueLevel, deckACue, deckBCue]);
 
   // 2. VOLUME UPDATES
   // Calculate crossfader curve
@@ -803,6 +860,23 @@ export function DJInterface() {
       window.removeEventListener("orientationchange", checkOrientation);
     };
   }, [isMounted]);
+
+  // Theme background styles
+  const backgroundStyle = useMemo(() => {
+    if (theme === "oled") {
+      return { background: "#000000", backgroundImage: "none" } as React.CSSProperties;
+    }
+    const baseGrid = `
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, ${theme === "high-contrast" ? 0.08 : 0.03}) 2px,
+        rgba(0, 0, 0, ${theme === "high-contrast" ? 0.08 : 0.03}) 4px
+      )
+    `;
+    return { background: "#121212", backgroundImage: baseGrid } as React.CSSProperties;
+  }, [theme]);
 
   // Uploaded tracks state
   const [uploadedTracks, setUploadedTracks] = useState<typeof tracks[0][]>([]);
@@ -1172,18 +1246,7 @@ export function DJInterface() {
       <ConsoleTour />
       <div
         className="min-h-screen flex"
-        style={{
-        background: "#121212",
-        backgroundImage: `
-          repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(0, 0, 0, 0.03) 2px,
-            rgba(0, 0, 0, 0.03) 4px
-          )
-        `,
-      }}
+        style={backgroundStyle}
     >
       {/* Left Sidebar - Track Library with Auto-Hide */}
       <aside
@@ -2059,6 +2122,7 @@ export function DJInterface() {
               borderColor: deckAColors?.primary || "#00d9ff",
             }}
           >
+            {audioGraphReady && (
             <DJDeck
               ref={deckARef}
               trackUrl={deckAData?.src || null}
@@ -2081,7 +2145,7 @@ export function DJInterface() {
               onSlipModeToggle={() => setIsSlipModeA(!isSlipModeA)}
               onScratch={(velocity, isTouching) => handleScratch(velocity, isTouching, "A")}
               deckId="A"
-            />
+            />)}
             {/* Enhanced Drop indicator */}
             <div
               className="absolute inset-0 border-2 border-dashed border-[#00d9ff] rounded-lg pointer-events-none opacity-0 transition-all bg-[#00d9ff]/10 backdrop-blur-sm"
@@ -2148,6 +2212,18 @@ export function DJInterface() {
             onClearRecording={mixRecorder.clear}
             limiterThreshold={limiterThreshold}
             onLimiterThresholdChange={setLimiterThreshold}
+            deckACue={deckACue}
+            onDeckACueChange={setDeckACue}
+            deckBCue={deckBCue}
+            onDeckBCueChange={setDeckBCue}
+            cueEnabled={cueEnabled}
+            onCueEnabledChange={setCueEnabled}
+            cueLevel={cueLevel}
+            onCueLevelChange={setCueLevel}
+            hapticsEnabled={hapticsEnabled}
+            onHapticsEnabledChange={setHapticsEnabled}
+            theme={theme}
+            onThemeChange={setTheme}
           />
           </div>
 
@@ -2166,6 +2242,7 @@ export function DJInterface() {
               borderColor: deckBColors?.primary || "#ff00d9",
             }}
           >
+            {audioGraphReady && (
             <DJDeck
               ref={deckBRef}
               trackUrl={deckBData?.src || null}
@@ -2188,7 +2265,7 @@ export function DJInterface() {
               onSlipModeToggle={() => setIsSlipModeB(!isSlipModeB)}
               onScratch={(velocity, isTouching) => handleScratch(velocity, isTouching, "B")}
               deckId="B"
-            />
+            />)}
             {/* Enhanced Drop indicator */}
             <div
               className="absolute inset-0 border-2 border-dashed border-[#ff00d9] rounded-lg pointer-events-none opacity-0 transition-all bg-[#ff00d9]/10 backdrop-blur-sm"

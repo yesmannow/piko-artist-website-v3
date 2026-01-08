@@ -103,6 +103,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [showBeatGrid, setShowBeatGrid] = useState(false);
     const [beatPositions, setBeatPositions] = useState<number[]>([]);
     const [quantizeEnabled, setQuantizeEnabled] = useState(false);
+    const [beatGridOffset, setBeatGridOffset] = useState(0); // seconds; adjust if BPM grid is slightly off
     const [isReversedState, setIsReversedState] = useState(isReversed || false);
 
     // Use internal state for isReversed, sync with prop if it changes
@@ -147,10 +148,16 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     useEffect(() => {
       if (!waveformRef.current) return;
 
-      // 1. Create Audio Element with CORS (Crucial for Web Audio API)
+      // 1. Create Audio Element
       const audio = document.createElement("audio");
-      audio.crossOrigin = "anonymous";
+      // Only set CORS for external URLs; local files don't need (and may reject) CORS
+      if (trackUrl && /^(https?:)?\/\//i.test(trackUrl)) {
+        audio.crossOrigin = "anonymous";
+      }
       audio.controls = false;
+      audio.preload = "auto";
+      audio.muted = false;
+      audio.volume = 1;
 
       // 2. Initialize WaveSurfer with this element
       // Determine waveform colors based on deck color (cyan for A, magenta for B)
@@ -181,7 +188,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
       wavesurferRef.current = ws;
 
-      ws.on("ready", () => {
+      const connectMedia = () => {
         setDuration(ws.getDuration());
         onLoaded?.();
 
@@ -206,11 +213,13 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             }
           }
         }
-      });
+      };
 
-      ws.on("play", () => {
-        // Play event handled by parent
-      });
+      ws.on("ready", connectMedia);
+      // Fallback: also attempt connection on play (covers some mobile browsers)
+      ws.on("play", connectMedia);
+
+      // 'play' handled above for connection
 
       ws.on("pause", () => {
         // Pause event handled by parent
@@ -408,7 +417,22 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
       // Normal forward playback
       if (wavesurferRef.current) {
-        wavesurferRef.current.playPause();
+        const ws = wavesurferRef.current;
+        if (quantizeEnabled && bpm) {
+          const isPlayingNow = ws.isPlaying();
+          const dur = ws.getDuration() || 1;
+          if (!isPlayingNow) {
+            // Quantize start position before playing
+            const t = ws.getCurrentTime();
+            const snapped = snapToBeat(t - beatGridOffset, bpm, 1.0) + beatGridOffset;
+            ws.seekTo(Math.max(0, Math.min(snapped, dur)) / dur);
+            ws.play();
+          } else {
+            ws.pause();
+          }
+        } else {
+          ws.playPause();
+        }
       }
       onPlayPause();
     };
@@ -488,7 +512,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           // Set cue point at current position (with quantize if enabled)
           let currentTime = wavesurferRef.current.getCurrentTime();
           if (quantizeEnabled && bpm) {
-            currentTime = snapToBeat(currentTime, bpm, 1.0);
+            const snapped = snapToBeat(currentTime - beatGridOffset, bpm, 1.0) + beatGridOffset;
+            currentTime = snapped;
             wavesurferRef.current.seekTo(currentTime / (wavesurferRef.current.getDuration() || 1));
           }
           setCuePoint(currentTime);
@@ -496,7 +521,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           // Jump to cue point (with quantize if enabled)
           let seekTime = cuePoint;
           if (quantizeEnabled && bpm) {
-            seekTime = snapToBeat(cuePoint, bpm, 1.0);
+            seekTime = snapToBeat(cuePoint - beatGridOffset, bpm, 1.0) + beatGridOffset;
           }
           wavesurferRef.current.seekTo(seekTime / (wavesurferRef.current.getDuration() || 1));
         }
@@ -602,7 +627,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
       // Quantize loop start if quantize is enabled
       if (quantizeEnabled && bpm) {
-        currentTime = snapToBeat(currentTime, bpm, 1.0);
+        const snapped = snapToBeat(currentTime - beatGridOffset, bpm, 1.0) + beatGridOffset;
+        currentTime = snapped;
         wavesurferRef.current.seekTo(currentTime / duration);
       }
 
@@ -929,6 +955,23 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             >
               <Grid3x3 className="w-4 h-4" />
             </button>
+            {/* Beat grid alignment nudges */}
+            <div className="flex items-center gap-1" title="Align beat grid">
+              <button
+                onClick={() => setBeatGridOffset((o) => o - 0.02)}
+                className="px-2 py-1 text-[10px] font-barlow uppercase rounded border border-gray-700 text-gray-400 hover:border-gray-600"
+                aria-label="Nudge grid left"
+              >
+                «
+              </button>
+              <button
+                onClick={() => setBeatGridOffset((o) => o + 0.02)}
+                className="px-2 py-1 text-[10px] font-barlow uppercase rounded border border-gray-700 text-gray-400 hover:border-gray-600"
+                aria-label="Nudge grid right"
+              >
+                »
+              </button>
+            </div>
             <button
               onClick={() => {
                 setQuantizeEnabled(!quantizeEnabled);
@@ -1080,7 +1123,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           {showBeatGrid && beatPositions.length > 0 && duration > 0 && (
             <div className="absolute inset-0 pointer-events-none z-10" style={{ padding: "8px" }}>
               {beatPositions.map((beatTime, index) => {
-                const position = (beatTime / duration) * 100;
+                const position = ((beatTime + beatGridOffset) / duration) * 100;
                 return (
                   <div
                     key={index}

@@ -6,7 +6,7 @@ import { Crossfader } from "./dj-ui/Crossfader";
 import { AudioReactiveVisualizer } from "./dj-ui/AudioReactiveVisualizer";
 import { VUMeter } from "./dj-ui/VUMeter";
 import { SessionRecorder } from "./studio/SessionRecorder";
-import { Circle, Square, Download, Trash2 } from "lucide-react";
+import { Circle, Square, Download, Trash2, Headphones } from "lucide-react";
 
 interface DJMixerProps {
   // Deck A controls
@@ -69,6 +69,22 @@ interface DJMixerProps {
 
   // Session Recorder (canvas + audio)
   masterLimiterNode?: AudioNode | null;
+
+  // Pre-cue monitoring
+  deckACue?: boolean;
+  onDeckACueChange?: (value: boolean) => void;
+  deckBCue?: boolean;
+  onDeckBCueChange?: (value: boolean) => void;
+  cueEnabled?: boolean;
+  onCueEnabledChange?: (value: boolean) => void;
+  cueLevel?: number;
+  onCueLevelChange?: (value: number) => void;
+
+  // UI/UX toggles
+  hapticsEnabled?: boolean;
+  onHapticsEnabledChange?: (value: boolean) => void;
+  theme?: "default" | "high-contrast" | "oled";
+  onThemeChange?: (theme: "default" | "high-contrast" | "oled") => void;
 }
 
 export function DJMixer({
@@ -119,6 +135,18 @@ export function DJMixer({
   limiterThreshold = -3,
   onLimiterThresholdChange,
   masterLimiterNode,
+  deckACue = false,
+  onDeckACueChange,
+  deckBCue = false,
+  onDeckBCueChange,
+  cueEnabled = false,
+  onCueEnabledChange,
+  cueLevel = 0.3,
+  onCueLevelChange,
+  hapticsEnabled = true,
+  onHapticsEnabledChange,
+  theme = "default",
+  onThemeChange,
 }: DJMixerProps) {
   // Calculate limiter gradient percentage
   const limiterPercentage = ((limiterThreshold + 12) / 12) * 100;
@@ -138,6 +166,16 @@ export function DJMixer({
           <div className="text-sm font-barlow uppercase text-[#00d9ff] mb-1 font-bold tracking-wider">
             DECK A
           </div>
+          <button
+            onClick={() => onDeckACueChange && onDeckACueChange(!deckACue)}
+            className={`px-3 py-1 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[32px] ${
+              deckACue ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+            }`}
+            aria-label="Toggle Deck A cue monitor"
+            title="Cue Monitor"
+          >
+            CUE
+          </button>
 
           {/* Volume Fader */}
           <Fader
@@ -273,6 +311,58 @@ export function DJMixer({
                 width={typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200}
                 helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
               />
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  onClick={() => onCueEnabledChange && onCueEnabledChange(!cueEnabled)}
+                  className={`px-3 py-1.5 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[32px] flex items-center gap-2 ${
+                    cueEnabled ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                  }`}
+                  aria-label="Toggle headphones cue"
+                  title="Headphones Monitor"
+                >
+                  <Headphones className="w-4 h-4" /> HP
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-500 font-barlow">LVL</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.7"
+                    step="0.05"
+                    value={cueLevel}
+                    onChange={(e) => onCueLevelChange && onCueLevelChange(parseFloat(e.target.value))}
+                    className="h-1 w-28 accent-[#FFD700]"
+                    aria-label="Cue monitor level"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  onClick={() => onHapticsEnabledChange && onHapticsEnabledChange(!hapticsEnabled)}
+                  className={`px-3 py-1.5 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[32px] ${
+                    hapticsEnabled ? "bg-white/10 text-white border-white/20" : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                  }`}
+                  aria-label="Toggle haptics"
+                  title="Haptics"
+                >
+                  HAPTICS
+                </button>
+                <div className="flex items-center gap-1">
+                  {(["default","high-contrast","oled"] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => onThemeChange && onThemeChange(opt)}
+                      className={`px-2 py-1 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[28px] ${
+                        theme === opt ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+                      }`}
+                      aria-label={`Set theme ${opt}`}
+                      title={`Theme: ${opt}`}
+                    >
+                      {opt === "default" ? "DEF" : opt === "high-contrast" ? "HIGH" : "OLED"}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {/* Crossfader Curve Control */}
               {onCrossfaderCurveChange && (
                 <div className="w-full flex flex-col items-center gap-2">
@@ -416,6 +506,16 @@ export function DJMixer({
           <div className="text-sm font-barlow uppercase text-[#ff00d9] mb-1 font-bold tracking-wider">
             DECK B
           </div>
+          <button
+            onClick={() => onDeckBCueChange && onDeckBCueChange(!deckBCue)}
+            className={`px-3 py-1 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[32px] ${
+              deckBCue ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
+            }`}
+            aria-label="Toggle Deck B cue monitor"
+            title="Cue Monitor"
+          >
+            CUE
+          </button>
 
           {/* Volume Fader */}
           <Fader
