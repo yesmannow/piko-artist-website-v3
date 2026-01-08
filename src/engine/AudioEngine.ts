@@ -15,7 +15,7 @@ class AudioEngine {
   masterGain: GainNode;
   decks: Map<string, DeckNode> = new Map();
   // Reusable buffer for analyser data (avoid GC)
-  private analyserDataBuffer: Uint8Array = new Uint8Array(32);
+  private analyserDataBuffer: Uint8Array<ArrayBuffer> = new Uint8Array(new ArrayBuffer(32));
 
   constructor() {
     // Initialize with low latency for fast touch response

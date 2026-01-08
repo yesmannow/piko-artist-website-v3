@@ -9,7 +9,7 @@ interface VUMeterProps {
 
 export const VUMeter = ({ deckId }: VUMeterProps) => {
   const barRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     // requestAnimationFrame loop (runs outside React)
@@ -33,7 +33,7 @@ export const VUMeter = ({ deckId }: VUMeterProps) => {
 
     // Cleanup on unmount
     return () => {
-      if (rafRef.current) {
+      if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
       }
     };
