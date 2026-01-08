@@ -42,6 +42,29 @@ const nextConfig = {
         protocol: 'http',
         hostname: '127.0.0.1',
       },
+      // Unsplash
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      // Pexels
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
+      },
+      // Pixabay
+      {
+        protocol: 'https',
+        hostname: 'cdn.pixabay.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pixabay.com',
+      },
     ],
   },
   async headers() {

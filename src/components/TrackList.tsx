@@ -5,7 +5,7 @@ import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
 import Link from "next/link";
 import { Play } from "lucide-react";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -37,20 +37,35 @@ const isImagePath = (coverArt: string): boolean => {
   return coverArt.startsWith("/");
 };
 
-// Helper component to render cover art
+// Helper component to render cover art with API fallback
 const CoverArt = ({ coverArt, className }: { coverArt: string; className?: string }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(coverArt);
+  const [attemptedFallback, setAttemptedFallback] = useState(false);
+
+  const handleError = () => {
+    if (attemptedFallback) return;
+    setAttemptedFallback(true);
+    fetch(`/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap album cover street urban")}&count=1`, { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => {
+        const src = d?.images?.[0]?.src as string | undefined;
+        if (src) setCurrentSrc(src);
+      })
+      .catch(() => {});
+  };
 
   if (isImagePath(coverArt)) {
     return (
       <div className={`relative overflow-hidden rounded-md border border-white/10 flex-shrink-0 ${className || ""}`}>
         <Image
-          src={coverArt}
+          src={currentSrc}
           alt="Track cover"
           fill
           className="object-cover"
           sizes="(max-width: 768px) 40px, 40px"
           onLoadingComplete={() => setIsLoaded(true)}
+          onError={handleError}
         />
         {!isLoaded && (
           <Skeleton className="absolute inset-0" />
@@ -74,8 +89,29 @@ interface TrackCardProps {
 function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
   const { triggerHaptic } = useHaptic();
   const [isLoaded, setIsLoaded] = useState(false);
-  // Random rotation between -1deg and 1deg for pasted-on-wall effect
-  const rotation = (Math.random() * 2 - 1).toFixed(2);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const [currentCardSrc, setCurrentCardSrc] = useState(track.coverArt);
+  const [cardTriedFallback, setCardTriedFallback] = useState(false);
+  const onCardImageError = () => {
+    if (cardTriedFallback || !isImagePath(track.coverArt)) return;
+    setCardTriedFallback(true);
+    fetch(`/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap album cover street urban")}&count=1`, { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => {
+        const src = d?.images?.[0]?.src as string | undefined;
+        if (src) setCurrentCardSrc(src);
+      })
+      .catch(() => {});
+  };
+  // Deterministic rotation to avoid hydration mismatch
+  const rotation = useMemo(() => {
+    const s = `${track.id}-${index}`;
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    const val = ((h % 200) / 100) - 1; // -1..1
+    return val.toFixed(2);
+  }, [track.id, index]);
 
   // 3D Tilt Physics
   const cardRef = useRef<HTMLButtonElement>(null);
@@ -164,12 +200,13 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <Image
-                src={track.coverArt}
+                src={currentCardSrc}
                 alt={track.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 onLoadingComplete={() => setIsLoaded(true)}
+                onError={onCardImageError}
               />
               {!isLoaded && (
                 <Skeleton className="absolute inset-0" />
@@ -209,8 +246,8 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           </motion.div>
         </div>
 
-        {/* Active Indicator - Animated Equalizer */}
-        {isActive && (
+        {/* Active Indicator - Animated Equalizer (client-only to avoid SSR diffs) */}
+        {mounted && isActive && (
           <div className="absolute top-2 right-2 flex items-end gap-0.5 h-4 z-30">
             {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, idx) => (
               <motion.div
@@ -287,6 +324,8 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
   const { playTrack, currentTrack, isPlaying } = useAudio();
   const { triggerHaptic } = useHaptic();
   const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const audioTracks = useMemo(
     () => tracks.filter((t) => t.type === "audio"),
@@ -394,9 +433,9 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                           isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
                         ].join(" ")}
                       >
-                    {/* Col 1: Index / Play icon / Active Equalizer */}
+                    {/* Col 1: Index / Play icon / Active Equalizer (client-only) */}
                     <div className="relative flex items-center justify-center">
-                      {isActive ? (
+                      {mounted && isActive ? (
                         <div className="flex items-end gap-0.5 h-4">
                           {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, eqIdx) => (
                             <motion.div

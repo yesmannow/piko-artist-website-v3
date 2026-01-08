@@ -52,7 +52,7 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
 
     const source = audioContext.createMediaElementSource(audio);
     source.connect(analyser);
-    analyser.connect(audioContext.destination);
+    // Do not connect the analyser to destination; HTMLAudioElement already outputs audio
 
     analyserRef.current = analyser;
 

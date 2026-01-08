@@ -6,12 +6,37 @@ import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack } 
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 // Helper to check if coverArt is an image path
 const isImagePath = (coverArt: string): boolean => {
   return coverArt.startsWith("/");
 };
+
+// Hook: dynamic image fallback using /api/visuals
+function useImageFallback(initialSrc: string, theme: string) {
+  const [src, setSrc] = useState(initialSrc);
+  const [attempted, setAttempted] = useState(false);
+
+  useEffect(() => {
+    setSrc(initialSrc);
+    setAttempted(false);
+  }, [initialSrc]);
+
+  const onError = () => {
+    if (attempted) return;
+    setAttempted(true);
+    fetch(`/api/visuals?theme=${encodeURIComponent(theme)}&count=1`, { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => {
+        const next = d?.images?.[0]?.src as string | undefined;
+        if (next) setSrc(next);
+      })
+      .catch(() => {});
+  };
+
+  return { src, onError } as const;
+}
 
 // Format duration in MM:SS format
 const formatDuration = (seconds: number): string => {
@@ -59,19 +84,192 @@ function useTrackDuration(track: MediaItem): number {
 
 // Cover Art Component
 function CoverArt({ coverArt, className }: { coverArt: string; className?: string }) {
+  const { src, onError } = useImageFallback(coverArt, "graffiti hip hop rap album cover street urban");
   return (
     <div className={`relative flex-shrink-0 rounded overflow-hidden bg-zinc-800 ${className || ""}`}>
       {isImagePath(coverArt) ? (
         <Image
-          src={coverArt}
+          src={src}
           alt=""
           fill
           className="object-cover"
           sizes="40px"
+          onError={onError}
         />
       ) : (
         <div className={`w-full h-full bg-gradient-to-r ${coverArt}`} />
       )}
+    </div>
+  );
+}
+
+// Audio‑reactive Neon Dust overlay (graffiti neon gold with gentle swirl)
+function NeonDust() {
+  const { audioRef, isPlaying } = useAudio();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataRef = useRef<Uint8Array | null>(null);
+  const sourceCreatedRef = useRef(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(canvas.clientWidth * dpr);
+      canvas.height = Math.floor(canvas.clientHeight * dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl || sourceCreatedRef.current) return;
+
+    const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+    const ac = new AudioCtx();
+    const analyser = ac.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.85;
+
+    try {
+      const src = ac.createMediaElementSource(audioEl);
+      src.connect(analyser);
+      // Do NOT connect analyser to destination to avoid duplicate audio
+      sourceCreatedRef.current = true;
+    } catch {
+      // MediaElementSource may already be created; ignore
+    }
+
+    analyserRef.current = analyser;
+    dataRef.current = new Uint8Array(analyser.frequencyBinCount);
+
+    return () => {
+      analyserRef.current = null;
+      dataRef.current = null;
+      ac.close().catch(() => {});
+      sourceCreatedRef.current = false;
+    };
+  }, [audioRef]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const analyser = analyserRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const maxParticles = prefersReduced ? 0 : Math.min(3000, Math.floor(window.innerWidth * 1.5));
+    const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const count = mobile ? Math.min(800, Math.max(300, Math.floor(maxParticles * 0.35))) : Math.max(1200, Math.floor(maxParticles * 0.6));
+
+    type P = { x: number; y: number; vx: number; vy: number; s: number; a: number; t: number };
+    const particles: P[] = new Array(count).fill(0).map(() => ({
+      x: Math.random() * canvas.clientWidth,
+      y: Math.random() * canvas.clientHeight,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      s: 0.6 + Math.random() * 1.6,
+      a: 0.1 + Math.random() * 0.25,
+      t: Math.random() * Math.PI * 2,
+    }));
+
+    let running = true;
+    const onVis = () => {
+      running = !document.hidden;
+      if (running && rafRef.current == null) loop();
+    };
+    document.addEventListener('visibilitychange', onVis);
+
+    const gold = { r: 255, g: 215, b: 0 };
+    ctx.globalCompositeOperation = 'lighter';
+
+    const levels = () => {
+      const arr = dataRef.current;
+      const an = analyserRef.current;
+      if (!arr || !an) return { bass: 0, mid: 0, high: 0, overall: 0 };
+      an.getByteFrequencyData(arr);
+      const len = arr.length;
+      const lowEnd = Math.floor((200 / 22050) * len);
+      const midEnd = Math.floor((2000 / 22050) * len);
+      let lb=0, mb=0, hb=0, ob=0;
+      for (let i = 0; i < len; i++) {
+        const v = arr[i] / 255;
+        ob += v;
+        if (i < lowEnd) lb += v; else if (i < midEnd) mb += v; else hb += v;
+      }
+      const bass = Math.min(1, (lb / Math.max(1, lowEnd)) * 2);
+      const mid = Math.min(1, (mb / Math.max(1, midEnd - lowEnd)) * 2);
+      const high = Math.min(1, (hb / Math.max(1, len - midEnd)) * 2);
+      const overall = Math.min(1, (ob / len) * 2);
+      return { bass, mid, high, overall };
+    };
+
+    const loop = () => {
+      rafRef.current = requestAnimationFrame(loop);
+      if (!running) return;
+
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      const { bass, mid, overall } = levels();
+
+      // Gentle trails backdrop
+      ctx.fillStyle = 'rgba(5,5,5,0.15)';
+      ctx.fillRect(0, 0, w, h);
+
+      // Motion parameters
+      const swirl = 0.001 + (mid || 0) * 0.005;
+      const speed = 0.06 + (overall || 0) * 0.35;
+      const alphaBoost = 0.08 + (bass || 0) * 0.5;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.t += swirl;
+        p.vx += Math.cos(p.t) * 0.02;
+        p.vy += Math.sin(p.t) * 0.02;
+        p.x += p.vx * speed;
+        p.y += p.vy * speed;
+
+        // Wrap edges
+        if (p.x < -10) p.x = w + 10; else if (p.x > w + 10) p.x = -10;
+        if (p.y < -10) p.y = h + 10; else if (p.y > h + 10) p.y = -10;
+
+        const a = Math.min(0.9, p.a + alphaBoost);
+        ctx.fillStyle = `rgba(${gold.r}, ${gold.g}, ${gold.b}, ${a})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.s + overall * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    const loopStartIf = () => {
+      if (prefersReduced) return;
+      loop();
+    };
+
+    loopStartIf();
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      document.removeEventListener('visibilitychange', onVis);
+      rafRef.current = null;
+    };
+  }, [isPlaying]);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0">
+      <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );
 }
@@ -87,6 +285,7 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
 }) {
   // Always call hooks unconditionally
   const duration = useTrackDuration(track || { type: "audio", src: "", title: "", coverArt: "", vibe: "chill" } as MediaItem);
+  const { src: heroSrc, onError: heroOnError } = useImageFallback(track?.coverArt ?? "", "graffiti hip hop rap album cover artist portrait street urban");
 
   if (!track) return null;
 
@@ -106,12 +305,13 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
           <div className="relative w-full h-full rounded-lg overflow-hidden bg-zinc-900 shadow-2xl">
             {isImagePath(track.coverArt) ? (
               <Image
-                src={track.coverArt}
+                src={heroSrc}
                 alt={track.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
+                onError={heroOnError}
               />
             ) : (
               <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
@@ -213,6 +413,8 @@ function TableRowItem({ track, index, isActive, onPlay }: {
   onPlay: () => void;
 }) {
   const duration = useTrackDuration(track);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <motion.button
@@ -231,7 +433,7 @@ function TableRowItem({ track, index, isActive, onPlay }: {
     >
       {/* Col 1: Index / Play icon / Active Equalizer */}
       <div className="relative flex items-center justify-center">
-        {isActive ? (
+        {mounted && isActive ? (
           <div className="flex items-end gap-0.5 h-4">
             {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, eqIdx) => (
               <motion.div
@@ -360,6 +562,7 @@ function TableListView({ tracks, currentTrack, isPlaying, onPlay }: {
 // Card View Component (Grid)
 function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; index: number; isActive: boolean; onPlay: () => void }) {
   const duration = useTrackDuration(track);
+  const { src: cardSrc, onError: cardOnError } = useImageFallback(track.coverArt, "graffiti hip hop rap album cover street urban");
 
   return (
     <motion.div
@@ -382,11 +585,12 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
             <Image
-              src={track.coverArt}
+              src={cardSrc}
               alt={track.title}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              onError={cardOnError}
             />
           </motion.div>
         ) : (
@@ -479,6 +683,7 @@ function CardView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; curre
 // Compact View Track Item
 function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem; index: number; isActive: boolean; onPlay: () => void }) {
   const duration = useTrackDuration(track);
+  const { src: compactSrc, onError: compactOnError } = useImageFallback(track.coverArt, "graffiti hip hop rap album cover street urban");
 
   return (
     <motion.div
@@ -513,11 +718,12 @@ function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem;
       <div className="relative w-10 h-10 flex-shrink-0 rounded overflow-hidden bg-zinc-800">
         {isImagePath(track.coverArt) ? (
           <Image
-            src={track.coverArt}
+            src={compactSrc}
             alt={track.title}
             fill
             className="object-cover"
             sizes="40px"
+            onError={compactOnError}
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
@@ -596,8 +802,10 @@ export default function MusicPage() {
   const featuredTrack = currentTrack || audioTracks[0];
 
   return (
-    <div className="min-h-screen bg-background">
-      <section className="relative py-12 md:py-20 px-4 md:px-8">
+    <div className="min-h-screen relative overflow-hidden bg-background">
+      <NeonDust />
+      <div className="absolute inset-0 bg-[#121214cc] z-10 pointer-events-none" />
+      <section className="relative z-20 py-12 md:py-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8 md:mb-12">

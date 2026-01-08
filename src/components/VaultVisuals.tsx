@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { tracks } from "@/lib/data";
@@ -16,7 +16,6 @@ export function VaultVisuals() {
   const { playVideo } = useVideo();
   const videos = tracks.filter((t) => t.type === "video").slice(0, 6);
 
-  // Asset mapping for CCTV feed backgrounds
   const cctvAssets = [
     "/images/tracks/dj-2581269_1280.jpg", // Session 1
     "/images/tracks/graffiti-3750912_1280.jpg", // Session 2
@@ -25,6 +24,34 @@ export function VaultVisuals() {
     "/images/tracks/street-art-1499524_1280.jpg", // Session 5
     "/images/tracks/abstract-1846847_1280.jpg", // Session 6
   ];
+
+  const [dynamicCctv, setDynamicCctv] = useState<string[]>([]);
+  const [clock, setClock] = useState<string>("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap street urban neon")}&count=6`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        const list: string[] = Array.isArray(d?.images)
+          ? d.images.map((it: any) => String(it?.src)).filter((s: string) => !!s)
+          : [];
+        setDynamicCctv(list);
+      })
+      .catch(() => {})
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    // Set time on client only
+    const update = () => setClock(new Date().toLocaleTimeString("en-US", { hour12: false }));
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <section id="recent-sightings" className="relative py-24 bg-[#050505] border-t-2 border-[#E0E0E0]/10 px-6">
@@ -51,8 +78,7 @@ export function VaultVisuals() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
             {videos.map((video, index) => {
-              // Use mapped assets for CCTV feed backgrounds
-              const cctvBackground = cctvAssets[index] || "/images/placeholder.jpg";
+              const cctvBackground = dynamicCctv[index] || cctvAssets[index] || "/images/placeholder.jpg";
 
               // Extract YouTube ID from src for thumbnail fallback
               const youtubeId = video.src.includes("youtube.com/watch?v=")
@@ -78,7 +104,8 @@ export function VaultVisuals() {
                   <span className="text-[10px] font-mono text-white/70 uppercase">REC: {video.title}</span>
                 </div>
                 <div className="absolute bottom-4 right-4 z-20 text-[10px] font-mono text-white/40">
-                  {new Date().toLocaleTimeString("en-US", { hour12: false })} {/* CAM_{String(index + 1).padStart(2, "0")} */}
+                  {clock}
+                  {/* CAM_{String(index + 1).padStart(2, "0")} */}
                 </div>
 
                 {/* Video Thumbnail with Urban Filter - Grayscale by default, color on hover */}

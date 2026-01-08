@@ -7,6 +7,7 @@ import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
 import { FluidVaporBackground } from "@/components/FluidVaporBackground";
+import DynamicHeroBackground from "@/components/DynamicHeroBackground";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -27,17 +28,8 @@ export default function Home() {
         {/* Fluid Vapor Background */}
         <FluidVaporBackground />
 
-        {/* Background Image with Urban Filter */}
-        <Image
-          src="/images/hero/hero-white.jpg"
-          alt="Piko hero background"
-          fill
-          className="object-cover"
-          priority
-          style={{
-            filter: "grayscale(1) contrast(1.2) brightness(0.8)",
-          }}
-        />
+        {/* Dynamic Background Slideshow (Pexels/Unsplash/Pixabay) */}
+        <DynamicHeroBackground />
         <div className="absolute inset-0 bg-[#050505]/80 z-10" />
 
         {/* Ghosted Stencil "V3 SYNDICATE" Backdrop */}

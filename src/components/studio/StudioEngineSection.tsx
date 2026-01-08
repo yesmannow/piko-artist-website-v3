@@ -8,6 +8,7 @@ import { Zap, Cpu, Radio } from "lucide-react";
 export function StudioEngineSection() {
   const [isHovered, setIsHovered] = useState(false);
   const [audioPulse, setAudioPulse] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -23,6 +24,11 @@ export function StudioEngineSection() {
       setAudioPulse(Math.sin(Date.now() / 800) * 0.15 + 0.15);
     }, 50);
     return () => clearInterval(interval);
+  }, []);
+
+  // Gate client-only visuals (prevents SSR/client mismatch)
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   // Mouse tracking
@@ -282,29 +288,31 @@ export function StudioEngineSection() {
                   />
                 ))}
 
-                {/* Audio Waveform Visualization */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 flex items-end justify-center gap-1 px-8">
-                  {Array.from({ length: 40 }).map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="w-1 bg-[#FFD700]"
-                      animate={{
-                        height: [
-                          `${10 + Math.random() * 20}px`,
-                          `${30 + Math.random() * 40}px`,
-                          `${10 + Math.random() * 20}px`,
-                        ],
-                        opacity: [0.3, 0.8, 0.3],
-                      }}
-                      transition={{
-                        duration: 0.5 + Math.random() * 0.5,
-                        repeat: Infinity,
-                        delay: i * 0.05,
-                        ease: "easeInOut",
-                      }}
-                    />
-                  ))}
-                </div>
+                {/* Audio Waveform Visualization (client-only to avoid hydration mismatch) */}
+                {mounted && (
+                  <div className="absolute bottom-0 left-0 right-0 h-32 flex items-end justify-center gap-1 px-8">
+                    {Array.from({ length: 40 }).map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1 bg-[#FFD700]"
+                        animate={{
+                          height: [
+                            `${10 + Math.random() * 20}px`,
+                            `${30 + Math.random() * 40}px`,
+                            `${10 + Math.random() * 20}px`,
+                          ],
+                          opacity: [0.3, 0.8, 0.3],
+                        }}
+                        transition={{
+                          duration: 0.5 + Math.random() * 0.5,
+                          repeat: Infinity,
+                          delay: i * 0.05,
+                          ease: "easeInOut",
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
 
