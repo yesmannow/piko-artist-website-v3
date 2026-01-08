@@ -68,31 +68,13 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: "Piko Artist Studio",
-  description: "High-performance holographic DJ mixer and artist platform",
+  title: "Piko Artist V3",
+  description: "Professional Mobile DJ Workstation",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Piko Studio",
-    startupImage: [
-      {
-        url: "/icons/apple-touch-startup-image.png",
-        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
-      },
-      {
-        url: "/icons/apple-touch-startup-image.png",
-        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
-      },
-      {
-        url: "/icons/apple-touch-startup-image.png",
-        media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
-      },
-    ],
-  },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    title: "Piko V3",
   },
 };
 
@@ -100,7 +82,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false,
+  userScalable: false, // Critical: Prevents pinch-zoom
+  themeColor: "#000000",
 };
 
 export default function RootLayout({

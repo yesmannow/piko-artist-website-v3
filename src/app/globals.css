@@ -5,7 +5,14 @@
 @layer base {
   html,
   body {
-    overscroll-behavior: none;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* No scrolling allowed */
+    touch-action: none; /* Disables standard gestures like pull-to-refresh */
+    overscroll-behavior: none; /* Prevents bounce effect on iOS */
+    -webkit-user-select: none; /* Safari */
+    user-select: none; /* Prevent text highlighting */
+    background-color: black;
     -webkit-tap-highlight-color: transparent;
   }
 
