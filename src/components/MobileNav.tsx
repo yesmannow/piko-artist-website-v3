@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, User, Video, MoreVertical, Music, Wrench, Calendar, Mail, X, Instagram, Youtube, ExternalLink } from "lucide-react";
@@ -20,7 +20,7 @@ const navItems = [
 const moreItems = [
   { href: "/music", label: "Music", icon: Music },
   { href: "/studio", label: "Studio", icon: Wrench },
-  { href: "/#contact", label: "Contact", icon: Mail },
+  { href: "/contact", label: "Contact", icon: Mail },
 ];
 
 // Social links for mobile menu
@@ -55,6 +55,7 @@ const grainStyle = {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { triggerHaptic } = useHaptic();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -414,11 +415,7 @@ export function MobileNav() {
                           onClick={() => {
                             handleClick();
                             setIsMoreOpen(false);
-                            // Scroll to contact or open contact modal
-                            const contactEl = document.getElementById("contact");
-                            if (contactEl) {
-                              contactEl.scrollIntoView({ behavior: "smooth" });
-                            }
+                            router.push("/contact");
                           }}
                           className="w-full px-4 py-3 rounded-lg border-2 border-toxic-lime/30 bg-zinc-800/30 text-white hover:bg-toxic-lime/10 hover:border-toxic-lime/50 transition-all touch-manipulation active:scale-[0.98]"
                         >

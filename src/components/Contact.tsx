@@ -2,17 +2,28 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 
 export function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    inquiryType: "general",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const type = searchParams.get("type");
+    const allowed = ["general", "booking", "collab", "feature", "production", "press"];
+    if (type && allowed.includes(type)) {
+      setFormData((prev) => ({ ...prev, inquiryType: type }));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,7 +53,7 @@ export function Contact() {
 
       if (result.success) {
         setSubmitStatus("success");
-        setFormData({ name: "", email: "", message: "" });
+        setFormData({ name: "", email: "", inquiryType: "general", message: "" });
         setErrorMessage("");
       } else {
         setSubmitStatus("error");
@@ -60,7 +71,7 @@ export function Contact() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -148,6 +159,58 @@ export function Contact() {
                   placeholder="your.email@example.com"
                 />
               </div>
+            </div>
+
+            {/* Inquiry Type Selector */}
+            <div>
+              <label htmlFor="inquiryType" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
+                What's This About?
+              </label>
+              <div className="relative">
+                <select
+                  id="inquiryType"
+                  name="inquiryType"
+                  value={formData.inquiryType}
+                  onChange={handleChange}
+                  required
+                  aria-label="Type of inquiry"
+                  aria-required="true"
+                  className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
+                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
+                  }}
+                >
+                  <option value="general">General Inquiry</option>
+                  <option value="booking">Booking / Performance</option>
+                  <option value="collab">Collaboration Request</option>
+                  <option value="feature">Feature / Guest Verse</option>
+                  <option value="production">Beat / Production</option>
+                  <option value="press">Press / Media</option>
+                </select>
+                {/* Custom dropdown arrow */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              {/* Helper text based on selection */}
+              {formData.inquiryType === "collab" && (
+                <p className="mt-2 text-sm text-toxic-lime/80 font-industrial">
+                  🔥 Looking to work together? Drop details about your project, timeline, and vibe.
+                </p>
+              )}
+              {formData.inquiryType === "feature" && (
+                <p className="mt-2 text-sm text-toxic-lime/80 font-industrial">
+                  🎤 Need a verse? Include track details, deadline, and your vision.
+                </p>
+              )}
+              {formData.inquiryType === "production" && (
+                <p className="mt-2 text-sm text-toxic-lime/80 font-industrial">
+                  🎹 Need beats? Describe the sound you're after and project scope.
+                </p>
+              )}
             </div>
 
             {/* Message Input - Duct Tape Style */}

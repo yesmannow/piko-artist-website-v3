@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
       sanitizedData = {
         name: sanitizeInput(formData.name || ""),
         email: email,
+        inquiryType: sanitizeInput(formData.inquiryType || "general"),
         message: sanitizeInput(formData.message || ""),
       };
     }
@@ -176,16 +177,27 @@ Reply to this email to contact the promoter directly.
       `;
     } else {
       // Contact form
-      subject = `New Contact Message: ${sanitizedData.name || "Unknown"}`;
+      const inquiryTypeLabels: Record<string, string> = {
+        general: "General Inquiry",
+        booking: "Booking / Performance",
+        collab: "🔥 Collaboration Request",
+        feature: "🎤 Feature / Guest Verse",
+        production: "🎹 Beat / Production",
+        press: "Press / Media",
+      };
+      
+      const inquiryLabel = inquiryTypeLabels[sanitizedData.inquiryType || "general"] || "General Inquiry";
+      subject = `${inquiryLabel}: ${sanitizedData.name || "Unknown"}`;
 
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #FFD700; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">
-            New Contact Message
+            ${inquiryLabel}
           </h2>
           <div style="background: #f5f5f5; padding: 20px; margin: 20px 0; border-left: 4px solid #FFD700;">
             <p><strong>Name:</strong> ${sanitizedData.name || "N/A"}</p>
             <p><strong>Email:</strong> ${sanitizedData.email || "N/A"}</p>
+            <p><strong>Type:</strong> ${inquiryLabel}</p>
             <p><strong>Message:</strong></p>
             <p style="white-space: pre-wrap; background: white; padding: 15px; border-radius: 4px;">
               ${sanitizedData.message || "N/A"}
@@ -198,10 +210,11 @@ Reply to this email to contact the promoter directly.
       `;
 
       textContent = `
-New Contact Message
+${inquiryLabel}
 
 Name: ${sanitizedData.name || "N/A"}
 Email: ${sanitizedData.email || "N/A"}
+Type: ${inquiryLabel}
 
 Message:
 ${sanitizedData.message || "N/A"}

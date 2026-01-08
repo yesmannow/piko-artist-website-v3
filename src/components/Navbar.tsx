@@ -17,7 +17,7 @@ const navItems = [
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
   { name: "Studio", path: "/studio", anchor: null },
-  { name: "Contact", path: "/", anchor: "contact" },
+  { name: "Contact", path: "/contact", anchor: null },
 ];
 
 // Animated Logo Component - Urban/Hip-Hop Style
