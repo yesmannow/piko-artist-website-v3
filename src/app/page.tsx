@@ -112,7 +112,7 @@ export default function Home() {
             fill
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-black/88" />
+          <div className="absolute inset-0 bg-black/92" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto">
           <motion.div
@@ -122,7 +122,7 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {/* Warehouse Manifest Header */}
-            <div className="mb-8 border-l-8 border-[#FFD700] pl-6">
+            <div className="mb-8 border-l-8 border-[#FFD700] pl-6 bg-black/60 backdrop-blur-sm py-4 pr-4">
               <h2
                 className="text-4xl md:text-6xl font-black italic uppercase mb-2 text-[#E0E0E0]"
                 style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
@@ -133,7 +133,7 @@ export default function Home() {
                 <span className="px-3 py-1 bg-[#FFD700] text-black text-[10px] font-mono font-bold uppercase tracking-wider border-2 border-black">
                   CAUTION
                 </span>
-                <span className="text-xs font-mono text-[#E0E0E0]/60 uppercase">LATEST_RELEASES</span>
+                <span className="text-xs font-mono text-[#E0E0E0]/80 uppercase">LATEST_RELEASES</span>
               </div>
             </div>
 

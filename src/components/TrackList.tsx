@@ -372,10 +372,10 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
       {featuredOnly ? (
         // Featured Mode: Warehouse Manifest Table Layout
         <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
-          <div className="min-w-[min(100%,760px)] border-2 border-white/10 bg-black/40 overflow-hidden mx-4 md:mx-0">
+          <div className="min-w-[min(100%,760px)] border-2 border-[#FFD700]/20 bg-black/80 backdrop-blur-md overflow-hidden mx-4 md:mx-0" style={{ boxShadow: "0 0 30px rgba(255, 215, 0, 0.1)" }}>
             {/* Sticky header */}
-            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b-2 border-white/10">
-              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-[#E0E0E0]/60 font-mono font-bold uppercase">
+            <div className="sticky top-0 z-10 bg-black/95 backdrop-blur-md border-b-2 border-[#FFD700]/30">
+              <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-[#E0E0E0]/80 font-mono font-bold uppercase">
                 <div>#</div>
                 <div>TITLE</div>
                 <div>ARTIST</div>
@@ -384,7 +384,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
               </div>
             </div>
             {/* Section Header Update */}
-            <div className="px-4 py-2 border-b-2 border-white/10 bg-black/60">
+            <div className="px-4 py-2 border-b-2 border-[#FFD700]/20 bg-black/70">
               <span className="text-[10px] font-mono text-[#FFD700] uppercase tracking-widest">
                 STUDIO_MANIFEST // LATEST_RELEASES
               </span>
@@ -428,9 +428,9 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                           "w-full text-left relative",
                           "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
                           "px-4 py-3 md:py-4",
-                          "hover:bg-white/5 transition-colors",
-                          "border-b border-white/10",
-                          isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
+                          "hover:bg-[#FFD700]/10 transition-colors",
+                          "border-b border-[#E0E0E0]/10",
+                          isActive ? "text-[#FFD700] bg-[#FFD700]/5" : "text-[#E0E0E0]",
                         ].join(" ")}
                       >
                     {/* Col 1: Index / Play icon / Active Equalizer (client-only) */}
@@ -496,7 +496,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     </div>
 
                     {/* Col 3: Artist */}
-                    <div className={["flex items-center font-mono", isActive ? "text-[#FFD700]/80" : "text-[#E0E0E0]/60"].join(" ")}>
+                    <div className={["flex items-center font-mono text-sm", isActive ? "text-[#FFD700]/90" : "text-[#E0E0E0]/80"].join(" ")}>
                       <span className="truncate text-sm">{track.artist}</span>
                     </div>
 
@@ -513,7 +513,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     </div>
 
                     {/* Col 5: Duration */}
-                    <div className={["flex items-center justify-end text-sm", isActive ? "text-toxic-lime/80" : "text-foreground/60"].join(" ")}>
+                    <div className={["flex items-center justify-end text-sm font-mono", isActive ? "text-[#FFD700]/90" : "text-[#E0E0E0]/70"].join(" ")}>
                       3:00
                     </div>
                   </motion.button>

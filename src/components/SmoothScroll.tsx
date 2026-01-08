@@ -16,9 +16,12 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
     <ReactLenis 
       root 
       options={{ 
-        lerp: 0.1, 
-        duration: 1.5, 
+        lerp: 0.08, 
+        duration: 1.2, 
         smoothWheel: true,
+        wheelMultiplier: 1.0, // Allow normal mouse wheel sensitivity
+        touchMultiplier: 2.0, // Better touch scrolling
+        infinite: false,
         // Ensure Lenis targets window (global) for PWA compatibility
         wrapper: typeof window !== "undefined" ? window : undefined,
         content: typeof document !== "undefined" ? document.documentElement : undefined,

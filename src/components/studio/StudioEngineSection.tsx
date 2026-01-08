@@ -1,38 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
-import { Zap, Cpu, Radio } from "lucide-react";
+import { Zap, Disc3, Headphones } from "lucide-react";
+import { StudioVideoPreview } from "./StudioVideoPreview";
 
 export function StudioEngineSection() {
   const [isHovered, setIsHovered] = useState(false);
-  const [audioPulse, setAudioPulse] = useState(0);
-  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Smooth spring animations for mouse tracking
-  const springConfig = { damping: 50, stiffness: 100 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-5, 5]), springConfig);
-
-  // Audio pulse simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAudioPulse(Math.sin(Date.now() / 800) * 0.15 + 0.15);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Gate client-only visuals (prevents SSR/client mismatch)
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Mouse tracking
+  // Mouse tracking for background effects
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return;
@@ -106,9 +86,9 @@ export function StudioEngineSection() {
                 transition: { duration: 2, repeat: Infinity, repeatType: "reverse" },
               }}
             >
-              OWN THE
+              COMMAND THE
               <br />
-              <span className="text-[#FFD700]">MASTER</span>
+              <span className="text-[#FFD700]">DECKS</span>
             </motion.h2>
 
             {/* Description */}
@@ -119,7 +99,7 @@ export function StudioEngineSection() {
               viewport={{ once: true }}
               className="text-lg md:text-xl text-[#E0E0E0] leading-relaxed max-w-xl"
             >
-              The industry&apos;s most powerful remix suite. Isolate stems, command the mix, and reinvent every beat with professional-grade AI deconstruction.
+              Step into Piko&apos;s virtual booth. Scratch, mix, and remix with professional DJ tools. Isolate stems, drop hot cues, and create your own versions of the hottest tracks. This ain&apos;t just a player—it&apos;s a full studio experience.
             </motion.p>
 
             {/* Feature Pills */}
@@ -131,9 +111,9 @@ export function StudioEngineSection() {
               className="flex flex-wrap gap-3"
             >
               {[
-                { icon: Zap, label: "AI Stem Isolation" },
-                { icon: Cpu, label: "Real-time Processing" },
-                { icon: Radio, label: "Professional Mixing" },
+                { icon: Disc3, label: "Dual Turntables" },
+                { icon: Zap, label: "Stem Isolation" },
+                { icon: Headphones, label: "Live Scratching" },
               ].map((feature, idx) => (
                 <motion.div
                   key={feature.label}
@@ -175,7 +155,7 @@ export function StudioEngineSection() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <span style={{ transform: "skewX(12deg)", display: "inline-block" }}>
-                    ENTER THE BOOTH
+                    HIT THE BOOTH
                   </span>
                   <motion.span
                     style={{ transform: "skewX(12deg)", display: "inline-block", marginLeft: "8px" }}
@@ -209,140 +189,19 @@ export function StudioEngineSection() {
                 transition={{ duration: 2, repeat: Infinity }}
                 className="inline-block w-2 h-2 bg-[#FFD700] rounded-full"
               />
-              STUDIO_ENGINE: CONSOLE_ONLINE
+              DJ_BOOTH: DECKS_READY • SCRATCH_MODE_ACTIVE
             </motion.div>
           </motion.div>
 
-          {/* Right: 3D Interactive Element */}
+          {/* Right: Interactive Video Preview */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
             className="relative h-[400px] md:h-[500px] lg:h-[600px]"
-            style={{
-              perspective: "1000px",
-            }}
           >
-            {/* 3D Container with Parallax */}
-            <motion.div
-              className="relative w-full h-full"
-              style={{
-                rotateX,
-                rotateY,
-                transformStyle: "preserve-3d",
-              }}
-            >
-              <div className="absolute inset-0">
-                <Image
-                  src="/images/hero/hero-bw.jpg"
-                  alt="Studio background"
-                  fill
-                  priority
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40" />
-              </div>
-              {/* Geometric Shapes - Abstract 3D Mixer */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                {/* Main Console Shape */}
-                <motion.div
-                  className="relative w-64 h-64 md:w-80 md:h-80 border-2 border-[#FFD700]/30"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, transparent 100%)",
-                    transform: "rotateX(45deg) rotateY(-45deg)",
-                    transformStyle: "preserve-3d",
-                  }}
-                  animate={{
-                    rotateZ: [0, 360],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                >
-                  {/* Inner Grid */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `
-                        linear-gradient(rgba(255, 215, 0, 0.1) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255, 215, 0, 0.1) 1px, transparent 1px)
-                      `,
-                      backgroundSize: "20px 20px",
-                    }}
-                  />
-                </motion.div>
-
-                {/* Floating Elements */}
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-16 h-16 border border-[#FFD700]/20"
-                    style={{
-                      background: `rgba(255, 215, 0, ${0.05 + audioPulse * 0.1})`,
-                      left: `${30 + i * 20}%`,
-                      top: `${20 + i * 25}%`,
-                    }}
-                    animate={{
-                      y: [0, -20, 0],
-                      opacity: [0.2, 0.4, 0.2],
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                      duration: 2 + i * 0.5,
-                      repeat: Infinity,
-                      delay: i * 0.3,
-                      ease: "easeInOut",
-                    }}
-                  />
-                ))}
-
-                {/* Audio Waveform Visualization (client-only to avoid hydration mismatch) */}
-                {mounted && (
-                  <div className="absolute bottom-0 left-0 right-0 h-32 flex items-end justify-center gap-1 px-8">
-                    {Array.from({ length: 40 }).map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="w-1 bg-[#FFD700]"
-                        animate={{
-                          height: [
-                            `${10 + Math.random() * 20}px`,
-                            `${30 + Math.random() * 40}px`,
-                            `${10 + Math.random() * 20}px`,
-                          ],
-                          opacity: [0.3, 0.8, 0.3],
-                        }}
-                        transition={{
-                          duration: 0.5 + Math.random() * 0.5,
-                          repeat: Infinity,
-                          delay: i * 0.05,
-                          ease: "easeInOut",
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Glow Effect */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(circle at center, rgba(255, 215, 0, ${audioPulse * 0.2}) 0%, transparent 70%)`,
-                filter: "blur(40px)",
-              }}
-              animate={{
-                opacity: [0.3, 0.6, 0.3],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
+            <StudioVideoPreview isHovered={isHovered} />
           </motion.div>
         </div>
       </div>
