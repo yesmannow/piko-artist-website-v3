@@ -23,6 +23,16 @@ export default function Home() {
         id="home"
         className="relative h-screen flex items-center justify-center overflow-hidden bg-[#050505]"
       >
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/hero/hero-white.jpg"
+            alt=""
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
 
         {/* Ghosted Stencil "V3 SYNDICATE" Backdrop */}
         <h1
@@ -58,7 +68,7 @@ export default function Home() {
             }}
             whileHover={{
               scale: 1.05,
-              filter: "blur(0px) grayscale(0.8) brightness(1.6)",
+              filter: "blur(0px) grayscale(0) brightness(1.1)",
             }}
             transition={{
               type: "spring",
@@ -94,7 +104,17 @@ export default function Home() {
 
       {/* Section 1: LATEST DROPS - Warehouse Shipping Manifest */}
       <section id="latest-drops" className="relative py-12 md:py-20 px-4 md:px-8 bg-[#050505] border-t-2 border-[#E0E0E0]/10">
-        <div className="max-w-7xl mx-auto">
+        {/* Graffiti Wall Background */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/bg/graffiti-wall-1.jpg"
+            alt=""
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/88" />
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -138,18 +158,30 @@ export default function Home() {
       <section
         id="rap-sheet"
         className="relative py-12 md:py-20 px-4 md:px-8 bg-[#0a0a0a]"
-        style={{
-          backgroundImage: `
-            /* Paper Texture */
-            url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)'/%3E%3C/svg%3E"),
-            /* Spray Paint Streaks */
-            linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.08) 50%, transparent 70%),
-            linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.06) 50%, transparent 70%)
-          `,
-          backgroundBlendMode: "overlay, normal, normal",
-        }}
       >
-        <div className="max-w-7xl mx-auto">
+        {/* Studio Mic Background */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/artist/studio-mic.jpg"
+            alt=""
+            fill
+            className="object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/95 to-black/90" />
+        </div>
+        {/* Paper Texture Overlay */}
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `
+              url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)'/%3E%3C/svg%3E"),
+              linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.08) 50%, transparent 70%),
+              linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.06) 50%, transparent 70%)
+            `,
+            backgroundBlendMode: "overlay, normal, normal",
+          }}
+        />
+        <div className="relative z-10 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
             {/* Text Content - Left Column */}
             <motion.div

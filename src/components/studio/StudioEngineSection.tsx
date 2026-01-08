@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Zap, Cpu, Radio } from "lucide-react";
 
 export function StudioEngineSection() {
@@ -232,6 +233,16 @@ export function StudioEngineSection() {
                 transformStyle: "preserve-3d",
               }}
             >
+              <div className="absolute inset-0">
+                <Image
+                  src="/images/hero/hero-bw.jpg"
+                  alt="Studio background"
+                  fill
+                  priority
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+              </div>
               {/* Geometric Shapes - Abstract 3D Mixer */}
               <div className="absolute inset-0 flex items-center justify-center">
                 {/* Main Console Shape */}

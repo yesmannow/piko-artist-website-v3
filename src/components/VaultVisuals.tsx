@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { tracks } from "@/lib/data";
 import { useVideo } from "@/context/VideoContext";
 
@@ -55,7 +56,18 @@ export function VaultVisuals() {
 
   return (
     <section id="recent-sightings" className="relative py-24 bg-[#050505] border-t-2 border-[#E0E0E0]/10 px-6">
-      <div className="max-w-7xl mx-auto">
+      {/* Graffiti Wall Background */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/bg/graffiti-wall-3.jpg"
+          alt=""
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/85" />
+      </div>
+      <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header with Stencil Style */}
         <div className="mb-16 text-center">
           <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase text-[#E0E0E0]" style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}>

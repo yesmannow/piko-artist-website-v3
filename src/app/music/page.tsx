@@ -633,7 +633,18 @@ export default function MusicPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
-      <section className="relative py-12 md:py-20 px-4 md:px-8">
+      {/* Background Image Layer */}
+      <div className="fixed inset-0 z-0">
+        <Image
+          src="/images/tracks/background-1833056_1280.jpg"
+          alt=""
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/90" />
+      </div>
+      <section className="relative z-10 py-12 md:py-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8 md:mb-12">

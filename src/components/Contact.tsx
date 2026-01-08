@@ -72,7 +72,7 @@ export function Contact() {
       {/* Graffiti Wall Background */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/bg/graffiti-wall-1.jpg"
+          src="/images/bg/graffiti-wall-3.jpg"
           alt="Graffiti Wall Background"
           fill
           className="object-cover"
