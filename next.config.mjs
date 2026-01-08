@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV !== 'production',
 });
 
 /** @type {import('next').NextConfig} */
@@ -67,8 +68,22 @@ const nextConfig = {
       },
     ],
   },
-  async headers() {
+  async rewrites() {
     return [
+      // Fix case mismatch in dev/prod for Fallé track
+      {
+        source: '/audio/tracks/falle.mp3',
+        destination: '/audio/tracks/Falle.mp3',
+      },
+      // Serve SVG icon as favicon to avoid 404s
+      {
+        source: '/favicon.ico',
+        destination: '/icon.svg',
+      },
+    ];
+  },
+  async headers() {
+    const headers = [
       {
         source: '/:path*',
         headers: [
@@ -90,15 +105,16 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
+            value: 'camera=(), microphone=(self), geolocation=()',
           },
         ],
       },
     ];
+    // Add COOP only in production (avoids dev warnings on non-trustworthy origins)
+    if (process.env.NODE_ENV === 'production') {
+      headers[0].headers.push({ key: 'Cross-Origin-Opener-Policy', value: 'same-origin' });
+    }
+    return headers;
   },
   experimental: {
     // Vercel deployment configuration

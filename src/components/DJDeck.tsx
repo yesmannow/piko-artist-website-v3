@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallba
 import { motion } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
 import { JogWheel } from "./dj-ui/JogWheel";
+import { SpinningVinyl } from "./dj-ui/SpinningVinyl";
 import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
@@ -187,21 +188,17 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         // 3. Connect to Web Audio Mixer
         if (audioContext && outputNode) {
           try {
-            // Disconnect old source if exists
-            if (mediaSourceRef.current) {
-              try {
-                mediaSourceRef.current.disconnect();
-              } catch {
-                // Ignore disconnect errors
-              }
+            // Only create source once per media element to avoid InvalidStateError
+            if (!mediaSourceRef.current) {
+              const mediaElement = ws.getMediaElement();
+              const mediaSource = audioContext.createMediaElementSource(mediaElement);
+              mediaSourceRef.current = mediaSource;
+              // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
+              mediaSource.connect(outputNode);
+            } else {
+              // Ensure it's connected
+              try { mediaSourceRef.current.connect(outputNode); } catch {}
             }
-
-            const mediaElement = ws.getMediaElement();
-            const mediaSource = audioContext.createMediaElementSource(mediaElement);
-            mediaSourceRef.current = mediaSource;
-
-            // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
-            mediaSource.connect(outputNode);
           } catch (error) {
             if (process.env.NODE_ENV === "development") {
               // eslint-disable-next-line no-console
@@ -227,6 +224,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         }
       });
 
+      // Swallow benign errors from teardown/aborted loads
+      ws.on("error", () => {});
+
       return () => {
         // Clean up carefully to prevent context loss
         if (mediaSourceRef.current) {
@@ -234,6 +234,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             mediaSourceRef.current.disconnect();
           } catch {
             // Ignore disconnect errors
+          } finally {
+            mediaSourceRef.current = null;
           }
         }
         ws.destroy();
@@ -249,7 +251,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           setTimeout(() => setIsTransitioning(false), 1000);
         }
         setPreviousTrackUrl(trackUrl);
-        wavesurferRef.current.load(trackUrl);
+        try {
+          wavesurferRef.current.load(trackUrl);
+        } catch {
+          // Ignore abort race conditions on route/nav
+        }
       }
     }, [trackUrl, previousTrackUrl]);
 
@@ -720,38 +726,32 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           {deckLabel}
         </h3>
 
-        {/* Jog Wheel with Vinyl Mode */}
+        {/* Spinning Vinyl with DJ Scratch Interaction */}
         <div className="w-full flex justify-center">
-          <JogWheel
-            rotation={rotation}
+          <SpinningVinyl
             isPlaying={isPlaying && !isScrubbing}
-            size={Math.min(180, typeof window !== "undefined" ? window.innerWidth * 0.3 : 180)}
-            onScrub={handleScrub}
-            onDragStart={() => {
-              handleDragStart();
-              // Notify scratch start
-              if (onScratch) {
-                onScratch(0, true);
-              }
-            }}
-            onDragEnd={() => {
-              handleDragEnd();
-              // Notify scratch end
-              if (onScratch) {
-                onScratch(0, false);
-              }
-            }}
-            onVelocityChange={(velocity) => {
-              // Map velocity to normalized range for handleScratch
-              // JogWheel provides angular velocity, convert to playbackRate offset
-              const normalizedVelocity = (velocity - 1.0) * 10; // Convert to -5 to 5 range
-              if (onScratch) {
-                onScratch(normalizedVelocity, true);
-              }
-            }}
-            bpm={bpm || 120}
-            playbackRate={speed * (isReversedState ? -1 : 1)}
             coverArt={coverArt}
+            rotation={rotation}
+            onScratch={(velocity, isTouching) => {
+              if (isTouching) {
+                if (!isScrubbing) {
+                  handleDragStart();
+                }
+                // Apply scratch velocity to playback
+                if (onScratch) {
+                  onScratch(velocity, true);
+                }
+              } else {
+                if (isScrubbing) {
+                  handleDragEnd();
+                }
+                if (onScratch) {
+                  onScratch(0, false);
+                }
+              }
+            }}
+            size={Math.min(200, typeof window !== "undefined" ? window.innerWidth * 0.35 : 200)}
+            deckColor={deckColor}
           />
         </div>
 

@@ -7,13 +7,14 @@ import Image from "next/image";
 import { tracks, MediaItem } from "@/lib/data";
 import { X, Play } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
+import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
 
 function NeonDust() {
   const { audioRef, isPlaying } = useAudio();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array | null>(null);
+  const dataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const sourceCreatedRef = useRef(false);
 
   useEffect(() => {
@@ -36,23 +37,21 @@ function NeonDust() {
   useEffect(() => {
     const el = audioRef.current;
     if (!el || sourceCreatedRef.current) return;
-    const AC = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
-    const ac = new AC();
+    const ac = getSharedAudioContext();
     const analyser = ac.createAnalyser();
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.85;
     ac.resume?.().catch(() => {});
     try {
-      const src = ac.createMediaElementSource(el);
+      const src = getOrCreateMediaSourceFor(el);
       src.connect(analyser);
       sourceCreatedRef.current = true;
     } catch {}
     analyserRef.current = analyser;
-    dataRef.current = new Uint8Array(analyser.frequencyBinCount);
+    dataRef.current = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount)) as Uint8Array<ArrayBuffer>;
     return () => {
       analyserRef.current = null;
       dataRef.current = null;
-      ac.close().catch(() => {});
       sourceCreatedRef.current = false;
     };
   }, [audioRef]);
@@ -122,7 +121,7 @@ function NeonDust() {
   }, [isPlaying]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[1]">
+    <div className="pointer-events-none absolute inset-0 z-0">
       <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );
@@ -467,9 +466,10 @@ export default function VideosPage() {
   }
 
   return (
-    <div className="min-h-screen relative z-0 overflow-hidden bg-[#121214cc] pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
+    <div className="min-h-screen relative overflow-hidden bg-background pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
       <NeonDust />
-      <div className="max-w-7xl mx-auto">
+      <div className="absolute inset-0 bg-[#121214cc] z-10 pointer-events-none" />
+      <div className="relative z-20 max-w-7xl mx-auto">
         <div className="mb-8 md:mb-12">
           <h1 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-header text-foreground tracking-tighter mb-2">
             VISUAL{" "}

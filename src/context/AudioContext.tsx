@@ -33,34 +33,73 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
+  const playPromiseRef = useRef<Promise<void> | null>(null);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (!audioRef.current || !currentTrack) return;
+
+    // Wait for any pending play promise to resolve
+    if (playPromiseRef.current) {
+      try {
+        await playPromiseRef.current;
+      } catch {
+        // Ignore errors from previous play attempts
+      }
+      playPromiseRef.current = null;
+    }
 
     if (isPlaying) {
       audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      try {
+        playPromiseRef.current = audioRef.current.play();
+        await playPromiseRef.current;
+        playPromiseRef.current = null;
+        setIsPlaying(true);
+      } catch (error) {
+        playPromiseRef.current = null;
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.error("Error playing audio:", error);
+        }
+        setIsPlaying(false);
+      }
     }
-    setIsPlaying(!isPlaying);
   };
 
-  const playTrack = useCallback((track: MediaItem) => {
+  const playTrack = useCallback(async (track: MediaItem) => {
+    // Wait for any pending play promise to resolve
+    if (playPromiseRef.current) {
+      try {
+        await playPromiseRef.current;
+      } catch {
+        // Ignore errors from previous play attempts
+      }
+      playPromiseRef.current = null;
+    }
+
     setCurrentTrack(track);
-    setIsPlaying(true);
 
     // Load and play the track
     if (audioRef.current) {
       if (track.type === "audio") {
         audioRef.current.src = track.src;
         audioRef.current.load();
-        audioRef.current.play().catch((error) => {
+        
+        try {
+          playPromiseRef.current = audioRef.current.play();
+          await playPromiseRef.current;
+          playPromiseRef.current = null;
+          setIsPlaying(true);
+        } catch (error) {
+          playPromiseRef.current = null;
           if (process.env.NODE_ENV === "development") {
             // eslint-disable-next-line no-console
             console.error("Error playing audio:", error);
           }
           setIsPlaying(false);
-        });
+        }
       } else {
         // For video tracks, we might need different handling
         // For now, just set the track
@@ -150,10 +189,17 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     });
 
     // Set action handlers
-    mediaSession.setActionHandler("play", () => {
+    mediaSession.setActionHandler("play", async () => {
       if (audioRef.current && !isPlaying) {
-        audioRef.current.play();
-        setIsPlaying(true);
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        } catch (error) {
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.error("Error playing audio from MediaSession:", error);
+          }
+        }
       }
     });
 

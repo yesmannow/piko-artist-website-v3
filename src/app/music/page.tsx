@@ -7,6 +7,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useState, useEffect, useMemo, useRef } from "react";
+import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
 
 // Helper to check if coverArt is an image path
 const isImagePath = (coverArt: string): boolean => {
@@ -109,7 +110,7 @@ function NeonDust() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array | null>(null);
+  const dataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const sourceCreatedRef = useRef(false);
 
   useEffect(() => {
@@ -134,14 +135,13 @@ function NeonDust() {
     const audioEl = audioRef.current;
     if (!audioEl || sourceCreatedRef.current) return;
 
-    const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
-    const ac = new AudioCtx();
+    const ac = getSharedAudioContext();
     const analyser = ac.createAnalyser();
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.85;
 
     try {
-      const src = ac.createMediaElementSource(audioEl);
+      const src = getOrCreateMediaSourceFor(audioEl);
       src.connect(analyser);
       // Do NOT connect analyser to destination to avoid duplicate audio
       sourceCreatedRef.current = true;
@@ -150,12 +150,12 @@ function NeonDust() {
     }
 
     analyserRef.current = analyser;
-    dataRef.current = new Uint8Array(analyser.frequencyBinCount);
+    dataRef.current = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount)) as Uint8Array<ArrayBuffer>;
 
     return () => {
       analyserRef.current = null;
       dataRef.current = null;
-      ac.close().catch(() => {});
+      // Do not close shared audio context
       sourceCreatedRef.current = false;
     };
   }, [audioRef]);

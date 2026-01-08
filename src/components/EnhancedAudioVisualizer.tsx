@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAudio } from "@/context/AudioContext";
+import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
 
 interface EnhancedAudioVisualizerProps {
   height?: number;
@@ -44,13 +45,13 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Create audio context and analyser
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Create shared audio context and analyser
+    const audioContext = getSharedAudioContext();
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 256; // More bars
     analyser.smoothingTimeConstant = 0.8;
 
-    const source = audioContext.createMediaElementSource(audio);
+    const source = getOrCreateMediaSourceFor(audio);
     source.connect(analyser);
     // Do not connect the analyser to destination; HTMLAudioElement already outputs audio
 
@@ -73,7 +74,7 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
       }
 
       const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+      const dataArray = new Uint8Array(new ArrayBuffer(bufferLength)) as Uint8Array<ArrayBuffer>;
       analyserRef.current.getByteFrequencyData(dataArray);
 
       // Clear canvas
@@ -145,9 +146,8 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      source.disconnect();
-      analyser.disconnect();
-      audioContext.close();
+      try { analyser.disconnect(); } catch {}
+      // Do not disconnect shared media source or close shared context
     };
   }, [audioRef, isPlaying, colors, height]);
 

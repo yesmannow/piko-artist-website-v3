@@ -45,16 +45,26 @@ export function Waveform({
 
     wavesurferRef.current = wavesurfer;
 
-    // Load audio
-    wavesurfer.load(audioUrl);
+    // Load audio with abort guard
+    try {
+      // Some builds return a promise; guard aborts
+      const maybePromise = wavesurfer.load(audioUrl) as unknown;
+      if (maybePromise && typeof (maybePromise as Promise<unknown>).catch === "function") {
+        (maybePromise as Promise<unknown>).catch(() => {});
+      }
+    } catch {
+      // Ignore race conditions on teardown
+    }
 
     // Handle ready state
     wavesurfer.on("ready", () => {
       setIsReady(true);
     });
+    // Swallow benign errors from abort/destroy
+    wavesurfer.on("error", () => {});
 
     // Handle seek - sync with audio element
-    // @ts-expect-error - wavesurfer.js types may not include all event names
+    // @ts-expect-error - WaveSurfer types may not include all events
     wavesurfer.on("seek", (seekProgress: number) => {
       if (!wavesurferRef.current) return;
       isSeekingRef.current = true;

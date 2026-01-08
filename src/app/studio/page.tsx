@@ -5,6 +5,7 @@ import { DJInterface } from "@/components/DJInterface";
 import { HelpProvider } from "@/context/HelpContext";
 import { CrashGuard } from "@/components/dj-ui/CrashGuard";
 import { useAudio } from "@/context/AudioContext";
+import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
 // Preload 3D models early
 import "@/components/dj-ui/preload3D";
 
@@ -13,7 +14,7 @@ function NeonDust() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array | null>(null);
+  const dataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const sourceCreatedRef = useRef(false);
 
   useEffect(() => {
@@ -24,11 +25,10 @@ function NeonDust() {
 
   useEffect(() => {
     const el = audioRef.current; if (!el || sourceCreatedRef.current) return;
-    const AC = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
-    const ac = new AC(); const analyser = ac.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.85;
-    try { const src = ac.createMediaElementSource(el); src.connect(analyser); sourceCreatedRef.current = true; } catch {}
-    analyserRef.current = analyser; dataRef.current = new Uint8Array(analyser.frequencyBinCount);
-    return () => { analyserRef.current = null; dataRef.current = null; ac.close().catch(() => {}); sourceCreatedRef.current = false; };
+    const ac = getSharedAudioContext(); const analyser = ac.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.85;
+    try { const src = getOrCreateMediaSourceFor(el); src.connect(analyser); sourceCreatedRef.current = true; } catch {}
+    analyserRef.current = analyser; dataRef.current = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount)) as Uint8Array<ArrayBuffer>;
+    return () => { analyserRef.current = null; dataRef.current = null; sourceCreatedRef.current = false; };
   }, [audioRef]);
 
   useEffect(() => {

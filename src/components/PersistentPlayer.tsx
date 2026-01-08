@@ -60,9 +60,16 @@ export function PersistentPlayer() {
     });
 
     // Set action handlers
-    mediaSession.setActionHandler("play", () => {
+    mediaSession.setActionHandler("play", async () => {
       if (audioRef.current && !isPlaying) {
-        audioRef.current.play();
+        try {
+          await audioRef.current.play();
+        } catch (error) {
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.error("Error playing audio from MediaSession:", error);
+          }
+        }
       }
     });
 

@@ -21,6 +21,9 @@ import { VoiceTagPanel } from "./VoiceTagPanel";
 import { MicInput } from "./MicInput";
 import { OverlayShell } from "./ui/OverlayShell";
 import { useDualDeck } from "@/hooks/useDualDeck";
+import { extractDominantColors, type DominantColors } from "@/utils/colorExtractor";
+import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
+import { Sliders, Mic, Music2 } from "lucide-react";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -55,6 +58,7 @@ export function DJInterface() {
 
   // Deck A state
   const [deckAData, setDeckAData] = useState<typeof tracks[0] | null>(null);
+  const [deckAColors, setDeckAColors] = useState<DominantColors | null>(null);
   const [deckAAudioBuffer, setDeckAAudioBuffer] = useState<AudioBuffer | null>(null);
   const [deckAPlaying, setDeckAPlaying] = useState(false);
   const [deckAVolume, setDeckAVolume] = useState(0.7);
@@ -66,6 +70,7 @@ export function DJInterface() {
 
   // Deck B state
   const [deckBData, setDeckBData] = useState<typeof tracks[0] | null>(null);
+  const [deckBColors, setDeckBColors] = useState<DominantColors | null>(null);
   const [deckBAudioBuffer, setDeckBAudioBuffer] = useState<AudioBuffer | null>(null);
   const [deckBPlaying, setDeckBPlaying] = useState(false);
   const [deckBVolume, setDeckBVolume] = useState(0.7);
@@ -80,6 +85,8 @@ export function DJInterface() {
 
   // Sidebar collapse state
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const sidebarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mixer state
   const [crossfader, setCrossfader] = useState(0.5);
@@ -888,6 +895,17 @@ export function DJInterface() {
       setDeckAData(track);
       setDeckAPlaying(false);
 
+      // Extract dominant colors from artwork
+      if (track.coverArt) {
+        try {
+          const colors = await extractDominantColors(track.coverArt);
+          setDeckAColors(colors);
+        } catch (error) {
+          console.warn("Failed to extract colors:", error);
+          setDeckAColors(null);
+        }
+      }
+
       // Load audio buffer for BPM detection
       try {
         const response = await fetch(track.src);
@@ -911,6 +929,17 @@ export function DJInterface() {
     if (track.type === "audio" && audioContextRef.current) {
       setDeckBData(track);
       setDeckBPlaying(false);
+
+      // Extract dominant colors from artwork
+      if (track.coverArt) {
+        try {
+          const colors = await extractDominantColors(track.coverArt);
+          setDeckBColors(colors);
+        } catch (error) {
+          console.warn("Failed to extract colors:", error);
+          setDeckBColors(null);
+        }
+      }
 
       // Load audio buffer for BPM detection
       try {
@@ -1156,11 +1185,26 @@ export function DJInterface() {
         `,
       }}
     >
-      {/* Left Sidebar - Track Library */}
+      {/* Left Sidebar - Track Library with Auto-Hide */}
       <aside
         className={`hidden lg:block flex-shrink-0 border-r border-gray-800 bg-[#0a0a0a] overflow-hidden h-screen sticky top-0 transition-all duration-300 ease-in-out ${
-          isSidebarMinimized ? "w-16" : "w-80 xl:w-96"
+          isSidebarMinimized && !isSidebarHovered ? "w-16" : "w-80 xl:w-96"
         }`}
+        onMouseEnter={() => {
+          if (isSidebarMinimized) {
+            if (sidebarTimeoutRef.current) {
+              clearTimeout(sidebarTimeoutRef.current);
+            }
+            setIsSidebarHovered(true);
+          }
+        }}
+        onMouseLeave={() => {
+          if (isSidebarMinimized) {
+            sidebarTimeoutRef.current = setTimeout(() => {
+              setIsSidebarHovered(false);
+            }, 300);
+          }
+        }}
       >
         <div className="h-full flex flex-col">
           {/* Header */}
@@ -1213,8 +1257,8 @@ export function DJInterface() {
             </div>
           </div>
 
-          {/* Sidebar Content - Hidden when minimized */}
-          {!isSidebarMinimized && (
+          {/* Sidebar Content - Hidden when minimized and not hovered */}
+          {(!isSidebarMinimized || isSidebarHovered) && (
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6" data-tour="library">
 
           {/* File Upload Section */}
@@ -1867,8 +1911,15 @@ export function DJInterface() {
           )}
         </OverlayShell>
 
-        {/* FX Rack */}
+        {/* FX Rack - Collapsible */}
         <div data-tour="fx-unit">
+        <CollapsibleSection
+          title="FX Rack"
+          icon={<Sliders className="w-5 h-5" />}
+          defaultOpen={true}
+          accentColor="#00ff00"
+          className="mb-6 lg:mb-8"
+        >
         <FXUnit
           // Session Recorder props
           audioContext={audioContextRef.current}
@@ -1987,6 +2038,7 @@ export function DJInterface() {
           onEchoTimeChangeB={setEchoTimeB}
           onEchoFeedbackChangeB={setEchoFeedbackB}
         />
+        </CollapsibleSection>
         </div>
 
           {/* Main Console */}
@@ -1997,16 +2049,22 @@ export function DJInterface() {
             onDragOver={handleDeckADragOver}
             onDragLeave={handleDeckADragLeave}
             onDrop={handleDeckADrop}
-            className={`relative transition-all ${
+            className={`relative transition-all rounded-lg ${
               dragOverDeck === "A" ? "scale-105" : ""
             }`}
+            style={{
+              background: deckAColors
+                ? `linear-gradient(to bottom, ${deckAColors.primary}15, transparent 50%)`
+                : undefined,
+              borderColor: deckAColors?.primary || "#00d9ff",
+            }}
           >
             <DJDeck
               ref={deckARef}
               trackUrl={deckAData?.src || null}
               isPlaying={deckAPlaying}
               speed={deckASpeed}
-              deckColor="#00d9ff"
+              deckColor={deckAColors?.primary || "#00d9ff"}
               deckLabel="DECK A"
               onPlayPause={() => setDeckAPlaying(!deckAPlaying)}
               onSync={handleDeckASync}
@@ -2098,16 +2156,22 @@ export function DJInterface() {
             onDragOver={handleDeckBDragOver}
             onDragLeave={handleDeckBDragLeave}
             onDrop={handleDeckBDrop}
-            className={`relative transition-all ${
+            className={`relative transition-all rounded-lg ${
               dragOverDeck === "B" ? "scale-105" : ""
             }`}
+            style={{
+              background: deckBColors
+                ? `linear-gradient(to bottom, ${deckBColors.primary}15, transparent 50%)`
+                : undefined,
+              borderColor: deckBColors?.primary || "#ff00d9",
+            }}
           >
             <DJDeck
               ref={deckBRef}
               trackUrl={deckBData?.src || null}
               isPlaying={deckBPlaying}
               speed={deckBSpeed}
-              deckColor="#ff00d9"
+              deckColor={deckBColors?.primary || "#ff00d9"}
               deckLabel="DECK B"
               onPlayPause={() => setDeckBPlaying(!deckBPlaying)}
               onSync={handleDeckBSync}
@@ -2144,14 +2208,27 @@ export function DJInterface() {
 
           {/* Mic Input - Monitor Only */}
           <div className="mt-6 lg:mt-8">
-            <MicInput
-              audioContext={audioContextRef.current || undefined}
-              masterGainNode={masterGainRef.current || undefined}
-            />
+            <CollapsibleSection
+              title="Mic Input"
+              icon={<Mic className="w-5 h-5" />}
+              defaultOpen={false}
+              accentColor="#ff00d9"
+            >
+              <MicInput
+                audioContext={audioContextRef.current || undefined}
+                masterGainNode={masterGainRef.current || undefined}
+              />
+            </CollapsibleSection>
           </div>
 
           {/* Voice Tag Panel - Moved outside grid */}
           <div className="mt-6 lg:mt-8" data-tour="voice-tags">
+            <CollapsibleSection
+              title="Voice Tags"
+              icon={<Music2 className="w-5 h-5" />}
+              defaultOpen={false}
+              accentColor="#FFD700"
+            >
             <VoiceTagPanel
               micEnabled={voiceTag.micEnabled}
               isRecording={voiceTag.isRecording}
@@ -2169,6 +2246,7 @@ export function DJInterface() {
               onClearTag={voiceTag.clearTag}
               onTagVolumeChange={handleTagVolumeChange}
             />
+            </CollapsibleSection>
           </div>
         </div>
       </div>

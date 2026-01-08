@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Play, Pause, Volume2 } from "lucide-react";
 import { tracks, MediaItem } from "@/lib/data";
 import { useHaptic } from "@/hooks/useHaptic";
+import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
 
 const vibeColors = {
   chill: "bg-neon-green/20 text-neon-green border-neon-green",
@@ -85,30 +86,21 @@ export function Player() {
       setIsLoading(false);
       setDuration(formatTime(wavesurfer.getDuration()));
 
-      // Get the backend's audio context if available
-      interface WaveSurferBackend {
-        ac?: AudioContext;
-      }
+      // Get the backend's audio context if available; otherwise use shared
+      interface WaveSurferBackend { ac?: AudioContext; }
       const backend = (wavesurfer as unknown as { backend?: WaveSurferBackend }).backend;
-      if (backend && backend.ac) {
-        const audioContext = backend.ac;
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        analyserRef.current = analyser;
+      const audioContext = backend && backend.ac ? backend.ac : getSharedAudioContext();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyserRef.current = analyser;
 
-        // Try to connect to the audio source
-        try {
-          const source = audioContext.createMediaElementSource(wavesurfer.getMediaElement());
-          source.connect(analyser);
-          analyser.connect(audioContext.destination);
-        } catch {
-          // If connection fails (already connected), use gain node
-          const gainNode = audioContext.createGain();
-          const source = audioContext.createMediaElementSource(wavesurfer.getMediaElement());
-          source.connect(gainNode);
-          gainNode.connect(analyser);
-          gainNode.connect(audioContext.destination);
-        }
+      try {
+        const mediaEl = wavesurfer.getMediaElement();
+        const source = getOrCreateMediaSourceFor(mediaEl);
+        source.connect(analyser);
+        // Do NOT connect analyser to destination; avoid double audio
+      } catch {
+        // Ignore repeated connections
       }
     });
 

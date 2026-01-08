@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 
+// Shared Web Audio singletons to prevent InvalidStateError
+let __sharedAudioContext: AudioContext | null = null;
+const __mediaSourceMap = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+
+export function getSharedAudioContext(): AudioContext {
+  if (!__sharedAudioContext) {
+    const AC = (window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext) as unknown as typeof AudioContext;
+    __sharedAudioContext = new AC();
+  }
+  return __sharedAudioContext;
+}
+
+export function getOrCreateMediaSourceFor(el: HTMLMediaElement): MediaElementAudioSourceNode {
+  const existing = __mediaSourceMap.get(el);
+  if (existing) return existing;
+  const ac = getSharedAudioContext();
+  const src = ac.createMediaElementSource(el);
+  __mediaSourceMap.set(el, src);
+  return src;
+}
+
 interface AudioAnalyserResult {
   bass: number; // 0-1, low frequencies (0-200Hz)
   mid: number; // 0-1, mid frequencies (200Hz-2kHz)
@@ -36,11 +58,8 @@ export function useAudioAnalyser(
       return;
     }
 
-    // Initialize AudioContext
-    const AudioContextClass =
-      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-
-    const audioContext = new AudioContextClass();
+    // Initialize shared AudioContext
+    const audioContext = getSharedAudioContext();
     audioContextRef.current = audioContext;
 
     // Create analyser
@@ -52,9 +71,8 @@ export function useAudioAnalyser(
     // For HTML5 video elements
     if (videoElement instanceof HTMLVideoElement) {
       try {
-        const source = audioContext.createMediaElementSource(videoElement);
+        const source = getOrCreateMediaSourceFor(videoElement);
         source.connect(analyser);
-        analyser.connect(audioContext.destination);
         sourceRef.current = source;
       } catch (error) {
         console.warn("Audio source already connected or unavailable:", error);
@@ -118,12 +136,12 @@ export function useAudioAnalyser(
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
+      if (sourceRef.current && analyserRef.current) {
+        try {
+          sourceRef.current.disconnect(analyserRef.current);
+        } catch {}
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
+      // Do not close shared audio context here
     };
   }, [videoElement, enabled]);
 
