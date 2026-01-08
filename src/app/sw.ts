@@ -11,7 +11,7 @@ declare global {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
   }
-  
+
   interface ExtendableEvent extends Event {
     waitUntil(f: Promise<unknown>): void;
   }
@@ -179,6 +179,15 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+self.addEventListener('message', (event: Event) => {
+  const e = event as any;
+  const data = e?.data;
+  if (data && data.type === 'CLEANUP_CACHES') {
+    const ev = event as unknown as ExtendableEvent;
+    ev.waitUntil(cleanupOldCaches());
+  }
+});
 
 // Cache cleanup on service worker activation
 self.addEventListener("activate", async (event: Event) => {
