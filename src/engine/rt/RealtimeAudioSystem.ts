@@ -4,6 +4,7 @@
  * Phase 4: Real-time audio primitives
  * - Initializes AudioContext with latencyHint:'interactive'
  * - Loads AudioWorklet modules
+ * - Creates SharedArrayBuffer control plane
  * - Provides low-level audio infrastructure without UI dependencies
  * 
  * Constraints:
@@ -12,6 +13,10 @@
  * - Singleton pattern for global audio context
  * - Strict TypeScript
  */
+
+import { createSharedControlBlock, ControlBus } from './control/ControlBus';
+import type { ControlBlockViews } from './control/ControlLayout';
+import type { WorkletInitMessage, FromWorkletMessage } from './control/messages';
 
 export type AudioSystemState = 'uninitialized' | 'initializing' | 'ready' | 'error';
 
@@ -28,6 +33,11 @@ class RealtimeAudioSystem {
   private audioDestination: AudioDestinationNode | null = null;
   private systemState: AudioSystemState = 'uninitialized';
   private initializationError: Error | null = null;
+  
+  // Phase 4: Control plane
+  private controlBlock: ControlBlockViews | null = null;
+  private controlBusInstance: ControlBus | null = null;
+  private mixerWorkletNode: AudioWorkletNode | null = null;
   
   // Private constructor enforces singleton pattern
   private constructor() {}
@@ -87,19 +97,67 @@ class RealtimeAudioSystem {
         await this.audioContext.resume();
       }
       
+      // Phase 4: Create SharedArrayBuffer control block
+      try {
+        console.log('[RealtimeAudioSystem] Creating SharedArrayBuffer control block...');
+        this.controlBlock = createSharedControlBlock();
+        this.controlBusInstance = new ControlBus(this.controlBlock);
+        console.log('[RealtimeAudioSystem] ✓ Control block created');
+      } catch (sabError) {
+        console.error('[RealtimeAudioSystem] ❌ Failed to create control block:', sabError);
+        throw sabError;
+      }
+      
       // Load AudioWorklet modules if specified
       const workletModules = config.workletModules || ['/worklets/mixer-processor.js'];
       
+      let workletLoaded = false;
       for (const modulePath of workletModules) {
         try {
           console.log(`[RealtimeAudioSystem] Loading worklet: ${modulePath}`);
           await this.audioContext.audioWorklet.addModule(modulePath);
           console.log(`[RealtimeAudioSystem] ✓ Loaded worklet: ${modulePath}`);
+          workletLoaded = true;
         } catch (workletError) {
           // Log worklet load error but don't fail initialization
           // The worklet file may not exist yet (Phase 4 dependency)
           console.warn(`[RealtimeAudioSystem] ⚠ Failed to load worklet ${modulePath}:`, workletError);
           // Store as warning but continue - this is expected if worklet file doesn't exist yet
+        }
+      }
+      
+      // Phase 4: Create mixer worklet node if worklet loaded successfully
+      if (workletLoaded && this.controlBlock) {
+        try {
+          console.log('[RealtimeAudioSystem] Creating mixer worklet node...');
+          this.mixerWorkletNode = new AudioWorkletNode(this.audioContext, 'mixer-processor');
+          
+          // Send initialization message with SharedArrayBuffer
+          const initMessage: WorkletInitMessage = {
+            kind: 'INIT',
+            sab: this.controlBlock.sab,
+          };
+          
+          this.mixerWorkletNode.port.postMessage(initMessage);
+          
+          // Listen for worklet responses
+          this.mixerWorkletNode.port.onmessage = (event: MessageEvent<FromWorkletMessage>) => {
+            const msg = event.data;
+            
+            if (msg.kind === 'READY') {
+              console.log('[RealtimeAudioSystem] ✓ Mixer worklet ready');
+            } else if (msg.kind === 'ERROR') {
+              console.error('[RealtimeAudioSystem] Mixer worklet error:', msg.error);
+            }
+          };
+          
+          // Connect mixer to destination
+          this.mixerWorkletNode.connect(this.audioDestination);
+          
+          console.log('[RealtimeAudioSystem] ✓ Mixer worklet node created and connected');
+        } catch (nodeError) {
+          console.warn('[RealtimeAudioSystem] ⚠ Failed to create mixer worklet node:', nodeError);
+          // Don't fail initialization - worklet is optional for now
         }
       }
       
@@ -155,6 +213,24 @@ class RealtimeAudioSystem {
    */
   public get isReady(): boolean {
     return this.systemState === 'ready';
+  }
+  
+  /**
+   * Get the control bus for high-frequency UI control updates
+   * @throws Error if system is not initialized or control bus not created
+   */
+  public get controlBus(): ControlBus {
+    if (!this.controlBusInstance) {
+      throw new Error('[RealtimeAudioSystem] ControlBus not initialized. Call initialize() first and ensure crossOriginIsolated=true.');
+    }
+    return this.controlBusInstance;
+  }
+  
+  /**
+   * Get the mixer worklet node (if created)
+   */
+  public get mixerNode(): AudioWorkletNode | null {
+    return this.mixerWorkletNode;
   }
   
   /**
