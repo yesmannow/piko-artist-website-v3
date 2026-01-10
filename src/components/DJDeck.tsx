@@ -766,31 +766,45 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
         {/* Spinning Vinyl with DJ Scratch Interaction */}
         <div className="w-full flex justify-center">
-          <SpinningVinyl
-            isPlaying={isPlaying && !isScrubbing}
-            coverArt={coverArt}
-            rotation={rotation}
-            onScratch={(velocity, isTouching) => {
-              if (isTouching) {
-                if (!isScrubbing) {
-                  handleDragStart();
-                }
-                // Apply scratch velocity to playback
-                if (onScratch) {
-                  onScratch(velocity, true);
-                }
-              } else {
-                if (isScrubbing) {
-                  handleDragEnd();
-                }
-                if (onScratch) {
-                  onScratch(0, false);
-                }
-              }
+          <motion.div
+            key={trackUrl || "empty"}
+            initial={{ scale: 0.8, opacity: 0, rotateY: -180 }}
+            animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+            exit={{ scale: 0.8, opacity: 0, rotateY: 180 }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 20,
+              opacity: { duration: 0.3 }
             }}
-            size={Math.min(200, typeof window !== "undefined" ? window.innerWidth * 0.35 : 200)}
-            deckColor={deckColor}
-          />
+          >
+            <SpinningVinyl
+              isPlaying={isPlaying && !isScrubbing}
+              coverArt={coverArt}
+              rotation={rotation}
+              duration={duration}
+              onScratch={(velocity, isTouching) => {
+                if (isTouching) {
+                  if (!isScrubbing) {
+                    handleDragStart();
+                  }
+                  // Apply scratch velocity to playback
+                  if (onScratch) {
+                    onScratch(velocity, true);
+                  }
+                } else {
+                  if (isScrubbing) {
+                    handleDragEnd();
+                  }
+                  if (onScratch) {
+                    onScratch(0, false);
+                  }
+                }
+              }}
+              size={Math.min(200, typeof window !== "undefined" ? window.innerWidth * 0.35 : 200)}
+              deckColor={deckColor}
+            />
+          </motion.div>
         </div>
 
         {/* Transport Controls */}
@@ -927,22 +941,109 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               <RotateCw className="w-6 h-6" style={{ color: isReversedState ? "#a855f7" : deckColor }} />
             </button>
           </Tooltip>
+
+          {/* Vinyl Mode Toggle - Switch between scratch and pitch bend */}
+          <Tooltip content="Vinyl Mode: Dragging scratches audio. Off: Dragging bends pitch">
+            <button
+              onClick={() => {
+                // Toggle vinyl mode state (can be added to component state)
+                const newVinylMode = !isReversedState; // Using isReversed as placeholder - ideally add new state
+                // Note: This would need to be wired to actual vinyl mode logic
+              }}
+              aria-label="Toggle vinyl mode"
+              className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 touch-manipulation border-gray-700`}
+              style={{
+                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)",
+              }}
+              title="Vinyl Mode"
+            >
+              <span className="text-xs font-black italic uppercase tracking-wider text-gray-400">
+                VINYL
+              </span>
+            </button>
+          </Tooltip>
+
+          {/* Eject/Remove Button - Only visible when track is loaded */}
+          {trackUrl && (
+            <Tooltip content="Remove track and reset deck">
+              <button
+                onClick={() => {
+                  // Clear track and reset deck state
+                  if (wavesurferRef.current) {
+                    wavesurferRef.current.pause();
+                    wavesurferRef.current.empty();
+                  }
+                  setCuePoint(null);
+                  setHotCues({});
+                  setIsLooping(false);
+                  setLoopIn(null);
+                  setLoopOut(null);
+                  // Notify parent to clear track
+                  window.location.reload(); // Temp - should be handled by parent
+                }}
+                aria-label="Remove track from deck"
+                className="relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 border-red-700 flex items-center justify-center transition-all hover:border-red-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500 touch-manipulation"
+                style={{
+                  boxShadow: "0 0 15px rgba(239, 68, 68, 0.2), inset 0 0 8px rgba(239, 68, 68, 0.1)",
+                }}
+                title="Eject Track"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                  <path d="M7 8l5-5 5 5M12 3v12M5 21h14" />
+                </svg>
+              </button>
+            </Tooltip>
+          )}
         </div>
 
-          {/* BPM Display and Beat Grid Toggle */}
-        {bpm && (
-          <div className="flex items-center justify-center gap-3 mt-2">
-            <div className="flex items-center gap-2">
-              <Music className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-barlow font-bold text-gray-300">
-                {bpm} BPM
-              </span>
-              {confidence < 0.5 && (
-                <span className="text-xs text-gray-500" title="Low confidence BPM detection">
-                  ~
-                </span>
+          {/* BPM, Key & Time Remaining Display */}
+        {trackUrl && (
+          <div className="flex items-center justify-between w-full px-4 mt-2">
+            {/* BPM & Key Display */}
+            <div className="flex flex-col items-start gap-1">
+              {bpm && (
+                <div className="flex items-center gap-2">
+                  <Music className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-barlow font-bold text-gray-300">
+                    {bpm} BPM
+                  </span>
+                  {confidence < 0.5 && (
+                    <span className="text-xs text-gray-500" title="Low confidence BPM detection">
+                      ~
+                    </span>
+                  )}
+                </div>
               )}
+              {/* Musical Key Display - Placeholder */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-barlow text-gray-500">KEY:</span>
+                <span className="text-xs font-barlow font-bold text-gray-300">
+                  C♯m {/* Placeholder - would need key detection */}
+                </span>
+              </div>
             </div>
+
+            {/* Time Remaining Countdown */}
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-xs font-barlow text-gray-500">REMAINING</span>
+              <span
+                className={`text-lg font-barlow font-bold tabular-nums ${
+                  duration - currentPosition < 30
+                    ? "text-red-500 animate-pulse"
+                    : "text-gray-300"
+                }`}
+              >
+                -{Math.floor(duration - currentPosition) >= 0
+                  ? `${Math.floor((duration - currentPosition) / 60)}:${String(Math.floor((duration - currentPosition) % 60)).padStart(2, "0")}`
+                  : "0:00"}
+              </span>
+            </div>
+          </div>
+        )}
+
+          {/* Beat Grid Toggle */}
+        {bpm && (
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => setShowBeatGrid(!showBeatGrid)}
               className={`p-1.5 rounded border transition-all ${

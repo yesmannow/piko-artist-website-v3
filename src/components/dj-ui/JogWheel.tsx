@@ -278,6 +278,57 @@ export function JogWheel({
         }
       }}
     >
+      {/* Rotating Outer Ring - Visual Feedback */}
+      <motion.svg
+        className="absolute inset-0 pointer-events-none z-5"
+        viewBox="0 0 100 100"
+        style={{ width: size, height: size }}
+        animate={{
+          rotate: isPlaying && !isDragging ? [0, 360] : 0
+        }}
+        transition={{
+          duration: isPlaying && !isDragging ? (60 / (bpm * playbackRate)) : 0,
+          repeat: isPlaying && !isDragging ? Infinity : 0,
+          ease: "linear"
+        }}
+      >
+        {/* Outer ring with tick marks */}
+        <circle
+          cx="50"
+          cy="50"
+          r="48"
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.1)"
+          strokeWidth="0.5"
+        />
+        {/* BPM indicator marks */}
+        {Array.from({ length: 4 }).map((_, i) => (
+          <line
+            key={i}
+            x1="50"
+            y1="2"
+            x2="50"
+            y2="6"
+            stroke="rgba(0, 255, 100, 0.6)"
+            strokeWidth="1"
+            transform={`rotate(${i * 90} 50 50)`}
+          />
+        ))}
+        {/* Secondary marks */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <line
+            key={`sec-${i}`}
+            x1="50"
+            y1="2"
+            x2="50"
+            y2="4"
+            stroke="rgba(255, 255, 255, 0.3)"
+            strokeWidth="0.5"
+            transform={`rotate(${i * 45 + 22.5} 50 50)`}
+          />
+        ))}
+      </motion.svg>
+
       {/* Vinyl Label Overlay with Smooth Transitions */}
       <AnimatePresence mode="wait">
         <motion.div

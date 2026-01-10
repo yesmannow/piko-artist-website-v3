@@ -11,6 +11,7 @@ interface SpinningVinylProps {
   onScratch?: (velocity: number, isTouching: boolean) => void;
   size?: number;
   deckColor?: string;
+  duration?: number; // Track duration in seconds
 }
 
 export function SpinningVinyl({
@@ -20,6 +21,7 @@ export function SpinningVinyl({
   onScratch,
   size = 200,
   deckColor = "#00d9ff",
+  duration = 0,
 }: SpinningVinylProps) {
   const vinylRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -265,6 +267,49 @@ export function SpinningVinyl({
             animationDuration: "1s",
           }}
         />
+      )}
+
+      {/* Mini Waveform Position Indicator */}
+      {isPlaying && duration > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none">
+          <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+            {/* Background waveform (simplified visual) */}
+            <path
+              d="M 0,15 Q 10,5 20,15 T 40,15 T 60,15 T 80,15 T 100,15"
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="1"
+            />
+            {/* Progress waveform */}
+            <defs>
+              <clipPath id={`waveform-clip-${deckColor}`}>
+                <rect
+                  x="0"
+                  y="0"
+                  width={(rotation / 360) * 100}
+                  height="30"
+                />
+              </clipPath>
+            </defs>
+            <path
+              d="M 0,15 Q 10,5 20,15 T 40,15 T 60,15 T 80,15 T 100,15"
+              fill="none"
+              stroke={deckColor}
+              strokeWidth="2"
+              clipPath={`url(#waveform-clip-${deckColor})`}
+            />
+            {/* Playhead indicator */}
+            <line
+              x1={(rotation / 360) * 100}
+              y1="0"
+              x2={(rotation / 360) * 100}
+              y2="30"
+              stroke={deckColor}
+              strokeWidth="2"
+              opacity="0.8"
+            />
+          </svg>
+        </div>
       )}
     </div>
   );
