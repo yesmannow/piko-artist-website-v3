@@ -157,6 +157,30 @@ export function Waveform({
           resize: false,
         });
 
+        // Add label to the region element
+        if (region.element) {
+          const label = document.createElement('div');
+          label.textContent = (parseInt(index) + 1).toString(); // Display 1-based pad number
+          label.style.cssText = `
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FFD700;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            font-family: 'Barlow', sans-serif;
+            text-align: center;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+          `;
+          region.element.appendChild(label);
+        }
+
         // Add hover event listeners
         if (region.element) {
           region.element.addEventListener("mouseenter", () => {

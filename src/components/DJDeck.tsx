@@ -16,6 +16,7 @@ import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
 import { TrackTransition } from "./dj-ui/TrackTransition";
+import { Waveform } from "./dj-ui/Waveform";
 import {
   Play,
   Pause,
@@ -1410,6 +1411,32 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           }}
           title="Click or drag to scrub through the track"
         >
+          {/* Waveform Component */}
+          {trackUrl && (
+            <Waveform
+              audioUrl={trackUrl}
+              progress={(currentPosition / duration) * 100}
+              isPlaying={isPlaying}
+              onSeek={(time) => {
+                if (wavesurferRef.current) {
+                  wavesurferRef.current.setTime(time);
+                  setCurrentPosition(time);
+                }
+              }}
+              height={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 60
+                  : 80
+              }
+              hotCues={externalHotCues}
+              loopStart={loopIn}
+              loopEnd={loopOut}
+              onHotCueUpdate={onHotCueSet ? (padIndex, newTime) => {
+                onHotCueSet(padIndex, newTime);
+              } : undefined}
+            />
+          )}
+
           {/* Beat Grid Overlay */}
           {showBeatGrid && beatPositions.length > 0 && duration > 0 && (
             <div
