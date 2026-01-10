@@ -69,22 +69,38 @@ export const MobileStudioLayout = () => {
   };
 
   /**
+   * PHASE 4: Initialize StudioEngine (new high-level API)
+   */
+  const initializeStudioEngine = async () => {
+    try {
+      console.log('🎵 [Phase 4] Initializing StudioEngine...');
+      
+      const { getStudioEngine } = await import('@/engine/rt/StudioEngine');
+      const studio = getStudioEngine();
+      await studio.initialize();
+      
+      console.log('✅ [Phase 4] StudioEngine initialized');
+      return true;
+    } catch (error) {
+      console.error('❌ [Phase 4] StudioEngine initialization failed:', error);
+      return false;
+    }
+  };
+
+  /**
    * REMEDIATION: "Tap to Start" - User-Intent Boot Sequence
-   * PHASE 4: Now initializes new real-time audio system first, then legacy AudioEngine
+   * PHASE 4: Now initializes StudioEngine instead of legacy AudioEngine
    */
   const handleStartSession = async () => {
     setIsInitializing(true);
     setInitError(null);
 
     try {
-      // PHASE 4: Initialize new real-time audio system first
-      await initializeRealtimeAudio();
-
-      // Initialize legacy AudioEngine with user interaction
-      const audioSuccess = await getAudioEngine().initialize();
+      // PHASE 4: Initialize new StudioEngine
+      const studioSuccess = await initializeStudioEngine();
       
-      if (!audioSuccess) {
-        setInitError('Failed to initialize audio engine');
+      if (!studioSuccess) {
+        setInitError('Failed to initialize studio engine');
         setIsInitializing(false);
         return;
       }
@@ -157,8 +173,16 @@ export const MobileStudioLayout = () => {
   };
 
   return (
+    // PHASE 4: Fixed viewport container with no scrolling
     // Force landscape and full viewport
-    <main className="fixed inset-0 flex flex-col bg-black overflow-hidden">
+    <main 
+      className="fixed inset-0 flex flex-col bg-black overflow-hidden"
+      style={{
+        touchAction: 'none',
+        overscrollBehavior: 'none',
+        WebkitOverflowScrolling: 'auto',
+      }}
+    >
       {/* REMEDIATION: CSS Orientation Guard - Enforce landscape mode */}
       <OrientationGuard />
 
@@ -246,6 +270,32 @@ export const MobileStudioLayout = () => {
                   )}
                 </div>
               </motion.button>
+
+              {/* Audio Unlock Indicator */}
+              {isInitializing && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <div className="flex items-center gap-2 text-[#FFD700]">
+                    {isAudioUnlocked ? (
+                      <>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-mono">Audio Unlocked</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-mono">Unlocking Audio...</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-zinc-500 font-mono">
+                    {rtAudioContext ? `${rtAudioContext.state} | ${rtAudioContext.sampleRate}Hz` : 'Initializing...'}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Error Message */}
               {initError && (
