@@ -7,7 +7,7 @@ import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 
 // Dynamically import DJInterface to avoid SSR issues
 const DJInterface = dynamic(
-  () => import('@/components/DJInterface').then(mod => ({ default: mod.DJInterface })),
+  () => import('@/components/DJInterface').then(mod => mod.DJInterface),
   {
     ssr: false,
     loading: () => (

@@ -8,7 +8,7 @@ import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 
 // Dynamically import DJInterface for mobile
 const DJInterface = dynamic(
-  () => import('@/components/DJInterface').then(mod => ({ default: mod.DJInterface })),
+  () => import('@/components/DJInterface').then(mod => mod.DJInterface),
   {
     ssr: false,
     loading: () => <div className="fixed inset-0 bg-black flex items-center justify-center">
