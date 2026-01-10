@@ -192,6 +192,19 @@ class StudioEngine {
     }
   }
 
+  /**
+   * Seek to a specific time in the track
+   *
+   * @param deck - 'A' or 'B'
+   * @param trackTime - Target position in track time (seconds)
+   */
+  seek(deck: DeckId, trackTime: number): void {
+    this.ensureReady();
+    const deckGraph = this.getDeck(deck);
+
+    deckGraph.seek(trackTime);
+  }
+
   // ==========================================================================
   // DECK CONTROLS
   // ==========================================================================
@@ -212,6 +225,13 @@ class StudioEngine {
     if (this.controlBusInstance) {
       this.controlBusInstance.setDeckRate(deck, rate);
     }
+  }
+
+  /**
+   * Alias for setRate - for API consistency
+   */
+  setPlaybackRate(deck: DeckId, rate: number): void {
+    this.setRate(deck, rate);
   }
 
   /**
@@ -281,6 +301,20 @@ class StudioEngine {
     this.ensureReady();
     const deckGraph = this.getDeck(deck);
     return deckGraph.state;
+  }
+
+  /**
+   * Get complete deck information
+   */
+  getDeckInfo(deck: DeckId) {
+    this.ensureReady();
+    const deckGraph = this.getDeck(deck);
+    return {
+      state: deckGraph.state,
+      currentTime: deckGraph.currentTime,
+      duration: deckGraph.duration,
+      isLoaded: deckGraph.isLoaded,
+    };
   }
 
   /**
