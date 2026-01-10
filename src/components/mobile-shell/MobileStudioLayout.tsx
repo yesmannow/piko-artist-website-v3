@@ -8,6 +8,7 @@ import { getMIDIManager } from '@/engine/MIDIManager';
 import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
 import { getStudioEngine } from '@/engine/rt/StudioEngine';
 import { useIOSAudioUnlock } from '@/hooks/useIOSAudioUnlock';
+import { useSilentAudioLoop } from '@/hooks/useSilentAudioLoop';
 import { useMIDIStore } from '@/store/useMIDIStore';
 import { AlwaysOnTopBar } from './AlwaysOnTopBar';
 import { AlwaysOnBottomBar } from './AlwaysOnBottomBar';
@@ -32,9 +33,16 @@ export const MobileStudioLayout = () => {
   const isAudioUnlocked = useIOSAudioUnlock(rtAudioContext, {
     onUnlock: () => {
       console.log('🔓 iOS Audio unlocked');
+      // PHASE 3: Start silent audio loop when unlocked
+      if (rtAudioContext) {
+        silentLoop.start();
+      }
     },
     debug: true,
   });
+
+  // PHASE 3: Silent audio loop for iOS keep-alive
+  const silentLoop = useSilentAudioLoop(rtAudioContext);
 
   // PHASE 9: Subscribe to MIDI learn mode
   const learnMode = useMIDIStore((state) => state.learnMode);
@@ -154,6 +162,18 @@ export const MobileStudioLayout = () => {
     }
   }, [mappings]);
 
+  // PHASE 3: Start silent audio loop when audio context is ready
+  useEffect(() => {
+    if (rtAudioContext && isAudioUnlocked && isInitialized) {
+      silentLoop.start();
+      console.log('🔊 Silent audio loop started for iOS keep-alive');
+    }
+    
+    return () => {
+      silentLoop.stop();
+    };
+  }, [rtAudioContext, isAudioUnlocked, isInitialized, silentLoop]);
+
   // PHASE 9: Show toast when learn mode activates
   useEffect(() => {
     if (learnMode && learnTarget) {
@@ -174,10 +194,10 @@ export const MobileStudioLayout = () => {
   };
 
   return (
-    // PHASE 4: Fixed viewport container with no scrolling
-    // Force landscape and full viewport
+    // PHASE 3 & 4: Fixed viewport container with no scrolling
+    // Force landscape and full viewport with safe-area-inset support
     <main
-      className="fixed inset-0 flex flex-col bg-black overflow-hidden"
+      className="fixed inset-0 flex flex-col bg-black overflow-hidden safe-area"
       style={{
         touchAction: 'none',
         overscrollBehavior: 'none',

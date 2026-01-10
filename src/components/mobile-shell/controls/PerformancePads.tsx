@@ -60,7 +60,8 @@ export const PerformancePads = ({ deckId }: PerformancePadsProps) => {
   };
 
   const handleLoopOut = () => {
-    triggerHaptic(HAPTIC_PATTERNS.CLICK);
+    // PHASE 3: Triple buzz when loop is set
+    triggerHaptic(HAPTIC_PATTERNS.LOOP_SET);
     try {
       const engine = getAudioEngine();
       const deck = engine.decks.get(deckId);
@@ -101,7 +102,22 @@ export const PerformancePads = ({ deckId }: PerformancePadsProps) => {
 
   // Hot Cue Controls
   const handleHotCue = (index: number, isLongPress: boolean = false) => {
-    triggerHaptic(HAPTIC_PATTERNS.CLICK);
+    // PHASE 3: Different haptics for cue set vs jump
+    if (isLongPress) {
+      triggerHaptic(HAPTIC_PATTERNS.ERROR); // Delete cue
+    } else {
+      const engine = getAudioEngine();
+      const hasCue = engine.hasHotCue(deckId, index);
+      
+      if (hasCue) {
+        // PHASE 3: Use CUE_JUMP pattern when jumping to existing cue
+        triggerHaptic(HAPTIC_PATTERNS.CUE_JUMP);
+      } else {
+        // PHASE 3: Use CUE_TOGGLE pattern when setting new cue
+        triggerHaptic(HAPTIC_PATTERNS.CUE_TOGGLE);
+      }
+    }
+    
     try {
       const engine = getAudioEngine();
       
