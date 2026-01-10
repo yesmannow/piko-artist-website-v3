@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef } from 'react';
 import { getAudioEngine } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
 import { VUMeter } from '../VUMeter';
+import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
 
 export const MixerView = () => {
   // Get volumes for both decks
@@ -11,13 +13,53 @@ export const MixerView = () => {
   const masterVolume = useAudioStore((state) => state.masterVolume);
   const setMasterVolume = useAudioStore((state) => state.setMasterVolume);
 
+  // PHASE 3: Track last volume to detect midpoint crossing
+  const lastVolumeA = useRef(volumeA);
+  const lastVolumeB = useRef(volumeB);
+  const lastMaster = useRef(masterVolume);
+
+  /**
+   * PHASE 3: Detect if fader crossed midpoint (0.5)
+   */
+  const checkMidpointCrossing = (prevValue: number, newValue: number) => {
+    const midpoint = 0.5;
+    const threshold = 0.02; // 2% threshold around midpoint
+    
+    // Check if we crossed the midpoint zone
+    const wasBeforeMidpoint = prevValue < (midpoint - threshold);
+    const wasAfterMidpoint = prevValue > (midpoint + threshold);
+    const isAtMidpoint = Math.abs(newValue - midpoint) <= threshold;
+    
+    if ((wasBeforeMidpoint || wasAfterMidpoint) && isAtMidpoint) {
+      // Crossed into midpoint zone - trigger haptic
+      triggerHaptic(HAPTIC_PATTERNS.FADER_MIDPOINT);
+    }
+  };
+
   const handleVolumeChange = (deckId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
+    
+    // PHASE 3: Check for midpoint crossing
+    const lastVol = deckId === 'deckA' ? lastVolumeA.current : lastVolumeB.current;
+    checkMidpointCrossing(lastVol, val);
+    
+    // Update last volume
+    if (deckId === 'deckA') {
+      lastVolumeA.current = val;
+    } else {
+      lastVolumeB.current = val;
+    }
+    
     getAudioEngine().setVolume(deckId, val);
   };
 
   const handleMasterVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
+    
+    // PHASE 3: Check for midpoint crossing
+    checkMidpointCrossing(lastMaster.current, val);
+    lastMaster.current = val;
+    
     setMasterVolume(val);
     // Note: Master volume control would need to be added to AudioEngine
     // For now, this just updates the store

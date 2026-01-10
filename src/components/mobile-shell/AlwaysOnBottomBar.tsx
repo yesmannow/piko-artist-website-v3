@@ -17,7 +17,8 @@ export const AlwaysOnBottomBar = () => {
 
   // Handlers
   const handleDeckAPlayPause = () => {
-    triggerHaptic(HAPTIC_PATTERNS.CLICK);
+    // PHASE 3: Use PLAY_TOGGLE pattern
+    triggerHaptic(HAPTIC_PATTERNS.PLAY_TOGGLE);
     if (deckAState.isPlaying) {
       getAudioEngine().pause('deckA');
     } else {
@@ -26,7 +27,8 @@ export const AlwaysOnBottomBar = () => {
   };
 
   const handleDeckBPlayPause = () => {
-    triggerHaptic(HAPTIC_PATTERNS.CLICK);
+    // PHASE 3: Use PLAY_TOGGLE pattern
+    triggerHaptic(HAPTIC_PATTERNS.PLAY_TOGGLE);
     if (deckBState.isPlaying) {
       getAudioEngine().pause('deckB');
     } else {
@@ -35,11 +37,13 @@ export const AlwaysOnBottomBar = () => {
   };
 
   const handleLoadDeckA = () => {
+    triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const testTrack = 'https://archive.org/download/mythium/JLS_ATI.mp3';
     getAudioEngine().loadTrack('deckA', testTrack);
   };
 
   const handleLoadDeckB = () => {
+    triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const testTrack = 'https://archive.org/download/mythium/JLS_ATI.mp3';
     getAudioEngine().loadTrack('deckB', testTrack);
   };
@@ -48,9 +52,14 @@ export const AlwaysOnBottomBar = () => {
     const value = parseFloat(e.target.value);
     const prev = prevCrossfaderRef.current;
 
-    // Detect crossing the center point (0.5)
-    if ((prev < 0.5 && value >= 0.5) || (prev > 0.5 && value <= 0.5)) {
-      triggerHaptic(HAPTIC_PATTERNS.BUMP);
+    // PHASE 3: Detect crossing the center point with stronger haptic
+    const centerThreshold = 0.02; // 2% threshold
+    const wasBeforeCenter = prev < (0.5 - centerThreshold);
+    const wasAfterCenter = prev > (0.5 + centerThreshold);
+    const isAtCenter = Math.abs(value - 0.5) <= centerThreshold;
+    
+    if ((wasBeforeCenter || wasAfterCenter) && isAtCenter) {
+      triggerHaptic(HAPTIC_PATTERNS.CROSSFADER_CENTER);
     }
 
     prevCrossfaderRef.current = value;
@@ -59,28 +68,32 @@ export const AlwaysOnBottomBar = () => {
 
   // PHASE 8: Sync handlers
   const handleSyncA = () => {
-    triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const engine = getAudioEngine();
     const playbackRate = engine.getPlaybackRate('deckA');
 
     if (playbackRate !== 1.0) {
       // Already synced, unsync
+      triggerHaptic(HAPTIC_PATTERNS.CLICK);
       engine.unsync('deckA');
     } else {
+      // PHASE 3: Sync enabled pattern
+      triggerHaptic(HAPTIC_PATTERNS.SYNC_ENABLE);
       // Sync to Deck B
       engine.sync('deckA', 'deckB');
     }
   };
 
   const handleSyncB = () => {
-    triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const engine = getAudioEngine();
     const playbackRate = engine.getPlaybackRate('deckB');
 
     if (playbackRate !== 1.0) {
       // Already synced, unsync
+      triggerHaptic(HAPTIC_PATTERNS.CLICK);
       engine.unsync('deckB');
     } else {
+      // PHASE 3: Sync enabled pattern
+      triggerHaptic(HAPTIC_PATTERNS.SYNC_ENABLE);
       // Sync to Deck A
       engine.sync('deckB', 'deckA');
     }
