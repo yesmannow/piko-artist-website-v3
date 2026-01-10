@@ -14,6 +14,7 @@ interface PerformancePadsProps {
   helpText?: string;
   numPads?: number; // Number of pads (default 8, can be 12 for desktop)
   cuePoints?: Record<number, number>; // External cue points state
+  onHapticTrigger?: () => void; // Haptic feedback trigger
 }
 
 export function PerformancePads({
@@ -26,6 +27,7 @@ export function PerformancePads({
   helpText,
   numPads = 8,
   cuePoints: externalCuePoints,
+  onHapticTrigger,
 }: PerformancePadsProps) {
   const [cuePoints, setCuePoints] = useState<Record<number, number>>({});
   const [stutterActive, setStutterActive] = useState<Record<number, boolean>>(
@@ -184,6 +186,7 @@ export function PerformancePads({
         } else {
           // Jump to cue point
           onCueJump(activeCuePoints[padIndex]);
+          onHapticTrigger?.(); // Trigger haptic feedback when cue is jumped to
         }
       } else {
         // Pad is empty - set hot cue
@@ -195,6 +198,7 @@ export function PerformancePads({
           }));
         }
         onCueSet(padIndex, currentTime);
+        onHapticTrigger?.(); // Trigger haptic feedback when cue is set
       }
     }
     // e is used above via e.changedTouches

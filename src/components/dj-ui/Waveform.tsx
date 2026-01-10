@@ -310,3 +310,5 @@ export function Waveform({
     </div>
   );
 }
+
+export default Waveform;

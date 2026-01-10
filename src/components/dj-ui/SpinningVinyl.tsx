@@ -12,6 +12,10 @@ interface SpinningVinylProps {
   size?: number;
   deckColor?: string;
   duration?: number; // Track duration in seconds
+  onClick?: () => void; // Click handler for library trigger
+  showEmptyState?: boolean; // Whether to show empty state message
+  playbackRate?: number; // Playback rate (1.0 = normal speed)
+  isFxActive?: boolean; // Whether FX are currently active on this deck
 }
 
 export function SpinningVinyl({
@@ -22,6 +26,10 @@ export function SpinningVinyl({
   size = 200,
   deckColor = "#00d9ff",
   duration = 0,
+  onClick,
+  showEmptyState = false,
+  playbackRate = 1.0,
+  isFxActive = false,
 }: SpinningVinylProps) {
   const vinylRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -170,7 +178,8 @@ export function SpinningVinyl({
           boxShadow: `
             inset 0 0 20px rgba(0, 0, 0, 0.8),
             0 4px 20px rgba(0, 0, 0, 0.5),
-            0 0 0 2px ${deckColor}40
+            0 0 0 2px ${deckColor}40,
+            ${isFxActive ? `0 0 25px ${deckColor}60, 0 0 50px ${deckColor}30` : ''}
           `,
           rotate: `${rotation}deg`,
         }}
@@ -179,10 +188,11 @@ export function SpinningVinyl({
             isPlaying && !isDragging ? [rotation, rotation + 360] : rotation,
         }}
         transition={{
-          duration: isPlaying && !isDragging ? 2 : 0,
+          duration: isPlaying && !isDragging ? 2 / Math.abs(playbackRate) : 0,
           repeat: isPlaying && !isDragging ? Infinity : 0,
           ease: "linear",
         }}
+        onClick={onClick}
       >
         {/* Grooves */}
         {Array.from({ length: 15 }).map((_, i) => (
@@ -196,8 +206,16 @@ export function SpinningVinyl({
         ))}
 
         {/* Center Label */}
-        <div
+        <motion.div
           className="absolute inset-0 flex items-center justify-center"
+          animate={{
+            scale: isPlaying && !isDragging ? [1, 1.02, 1] : 1,
+          }}
+          transition={{
+            duration: 2 / Math.abs(playbackRate || 1),
+            repeat: isPlaying && !isDragging ? Infinity : 0,
+            ease: "easeInOut",
+          }}
           style={{
             margin: `${size * 0.25}px`,
           }}
@@ -206,7 +224,10 @@ export function SpinningVinyl({
             className="relative w-full h-full rounded-full overflow-hidden border-2"
             style={{
               borderColor: deckColor,
-              boxShadow: `0 0 10px ${deckColor}80`,
+              boxShadow: `
+                0 0 10px ${deckColor}80,
+                ${isFxActive ? `0 0 20px ${deckColor}60` : ''}
+              `,
             }}
           >
             {coverArt && isImagePath(coverArt) ? (
@@ -244,7 +265,7 @@ export function SpinningVinyl({
               />
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Spindle */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -256,6 +277,20 @@ export function SpinningVinyl({
           />
         </div>
       </motion.div>
+
+      {/* Empty State Overlay */}
+      {showEmptyState && (
+        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="text-[#FFD700] font-barlow uppercase text-xs font-bold tracking-wider mb-1">
+              TAP TO SELECT
+            </div>
+            <div className="text-white font-barlow uppercase text-xs font-bold tracking-wider">
+              TRACK
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Playback Indicator */}
       {isPlaying && !isDragging && (

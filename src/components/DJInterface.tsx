@@ -23,6 +23,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Drawer } from "vaul";
 import { useHaptic } from "@/hooks/useHaptic";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { Knob } from "./dj-ui/Knob";
 import { DrawerAudioMeters } from "./dj-ui/DrawerAudioMeters";
 import { useMixRecorder } from "@/hooks/useMixRecorder";
@@ -37,6 +38,7 @@ import {
 } from "@/utils/colorExtractor";
 import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
 import { Sliders, Mic, Music2 } from "lucide-react";
+import { LibraryModal } from "./dj-ui/LibraryModal";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -47,6 +49,26 @@ const DISTORTION_CURVE_MULTIPLIER = 20;
 const DISTORTION_CURVE_SAMPLES = 44100;
 // Safety cap for feedback loop stability
 const FX_DELAY_FEEDBACK_MAX = 0.9;
+
+/**
+ * Generate a symmetrical soft-clipping curve for WaveShaperNode.
+ * Based on the classic arctangent-inspired formula from MDN:
+ *   y = ((a + k) * x * b * deg) / (π + k * |x|)
+ * where k is drive amount, a/b tune the curve shape, and x spans -1..1.
+ * @param amount Drive amount (0..DISTORTION_SCALE) controlling curve intensity.
+ */
+function makeDistortionCurve(amount: number) {
+  const k = Number.isFinite(amount) ? amount : DISTORTION_DEFAULT_K;
+  const curve = new Float32Array(DISTORTION_CURVE_SAMPLES);
+  const deg = Math.PI / 180;
+  for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
+    const x = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
+    curve[i] =
+      ((DISTORTION_CURVE_BASE + k) * x * DISTORTION_CURVE_MULTIPLIER * deg) /
+      (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
 
 // Helper function to check if coverArt is an image path
 const isImagePath = (coverArt: string): boolean => {
@@ -67,6 +89,7 @@ interface TrackSettings {
 export function DJInterface() {
   const { isHelpMode, toggleHelp, triggerTour } = useHelp();
   const { triggerHaptic: baseTriggerHaptic } = useHaptic();
+  const isMobile = useIsMobile();
   const pathname = usePathname();
   const [audioGraphReady, setAudioGraphReady] = useState(false);
 
@@ -105,6 +128,10 @@ export function DJInterface() {
   const [trackHistory, setTrackHistory] = useState<
     Array<{ track: (typeof tracks)[0]; deck: "A" | "B"; timestamp: number }>
   >([]);
+
+  // Library modal state
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [libraryTargetDeck, setLibraryTargetDeck] = useState<"A" | "B">("A");
 
   // Sidebar collapse state
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
@@ -168,6 +195,97 @@ export function DJInterface() {
   const [reverbBypassB, setReverbBypassB] = useState(false);
   const [delayBypassB, setDelayBypassB] = useState(false);
   const [distortionBypassB, setDistortionBypassB] = useState(false);
+
+  // Library modal handlers
+  const handleOpenLibraryA = useCallback(() => {
+    setLibraryTargetDeck("A");
+    setIsLibraryOpen(true);
+  }, []);
+
+  const handleOpenLibraryB = useCallback(() => {
+    setLibraryTargetDeck("B");
+    setIsLibraryOpen(true);
+  }, []);
+
+  const handleCloseLibrary = useCallback(() => {
+    setIsLibraryOpen(false);
+  }, []);
+
+  const handleLoadTrack = useCallback(
+    (track: (typeof tracks)[0]) => {
+      if (libraryTargetDeck === "A") {
+        loadTrackToDeckA(track);
+      } else {
+        loadTrackToDeckB(track);
+      }
+    },
+    [libraryTargetDeck, loadTrackToDeckA, loadTrackToDeckB]
+  );
+
+  // Determine if FX are active for each deck
+  const isFxActiveA = useMemo(() => {
+    return (
+      !filterBypassA ||
+      !reverbBypassA ||
+      !delayBypassA ||
+      !distortionBypassA ||
+      reverbDryWetA > 0 ||
+      delayTimeA > 0 ||
+      delayFeedbackA > 0 ||
+      distortionAmountA > 0 ||
+      filterFreqA < 20000 ||
+      flangerDepthA > 0 ||
+      phaserDepthA > 0 ||
+      chorusDepthA > 0 ||
+      echoFeedbackA > 0
+    );
+  }, [
+    filterBypassA,
+    reverbBypassA,
+    delayBypassA,
+    distortionBypassA,
+    reverbDryWetA,
+    delayTimeA,
+    delayFeedbackA,
+    distortionAmountA,
+    filterFreqA,
+    flangerDepthA,
+    phaserDepthA,
+    chorusDepthA,
+    echoFeedbackA,
+  ]);
+
+  const isFxActiveB = useMemo(() => {
+    return (
+      !filterBypassB ||
+      !reverbBypassB ||
+      !delayBypassB ||
+      !distortionBypassB ||
+      reverbDryWetB > 0 ||
+      delayTimeB > 0 ||
+      delayFeedbackB > 0 ||
+      distortionAmountB > 0 ||
+      filterFreqB < 20000 ||
+      flangerDepthB > 0 ||
+      phaserDepthB > 0 ||
+      chorusDepthB > 0 ||
+      echoFeedbackB > 0
+    );
+  }, [
+    filterBypassB,
+    reverbBypassB,
+    delayBypassB,
+    distortionBypassB,
+    reverbDryWetB,
+    delayTimeB,
+    delayFeedbackB,
+    distortionAmountB,
+    filterFreqB,
+    flangerDepthB,
+    phaserDepthB,
+    chorusDepthB,
+    echoFeedbackB,
+  ]);
 
   // Clear All FX handlers
   const handleClearAllFXA = () => {
@@ -1173,7 +1291,7 @@ export function DJInterface() {
 
       // Trigger haptic at center position
       if (crossedCenter && Math.abs(newValue - 0.5) < centerThreshold) {
-        baseTriggerHaptic("medium");
+        baseTriggerHaptic();
       }
 
       prevCrossfaderRef.current = newValue;
@@ -1297,34 +1415,6 @@ export function DJInterface() {
 
       // Set drag image offset to center
       const offsetX = 60; // Half of drag image width
-      const offsetY = 60; // Half of drag image height
-      e.dataTransfer.setDragImage(dragImage, offsetX, offsetY);
-
-      setTimeout(() => {
-        if (document.body.contains(dragImage)) {
-          document.body.removeChild(dragImage);
-        }
-      }, 0);
-    },
-    [isMounted],
-  );
-
-  const handleDragEnd = useCallback(() => {
-    setDraggedTrack(null);
-    setDragOverDeck(null);
-  }, []);
-
-  const handleDeckADragOver = useCallback(
-    (e: React.DragEvent) => {
-      if (!isMounted) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      setDragOverDeck("A");
-      const dropZone = document.getElementById("deck-a-drop-zone");
-      if (dropZone) dropZone.style.opacity = "1";
-    },
-    [isMounted],
-  );
 
   const handleDeckADragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -2321,7 +2411,7 @@ export function DJInterface() {
             </OverlayShell>
 
             {/* FX Rack - Collapsible */}
-            <div data-tour="fx-unit">
+            <div data-tour="fx-unit" className={isMobile ? "hidden" : ""}>
               <CollapsibleSection
                 title="FX Rack"
                 icon={<Sliders className="w-5 h-5" />}
@@ -2459,7 +2549,7 @@ export function DJInterface() {
             </div>
 
             {/* Main Console */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className={`${isMobile ? "flex flex-col space-y-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8"}`}>
               {/* Deck A */}
               <div
                 data-tour="deck-a"
@@ -2504,6 +2594,9 @@ export function DJInterface() {
                     hotCues={deckAHotCues}
                     onHotCueSet={setDeckAHotCue}
                     onHotCueClear={clearDeckAHotCue}
+                    onHapticTrigger={() => hapticsEnabled && baseTriggerHaptic()}
+                    onLibraryOpen={handleOpenLibraryA}
+                    isFxActive={isFxActiveA}
                   />
                 )}
                 {/* Enhanced Drop indicator */}
@@ -2557,7 +2650,14 @@ export function DJInterface() {
                   onDeckBKillMidChange={setDeckBKillMid}
                   onDeckBKillLowChange={setDeckBKillLow}
                   crossfader={crossfader}
-                  onCrossfaderChange={setCrossfader}
+                  onCrossfaderChange={(value) => {
+                    // Check for center detent haptic feedback
+                    if (prevCrossfaderRef.current !== 0.5 && value === 0.5 && hapticsEnabled) {
+                      baseTriggerHaptic();
+                    }
+                    prevCrossfaderRef.current = value;
+                    setCrossfader(value);
+                  }}
                   crossfaderCurve={crossfaderCurve}
                   onCrossfaderCurveChange={setCrossfaderCurve}
                   audioContext={audioContextRef.current || undefined}
@@ -2633,6 +2733,9 @@ export function DJInterface() {
                     hotCues={deckBHotCues}
                     onHotCueSet={setDeckBHotCue}
                     onHotCueClear={clearDeckBHotCue}
+                    onHapticTrigger={() => hapticsEnabled && baseTriggerHaptic()}
+                    onLibraryOpen={handleOpenLibraryB}
+                    isFxActive={isFxActiveB}
                   />
                 )}
                 {/* Enhanced Drop indicator */}
@@ -2700,6 +2803,19 @@ export function DJInterface() {
           </div>
         </div>
       </div>
+
+      {/* Library Modal */}
+      <LibraryModal
+        isOpen={isLibraryOpen}
+        onClose={handleCloseLibrary}
+        targetDeck={libraryTargetDeck}
+        onLoadTrack={handleLoadTrack}
+        currentTrack={
+          libraryTargetDeck === "A"
+            ? deckAData?.title || null
+            : deckBData?.title || null
+        }
+      />
     </>
   );
 }

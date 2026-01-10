@@ -7,6 +7,8 @@ import {
   useImperativeHandle,
   forwardRef,
   useCallback,
+  lazy,
+  Suspense,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
@@ -16,7 +18,6 @@ import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
 import { TrackTransition } from "./dj-ui/TrackTransition";
-import { Waveform } from "./dj-ui/Waveform";
 import {
   Play,
   Pause,
@@ -34,6 +35,9 @@ import {
   snapToBeat,
   quantizeLoop,
 } from "@/utils/audioUtils";
+
+// Lazy load heavy components
+const Waveform = lazy(() => import("./dj-ui/Waveform"));
 
 // Utility function to format time remaining as -MM:SS
 function formatTimeRemaining(seconds: number): string {
@@ -80,6 +84,12 @@ interface DJDeckProps {
   hotCues?: Record<number, number>; // External hot cues state from useDualDeck
   onHotCueSet?: (padIndex: number, time: number) => void; // Callback to set hot cue
   onHotCueClear?: (padIndex: number) => void; // Callback to clear hot cue
+  // Haptic feedback
+  onHapticTrigger?: () => void; // Haptic feedback trigger
+  // Library trigger
+  onLibraryOpen?: () => void; // Callback to open library modal
+  // FX active state
+  isFxActive?: boolean; // Whether FX are currently active on this deck
 }
 
 export interface DJDeckRef {
@@ -121,6 +131,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       hotCues: externalHotCues,
       onHotCueSet,
       onHotCueClear,
+      onHapticTrigger,
+      onLibraryOpen,
+      isFxActive,
     },
     ref,
   ) => {
@@ -897,7 +910,6 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 isPlaying={isPlaying && !isScrubbing}
                 coverArt={coverArt}
                 rotation={rotation}
-                duration={duration}
                 onScratch={(velocity, isTouching) => {
                   if (isTouching) {
                     if (!isScrubbing) {
@@ -923,6 +935,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                     : 200,
                 )}
                 deckColor={deckColor}
+                onClick={onLibraryOpen}
+                showEmptyState={!trackUrl}
+                playbackRate={speed}
+                isFxActive={isFxActive}
               />
             </motion.div>
           </AnimatePresence>
@@ -1413,28 +1429,30 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         >
           {/* Waveform Component */}
           {trackUrl && (
-            <Waveform
-              audioUrl={trackUrl}
-              progress={(currentPosition / duration) * 100}
-              isPlaying={isPlaying}
-              onSeek={(time) => {
-                if (wavesurferRef.current) {
-                  wavesurferRef.current.setTime(time);
-                  setCurrentPosition(time);
+            <Suspense fallback={<div className="h-20 bg-gray-800 animate-pulse rounded" />}>
+              <Waveform
+                audioUrl={trackUrl}
+                progress={(currentPosition / duration) * 100}
+                isPlaying={isPlaying}
+                onSeek={(time) => {
+                  if (wavesurferRef.current) {
+                    wavesurferRef.current.setTime(time);
+                    setCurrentPosition(time);
+                  }
+                }}
+                height={
+                  typeof window !== "undefined" && window.innerWidth < 768
+                    ? 60
+                    : 80
                 }
-              }}
-              height={
-                typeof window !== "undefined" && window.innerWidth < 768
-                  ? 60
-                  : 80
-              }
-              hotCues={externalHotCues}
-              loopStart={loopIn}
-              loopEnd={loopOut}
-              onHotCueUpdate={onHotCueSet ? (padIndex, newTime) => {
-                onHotCueSet(padIndex, newTime);
-              } : undefined}
-            />
+                hotCues={externalHotCues}
+                loopStart={loopIn}
+                loopEnd={loopOut}
+                onHotCueUpdate={onHotCueSet ? (padIndex, newTime) => {
+                  onHotCueSet(padIndex, newTime);
+                } : undefined}
+              />
+            </Suspense>
           )}
 
           {/* Beat Grid Overlay */}
@@ -1469,6 +1487,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             helpText="Set Hot Cues (8 pads). Click to set/jump/stutter, Long press or Shift+Click to clear"
             numPads={8}
             cuePoints={activeHotCues}
+            onHapticTrigger={onHapticTrigger}
           />
         </div>
 
