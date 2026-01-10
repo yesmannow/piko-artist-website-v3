@@ -35,50 +35,59 @@ export function SpinningVinyl({
   };
 
   // Calculate angle from center
-  const calculateAngle = useCallback((clientX: number, clientY: number): number => {
-    if (!vinylRef.current) return 0;
-    
-    const rect = vinylRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const deltaX = clientX - centerX;
-    const deltaY = clientY - centerY;
-    
-    return Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-  }, []);
+  const calculateAngle = useCallback(
+    (clientX: number, clientY: number): number => {
+      if (!vinylRef.current) return 0;
+
+      const rect = vinylRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const deltaX = clientX - centerX;
+      const deltaY = clientY - centerY;
+
+      return Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+    },
+    [],
+  );
 
   // Handle mouse/touch start
-  const handleStart = useCallback((clientX: number, clientY: number) => {
-    setIsDragging(true);
-    const angle = calculateAngle(clientX, clientY);
-    setLastAngle(angle);
-    setLastTime(Date.now());
-    onScratch?.(0, true);
-  }, [calculateAngle, onScratch]);
+  const handleStart = useCallback(
+    (clientX: number, clientY: number) => {
+      setIsDragging(true);
+      const angle = calculateAngle(clientX, clientY);
+      setLastAngle(angle);
+      setLastTime(Date.now());
+      onScratch?.(0, true);
+    },
+    [calculateAngle, onScratch],
+  );
 
   // Handle mouse/touch move
-  const handleMove = useCallback((clientX: number, clientY: number) => {
-    if (!isDragging) return;
+  const handleMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!isDragging) return;
 
-    const currentAngle = calculateAngle(clientX, clientY);
-    const currentTime = Date.now();
-    
-    // Calculate angular velocity
-    let angleDelta = currentAngle - lastAngle;
-    
-    // Handle wrap-around
-    if (angleDelta > 180) angleDelta -= 360;
-    if (angleDelta < -180) angleDelta += 360;
-    
-    const timeDelta = Math.max(1, currentTime - lastTime);
-    const velocity = angleDelta / timeDelta; // degrees per millisecond
-    
-    setLastAngle(currentAngle);
-    setLastTime(currentTime);
-    
-    onScratch?.(velocity * 100, true); // Scale velocity for audio effect
-  }, [isDragging, lastAngle, lastTime, calculateAngle, onScratch]);
+      const currentAngle = calculateAngle(clientX, clientY);
+      const currentTime = Date.now();
+
+      // Calculate angular velocity
+      let angleDelta = currentAngle - lastAngle;
+
+      // Handle wrap-around
+      if (angleDelta > 180) angleDelta -= 360;
+      if (angleDelta < -180) angleDelta += 360;
+
+      const timeDelta = Math.max(1, currentTime - lastTime);
+      const velocity = angleDelta / timeDelta; // degrees per millisecond
+
+      setLastAngle(currentAngle);
+      setLastTime(currentTime);
+
+      onScratch?.(velocity * 100, true); // Scale velocity for audio effect
+    },
+    [isDragging, lastAngle, lastTime, calculateAngle, onScratch],
+  );
 
   // Handle mouse/touch end
   const handleEnd = useCallback(() => {
@@ -166,7 +175,8 @@ export function SpinningVinyl({
           rotate: `${rotation}deg`,
         }}
         animate={{
-          rotate: isPlaying && !isDragging ? [rotation, rotation + 360] : rotation,
+          rotate:
+            isPlaying && !isDragging ? [rotation, rotation + 360] : rotation,
         }}
         transition={{
           duration: isPlaying && !isDragging ? 2 : 0,
@@ -217,7 +227,7 @@ export function SpinningVinyl({
                 }}
               />
             )}
-            
+
             {/* Center Hole */}
             <div
               className="absolute inset-0 flex items-center justify-center"
@@ -272,7 +282,11 @@ export function SpinningVinyl({
       {/* Mini Waveform Position Indicator */}
       {isPlaying && duration > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none">
-          <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 100 30"
+            preserveAspectRatio="none"
+          >
             {/* Background waveform (simplified visual) */}
             <path
               d="M 0,15 Q 10,5 20,15 T 40,15 T 60,15 T 80,15 T 100,15"
@@ -283,12 +297,7 @@ export function SpinningVinyl({
             {/* Progress waveform */}
             <defs>
               <clipPath id={`waveform-clip-${deckColor}`}>
-                <rect
-                  x="0"
-                  y="0"
-                  width={(rotation / 360) * 100}
-                  height="30"
-                />
+                <rect x="0" y="0" width={(rotation / 360) * 100} height="30" />
               </clipPath>
             </defs>
             <path

@@ -18,7 +18,13 @@ interface FaderProps {
  * When user drags to 0% or 100%, visual elements "stretch" 5px past the limit
  * and snap back to simulate rubber gaskets.
  */
-export function Fader({ value, onChange, label, height = 200, helpText }: FaderProps) {
+export function Fader({
+  value,
+  onChange,
+  label,
+  height = 200,
+  helpText,
+}: FaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
 
@@ -166,4 +172,3 @@ export function Fader({ value, onChange, label, height = 200, helpText }: FaderP
 
   return faderContent;
 }
-

@@ -89,7 +89,9 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
       {/* Master Level Bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-barlow text-gray-400 uppercase">MASTER</span>
+          <span className="text-xs font-barlow text-gray-400 uppercase">
+            MASTER
+          </span>
           <span className="text-xs font-barlow text-[#00ff00] font-bold">
             {Math.round(levels.master * 100)}%
           </span>
@@ -99,7 +101,8 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
             className="h-full bg-gradient-to-r from-[#00ff00] to-[#00ff00] transition-all duration-75"
             style={{
               width: `${levels.master * 100}%`,
-              boxShadow: levels.master > 0.8 ? "0 0 8px rgba(0, 255, 0, 0.5)" : "none",
+              boxShadow:
+                levels.master > 0.8 ? "0 0 8px rgba(0, 255, 0, 0.5)" : "none",
             }}
           />
         </div>
@@ -109,14 +112,17 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
       <div className="grid grid-cols-3 gap-3">
         {/* Low Band */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-barlow text-gray-500 uppercase">LOW</span>
+          <span className="text-[10px] font-barlow text-gray-500 uppercase">
+            LOW
+          </span>
           <div className="w-full h-16 bg-[#0a0a0a] rounded border border-gray-700 flex items-end justify-center p-1">
             <div
               className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded transition-all duration-75"
               style={{
                 height: `${levels.low * 100}%`,
                 minHeight: levels.low > 0 ? "2px" : "0",
-                boxShadow: levels.low > 0.7 ? "0 0 6px rgba(59, 130, 246, 0.5)" : "none",
+                boxShadow:
+                  levels.low > 0.7 ? "0 0 6px rgba(59, 130, 246, 0.5)" : "none",
               }}
             />
           </div>
@@ -124,14 +130,17 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
 
         {/* Mid Band */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-barlow text-gray-500 uppercase">MID</span>
+          <span className="text-[10px] font-barlow text-gray-500 uppercase">
+            MID
+          </span>
           <div className="w-full h-16 bg-[#0a0a0a] rounded border border-gray-700 flex items-end justify-center p-1">
             <div
               className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded transition-all duration-75"
               style={{
                 height: `${levels.mid * 100}%`,
                 minHeight: levels.mid > 0 ? "2px" : "0",
-                boxShadow: levels.mid > 0.7 ? "0 0 6px rgba(34, 197, 94, 0.5)" : "none",
+                boxShadow:
+                  levels.mid > 0.7 ? "0 0 6px rgba(34, 197, 94, 0.5)" : "none",
               }}
             />
           </div>
@@ -139,14 +148,17 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
 
         {/* High Band */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-barlow text-gray-500 uppercase">HIGH</span>
+          <span className="text-[10px] font-barlow text-gray-500 uppercase">
+            HIGH
+          </span>
           <div className="w-full h-16 bg-[#0a0a0a] rounded border border-gray-700 flex items-end justify-center p-1">
             <div
               className="w-full bg-gradient-to-t from-red-500 to-red-400 rounded transition-all duration-75"
               style={{
                 height: `${levels.high * 100}%`,
                 minHeight: levels.high > 0 ? "2px" : "0",
-                boxShadow: levels.high > 0.7 ? "0 0 6px rgba(239, 68, 68, 0.5)" : "none",
+                boxShadow:
+                  levels.high > 0.7 ? "0 0 6px rgba(239, 68, 68, 0.5)" : "none",
               }}
             />
           </div>
@@ -155,4 +167,3 @@ export function DrawerAudioMeters({ analyser }: DrawerAudioMetersProps) {
     </div>
   );
 }
-

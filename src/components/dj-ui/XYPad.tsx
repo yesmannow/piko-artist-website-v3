@@ -62,8 +62,14 @@ export function XYPad({
 
         // Calculate normalized values (0 to 1)
         // Clamp to ensure we don't go outside the box
-        const relativeX = Math.min(Math.max((pageX - rect.left) / rect.width, 0), 1);
-        const relativeY = Math.min(Math.max(1 - (pageY - rect.top) / rect.height, 0), 1); // 1 at top
+        const relativeX = Math.min(
+          Math.max((pageX - rect.left) / rect.width, 0),
+          1,
+        );
+        const relativeY = Math.min(
+          Math.max(1 - (pageY - rect.top) / rect.height, 0),
+          1,
+        ); // 1 at top
 
         // Update Springs
         x.set(relativeX);
@@ -91,7 +97,7 @@ export function XYPad({
     },
     {
       eventOptions: { passive: false }, // Prevent scrolling on mobile
-    }
+    },
   );
 
   // Trail Decay Loop
@@ -164,7 +170,9 @@ export function XYPad({
           {/* Optional: Connect points with a line for a smooth look */}
           {trail.length > 1 && (
             <polyline
-              points={trail.map((p) => `${p.x * 100},${(1 - p.y) * 100}`).join(" ")}
+              points={trail
+                .map((p) => `${p.x * 100},${(1 - p.y) * 100}`)
+                .join(" ")}
               fill="none"
               stroke="rgb(204 255 0)"
               strokeWidth="2"
@@ -184,7 +192,9 @@ export function XYPad({
             top: cursorTop,
             x: "-50%",
             y: "-50%",
-            boxShadow: active ? "0 0 15px rgb(204 255 0), inset 0 0 5px rgb(204 255 0)" : "none",
+            boxShadow: active
+              ? "0 0 15px rgb(204 255 0), inset 0 0 5px rgb(204 255 0)"
+              : "none",
             backgroundColor: active ? "rgb(204 255 0 / 0.1)" : "transparent",
             borderRadius: 0, // Brutalist design
           }}
@@ -202,4 +212,3 @@ export function XYPad({
     </div>
   );
 }
-

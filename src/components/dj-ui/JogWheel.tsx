@@ -37,7 +37,9 @@ export function JogWheel({
   const [isDragging, setIsDragging] = useState(false);
   const [dragRotation, setDragRotation] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [previousCoverArt, setPreviousCoverArt] = useState<string | undefined>(coverArt);
+  const [previousCoverArt, setPreviousCoverArt] = useState<string | undefined>(
+    coverArt,
+  );
   const wheelRef = useRef<HTMLDivElement>(null);
   const lastAngleRef = useRef<number | null>(null);
   const lastHapticTimeRef = useRef<number>(0);
@@ -107,8 +109,13 @@ export function JogWheel({
 
         // Map velocity to playbackRate: fast forward = +2.0x, backward = -1.5x
         // Scale factor: 1 degree/ms ≈ 0.01x playback rate
-        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, velocity * 0.01));
-        const targetPlaybackRate = isPlaying ? 1.0 + playbackRateMultiplier : playbackRateMultiplier;
+        const playbackRateMultiplier = Math.max(
+          -1.5,
+          Math.min(2.0, velocity * 0.01),
+        );
+        const targetPlaybackRate = isPlaying
+          ? 1.0 + playbackRateMultiplier
+          : playbackRateMultiplier;
 
         // Notify parent component of velocity change
         if (onVelocityChange) {
@@ -165,8 +172,13 @@ export function JogWheel({
 
         // Map velocity to playbackRate: fast forward = +2.0x, backward = -1.5x
         // Scale factor: 1 degree/ms ≈ 0.01x playback rate
-        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, velocity * 0.01));
-        const targetPlaybackRate = isPlaying ? 1.0 + playbackRateMultiplier : playbackRateMultiplier;
+        const playbackRateMultiplier = Math.max(
+          -1.5,
+          Math.min(2.0, velocity * 0.01),
+        );
+        const targetPlaybackRate = isPlaying
+          ? 1.0 + playbackRateMultiplier
+          : playbackRateMultiplier;
 
         // Notify parent component of velocity change
         if (onVelocityChange) {
@@ -207,7 +219,10 @@ export function JogWheel({
         angularVelocityRef.current = currentVelocity * FRICTION_COEFFICIENT;
 
         // Map to playbackRate
-        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, angularVelocityRef.current * 0.01));
+        const playbackRateMultiplier = Math.max(
+          -1.5,
+          Math.min(2.0, angularVelocityRef.current * 0.01),
+        );
         const targetPlaybackRate = isPlaying
           ? 1.0 + playbackRateMultiplier
           : Math.max(0, playbackRateMultiplier); // Don't go below 0 when paused
@@ -255,7 +270,7 @@ export function JogWheel({
   }, [isDragging, onScrub, onDragEnd, isPlaying, onVelocityChange, stopHaptic]);
 
   // Calculate display rotation: use drag rotation when dragging, otherwise use rotation prop
-  const displayRotation = isDragging ? dragRotation : (isPlaying ? rotation : 0);
+  const displayRotation = isDragging ? dragRotation : isPlaying ? rotation : 0;
 
   return (
     <div
@@ -284,12 +299,12 @@ export function JogWheel({
         viewBox="0 0 100 100"
         style={{ width: size, height: size }}
         animate={{
-          rotate: isPlaying && !isDragging ? [0, 360] : 0
+          rotate: isPlaying && !isDragging ? [0, 360] : 0,
         }}
         transition={{
-          duration: isPlaying && !isDragging ? (60 / (bpm * playbackRate)) : 0,
+          duration: isPlaying && !isDragging ? 60 / (bpm * playbackRate) : 0,
           repeat: isPlaying && !isDragging ? Infinity : 0,
-          ease: "linear"
+          ease: "linear",
         }}
       >
         {/* Outer ring with tick marks */}
@@ -412,11 +427,21 @@ export function JogWheel({
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 0, 8], fov: 50 }}
-        style={{ width: "100%", height: "100%", pointerEvents: "none", touchAction: "none" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          touchAction: "none",
+        }}
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={0.8} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={0.5} />
+        <spotLight
+          position={[10, 10, 10]}
+          angle={0.15}
+          penumbra={1}
+          intensity={0.5}
+        />
         <Suspense fallback={null}>
           <JogWheel3D
             isPlaying={isPlaying && !isDragging}
@@ -441,4 +466,3 @@ export function JogWheel({
     </div>
   );
 }
-

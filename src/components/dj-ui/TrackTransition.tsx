@@ -47,7 +47,8 @@ export function TrackTransition({
               transition={{ duration: 1, ease: "easeInOut" }}
               className="w-64 h-64 rounded-full border-4 border-cyan-500/50"
               style={{
-                background: "radial-gradient(circle, transparent 0%, rgba(0, 217, 255, 0.1) 100%)",
+                background:
+                  "radial-gradient(circle, transparent 0%, rgba(0, 217, 255, 0.1) 100%)",
               }}
             />
           </div>
@@ -117,4 +118,3 @@ export function TrackTransition({
     </AnimatePresence>
   );
 }
-

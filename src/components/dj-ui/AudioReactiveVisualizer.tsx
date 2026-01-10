@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import AudioMotionAnalyzer, { type GradientOptions } from "audiomotion-analyzer";
+import AudioMotionAnalyzer, {
+  type GradientOptions,
+} from "audiomotion-analyzer";
 
 interface AudioReactiveVisualizerProps {
   audioContext?: AudioContext;
@@ -19,7 +21,11 @@ export function AudioReactiveVisualizer({
 }: AudioReactiveVisualizerProps) {
   const analyzerRef = useRef<HTMLDivElement>(null);
   const audioMotionRef = useRef<AudioMotionAnalyzer | null>(null);
-  const [frequencyData, setFrequencyData] = useState<{ low: number; mid: number; high: number }>({
+  const [frequencyData, setFrequencyData] = useState<{
+    low: number;
+    mid: number;
+    high: number;
+  }>({
     low: 0,
     mid: 0,
     high: 0,
@@ -96,15 +102,26 @@ export function AudioReactiveVisualizer({
         if (bars && bars.length > 0) {
           // Low frequencies (0-30% of bars)
           const lowEnd = Math.floor(bars.length * 0.3);
-          const lowAvg = bars.slice(0, lowEnd).reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / lowEnd;
+          const lowAvg =
+            bars
+              .slice(0, lowEnd)
+              .reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / lowEnd;
 
           // Mid frequencies (30-70% of bars)
           const midStart = lowEnd;
           const midEnd = Math.floor(bars.length * 0.7);
-          const midAvg = bars.slice(midStart, midEnd).reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / (midEnd - midStart);
+          const midAvg =
+            bars
+              .slice(midStart, midEnd)
+              .reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) /
+            (midEnd - midStart);
 
           // High frequencies (70-100% of bars)
-          const highAvg = bars.slice(midEnd).reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) / (bars.length - midEnd);
+          const highAvg =
+            bars
+              .slice(midEnd)
+              .reduce((a, b) => a + (Array.isArray(b) ? b[0] : b), 0) /
+            (bars.length - midEnd);
 
           setFrequencyData({
             low: Math.min(lowAvg / 100, 1),
@@ -145,7 +162,16 @@ export function AudioReactiveVisualizer({
         }
       }
     };
-  }, [audioContext, masterGainNode, deckAColor, deckBColor, lowPulse, midPulse, highPulse, colorShift]);
+  }, [
+    audioContext,
+    masterGainNode,
+    deckAColor,
+    deckBColor,
+    lowPulse,
+    midPulse,
+    highPulse,
+    colorShift,
+  ]);
 
   return (
     <div className="relative w-full">
@@ -221,4 +247,3 @@ export function AudioReactiveVisualizer({
     </div>
   );
 }
-

@@ -8,7 +8,11 @@ interface VUMeterProps {
   color?: string;
 }
 
-export function VUMeter({ analyserNode, label = "L", color = "#00ff00" }: VUMeterProps) {
+export function VUMeter({
+  analyserNode,
+  label = "L",
+  color = "#00ff00",
+}: VUMeterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [peakLevel, setPeakLevel] = useState(0);
@@ -86,7 +90,12 @@ export function VUMeter({ analyserNode, label = "L", color = "#00ff00" }: VUMete
       }
 
       // Draw level
-      const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+      const gradient = ctx.createLinearGradient(
+        0,
+        height,
+        0,
+        height - barHeight,
+      );
       gradient.addColorStop(0, barColor);
       gradient.addColorStop(1, isPeaking ? "#ff6666" : barColor + "80");
 
@@ -143,4 +152,3 @@ export function VUMeter({ analyserNode, label = "L", color = "#00ff00" }: VUMete
     />
   );
 }
-
