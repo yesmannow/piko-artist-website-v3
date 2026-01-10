@@ -1420,6 +1420,16 @@ export function DJInterface() {
             </div>
           </div>
 
+          {/* Keyboard Shortcuts Help */}
+          <div className="px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-xs font-barlow text-gray-400">
+            <div className="font-bold text-gray-300 mb-1">Keyboard Shortcuts:</div>
+            <div className="space-y-0.5">
+              <div><kbd className="px-1.5 py-0.5 bg-[#2a2a2a] rounded text-[#00d9ff]">A</kbd> Load to Deck A</div>
+              <div><kbd className="px-1.5 py-0.5 bg-[#2a2a2a] rounded text-[#ff00d9]">B</kbd> Load to Deck B</div>
+              <div><kbd className="px-1.5 py-0.5 bg-[#2a2a2a] rounded">Enter</kbd> View Details</div>
+            </div>
+          </div>
+
           {/* Track List */}
           <div className="space-y-2 mt-6">
             {audioTracks.length === 0 ? (
@@ -1446,6 +1456,25 @@ export function DJInterface() {
                       setIsDrawerOpen(true);
                     }
                   }}
+                  onKeyDown={(e) => {
+                    // Keyboard shortcuts for accessibility
+                    if (e.key === 'a' || e.key === 'A') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      triggerHaptic();
+                      loadTrackToDeckA(track);
+                    } else if (e.key === 'b' || e.key === 'B') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      triggerHaptic();
+                      loadTrackToDeckB(track);
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      triggerHaptic();
+                      setSelectedTrack(track);
+                      setIsDrawerOpen(true);
+                    }
+                  }}
                   whileHover={{ scale: 1.02, x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
@@ -1456,6 +1485,8 @@ export function DJInterface() {
                   }`}
                   style={{ cursor: draggedTrack?.id === track.id ? 'grabbing' : 'pointer' }}
                   tabIndex={0}
+                  role="button"
+                  aria-label={`${track.title} by ${track.artist}. Press A to load to Deck A, B to load to Deck B, or Enter to view details`}
                 >
                   {/* Cover Art Thumbnail */}
                   <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded bg-[#0a0a0a]">
@@ -1573,8 +1604,30 @@ export function DJInterface() {
                         setIsDrawerOpen(true);
                       }
                     }}
+                    onKeyDown={(e) => {
+                      // Keyboard shortcuts for accessibility
+                      if (e.key === 'a' || e.key === 'A') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        triggerHaptic();
+                        loadTrackToDeckA(track);
+                      } else if (e.key === 'b' || e.key === 'B') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        triggerHaptic();
+                        loadTrackToDeckB(track);
+                      } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        triggerHaptic();
+                        setSelectedTrack(track);
+                        setIsDrawerOpen(true);
+                      }
+                    }}
                     whileTap={{ scale: 0.98 }}
                     className="flex items-center gap-3 p-2 bg-[#1a1a1a] rounded border border-gray-800 hover:border-gray-600 transition-all cursor-pointer"
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`${track.title} by ${track.artist}. Press A to load to Deck A, B to load to Deck B, or Enter to view details`}
                   >
                     <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden rounded bg-[#0a0a0a]">
                       {isImagePath(track.coverArt) ? (
