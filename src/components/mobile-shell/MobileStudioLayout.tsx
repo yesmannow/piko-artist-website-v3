@@ -174,10 +174,10 @@ export const MobileStudioLayout = () => {
   };
 
   return (
-    // PHASE 4: Fixed viewport container with no scrolling
-    // Force landscape and full viewport
+    // PHASE 3 & 4: Fixed viewport container with no scrolling
+    // Force landscape and full viewport with safe-area-inset support
     <main
-      className="fixed inset-0 flex flex-col bg-black overflow-hidden"
+      className="fixed inset-0 flex flex-col bg-black overflow-hidden safe-area"
       style={{
         touchAction: 'none',
         overscrollBehavior: 'none',
