@@ -9,6 +9,8 @@ import { createConstantPowerSplitter, applyConstantPowerGains } from "@/utils/co
 const STORAGE_KEY_CROSSFADER = "piko_studio_crossfader";
 const STORAGE_KEY_DECK_A_TRACK = "piko_studio_deck_a_track";
 const STORAGE_KEY_DECK_B_TRACK = "piko_studio_deck_b_track";
+const STORAGE_KEY_DECK_A_HOT_CUES = "piko_studio_deck_a_hot_cues";
+const STORAGE_KEY_DECK_B_HOT_CUES = "piko_studio_deck_b_hot_cues";
 
 export interface DeckState {
   trackName: string | null;
@@ -100,6 +102,32 @@ export function useDualDeck() {
   const virtualStartTimeBRef = useRef<number>(0);
   const virtualOffsetARef = useRef<number>(0);
   const virtualOffsetBRef = useRef<number>(0);
+
+  // Hot Cues state (8 cues per deck) - Hydrate from sessionStorage
+  const [deckAHotCues, setDeckAHotCues] = useState<Record<number, number>>(() => {
+    if (typeof window === "undefined") return {};
+    const stored = sessionStorage.getItem(STORAGE_KEY_DECK_A_HOT_CUES);
+    return stored ? JSON.parse(stored) : {};
+  });
+
+  const [deckBHotCues, setDeckBHotCues] = useState<Record<number, number>>(() => {
+    if (typeof window === "undefined") return {};
+    const stored = sessionStorage.getItem(STORAGE_KEY_DECK_B_HOT_CUES);
+    return stored ? JSON.parse(stored) : {};
+  });
+
+  // Persist hot cues to sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(STORAGE_KEY_DECK_A_HOT_CUES, JSON.stringify(deckAHotCues));
+    }
+  }, [deckAHotCues]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(STORAGE_KEY_DECK_B_HOT_CUES, JSON.stringify(deckBHotCues));
+    }
+  }, [deckBHotCues]);
 
   // Initialize constant-power signal splitter and filter nodes
   useEffect(() => {
@@ -662,6 +690,48 @@ export function useDualDeck() {
     [audioContext, isSlipModeA, isSlipModeB, deckA.sourceNode, deckA.audioBuffer, deckA.playbackRate, deckB.sourceNode, deckB.audioBuffer, deckB.playbackRate, seekToVirtualPlayheadA, seekToVirtualPlayheadB]
   );
 
+  /**
+   * Set hot cue for Deck A
+   */
+  const setDeckAHotCue = useCallback((padIndex: number, time: number) => {
+    setDeckAHotCues((prev) => ({
+      ...prev,
+      [padIndex]: time,
+    }));
+  }, []);
+
+  /**
+   * Clear hot cue for Deck A
+   */
+  const clearDeckAHotCue = useCallback((padIndex: number) => {
+    setDeckAHotCues((prev) => {
+      const newCues = { ...prev };
+      delete newCues[padIndex];
+      return newCues;
+    });
+  }, []);
+
+  /**
+   * Set hot cue for Deck B
+   */
+  const setDeckBHotCue = useCallback((padIndex: number, time: number) => {
+    setDeckBHotCues((prev) => ({
+      ...prev,
+      [padIndex]: time,
+    }));
+  }, []);
+
+  /**
+   * Clear hot cue for Deck B
+   */
+  const clearDeckBHotCue = useCallback((padIndex: number) => {
+    setDeckBHotCues((prev) => {
+      const newCues = { ...prev };
+      delete newCues[padIndex];
+      return newCues;
+    });
+  }, []);
+
   return {
     deckA,
     deckB,
@@ -688,6 +758,13 @@ export function useDualDeck() {
     handleScratch,
     virtualPlayheadA: virtualPlayheadARef.current,
     virtualPlayheadB: virtualPlayheadBRef.current,
+    // Hot Cues (8 pads per deck)
+    deckAHotCues,
+    deckBHotCues,
+    setDeckAHotCue,
+    clearDeckAHotCue,
+    setDeckBHotCue,
+    clearDeckBHotCue,
   };
 }
 

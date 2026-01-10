@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
+import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 
 interface WaveformProps {
   audioUrl: string;
@@ -9,6 +10,9 @@ interface WaveformProps {
   isPlaying: boolean; // Kept for potential future use
   onSeek: (time: number) => void;
   height?: number;
+  hotCues?: Record<number, number>; // Hot cue points (index -> time in seconds)
+  loopStart?: number | null; // Loop start time in seconds
+  loopEnd?: number | null; // Loop end time in seconds
 }
 
 export function Waveform({
@@ -17,15 +21,23 @@ export function Waveform({
   isPlaying: _isPlaying, // eslint-disable-line @typescript-eslint/no-unused-vars
   onSeek,
   height = 60,
+  hotCues = {},
+  loopStart = null,
+  loopEnd = null,
 }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const regionsPluginRef = useRef<RegionsPlugin | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isSeekingRef = useRef(false);
 
   // Initialize WaveSurfer
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // Create regions plugin
+    const regionsPlugin = RegionsPlugin.create();
+    regionsPluginRef.current = regionsPlugin;
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -41,6 +53,7 @@ export function Waveform({
       dragToSeek: true,
       backend: "WebAudio",
       mediaControls: false,
+      plugins: [regionsPlugin],
     });
 
     wavesurferRef.current = wavesurfer;
@@ -109,6 +122,67 @@ export function Waveform({
       }
     }
   }, [progress, isReady]);
+
+  // Update hot cue markers
+  useEffect(() => {
+    if (!regionsPluginRef.current || !isReady || !wavesurferRef.current) return;
+
+    const regions = regionsPluginRef.current;
+    const duration = wavesurferRef.current.getDuration();
+
+    // Clear existing cue markers (regions with id starting with "cue-")
+    regions.getRegions().forEach((region) => {
+      if (region.id.startsWith("cue-")) {
+        region.remove();
+      }
+    });
+
+    // Add new cue markers
+    Object.entries(hotCues).forEach(([index, time]) => {
+      if (time >= 0 && time <= duration) {
+        regions.addRegion({
+          id: `cue-${index}`,
+          start: time,
+          end: time + 0.1, // Small width for visibility
+          color: "rgba(255, 215, 0, 0.3)", // Safety Yellow with transparency
+          drag: false,
+          resize: false,
+        });
+      }
+    });
+  }, [hotCues, isReady]);
+
+  // Update loop region
+  useEffect(() => {
+    if (!regionsPluginRef.current || !isReady || !wavesurferRef.current) return;
+
+    const regions = regionsPluginRef.current;
+    const duration = wavesurferRef.current.getDuration();
+
+    // Clear existing loop region
+    const existingLoop = regions.getRegions().find((r) => r.id === "loop");
+    if (existingLoop) {
+      existingLoop.remove();
+    }
+
+    // Add new loop region if both start and end are defined
+    if (
+      loopStart !== null &&
+      loopEnd !== null &&
+      loopStart >= 0 &&
+      loopEnd <= duration &&
+      loopStart < loopEnd
+    ) {
+      regions.addRegion({
+        id: "loop",
+        start: loopStart,
+        end: loopEnd,
+        color: "rgba(255, 215, 0, 0.15)", // Semi-transparent Safety Yellow
+        drag: false,
+        resize: false,
+      });
+    }
+  }, [loopStart, loopEnd, isReady]);
 
   return (
     <div

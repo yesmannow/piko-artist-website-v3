@@ -21,6 +21,14 @@ function formatTimeRemaining(seconds: number): string {
   return `-${minutes}:${String(secs).padStart(2, "0")}`;
 }
 
+// Utility function to format time elapsed as MM:SS
+function formatTimeElapsed(seconds: number): string {
+  if (seconds < 0) return "0:00";
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes}:${String(secs).padStart(2, "0")}`;
+}
+
 interface DJDeckProps {
   trackUrl: string | null;
   isPlaying: boolean;
@@ -113,6 +121,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [quantizeEnabled, setQuantizeEnabled] = useState(false);
     const [beatGridOffset, setBeatGridOffset] = useState(0); // seconds; adjust if BPM grid is slightly off
     const [isReversedState, setIsReversedState] = useState(isReversed || false);
+    const [showElapsedTime, setShowElapsedTime] = useState(false); // Toggle between elapsed and remaining time
 
     // Use internal state for isReversed, sync with prop if it changes
     useEffect(() => {
@@ -1035,18 +1044,27 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             </div>
 
             {/* Time Remaining Countdown */}
-            <div className="flex flex-col items-end gap-1">
-              <span className="text-xs font-barlow text-gray-500">REMAINING</span>
+            <button
+              onClick={() => setShowElapsedTime(!showElapsedTime)}
+              className="flex flex-col items-end gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+              title={`Click to toggle between ${showElapsedTime ? "remaining" : "elapsed"} time`}
+              aria-label={`Toggle time display. Currently showing ${showElapsedTime ? "elapsed" : "remaining"} time`}
+            >
+              <span className="text-xs font-barlow text-gray-500">
+                {showElapsedTime ? "ELAPSED" : "REMAINING"}
+              </span>
               <span
                 className={`text-lg font-barlow font-bold tabular-nums ${
-                  duration - currentPosition < 30
+                  duration - currentPosition < 30 && !showElapsedTime
                     ? "text-red-500 animate-pulse"
                     : "text-gray-300"
                 }`}
               >
-                {formatTimeRemaining(duration - currentPosition)}
+                {showElapsedTime
+                  ? formatTimeElapsed(currentPosition)
+                  : formatTimeRemaining(duration - currentPosition)}
               </span>
-            </div>
+            </button>
           </div>
         )}
 
