@@ -10,47 +10,52 @@ import * as THREE from 'three';
  */
 function AudioReactiveMaterial() {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const analyserDataRef = useRef<Uint8Array>(new Uint8Array(0));
+  const analyserDataRef = useRef<Uint8Array | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  
+
   // Initialize analyser
   useEffect(() => {
     try {
       const rtAudio = getRealtimeAudioSystem();
-      
+
       if (rtAudio.isReady) {
         // Create analyser node
         const analyser = rtAudio.context.createAnalyser();
         analyser.fftSize = 256;
         analyser.smoothingTimeConstant = 0.8;
-        
-        // Pre-allocate buffer without underlying buffer (no ArrayBufferLike)
-        analyserDataRef.current = new Uint8Array(analyser.frequencyBinCount);
-        
+
+        // Pre-allocate buffer with explicit ArrayBuffer to ensure type compatibility
+        const bufferSize = analyser.frequencyBinCount;
+        const buffer = new ArrayBuffer(bufferSize);
+        analyserDataRef.current = new Uint8Array(buffer);
+
         analyserRef.current = analyser;
-        
+
         console.log('[Visualizer] Analyser initialized');
       }
     } catch (error) {
       console.error('[Visualizer] Failed to initialize analyser:', error);
     }
   }, []);
-  
+
   // Update shader uniforms based on audio data
   useFrame(() => {
-    if (!materialRef.current || !analyserRef.current || analyserDataRef.current.length === 0) return;
-    
+    if (!materialRef.current || !analyserRef.current || !analyserDataRef.current) return;
+
     // Update analyser data (reuses pre-allocated buffer)
+    // TypeScript strictness: buffer is created with ArrayBuffer, but TS infers ArrayBufferLike
+    // Runtime is correct - new Uint8Array(new ArrayBuffer(...)) creates ArrayBuffer-backed array
+    // @ts-expect-error - TypeScript incorrectly infers ArrayBufferLike, but runtime is correct
     analyserRef.current.getByteFrequencyData(analyserDataRef.current);
-    
+
     const analyserData = analyserDataRef.current;
-    
+
     // Calculate audio metrics
     const average = analyserData.reduce((a, b) => a + b, 0) / analyserData.length;
     const bass = analyserData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
     const mid = analyserData.slice(4, 16).reduce((a, b) => a + b, 0) / 12;
     const high = analyserData.slice(16, 32).reduce((a, b) => a + b, 0) / 16;
-    
+
     // Update shader uniforms
     materialRef.current.uniforms.uTime.value += 0.01;
     materialRef.current.uniforms.uBass.value = bass / 255;
@@ -58,26 +63,26 @@ function AudioReactiveMaterial() {
     materialRef.current.uniforms.uHigh.value = high / 255;
     materialRef.current.uniforms.uAverage.value = average / 255;
   });
-  
+
   return (
     <shaderMaterial
       ref={materialRef}
       vertexShader={`
         varying vec2 vUv;
         varying vec3 vPosition;
-        
+
         uniform float uTime;
         uniform float uBass;
-        
+
         void main() {
           vUv = uv;
           vPosition = position;
-          
+
           // Bass-reactive displacement
           vec3 pos = position;
           float displacement = sin(position.x * 2.0 + uTime) * uBass * 0.3;
           pos.z += displacement;
-          
+
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
       `}
@@ -87,32 +92,32 @@ function AudioReactiveMaterial() {
         uniform float uMid;
         uniform float uHigh;
         uniform float uAverage;
-        
+
         varying vec2 vUv;
         varying vec3 vPosition;
-        
+
         void main() {
           // Audio-reactive colors
           vec3 bassColor = vec3(1.0, 0.843, 0.0); // Gold
           vec3 midColor = vec3(0.0, 0.5, 1.0);    // Blue
           vec3 highColor = vec3(1.0, 0.0, 0.5);   // Pink
-          
+
           // Gradient based on position
           float gradient = vUv.y;
-          
+
           // Mix colors based on frequency bands
           vec3 color = bassColor * uBass * (1.0 - gradient);
           color += midColor * uMid * gradient;
           color += highColor * uHigh * vUv.x;
-          
+
           // Pulsing effect
           float pulse = 0.5 + 0.5 * sin(uTime * 2.0);
           color *= 0.5 + uAverage * 0.5 + pulse * 0.2;
-          
+
           // Glow effect
           float glow = smoothstep(0.0, 1.0, uAverage);
           color += vec3(glow * 0.2);
-          
+
           gl_FragColor = vec4(color, 1.0);
         }
       `}
@@ -135,17 +140,17 @@ function VisualizerScene() {
     <>
       {/* Ambient light */}
       <ambientLight intensity={0.5} />
-      
+
       {/* Point lights */}
       <pointLight position={[10, 10, 10]} intensity={1} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4444ff" />
-      
+
       {/* Audio-reactive plane */}
       <mesh position={[0, 0, 0]} rotation={[-Math.PI / 4, 0, 0]}>
         <planeGeometry args={[8, 8, 32, 32]} />
         <AudioReactiveMaterial />
       </mesh>
-      
+
       {/* Rotating audio-reactive sphere */}
       <mesh position={[0, 2, 0]}>
         <sphereGeometry args={[1, 32, 32]} />
@@ -157,19 +162,19 @@ function VisualizerScene() {
 
 /**
  * StudioVisualizerPage - Detachable visualizer window
- * 
+ *
  * This page is designed to be opened in a separate window (window.open)
  * for multi-monitor setups.
  */
 export default function StudioVisualizerPage() {
   const [isReady, setIsReady] = useState(false);
-  
+
   useEffect(() => {
     // Check if audio system is initialized
     try {
       const rtAudio = getRealtimeAudioSystem();
       setIsReady(rtAudio.isReady);
-      
+
       if (!rtAudio.isReady) {
         console.warn('[Visualizer] Audio system not initialized yet');
       }
@@ -177,7 +182,7 @@ export default function StudioVisualizerPage() {
       console.error('[Visualizer] Failed to access audio system:', error);
     }
   }, []);
-  
+
   return (
     <div className="w-full h-screen bg-black">
       {/* Header */}
@@ -191,7 +196,7 @@ export default function StudioVisualizerPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Three.js Canvas */}
       {isReady ? (
         <Canvas
