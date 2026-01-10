@@ -4,17 +4,23 @@ import type { NextRequest } from "next/server";
 /**
  * Middleware - Route redirects and request handling
  *
- * V3 Urban Syndicate:
- * - Redirects /beatmaker to /studio for unified console
- * - Device-aware routing: mobile UA -> /studio-v2, desktop UA -> /studio
- * - Enables SharedArrayBuffer via Cross-Origin-Isolation headers on studio routes
+ * Phase 1: DJ Mixer Enhancement - User-Agent Routing
+ * 
+ * Device-aware routing:
+ * - Mobile UA → /mobile (app-like mobile UI)
+ * - Desktop UA → /studio (full studio UI)
+ * - Legacy: /beatmaker → /studio redirect
+ * - Legacy: mobile UA on /studio → /studio-v2 rewrite
+ * 
+ * This enforces separate "app-like" mobile UI and full "studio" UI,
+ * preventing mobile devices from downloading heavy desktop code.
  *
  * CRITICAL: COOP/COEP Headers
  * - Sets Cross-Origin-Opener-Policy: same-origin
  * - Sets Cross-Origin-Embedder-Policy: require-corp
  * - Required for crossOriginIsolated=true and SharedArrayBuffer support
- * - Only applied to /studio* routes to avoid breaking other pages
- * - Service worker must NOT cache /studio* or /worklets/* routes (see sw.ts)
+ * - Applied to /studio*, /studio-v2*, and /mobile* routes
+ * - Service worker must NOT cache these routes or /worklets/* (see sw.ts)
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -30,7 +36,21 @@ export function middleware(request: NextRequest) {
   // Detect mobile user agents
   const isMobile = /iphone|ipad|ipod|android|mobi/i.test(userAgent);
 
-  // Device-aware routing for /studio routes
+  // Phase 1: Route mobile requests to /mobile for app-like UI
+  // Desktop requests continue to /studio for full studio UI
+  // Note: /studio still supports legacy mobile routing to /studio-v2 (see below)
+  
+  // Add Cross-Origin-Isolation headers for /mobile route
+  if (pathname.startsWith("/mobile")) {
+    const response = NextResponse.next();
+    
+    response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+    response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+    
+    return response;
+  }
+
+  // Device-aware routing for /studio routes (legacy support)
   if (pathname.startsWith("/studio") && !pathname.startsWith("/studio-v2")) {
     if (isMobile) {
       // Rewrite mobile requests to /studio-v2 (preserves URL as /studio)
@@ -68,6 +88,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/beatmaker/:path*", "/studio/:path*", "/studio-v2/:path*"],
+  matcher: ["/beatmaker/:path*", "/studio/:path*", "/studio-v2/:path*", "/mobile/:path*"],
 };
 
