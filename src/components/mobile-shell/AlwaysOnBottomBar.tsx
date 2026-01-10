@@ -5,6 +5,7 @@ import { getAudioEngine } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
 import { Play, Pause } from 'lucide-react';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
+import { PanicStopButton } from '@/components/studio/PanicStopButton';
 
 export const AlwaysOnBottomBar = () => {
   // Get deck states
@@ -46,12 +47,12 @@ export const AlwaysOnBottomBar = () => {
   const handleCrossfaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     const prev = prevCrossfaderRef.current;
-    
+
     // Detect crossing the center point (0.5)
     if ((prev < 0.5 && value >= 0.5) || (prev > 0.5 && value <= 0.5)) {
       triggerHaptic(HAPTIC_PATTERNS.BUMP);
     }
-    
+
     prevCrossfaderRef.current = value;
     // TODO: Apply crossfader logic to audio engine
   };
@@ -61,7 +62,7 @@ export const AlwaysOnBottomBar = () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const engine = getAudioEngine();
     const playbackRate = engine.getPlaybackRate('deckA');
-    
+
     if (playbackRate !== 1.0) {
       // Already synced, unsync
       engine.unsync('deckA');
@@ -75,7 +76,7 @@ export const AlwaysOnBottomBar = () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const engine = getAudioEngine();
     const playbackRate = engine.getPlaybackRate('deckB');
-    
+
     if (playbackRate !== 1.0) {
       // Already synced, unsync
       engine.unsync('deckB');
@@ -132,11 +133,11 @@ export const AlwaysOnBottomBar = () => {
         <label className="text-[10px] uppercase text-gray-500 font-barlow tracking-wider">
           Crossfader
         </label>
-        <input 
-          type="range" 
-          min="0" 
-          max="1" 
-          step="0.01" 
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
           defaultValue="0.5"
           onChange={handleCrossfaderChange}
           className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"

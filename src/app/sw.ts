@@ -100,6 +100,18 @@ declare const self: WorkerGlobalScope;
  * - Adds cache cleanup on quota errors
  */
 const customRuntimeCaching: RuntimeCaching[] = [
+  // CRITICAL: Never cache /worklets/* - these must always fetch fresh to preserve headers
+  // Worklets require specific headers (COOP/COEP) that can be lost if cached
+  {
+    matcher: /\/worklets\/.*/i,
+    handler: new NetworkOnly(), // Always fetch from network to preserve headers
+  },
+  // CRITICAL: Never cache /studio* routes - these require COOP/COEP headers for SharedArrayBuffer
+  // Caching these routes can break crossOriginIsolated=true
+  {
+    matcher: /\/studio.*/i,
+    handler: new NetworkOnly(), // Always fetch from network to preserve headers
+  },
   // Audio stems - Strict 50-item limit to prevent QuotaExceededError
   // Note: Stems are large files, so we use NetworkOnly to prevent caching
   // If caching is needed in the future, use maxEntries: 50

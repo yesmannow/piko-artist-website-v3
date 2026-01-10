@@ -4,10 +4,17 @@ import type { NextRequest } from "next/server";
 /**
  * Middleware - Route redirects and request handling
  *
- * V3 Urban Syndicate: 
+ * V3 Urban Syndicate:
  * - Redirects /beatmaker to /studio for unified console
  * - Device-aware routing: mobile UA -> /studio-v2, desktop UA -> /studio
  * - Enables SharedArrayBuffer via Cross-Origin-Isolation headers on studio routes
+ *
+ * CRITICAL: COOP/COEP Headers
+ * - Sets Cross-Origin-Opener-Policy: same-origin
+ * - Sets Cross-Origin-Embedder-Policy: require-corp
+ * - Required for crossOriginIsolated=true and SharedArrayBuffer support
+ * - Only applied to /studio* routes to avoid breaking other pages
+ * - Service worker must NOT cache /studio* or /worklets/* routes (see sw.ts)
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -30,19 +37,19 @@ export function middleware(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = pathname.replace("/studio", "/studio-v2");
       const response = NextResponse.rewrite(url);
-      
+
       // Add Cross-Origin-Isolation headers for SharedArrayBuffer support
       response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
       response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-      
+
       return response;
     } else {
       // Desktop: serve /studio with Cross-Origin-Isolation headers
       const response = NextResponse.next();
-      
+
       response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
       response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-      
+
       return response;
     }
   }
@@ -50,10 +57,10 @@ export function middleware(request: NextRequest) {
   // Add Cross-Origin-Isolation headers for direct /studio-v2 access
   if (pathname.startsWith("/studio-v2")) {
     const response = NextResponse.next();
-    
+
     response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
     response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-    
+
     return response;
   }
 

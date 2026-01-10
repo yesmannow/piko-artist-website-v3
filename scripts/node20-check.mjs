@@ -2,10 +2,10 @@
 
 /**
  * node20-check.mjs
- * 
+ *
  * Verifies that the current Node.js version is 20.x and runs
  * lint + build to ensure Vercel deployment compatibility.
- * 
+ *
  * This script MUST be run with Node 20:
  *   npx -y node@20 scripts/node20-check.mjs
  */
@@ -80,8 +80,26 @@ async function main() {
 
   success(`Node.js version is ${nodeVersion} (20.x) ✓`);
 
-  // Step 2: Run lint
-  log('\n📋 Step 2: Run Linting');
+  // Step 2: Check workers
+  log('\n📋 Step 2: Check Workers');
+  const workersCheckSuccess = runCommand('npm run check:workers', 'Worker compilation check');
+  if (!workersCheckSuccess) {
+    header('FAIL: Node 20 build verification failed');
+    error('Workers check failed. Run: npm run build:workers');
+    exit(1);
+  }
+
+  // Step 3: Check stem assets
+  log('\n📋 Step 3: Check Stem Separation Assets');
+  const assetsCheckSuccess = runCommand('npm run check:stem-assets', 'Stem assets verification');
+  if (!assetsCheckSuccess) {
+    header('FAIL: Node 20 build verification failed');
+    error('Stem assets check failed. Run: npm run build:assets');
+    exit(1);
+  }
+
+  // Step 4: Run lint
+  log('\n📋 Step 4: Run Linting');
   const lintSuccess = runCommand('npm run lint', 'ESLint check');
   if (!lintSuccess) {
     header('FAIL: Node 20 build verification failed');
@@ -89,8 +107,8 @@ async function main() {
     exit(1);
   }
 
-  // Step 3: Run build
-  log('\n📋 Step 3: Run Production Build');
+  // Step 5: Run build
+  log('\n📋 Step 5: Run Production Build');
   const buildSuccess = runCommand('npm run build', 'Next.js production build');
   if (!buildSuccess) {
     header('FAIL: Node 20 build verification failed');
@@ -101,6 +119,8 @@ async function main() {
   // All checks passed
   header('PASS: Node 20 build verified');
   success('Node version: 20.x ✓');
+  success('Workers: PASS ✓');
+  success('Stem assets: PASS ✓');
   success('Linting: PASS ✓');
   success('Build: PASS ✓');
   log('\n🚀 Ready for Vercel deployment!\n', colors.green);

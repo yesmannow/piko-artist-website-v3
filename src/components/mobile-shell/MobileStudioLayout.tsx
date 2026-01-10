@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Zap } from 'lucide-react';
 import { getAudioEngine } from '@/engine/AudioEngine';
 import { getMIDIManager } from '@/engine/MIDIManager';
 import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
+import { getStudioEngine } from '@/engine/rt/StudioEngine';
 import { useIOSAudioUnlock } from '@/hooks/useIOSAudioUnlock';
 import { useMIDIStore } from '@/store/useMIDIStore';
 import { AlwaysOnTopBar } from './AlwaysOnTopBar';
@@ -48,17 +49,17 @@ export const MobileStudioLayout = () => {
   const initializeRealtimeAudio = async () => {
     try {
       console.log('🎵 [Phase 4] Initializing real-time audio system...');
-      
+
       // Initialize the new real-time audio system
       await rtAudioSystem.initialize({
         latencyHint: 'interactive',
         sampleRate: 44100,
         workletModules: ['/worklets/mixer-processor.js'], // Will load if exists
       });
-      
+
       // Store context for iOS unlock hook
       setRtAudioContext(rtAudioSystem.context);
-      
+
       console.log('✅ [Phase 4] Real-time audio system initialized');
       return true;
     } catch (error) {
@@ -74,11 +75,11 @@ export const MobileStudioLayout = () => {
   const initializeStudioEngine = async () => {
     try {
       console.log('🎵 [Phase 4] Initializing StudioEngine...');
-      
+
       const { getStudioEngine } = await import('@/engine/rt/StudioEngine');
       const studio = getStudioEngine();
       await studio.initialize();
-      
+
       console.log('✅ [Phase 4] StudioEngine initialized');
       return true;
     } catch (error) {
@@ -98,7 +99,7 @@ export const MobileStudioLayout = () => {
     try {
       // PHASE 4: Initialize new StudioEngine
       const studioSuccess = await initializeStudioEngine();
-      
+
       if (!studioSuccess) {
         setInitError('Failed to initialize studio engine');
         setIsInitializing(false);
@@ -115,7 +116,7 @@ export const MobileStudioLayout = () => {
 
       // PHASE 9: Load persisted data from IndexedDB
       await loadPersistedData();
-      
+
       setIsInitialized(true);
       console.log('🎵 Studio V2 Session Started');
     } catch (error) {
@@ -175,7 +176,7 @@ export const MobileStudioLayout = () => {
   return (
     // PHASE 4: Fixed viewport container with no scrolling
     // Force landscape and full viewport
-    <main 
+    <main
       className="fixed inset-0 flex flex-col bg-black overflow-hidden"
       style={{
         touchAction: 'none',
@@ -188,7 +189,7 @@ export const MobileStudioLayout = () => {
 
       {/* PHASE 9: Learn Mode Overlay */}
       {learnMode && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-blue-500/20 backdrop-blur-[2px] flex items-center justify-center"
           onClick={handleLearnModeClick}
         >
@@ -224,7 +225,7 @@ export const MobileStudioLayout = () => {
             className="fixed inset-0 z-[200] flex items-center justify-center bg-gradient-to-br from-black via-zinc-950 to-black"
           >
             {/* Grain texture overlay */}
-            <div 
+            <div
               className="absolute inset-0 opacity-20 pointer-events-none"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
@@ -341,6 +342,50 @@ export const MobileStudioLayout = () => {
           <LibraryDrawer />
         </>
       )}
+
+      {/* PHASE 9B: Sync Controller rAF Loop */}
+      <SyncRafLoop />
     </main>
   );
 };
+
+/**
+ * SyncRafLoop - RequestAnimationFrame loop for sync controller
+ *
+ * Phase 9B: Ticks sync controller on every frame when sync is enabled
+ */
+function SyncRafLoop() {
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const tick = () => {
+      try {
+        const studio = getStudioEngine();
+        const syncState = studio.getSyncState();
+
+        // Only tick if sync is enabled
+        if (syncState.enabled) {
+          const rtAudio = getRealtimeAudioSystem();
+          const audioTime = rtAudio.context.currentTime;
+          studio.sync.tick(audioTime);
+        }
+
+        rafRef.current = requestAnimationFrame(tick);
+      } catch (error) {
+        // Silently handle errors (sync might not be ready)
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, []);
+
+  return null; // This component doesn't render anything
+}

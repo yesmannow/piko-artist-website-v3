@@ -44,9 +44,17 @@ Open [http://localhost:3000](http://localhost:3000) to view the site.
 ### Build
 
 ```bash
-# Production build
+# Production build (includes worker compilation)
 npm run build
+
+# Compile workers separately
+npm run build:workers
+
+# Verify workers are compiled
+npm run check:workers
 ```
+
+**Note:** Workers are automatically compiled during `npm run build`. See [docs/WORKER_BUILD_PROCESS.md](docs/WORKER_BUILD_PROCESS.md) for details.
 
 ### Validation
 

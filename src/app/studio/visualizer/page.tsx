@@ -8,6 +8,17 @@ import * as THREE from 'three';
 /**
  * AudioReactiveMaterial - Shader material driven by audio analyser data
  */
+/**
+ * Creates a Uint8Array with ArrayBuffer backing for Web Audio API compatibility.
+ * new Uint8Array(length) creates an ArrayBuffer-backed array at runtime.
+ * TypeScript infers ArrayBufferLike, but we assert the correct runtime type.
+ */
+function createAudioBuffer(size: number): Uint8Array & { buffer: ArrayBuffer } {
+  const buffer = new Uint8Array(size);
+  // Runtime guarantee: new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
+  return buffer as Uint8Array & { buffer: ArrayBuffer };
+}
+
 function AudioReactiveMaterial() {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const analyserDataRef = useRef<Uint8Array | null>(null);
@@ -24,10 +35,8 @@ function AudioReactiveMaterial() {
         analyser.fftSize = 256;
         analyser.smoothingTimeConstant = 0.8;
 
-        // Pre-allocate buffer with explicit ArrayBuffer to ensure type compatibility
-        const bufferSize = analyser.frequencyBinCount;
-        const buffer = new ArrayBuffer(bufferSize);
-        analyserDataRef.current = new Uint8Array(buffer);
+        // Pre-allocate buffer using helper to ensure correct typing
+        analyserDataRef.current = createAudioBuffer(analyser.frequencyBinCount);
 
         analyserRef.current = analyser;
 
@@ -43,10 +52,11 @@ function AudioReactiveMaterial() {
     if (!materialRef.current || !analyserRef.current || !analyserDataRef.current) return;
 
     // Update analyser data (reuses pre-allocated buffer)
-    // TypeScript strictness: buffer is created with ArrayBuffer, but TS infers ArrayBufferLike
-    // Runtime is correct - new Uint8Array(new ArrayBuffer(...)) creates ArrayBuffer-backed array
-    // @ts-expect-error - TypeScript incorrectly infers ArrayBufferLike, but runtime is correct
-    analyserRef.current.getByteFrequencyData(analyserDataRef.current);
+    // Runtime guarantee: new Uint8Array(length) creates ArrayBuffer-backed array
+    // TypeScript infers ArrayBufferLike, but runtime is correct (ArrayBuffer)
+    // Type assertion is safe because createAudioBuffer uses new Uint8Array(length)
+    const buffer = analyserDataRef.current;
+    analyserRef.current.getByteFrequencyData(buffer as Parameters<typeof analyserRef.current.getByteFrequencyData>[0]);
 
     const analyserData = analyserDataRef.current;
 
