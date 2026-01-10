@@ -70,6 +70,9 @@ export function DJInterface() {
   const pathname = usePathname();
   const [audioGraphReady, setAudioGraphReady] = useState(false);
 
+  // Track previous crossfader position for center detent detection
+  const prevCrossfaderRef = useRef(0.5);
+
   // Deck A state
   const [deckAData, setDeckAData] = useState<(typeof tracks)[0] | null>(null);
   const [deckAColors, setDeckAColors] = useState<DominantColors | null>(null);
@@ -1156,6 +1159,29 @@ export function DJInterface() {
   }, []);
 
   // Handle sync - syncs the other deck to this deck's speed
+  /**
+   * Handle crossfader change with haptic feedback at center position
+   */
+  const handleCrossfaderChange = useCallback(
+    (newValue: number) => {
+      const prev = prevCrossfaderRef.current;
+      const centerThreshold = 0.02; // 2% tolerance for center detection
+
+      // Check if crossfader crossed the center point (0.5)
+      const crossedCenter =
+        (prev < 0.5 && newValue >= 0.5) || (prev > 0.5 && newValue <= 0.5);
+
+      // Trigger haptic at center position
+      if (crossedCenter && Math.abs(newValue - 0.5) < centerThreshold) {
+        baseTriggerHaptic("medium");
+      }
+
+      prevCrossfaderRef.current = newValue;
+      setCrossfader(newValue);
+    },
+    [baseTriggerHaptic]
+  );
+
   const handleDeckASync = useCallback(() => {
     if (deckARef.current && deckBRef.current) {
       const deckARate = deckARef.current.getPlaybackRate();
