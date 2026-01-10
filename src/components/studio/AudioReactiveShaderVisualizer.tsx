@@ -27,12 +27,14 @@ export function AudioReactiveParticles({
 }: AudioReactiveParticlesProps) {
   const meshRef = useRef<THREE.Points>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const frequencyDataRef = useRef<Uint8Array | null>(null);
+  const frequencyDataRef = useRef<Uint8Array & { buffer: ArrayBuffer } | null>(null);
   
   // Initialize frequency data buffer
   useEffect(() => {
     if (analyser) {
-      frequencyDataRef.current = new Uint8Array(analyser.frequencyBinCount);
+      const buffer = new Uint8Array(analyser.frequencyBinCount);
+      // Cast to the expected type - new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
+      frequencyDataRef.current = buffer as Uint8Array & { buffer: ArrayBuffer };
     }
   }, [analyser]);
   
@@ -76,6 +78,7 @@ export function AudioReactiveParticles({
     if (!materialRef.current || !analyser || !frequencyDataRef.current) return;
     
     // Get frequency data
+    // @ts-ignore - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
     analyser.getByteFrequencyData(frequencyDataRef.current);
     
     const data = frequencyDataRef.current;
@@ -232,17 +235,20 @@ export function AudioReactivePlane({
 }: AudioReactivePlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const frequencyDataRef = useRef<Uint8Array | null>(null);
+  const frequencyDataRef = useRef<Uint8Array & { buffer: ArrayBuffer } | null>(null);
   
   useEffect(() => {
     if (analyser) {
-      frequencyDataRef.current = new Uint8Array(analyser.frequencyBinCount);
+      const buffer = new Uint8Array(analyser.frequencyBinCount);
+      // Cast to the expected type - new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
+      frequencyDataRef.current = buffer as Uint8Array & { buffer: ArrayBuffer };
     }
   }, [analyser]);
   
   useFrame((state) => {
     if (!materialRef.current || !analyser || !frequencyDataRef.current) return;
     
+    // @ts-ignore - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
     analyser.getByteFrequencyData(frequencyDataRef.current);
     const data = frequencyDataRef.current;
     const binCount = data.length;

@@ -120,17 +120,17 @@ export function useCollaboration({
       signaling: [
         'wss://signaling.yjs.dev', // Public signaling server
       ],
-      password: null, // Optional: add password for private rooms
-      awareness: {
-        name: userName,
-      },
+      password: null as any, // Optional: add password for private rooms
       maxConns: 10, // Max number of peer connections
     });
+    
+    // Set user awareness data
+    provider.awareness.setLocalStateField('name', userName);
     
     providerRef.current = provider;
     
     // Listen for connection status
-    provider.on('synced', (synced: boolean) => {
+    provider.on('synced', ({ synced }: { synced: boolean }) => {
       setIsConnected(synced);
       
       if (debug) {
@@ -160,7 +160,7 @@ export function useCollaboration({
       const state: Partial<CollaborationState> = {};
       
       stateMap.forEach((value, key) => {
-        state[key as keyof CollaborationState] = value;
+        (state as any)[key as keyof CollaborationState] = value;
       });
       
       setSyncedState(state);

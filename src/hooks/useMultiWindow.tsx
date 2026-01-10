@@ -298,16 +298,14 @@ export function PopoutButton({
   onClose,
   icon,
 }: PopoutButtonProps) {
+  const buttonClass = isOpen
+    ? 'flex items-center gap-2 px-4 py-2 border-2 font-mono text-sm transition-all bg-cyan-500 text-black border-cyan-400 hover:bg-cyan-400'
+    : 'flex items-center gap-2 px-4 py-2 border-2 font-mono text-sm transition-all bg-black/80 text-white border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/10';
+  
   return (
     <button
       onClick={isOpen ? onClose : onOpen}
-      className={`
-        flex items-center gap-2 px-4 py-2 border-2 font-mono text-sm transition-all
-        ${isOpen
-          ? 'bg-cyan-500 text-black border-cyan-400 hover:bg-cyan-400'
-          : 'bg-black/80 text-white border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/10'
-        }
-      `}
+      className={buttonClass}
       aria-label={`${isOpen ? 'Close' : 'Open'} ${label} window`}
     >
       {icon || <Monitor className="w-4 h-4" />}
