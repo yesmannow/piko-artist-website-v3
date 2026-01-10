@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Zap } from 'lucide-react';
 import { getAudioEngine } from '@/engine/AudioEngine';
 import { getMIDIManager } from '@/engine/MIDIManager';
+import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
+import { useIOSAudioUnlock } from '@/hooks/useIOSAudioUnlock';
 import { useMIDIStore } from '@/store/useMIDIStore';
 import { AlwaysOnTopBar } from './AlwaysOnTopBar';
 import { AlwaysOnBottomBar } from './AlwaysOnBottomBar';
@@ -21,6 +23,18 @@ export const MobileStudioLayout = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [learnToast, setLearnToast] = useState<string | null>(null);
 
+  // PHASE 4: Real-time audio system
+  const rtAudioSystem = getRealtimeAudioSystem();
+  const [rtAudioContext, setRtAudioContext] = useState<AudioContext | null>(null);
+
+  // PHASE 4: iOS audio unlock hook
+  const isAudioUnlocked = useIOSAudioUnlock(rtAudioContext, {
+    onUnlock: () => {
+      console.log('🔓 iOS Audio unlocked');
+    },
+    debug: true,
+  });
+
   // PHASE 9: Subscribe to MIDI learn mode
   const learnMode = useMIDIStore((state) => state.learnMode);
   const learnTarget = useMIDIStore((state) => state.learnTarget);
@@ -28,15 +42,45 @@ export const MobileStudioLayout = () => {
   const setMapping = useMIDIStore((state) => state.setMapping);
 
   /**
+   * PHASE 4: Initialize Real-time Audio System
+   * This is the new bootstrap layer that runs before legacy AudioEngine
+   */
+  const initializeRealtimeAudio = async () => {
+    try {
+      console.log('🎵 [Phase 4] Initializing real-time audio system...');
+      
+      // Initialize the new real-time audio system
+      await rtAudioSystem.initialize({
+        latencyHint: 'interactive',
+        sampleRate: 44100,
+        workletModules: ['/worklets/mixer-processor.js'], // Will load if exists
+      });
+      
+      // Store context for iOS unlock hook
+      setRtAudioContext(rtAudioSystem.context);
+      
+      console.log('✅ [Phase 4] Real-time audio system initialized');
+      return true;
+    } catch (error) {
+      console.error('❌ [Phase 4] Real-time audio system initialization failed:', error);
+      // Don't fail completely - allow legacy system to try
+      return false;
+    }
+  };
+
+  /**
    * REMEDIATION: "Tap to Start" - User-Intent Boot Sequence
-   * Initialize AudioEngine only after user interaction to prevent Safari suspension
+   * PHASE 4: Now initializes new real-time audio system first, then legacy AudioEngine
    */
   const handleStartSession = async () => {
     setIsInitializing(true);
     setInitError(null);
 
     try {
-      // Initialize AudioEngine with user interaction
+      // PHASE 4: Initialize new real-time audio system first
+      await initializeRealtimeAudio();
+
+      // Initialize legacy AudioEngine with user interaction
       const audioSuccess = await getAudioEngine().initialize();
       
       if (!audioSuccess) {
