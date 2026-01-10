@@ -14,8 +14,10 @@ import { TrackDrawer } from "@/components/TrackDrawer";
 const vibeColors = {
   chill: "bg-toxic-lime/20 text-toxic-lime border-toxic-lime border-black",
   hype: "bg-spray-magenta/20 text-spray-magenta border-spray-magenta border-black",
-  classic: "bg-safety-orange/20 text-safety-orange border-safety-orange border-black",
-  storytelling: "bg-spray-magenta/20 text-spray-magenta border-spray-magenta border-black",
+  classic:
+    "bg-safety-orange/20 text-safety-orange border-safety-orange border-black",
+  storytelling:
+    "bg-spray-magenta/20 text-spray-magenta border-spray-magenta border-black",
 };
 
 type VibeFilter = "all" | "chill" | "hype" | "storytelling" | "classic";
@@ -38,7 +40,13 @@ const isImagePath = (coverArt: string): boolean => {
 };
 
 // Helper component to render cover art with API fallback
-const CoverArt = ({ coverArt, className }: { coverArt: string; className?: string }) => {
+const CoverArt = ({
+  coverArt,
+  className,
+}: {
+  coverArt: string;
+  className?: string;
+}) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(coverArt);
   const [attemptedFallback, setAttemptedFallback] = useState(false);
@@ -46,9 +54,12 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
   const handleError = () => {
     if (attemptedFallback) return;
     setAttemptedFallback(true);
-    fetch(`/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap album cover street urban")}&count=1`, { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => {
+    fetch(
+      `/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap album cover street urban")}&count=1`,
+      { cache: "no-store" },
+    )
+      .then((r) => r.json())
+      .then((d) => {
         const src = d?.images?.[0]?.src as string | undefined;
         if (src) setCurrentSrc(src);
       })
@@ -57,7 +68,9 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
 
   if (isImagePath(coverArt)) {
     return (
-      <div className={`relative overflow-hidden rounded-md border border-white/10 flex-shrink-0 ${className || ""}`}>
+      <div
+        className={`relative overflow-hidden rounded-md border border-white/10 flex-shrink-0 ${className || ""}`}
+      >
         <Image
           src={currentSrc}
           alt="Track cover"
@@ -67,14 +80,14 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
           onLoadingComplete={() => setIsLoaded(true)}
           onError={handleError}
         />
-        {!isLoaded && (
-          <Skeleton className="absolute inset-0" />
-        )}
+        {!isLoaded && <Skeleton className="absolute inset-0" />}
       </div>
     );
   }
   return (
-    <div className={`rounded-md bg-gradient-to-r ${coverArt} flex-shrink-0 border border-white/10 ${className || ""}`} />
+    <div
+      className={`rounded-md bg-gradient-to-r ${coverArt} flex-shrink-0 border border-white/10 ${className || ""}`}
+    />
   );
 };
 
@@ -96,9 +109,12 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
   const onCardImageError = () => {
     if (cardTriedFallback || !isImagePath(track.coverArt)) return;
     setCardTriedFallback(true);
-    fetch(`/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap album cover street urban")}&count=1`, { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => {
+    fetch(
+      `/api/visuals?theme=${encodeURIComponent("graffiti hip hop rap album cover street urban")}&count=1`,
+      { cache: "no-store" },
+    )
+      .then((r) => r.json())
+      .then((d) => {
         const src = d?.images?.[0]?.src as string | undefined;
         if (src) setCurrentCardSrc(src);
       })
@@ -109,7 +125,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
     const s = `${track.id}-${index}`;
     let h = 0;
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-    const val = ((h % 200) / 100) - 1; // -1..1
+    const val = (h % 200) / 100 - 1; // -1..1
     return val.toFixed(2);
   }, [track.id, index]);
 
@@ -156,7 +172,9 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
         "bg-[#e5e5e5] overflow-hidden rounded-lg",
         "border-2 border-black",
         "transition-all duration-300",
-        isActive ? "ring-2 ring-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.3)]" : "shadow-lg hover:shadow-xl",
+        isActive
+          ? "ring-2 ring-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+          : "shadow-lg hover:shadow-xl",
       ].join(" ")}
       style={{
         transform: `rotate(${rotation}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
@@ -208,9 +226,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
                 onLoadingComplete={() => setIsLoaded(true)}
                 onError={onCardImageError}
               />
-              {!isLoaded && (
-                <Skeleton className="absolute inset-0" />
-              )}
+              {!isLoaded && <Skeleton className="absolute inset-0" />}
             </motion.div>
           </>
         ) : (
@@ -276,13 +292,19 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           initial={false}
         >
           <div className="text-white">
-            <div className="font-header text-sm font-semibold truncate mb-1 tracking-tight">{track.title}</div>
-            <div className="font-industrial text-xs text-white/80 truncate mb-1">{track.artist}</div>
+            <div className="font-header text-sm font-semibold truncate mb-1 tracking-tight">
+              {track.title}
+            </div>
+            <div className="font-industrial text-xs text-white/80 truncate mb-1">
+              {track.artist}
+            </div>
             <div className="flex items-center gap-2">
-              <span className={[
-                "px-2 py-0.5 rounded text-[10px] font-industrial font-bold uppercase tracking-wider border",
-                vibeColors[track.vibe],
-              ].join(" ")}>
+              <span
+                className={[
+                  "px-2 py-0.5 rounded text-[10px] font-industrial font-bold uppercase tracking-wider border",
+                  vibeColors[track.vibe],
+                ].join(" ")}
+              >
                 {track.vibe}
               </span>
               <span className="text-white/60 text-xs">3:00</span>
@@ -302,7 +324,12 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           {track.title}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={["text-xs md:text-sm", isActive ? "text-toxic-lime/80" : "text-black/70"].join(" ")}>
+          <span
+            className={[
+              "text-xs md:text-sm",
+              isActive ? "text-toxic-lime/80" : "text-black/70",
+            ].join(" ")}
+          >
             {track.artist}
           </span>
           <span className="text-black/40">•</span>
@@ -329,7 +356,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
 
   const audioTracks = useMemo(
     () => tracks.filter((t) => t.type === "audio"),
-    []
+    [],
   );
 
   const visibleTracks = useMemo(() => {
@@ -353,14 +380,14 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 key={opt.id}
                 type="button"
                 onClick={() => setActiveFilter(opt.id)}
-                  className={[
-                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
-                    isActive
-                      ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
-                      : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
-                  ].join(" ")}
-                  aria-label={`Filter by ${opt.label}`}
-                  aria-pressed={isActive}
+                className={[
+                  "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
+                  isActive
+                    ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
+                    : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
+                ].join(" ")}
+                aria-label={`Filter by ${opt.label}`}
+                aria-pressed={isActive}
               >
                 {opt.label}
               </button>
@@ -372,7 +399,10 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
       {featuredOnly ? (
         // Featured Mode: Warehouse Manifest Table Layout
         <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
-          <div className="min-w-[min(100%,760px)] border-2 border-[#FFD700]/20 bg-black/80 backdrop-blur-md overflow-hidden mx-4 md:mx-0" style={{ boxShadow: "0 0 30px rgba(255, 215, 0, 0.1)" }}>
+          <div
+            className="min-w-[min(100%,760px)] border-2 border-[#FFD700]/20 bg-black/80 backdrop-blur-md overflow-hidden mx-4 md:mx-0"
+            style={{ boxShadow: "0 0 30px rgba(255, 215, 0, 0.1)" }}
+          >
             {/* Sticky header */}
             <div className="sticky top-0 z-10 bg-black/95 backdrop-blur-md border-b-2 border-[#FFD700]/30">
               <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-[#E0E0E0]/80 font-mono font-bold uppercase">
@@ -396,15 +426,15 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 const isActive = currentTrack?.id === track.id && isPlaying;
 
                 return (
-                  <TrackDrawer
-                    key={track.id}
-                    track={track}
-                  >
+                  <TrackDrawer key={track.id} track={track}>
                     <motion.div
                       className="group relative"
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.25) }}
+                      transition={{
+                        duration: 0.35,
+                        delay: Math.min(idx * 0.03, 0.25),
+                      }}
                       viewport={{ once: true }}
                     >
                       {/* CCTV Scan-line Hover Effect */}
@@ -414,7 +444,8 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                         whileHover={{ y: "100%" }}
                         transition={{ duration: 0.6, ease: "linear" }}
                         style={{
-                          background: "linear-gradient(to bottom, transparent 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)",
+                          background:
+                            "linear-gradient(to bottom, transparent 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)",
                           height: "1px",
                         }}
                       />
@@ -430,93 +461,116 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                           "px-4 py-3 md:py-4",
                           "hover:bg-[#FFD700]/10 transition-colors",
                           "border-b border-[#E0E0E0]/10",
-                          isActive ? "text-[#FFD700] bg-[#FFD700]/5" : "text-[#E0E0E0]",
+                          isActive
+                            ? "text-[#FFD700] bg-[#FFD700]/5"
+                            : "text-[#E0E0E0]",
                         ].join(" ")}
                       >
-                    {/* Col 1: Index / Play icon / Active Equalizer (client-only) */}
-                    <div className="relative flex items-center justify-center">
-                      {mounted && isActive ? (
-                        <div className="flex items-end gap-0.5 h-4">
-                          {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, eqIdx) => (
-                            <motion.div
-                              key={eqIdx}
-                              className="w-0.5 bg-[#FFD700]"
-                              animate={{
-                                height: `${height * 100}%`,
-                              }}
-                              transition={{
-                                duration: 0.5,
-                                repeat: Infinity,
-                                delay: eqIdx * 0.1,
-                                ease: "easeInOut",
-                              }}
-                              style={{
-                                boxShadow: "0 0 4px #FFD700",
-                              }}
-                            />
-                          ))}
+                        {/* Col 1: Index / Play icon / Active Equalizer (client-only) */}
+                        <div className="relative flex items-center justify-center">
+                          {mounted && isActive ? (
+                            <div className="flex items-end gap-0.5 h-4">
+                              {[0.3, 0.6, 0.4, 0.8, 0.5].map(
+                                (height, eqIdx) => (
+                                  <motion.div
+                                    key={eqIdx}
+                                    className="w-0.5 bg-[#FFD700]"
+                                    animate={{
+                                      height: `${height * 100}%`,
+                                    }}
+                                    transition={{
+                                      duration: 0.5,
+                                      repeat: Infinity,
+                                      delay: eqIdx * 0.1,
+                                      ease: "easeInOut",
+                                    }}
+                                    style={{
+                                      boxShadow: "0 0 4px #FFD700",
+                                    }}
+                                  />
+                                ),
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <span
+                                className={[
+                                  "text-sm font-industrial font-bold",
+                                  "group-hover:opacity-0 transition-opacity",
+                                  "opacity-100 text-white/70",
+                                ].join(" ")}
+                              >
+                                {idx + 1}
+                              </span>
+                              <span
+                                className={[
+                                  "absolute",
+                                  "opacity-0 group-hover:opacity-100 transition-opacity",
+                                ].join(" ")}
+                                aria-hidden="true"
+                              >
+                                <Play className="w-4 h-4" fill="currentColor" />
+                              </span>
+                            </>
+                          )}
                         </div>
-                      ) : (
-                        <>
-                          <span
-                            className={[
-                              "text-sm font-industrial font-bold",
-                              "group-hover:opacity-0 transition-opacity",
-                              "opacity-100 text-white/70",
-                            ].join(" ")}
-                          >
-                            {idx + 1}
-                          </span>
-                          <span
-                            className={[
-                              "absolute",
-                              "opacity-0 group-hover:opacity-100 transition-opacity",
-                            ].join(" ")}
-                            aria-hidden="true"
-                          >
-                            <Play className="w-4 h-4" fill="currentColor" />
-                          </span>
-                        </>
-                      )}
-                    </div>
 
-                    {/* Col 2: Cover + Title */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <CoverArt coverArt={track.coverArt} className="w-10 h-10" />
-                      <div className="min-w-0">
+                        {/* Col 2: Cover + Title */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <CoverArt
+                            coverArt={track.coverArt}
+                            className="w-10 h-10"
+                          />
+                          <div className="min-w-0">
+                            <div
+                              className={[
+                                "truncate font-industrial font-semibold uppercase tracking-tight text-sm md:text-base",
+                                isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
+                              ].join(" ")}
+                            >
+                              {track.title}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Col 3: Artist */}
                         <div
                           className={[
-                            "truncate font-industrial font-semibold uppercase tracking-tight text-sm md:text-base",
-                            isActive ? "text-[#FFD700]" : "text-[#E0E0E0]",
+                            "flex items-center font-mono text-sm",
+                            isActive
+                              ? "text-[#FFD700]/90"
+                              : "text-[#E0E0E0]/80",
                           ].join(" ")}
                         >
-                          {track.title}
+                          <span className="truncate text-sm">
+                            {track.artist}
+                          </span>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Col 3: Artist */}
-                    <div className={["flex items-center font-mono text-sm", isActive ? "text-[#FFD700]/90" : "text-[#E0E0E0]/80"].join(" ")}>
-                      <span className="truncate text-sm">{track.artist}</span>
-                    </div>
+                        {/* Col 4: Vibe badge - Sharp rectangles with Safety Yellow */}
+                        <div className="flex items-center">
+                          <span
+                            className={[
+                              "px-3 py-1 border-2 text-[11px] font-mono font-bold tracking-[0.2em] uppercase",
+                              "bg-[#FFD700] text-black border-black",
+                            ].join(" ")}
+                          >
+                            {track.vibe}
+                          </span>
+                        </div>
 
-                    {/* Col 4: Vibe badge - Sharp rectangles with Safety Yellow */}
-                    <div className="flex items-center">
-                      <span
-                        className={[
-                          "px-3 py-1 border-2 text-[11px] font-mono font-bold tracking-[0.2em] uppercase",
-                          "bg-[#FFD700] text-black border-black",
-                        ].join(" ")}
-                      >
-                        {track.vibe}
-                      </span>
-                    </div>
-
-                    {/* Col 5: Duration */}
-                    <div className={["flex items-center justify-end text-sm font-mono", isActive ? "text-[#FFD700]/90" : "text-[#E0E0E0]/70"].join(" ")}>
-                      3:00
-                    </div>
-                  </motion.button>
+                        {/* Col 5: Duration */}
+                        <div
+                          className={[
+                            "flex items-center justify-end text-sm font-mono",
+                            isActive
+                              ? "text-[#FFD700]/90"
+                              : "text-[#E0E0E0]/70",
+                          ].join(" ")}
+                        >
+                          3:00
+                        </div>
+                      </motion.button>
                     </motion.div>
                   </TrackDrawer>
                 );
@@ -526,12 +580,12 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         </div>
       ) : (
         // Full Mode: 3-Column Responsive Grid - "Paper Flyer" Look with 3D Tilt
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 snap-y snap-mandatory overflow-y-auto" style={{ perspective: "1000px" }}>
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 snap-y snap-mandatory overflow-y-auto"
+          style={{ perspective: "1000px" }}
+        >
           {visibleTracks.map((track, idx) => (
-            <TrackDrawer
-              key={track.id}
-              track={track}
-            >
+            <TrackDrawer key={track.id} track={track}>
               <div className="snap-center">
                 <TrackCard
                   track={track}
@@ -547,8 +601,6 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
           ))}
         </div>
       )}
-
     </div>
   );
 }
-

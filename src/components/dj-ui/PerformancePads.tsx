@@ -26,7 +26,9 @@ export function PerformancePads({
   numPads = 12,
 }: PerformancePadsProps) {
   const [cuePoints, setCuePoints] = useState<Record<number, number>>({});
-  const [stutterActive, setStutterActive] = useState<Record<number, boolean>>({});
+  const [stutterActive, setStutterActive] = useState<Record<number, boolean>>(
+    {},
+  );
   const longPressTimerRef = useRef<Record<number, NodeJS.Timeout>>({});
   const stutterIntervalRef = useRef<Record<number, NodeJS.Timeout>>({});
   const longPressDelay = 500; // 500ms for long press
@@ -208,7 +210,9 @@ export function PerformancePads({
   };
 
   const padsContent = (
-    <div className={`grid ${getGridCols()} gap-2 md:gap-3 w-full ${getMaxWidth()}`}>
+    <div
+      className={`grid ${getGridCols()} gap-2 md:gap-3 w-full ${getMaxWidth()}`}
+    >
       {Array.from({ length: numPads }, (_, i) => i).map((padIndex) => {
         const isSet = cuePoints[padIndex] !== undefined;
         const isStuttering = stutterActive[padIndex] === true;
@@ -229,8 +233,8 @@ export function PerformancePads({
               isStuttering
                 ? "bg-red-600 border-red-400"
                 : isSet
-                ? "bg-[#1a1a1a] border-[#FFD700]"
-                : "bg-[#0a0a0a] border-gray-700 hover:border-gray-600"
+                  ? "bg-[#1a1a1a] border-[#FFD700]"
+                  : "bg-[#0a0a0a] border-gray-700 hover:border-gray-600"
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -238,15 +242,15 @@ export function PerformancePads({
               boxShadow: isStuttering
                 ? `0 0 20px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.3)`
                 : isSet
-                ? `0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.1)`
-                : "inset 0 2px 4px rgba(0,0,0,0.5)",
+                  ? `0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.1)`
+                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
             }}
             aria-label={
               isStuttering
                 ? `Stutter active on pad ${padIndex + 1}. Click to stop.`
                 : isSet
-                ? `Hot cue ${padIndex + 1} set at ${cuePoints[padIndex]?.toFixed(1)}s. ${isPlaying && onStutter ? "Click to stutter" : "Click to jump"}, long press or Shift+Click to clear.`
-                : `Hot cue ${padIndex + 1}. Click to set, long press or Shift+Click to clear.`
+                  ? `Hot cue ${padIndex + 1} set at ${cuePoints[padIndex]?.toFixed(1)}s. ${isPlaying && onStutter ? "Click to stutter" : "Click to jump"}, long press or Shift+Click to clear.`
+                  : `Hot cue ${padIndex + 1}. Click to set, long press or Shift+Click to clear.`
             }
           >
             {/* Pad number */}
@@ -255,8 +259,8 @@ export function PerformancePads({
                 isStuttering
                   ? "text-white"
                   : isSet
-                  ? "text-[#FFD700]"
-                  : "text-gray-500"
+                    ? "text-[#FFD700]"
+                    : "text-gray-500"
               }`}
             >
               {padIndex + 1}
@@ -302,4 +306,3 @@ export function PerformancePads({
 
   return padsContent;
 }
-

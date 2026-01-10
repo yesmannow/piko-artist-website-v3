@@ -37,7 +37,9 @@ export function JogWheel({
   const [isDragging, setIsDragging] = useState(false);
   const [dragRotation, setDragRotation] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [previousCoverArt, setPreviousCoverArt] = useState<string | undefined>(coverArt);
+  const [previousCoverArt, setPreviousCoverArt] = useState<string | undefined>(
+    coverArt,
+  );
   const wheelRef = useRef<HTMLDivElement>(null);
   const lastAngleRef = useRef<number | null>(null);
   const lastHapticTimeRef = useRef<number>(0);
@@ -107,8 +109,13 @@ export function JogWheel({
 
         // Map velocity to playbackRate: fast forward = +2.0x, backward = -1.5x
         // Scale factor: 1 degree/ms ≈ 0.01x playback rate
-        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, velocity * 0.01));
-        const targetPlaybackRate = isPlaying ? 1.0 + playbackRateMultiplier : playbackRateMultiplier;
+        const playbackRateMultiplier = Math.max(
+          -1.5,
+          Math.min(2.0, velocity * 0.01),
+        );
+        const targetPlaybackRate = isPlaying
+          ? 1.0 + playbackRateMultiplier
+          : playbackRateMultiplier;
 
         // Notify parent component of velocity change
         if (onVelocityChange) {
@@ -165,8 +172,13 @@ export function JogWheel({
 
         // Map velocity to playbackRate: fast forward = +2.0x, backward = -1.5x
         // Scale factor: 1 degree/ms ≈ 0.01x playback rate
-        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, velocity * 0.01));
-        const targetPlaybackRate = isPlaying ? 1.0 + playbackRateMultiplier : playbackRateMultiplier;
+        const playbackRateMultiplier = Math.max(
+          -1.5,
+          Math.min(2.0, velocity * 0.01),
+        );
+        const targetPlaybackRate = isPlaying
+          ? 1.0 + playbackRateMultiplier
+          : playbackRateMultiplier;
 
         // Notify parent component of velocity change
         if (onVelocityChange) {
@@ -207,7 +219,10 @@ export function JogWheel({
         angularVelocityRef.current = currentVelocity * FRICTION_COEFFICIENT;
 
         // Map to playbackRate
-        const playbackRateMultiplier = Math.max(-1.5, Math.min(2.0, angularVelocityRef.current * 0.01));
+        const playbackRateMultiplier = Math.max(
+          -1.5,
+          Math.min(2.0, angularVelocityRef.current * 0.01),
+        );
         const targetPlaybackRate = isPlaying
           ? 1.0 + playbackRateMultiplier
           : Math.max(0, playbackRateMultiplier); // Don't go below 0 when paused
@@ -255,7 +270,7 @@ export function JogWheel({
   }, [isDragging, onScrub, onDragEnd, isPlaying, onVelocityChange, stopHaptic]);
 
   // Calculate display rotation: use drag rotation when dragging, otherwise use rotation prop
-  const displayRotation = isDragging ? dragRotation : (isPlaying ? rotation : 0);
+  const displayRotation = isDragging ? dragRotation : isPlaying ? rotation : 0;
 
   return (
     <div
@@ -278,6 +293,57 @@ export function JogWheel({
         }
       }}
     >
+      {/* Rotating Outer Ring - Visual Feedback */}
+      <motion.svg
+        className="absolute inset-0 pointer-events-none z-5"
+        viewBox="0 0 100 100"
+        style={{ width: size, height: size }}
+        animate={{
+          rotate: isPlaying && !isDragging ? [0, 360] : 0,
+        }}
+        transition={{
+          duration: isPlaying && !isDragging ? 60 / (bpm * playbackRate) : 0,
+          repeat: isPlaying && !isDragging ? Infinity : 0,
+          ease: "linear",
+        }}
+      >
+        {/* Outer ring with tick marks */}
+        <circle
+          cx="50"
+          cy="50"
+          r="48"
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.1)"
+          strokeWidth="0.5"
+        />
+        {/* BPM indicator marks */}
+        {Array.from({ length: 4 }).map((_, i) => (
+          <line
+            key={i}
+            x1="50"
+            y1="2"
+            x2="50"
+            y2="6"
+            stroke="rgba(0, 255, 100, 0.6)"
+            strokeWidth="1"
+            transform={`rotate(${i * 90} 50 50)`}
+          />
+        ))}
+        {/* Secondary marks */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <line
+            key={`sec-${i}`}
+            x1="50"
+            y1="2"
+            x2="50"
+            y2="4"
+            stroke="rgba(255, 255, 255, 0.3)"
+            strokeWidth="0.5"
+            transform={`rotate(${i * 45 + 22.5} 50 50)`}
+          />
+        ))}
+      </motion.svg>
+
       {/* Vinyl Label Overlay with Smooth Transitions */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -361,11 +427,21 @@ export function JogWheel({
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 0, 8], fov: 50 }}
-        style={{ width: "100%", height: "100%", pointerEvents: "none", touchAction: "none" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          touchAction: "none",
+        }}
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={0.8} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={0.5} />
+        <spotLight
+          position={[10, 10, 10]}
+          angle={0.15}
+          penumbra={1}
+          intensity={0.5}
+        />
         <Suspense fallback={null}>
           <JogWheel3D
             isPlaying={isPlaying && !isDragging}
@@ -390,4 +466,3 @@ export function JogWheel({
     </div>
   );
 }
-

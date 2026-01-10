@@ -3,14 +3,17 @@
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
+import { HelpProvider } from '@/context/HelpContext';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 
-// Dynamically import with no SSR
-const MobileStudioLayout = dynamic(
-  () => import('@/components/mobile-shell/MobileStudioLayout').then(mod => mod.MobileStudioLayout),
+// Dynamically import DJInterface
+const DJInterface = dynamic(
+  () => import('@/components/DJInterface').then(mod => mod.DJInterface),
   {
     ssr: false,
-    loading: () => <div className="fixed inset-0 bg-black" />
+    loading: () => <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="text-white text-lg">Loading DJ Mixer...</div>
+    </div>
   }
 );
 
@@ -18,10 +21,13 @@ const MobileStudioLayout = dynamic(
  * Studio V2 Page
  *
  * Professional mobile DJ workstation with:
+ * - Track library with drag-and-drop to Deck A/B
  * - Dual deck audio engine
  * - Real-time waveform visualization
  * - Loop & hot cue system
  * - WebMIDI hardware support
+ * - Search and filter controls
+ * - Keyboard shortcuts (Shift+A/B)
  *
  * Uses headless audio engine architecture for maximum performance.
  *
@@ -35,7 +41,9 @@ export default function StudioV2Page() {
 
   return (
     <StudioErrorBoundary>
-      <MobileStudioLayout />
+      <HelpProvider>
+        <DJInterface />
+      </HelpProvider>
     </StudioErrorBoundary>
   );
 }

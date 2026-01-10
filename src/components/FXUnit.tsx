@@ -365,12 +365,11 @@ export function FXUnit({
             yLabel="REVERB"
             onChange={(x, y) => {
               // X maps to Filter Frequency (0-1) -> 20Hz to 20kHz (logarithmic)
+              // Using formula: f = f_min × (f_max / f_min)^x
+              // This provides even octave sweeping as expected by DJs
               const minFreq = 20;
               const maxFreq = 20000;
-              const logMin = Math.log10(minFreq);
-              const logMax = Math.log10(maxFreq);
-              const logValue = logMin + (logMax - logMin) * x;
-              const filterFreq = Math.pow(10, logValue);
+              const filterFreq = minFreq * Math.pow(maxFreq / minFreq, x);
               onFilterFreqChange(filterFreq);
 
               // Y maps to Reverb Wet/Dry (0-1) -> 0% to 50%

@@ -18,7 +18,7 @@ export function JogWheel3D({
   isScratching = false,
   rotation = 0,
   bpm = 120,
-  playbackRate = 1.0
+  playbackRate = 1.0,
 }: JogWheel3DProps) {
   const { scene } = useGLTF("/3d/music-20.glb");
   const meshRef = useRef<THREE.Group>(null);
@@ -37,7 +37,8 @@ export function JogWheel3D({
         // When not scratching, update base rotation if prop changed significantly
         // This handles the case when rotation prop is updated externally
         const diff = Math.abs(rotation - lastRotationPropRef.current);
-        if (diff > 1) { // Only update if significant change
+        if (diff > 1) {
+          // Only update if significant change
           baseRotationRef.current = rotationRad;
           meshRef.current.rotation.y = rotationRad;
         }
@@ -57,7 +58,8 @@ export function JogWheel3D({
     } else if (isPlaying) {
       // Auto-rotate when playing - rotation speed relative to BPM and playback rate
       // (bpm / 60) gives rotations per second, multiply by 2π for radians per second
-      meshRef.current.rotation.y += delta * (bpm / 60) * playbackRate * 2 * Math.PI;
+      meshRef.current.rotation.y +=
+        delta * (bpm / 60) * playbackRate * 2 * Math.PI;
       baseRotationRef.current = meshRef.current.rotation.y;
     } else {
       // When not playing and not scratching, keep current rotation
@@ -66,12 +68,6 @@ export function JogWheel3D({
   });
 
   return (
-    <primitive
-      ref={meshRef}
-      object={scene}
-      scale={1.5}
-      rotation={[0, 0, 0]}
-    />
+    <primitive ref={meshRef} object={scene} scale={1.5} rotation={[0, 0, 0]} />
   );
 }
-

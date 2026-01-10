@@ -44,12 +44,14 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
             </div>
             <div className="space-y-3">
               <p className="text-gray-300 font-barlow text-sm leading-relaxed">
-                Your device may not support 3D acceleration or WebGL. The DJ Console requires
-                hardware-accelerated graphics to function properly.
+                Your device may not support 3D acceleration or WebGL. The DJ
+                Console requires hardware-accelerated graphics to function
+                properly.
               </p>
               <div className="pt-2 border-t border-gray-700">
                 <p className="text-gray-400 font-barlow text-xs uppercase tracking-wider">
-                  Recommended: Try using a Desktop browser or a device with updated graphics drivers.
+                  Recommended: Try using a Desktop browser or a device with
+                  updated graphics drivers.
                 </p>
               </div>
               <button
@@ -71,4 +73,3 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
     return this.props.children;
   }
 }
-

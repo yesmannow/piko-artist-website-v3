@@ -23,7 +23,7 @@ export function Knob({
   max = 1,
   size = 60,
   color,
-  helpText
+  helpText,
 }: KnobProps) {
   const [isDragging, setIsDragging] = useState(false);
   const knobRef = useRef<HTMLDivElement>(null);
@@ -231,4 +231,3 @@ export function Knob({
 
   return knobContent;
 }
-

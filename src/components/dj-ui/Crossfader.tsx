@@ -11,14 +11,20 @@ interface CrossfaderProps {
   helpText?: string;
 }
 
-export function Crossfader({ value, onChange, width = 300, helpText }: CrossfaderProps) {
+export function Crossfader({
+  value,
+  onChange,
+  width = 300,
+  helpText,
+}: CrossfaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
 
   // Make width responsive
-  const responsiveWidth = typeof window !== "undefined" && window.innerWidth < 768
-    ? Math.min(width, window.innerWidth - 80)
-    : width;
+  const responsiveWidth =
+    typeof window !== "undefined" && window.innerWidth < 768
+      ? Math.min(width, window.innerWidth - 80)
+      : width;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -84,7 +90,8 @@ export function Crossfader({ value, onChange, width = 300, helpText }: Crossfade
         className="relative cursor-pointer select-none touch-manipulation"
         style={{
           width: responsiveWidth,
-          height: typeof window !== "undefined" && window.innerWidth < 768 ? 40 : 30
+          height:
+            typeof window !== "undefined" && window.innerWidth < 768 ? 40 : 30,
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
@@ -99,9 +106,19 @@ export function Crossfader({ value, onChange, width = 300, helpText }: Crossfade
         <motion.div
           className="absolute top-1/2 -translate-y-1/2 bg-[#2a2a2a] border border-gray-600 rounded-sm shadow-lg cursor-grab active:cursor-grabbing touch-manipulation"
           style={{
-            left: position - (typeof window !== "undefined" && window.innerWidth < 768 ? 22 : 20),
-            width: typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 40,
-            height: typeof window !== "undefined" && window.innerWidth < 768 ? 24 : 24,
+            left:
+              position -
+              (typeof window !== "undefined" && window.innerWidth < 768
+                ? 22
+                : 20),
+            width:
+              typeof window !== "undefined" && window.innerWidth < 768
+                ? 44
+                : 40,
+            height:
+              typeof window !== "undefined" && window.innerWidth < 768
+                ? 24
+                : 24,
           }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -120,4 +137,3 @@ export function Crossfader({ value, onChange, width = 300, helpText }: Crossfade
 
   return crossfaderContent;
 }
-

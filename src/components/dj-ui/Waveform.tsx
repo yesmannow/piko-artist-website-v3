@@ -49,7 +49,10 @@ export function Waveform({
     try {
       // Some builds return a promise; guard aborts
       const maybePromise = wavesurfer.load(audioUrl) as unknown;
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).catch === "function") {
+      if (
+        maybePromise &&
+        typeof (maybePromise as Promise<unknown>).catch === "function"
+      ) {
         (maybePromise as Promise<unknown>).catch(() => {});
       }
     } catch {
@@ -118,4 +121,3 @@ export function Waveform({
     </div>
   );
 }
-
