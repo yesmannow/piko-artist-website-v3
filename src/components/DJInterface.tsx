@@ -48,7 +48,6 @@ const DISTORTION_CURVE_BASE = 3;
 const DISTORTION_CURVE_MULTIPLIER = 20;
 const DISTORTION_CURVE_SAMPLES = 44100;
 // Safety cap for feedback loop stability
-const FX_DELAY_FEEDBACK_MAX = 0.9;
 
 /**
  * Generate a symmetrical soft-clipping curve for WaveShaperNode.
@@ -2820,13 +2819,6 @@ export function DJInterface() {
   );
 }
 
-/**
- * Generate a symmetrical soft-clipping curve for WaveShaperNode.
- * Based on the classic arctangent-inspired formula from MDN:
- *   y = ((a + k) * x * b * deg) / (π + k * |x|)
- * where k is drive amount, a/b tune the curve shape, and x spans -1..1.
- * @param amount Drive amount (0..DISTORTION_SCALE) controlling curve intensity.
- */
 function makeDistortionCurve(amount: number) {
   const k = Number.isFinite(amount) ? amount : DISTORTION_DEFAULT_K;
   const curve = new Float32Array(DISTORTION_CURVE_SAMPLES);

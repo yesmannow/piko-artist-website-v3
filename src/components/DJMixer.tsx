@@ -310,6 +310,7 @@ export function DJMixer({
                 onChange={onCrossfaderChange}
                 width={typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200}
                 helpText="Blends audio between Deck A and Deck B. Left = Deck A, Right = Deck B"
+                midiAction="crossfader"
               />
               <div className="flex items-center gap-3 mt-1">
                 <button

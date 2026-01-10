@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
@@ -19,6 +17,12 @@ import { WebrtcProvider } from 'y-webrtc';
  * - No conflicts, no server needed (P2P)
  * - Works across browser windows/devices
  */
+
+export interface Peer {
+  id: string;
+  name: string;
+  cursor?: unknown;
+}
 
 export interface CollaborationState {
   // Mixer state (shared)
@@ -116,6 +120,7 @@ export function useCollaboration({
     }
     
     // Create WebRTC provider for P2P sync
+    // @ts-expect-error SharedArrayBuffer Uint8Array compatibility issue
     const provider = new WebrtcProvider(roomName, ydoc, {
       signaling: [
         'wss://signaling.yjs.dev', // Public signaling server
@@ -125,6 +130,7 @@ export function useCollaboration({
     });
     
     // Set user awareness data
+    // @ts-expect-error SharedArrayBuffer compatibility
     provider.awareness.setLocalStateField('name', userName);
     
     providerRef.current = provider;
@@ -159,7 +165,7 @@ export function useCollaboration({
     const observer = () => {
       const state: Partial<CollaborationState> = {};
       
-      stateMap.forEach((value, key) => {
+      stateMap.forEach((value: unknown, key: string) => {
         (state as any)[key as keyof CollaborationState] = value;
       });
       
@@ -246,18 +252,18 @@ export function useCollaboration({
   /**
    * Get peer info
    */
-  const getPeerInfo = useCallback(() => {
+  const getPeerInfo = useCallback((): Peer[] => {
     if (!providerRef.current) return [];
     
     const awareness = providerRef.current.awareness;
-    const states = Array.from(awareness.getStates().entries());
+    const states = Array.from(awareness.getStates().entries()) as [number, { name?: string; cursor?: unknown }][];
     
     return states
       .filter(([id]) => id !== ydocRef.current?.clientID)
       .map(([id, state]) => ({
         id: String(id),
-        name: (state as any).name || 'Unknown',
-        cursor: (state as any).cursor,
+        name: state.name || 'Unknown',
+        cursor: state.cursor,
       }));
   }, []);
   

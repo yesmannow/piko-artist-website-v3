@@ -18,6 +18,7 @@ import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
 import { TrackTransition } from "./dj-ui/TrackTransition";
+import { MIDIButton } from "./dj-ui/MIDIButton";
 import {
   Play,
   Pause,
@@ -27,6 +28,7 @@ import {
   RotateCw,
   Music,
   Grid3x3,
+  Radio,
 } from "lucide-react";
 import { useBPMDetection } from "@/hooks/useBPMDetection";
 import {
@@ -35,6 +37,7 @@ import {
   snapToBeat,
   quantizeLoop,
 } from "@/utils/audioUtils";
+import { useMIDIStore } from "@/store/useMIDIStore";
 
 // Lazy load heavy components
 const Waveform = lazy(() => import("./dj-ui/Waveform"));
@@ -166,6 +169,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [beatGridOffset, setBeatGridOffset] = useState(0); // seconds; adjust if BPM grid is slightly off
     const [isReversedState, setIsReversedState] = useState(isReversed || false);
     const [showElapsedTime, setShowElapsedTime] = useState(false); // Toggle between elapsed and remaining time
+
+    // MIDI store
+    const { learnMode } = useMIDIStore();
 
     // Use internal state for isReversed, sync with prop if it changes
     useEffect(() => {
@@ -950,58 +956,63 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           data-tour="sync-pitch"
         >
           {/* Cue Button */}
-          <button
+          <MIDIButton
+            midiAction={deckId === "A" ? "deckA_cue" : "deckB_cue"}
             onClick={handleCue}
-            aria-label={
-              cuePoint !== null
-                ? `Cue point set at ${cuePoint.toFixed(1)} seconds. Click to jump to cue.`
-                : "Set cue point"
-            }
             className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500 touch-manipulation ${
               cuePoint !== null ? "border-orange-500" : "border-gray-700"
             }`}
-            style={{
-              boxShadow:
-                cuePoint !== null
-                  ? `0 0 15px rgba(249, 115, 22, 0.3), inset 0 0 8px rgba(249, 115, 22, 0.1)`
-                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
-            }}
             title={
               cuePoint !== null
                 ? `Cue: ${cuePoint.toFixed(1)}s`
                 : "Set Cue Point"
             }
           >
-            <RotateCcw
-              className="w-6 h-6"
-              style={{ color: cuePoint !== null ? "#f97316" : deckColor }}
-            />
-          </button>
+            <div
+              style={{
+                boxShadow:
+                  cuePoint !== null
+                    ? `0 0 15px rgba(249, 115, 22, 0.3), inset 0 0 8px rgba(249, 115, 22, 0.1)`
+                    : "inset 0 2px 4px rgba(0,0,0,0.5)",
+              }}
+              className="w-full h-full rounded-lg flex items-center justify-center"
+            >
+              <RotateCcw
+                className="w-6 h-6"
+                style={{ color: cuePoint !== null ? "#f97316" : deckColor }}
+              />
+            </div>
+          </MIDIButton>
 
           {/* Play/Pause Button */}
-          <button
+          <MIDIButton
+            midiAction={deckId === "A" ? "deckA_play" : "deckB_play"}
             onClick={handlePlayPause}
-            aria-label={
+            className={`relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#1a1a1a] border-2 border-gray-700 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation`}
+            title={
               isPlaying
                 ? `Pause ${title || "track"} on ${deckLabel}`
                 : `Play ${title || "track"} on ${deckLabel}`
             }
-            className="relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#1a1a1a] border-2 border-gray-700 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation"
-            style={
-              {
-                boxShadow: isPlaying
-                  ? `0 0 20px ${deckColor}40, inset 0 0 10px ${deckColor}20`
-                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
-                "--focus-ring-color": deckColor,
-              } as React.CSSProperties & { "--focus-ring-color": string }
-            }
           >
-            {isPlaying ? (
-              <Pause className="w-8 h-8" style={{ color: deckColor }} />
-            ) : (
-              <Play className="w-8 h-8 ml-1" style={{ color: deckColor }} />
-            )}
-          </button>
+            <div
+              style={
+                {
+                  boxShadow: isPlaying
+                    ? `0 0 20px ${deckColor}40, inset 0 0 10px ${deckColor}20`
+                    : "inset 0 2px 4px rgba(0,0,0,0.5)",
+                  "--focus-ring-color": deckColor,
+                } as React.CSSProperties & { "--focus-ring-color": string }
+              }
+              className="w-full h-full rounded-full flex items-center justify-center"
+            >
+              {isPlaying ? (
+                <Pause className="w-8 h-8" style={{ color: deckColor }} />
+              ) : (
+                <Play className="w-8 h-8 ml-1" style={{ color: deckColor }} />
+              )}
+            </div>
+          </MIDIButton>
 
           {/* Sync Button */}
           <Tooltip content="Automatically matches this deck's BPM to the other deck">
@@ -1112,24 +1123,30 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             </button>
           </Tooltip>
 
-          {/* Vinyl Mode Toggle - Switch between scratch and pitch bend */}
-          <Tooltip content="Vinyl Mode: Dragging scratches audio. Off: Dragging bends pitch">
+          {/* MIDI Learn Mode Toggle */}
+          <Tooltip content={learnMode ? "Exit MIDI Learn Mode" : "Enter MIDI Learn Mode"}>
             <button
               onClick={() => {
-                // TODO: Wire up vinyl mode state management
-                // This would toggle between scratch mode and pitch bend mode
-                // For now, button is placeholder for future implementation
+                const { startLearn, stopLearn } = useMIDIStore.getState();
+                if (learnMode) {
+                  stopLearn();
+                } else {
+                  // Don't start learn mode here, let individual controls handle it
+                }
               }}
-              aria-label="Toggle vinyl mode"
-              className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 touch-manipulation border-gray-700`}
+              className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 touch-manipulation ${
+                learnMode ? "border-cyan-500 bg-cyan-500/10" : "border-gray-700"
+              }`}
               style={{
-                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)",
+                boxShadow: learnMode
+                  ? `0 0 15px rgba(6, 182, 212, 0.3), inset 0 0 8px rgba(6, 182, 212, 0.1)`
+                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
               }}
-              title="Vinyl Mode"
+              title={learnMode ? "MIDI Learn Mode Active - Click controls to map" : "Enable MIDI Learn Mode"}
             >
-              <span className="text-xs font-black italic uppercase tracking-wider text-gray-400">
-                VINYL
-              </span>
+              <Radio
+                className={`w-6 h-6 ${learnMode ? "text-cyan-400 animate-pulse" : "text-gray-400"}`}
+              />
             </button>
           </Tooltip>
 
@@ -1299,6 +1316,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   : 150
               }
               helpText="Adjusts playback speed (pitch). Range: -8% to +8%"
+              midiAction={deckId === "A" ? "deckA_volume" : "deckB_volume"}
             />
             <div className="flex flex-col items-center gap-1 text-xs text-gray-500 font-barlow">
               <span>+8%</span>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 /**
  * PHASE 7: MIDI Mapping Store
@@ -48,43 +49,69 @@ interface MIDIStore {
   clearMappings: () => void;
 }
 
-export const useMIDIStore = create<MIDIStore>((set) => ({
-  // Initial state
-  isConnected: false,
-  deviceName: null,
-  lastActivity: 0,
-  mappings: {},
-  learnMode: false,
-  learnTarget: null,
-  
-  // Actions
-  setConnected: (connected, deviceName) => 
-    set({ isConnected: connected, deviceName: deviceName || null }),
-  
-  setActivity: () => 
-    set({ lastActivity: Date.now() }),
-  
-  setMapping: (midiKey, action, label) => 
-    set((state) => ({
-      mappings: {
-        ...state.mappings,
-        [midiKey]: { action, label }
-      }
-    })),
-  
-  removeMapping: (midiKey) => 
-    set((state) => {
-      const newMappings = { ...state.mappings };
-      delete newMappings[midiKey];
-      return { mappings: newMappings };
+// localStorage key for MIDI mappings
+const MIDI_STORAGE_KEY = 'piko-dj-midi-mappings';
+
+export const useMIDIStore = create<MIDIStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      isConnected: false,
+      deviceName: null,
+      lastActivity: 0,
+      mappings: {},
+      learnMode: false,
+      learnTarget: null,
+      
+      // Actions
+      setConnected: (connected, deviceName) => 
+        set({ isConnected: connected, deviceName: deviceName || null }),
+      
+      setActivity: () => 
+        set({ lastActivity: Date.now() }),
+      
+      setMapping: (midiKey, action, label) => 
+        set((state) => ({
+          mappings: {
+            ...state.mappings,
+            [midiKey]: { action, label }
+          }
+        })),
+      
+      removeMapping: (midiKey) => 
+        set((state) => {
+          const newMappings = { ...state.mappings };
+          delete newMappings[midiKey];
+          return { mappings: newMappings };
+        }),
+      
+      startLearn: (action) => 
+        set({ learnMode: true, learnTarget: action }),
+      
+      stopLearn: () => 
+        set({ learnMode: false, learnTarget: null }),
+      
+      clearMappings: () => 
+        set({ mappings: {} }),
     }),
-  
-  startLearn: (action) => 
-    set({ learnMode: true, learnTarget: action }),
-  
-  stopLearn: () => 
-    set({ learnMode: false, learnTarget: null }),
-  
-  clearMappings: () => 
-    set({ mappings: {} }),
-}));
+    {
+      name: MIDI_STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
+      // Only persist mappings, not connection state or learn mode
+      partialize: (state) => ({
+        mappings: state.mappings,
+      }),
+      // On rehydrate, ensure learn mode is reset
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Reset learn mode on app restart
+          state.learnMode = false;
+          state.learnTarget = null;
+          state.isConnected = false;
+          state.deviceName = null;
+          state.lastActivity = 0;
+        }
+      },
+    }
+  )
+);

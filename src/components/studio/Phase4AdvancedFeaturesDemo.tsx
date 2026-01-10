@@ -9,7 +9,8 @@ import {
   Users, 
   Monitor, 
   Sparkles,
-  Settings 
+  Settings,
+  Radio 
 } from 'lucide-react';
 
 // Components
@@ -21,6 +22,7 @@ import {
   AudioReactiveParticles, 
   AudioReactivePlane 
 } from '@/components/studio/AudioReactiveShaderVisualizer';
+import { useMIDIStore } from '@/store/useMIDIStore';
 
 /**
  * Phase4AdvancedFeaturesDemo
@@ -49,21 +51,40 @@ export function Phase4AdvancedFeaturesDemo({
   const [visualizerStyle, setVisualizerStyle] = useState<'particles' | 'plane'>('particles');
   const [showSettings, setShowSettings] = useState(false);
   
+  // MIDI store for global learn mode toggle
+  const { learnMode, startLearn, stopLearn } = useMIDIStore();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white">
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 h-screen">
         {/* Left Panel - Controls & Monitoring */}
         <div className="space-y-4 overflow-y-auto">
-          {/* Header */}
+          {/* Global MIDI Learn Mode Toggle */}
           <div className="bg-black/40 backdrop-blur-sm border-2 border-cyan-500/30 p-4">
-            <h1 className="text-2xl font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-              <Sparkles className="w-6 h-6" />
-              Phase 4: Advanced Features
-            </h1>
-            <p className="text-white/60 text-sm mt-1">
-              Professional DJ Suite with Cutting-Edge Tech
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Radio className={`w-5 h-5 ${learnMode ? 'text-cyan-400 animate-pulse' : 'text-white/60'}`} />
+                <div>
+                  <div className="font-bold text-sm uppercase tracking-wider">
+                    MIDI Learn Mode
+                  </div>
+                  <div className="text-xs text-white/60">
+                    {learnMode ? 'Active - Click controls to map' : 'Click to enable MIDI learning'}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => learnMode ? stopLearn() : startLearn('deckA_play')} // Dummy action to start learn mode
+                className={`px-4 py-2 rounded border-2 transition-all font-bold text-sm uppercase tracking-wider ${
+                  learnMode
+                    ? 'bg-cyan-500 text-black border-cyan-500 shadow-lg shadow-cyan-500/50'
+                    : 'bg-black border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500'
+                }`}
+              >
+                {learnMode ? 'Stop Learn' : 'Start Learn'}
+              </button>
+            </div>
           </div>
           
           {/* Latency Monitor */}
