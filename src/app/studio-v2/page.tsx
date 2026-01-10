@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
+import { HelpProvider } from '@/context/HelpContext';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 
 // Dynamically import DJInterface
@@ -40,7 +41,9 @@ export default function StudioV2Page() {
 
   return (
     <StudioErrorBoundary>
-      <DJInterface />
+      <HelpProvider>
+        <DJInterface />
+      </HelpProvider>
     </StudioErrorBoundary>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { HelpProvider } from '@/context/HelpContext';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 
 // Dynamically import DJInterface to avoid SSR issues
@@ -37,6 +38,10 @@ export default function StudioPage() {
     verifyStudioCrossOriginIsolation();
   }, []);
 
-  return <DJInterface />;
+  return (
+    <HelpProvider>
+      <DJInterface />
+    </HelpProvider>
+  );
 }
 
