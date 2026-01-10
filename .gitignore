@@ -21,7 +21,5 @@ wrangler.jsonc
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 
-# ONNX model files (use Git LFS if committing)
-# Large model files should use Git LFS or external hosting
-# public/models/*.onnx  # Commented out - using Git LFS to track .onnx files
-# Or use external hosting with NEXT_PUBLIC_MODEL_URL
+# ONNX model files are tracked via Git LFS (see .gitattributes); do not ignore them.
+# Use external hosting instead by setting NEXT_PUBLIC_MODEL_URL if you prefer not to commit them.
