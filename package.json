@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "node scripts/build.js",
     "start": "next start",
     "lint": "next lint",
-    "check:case": "node scripts/check-import-case.mjs"
+    "check:case": "node scripts/check-import-case.mjs",
+    "verify:vercel": "npx -y node@20 scripts/node20-check.mjs",
+    "verify:vercel:clean": "node -e \"require('fs').rmSync('node_modules',{recursive:true,force:true})\" && npm install && npm run verify:vercel"
   },
   "dependencies": {
     "@react-spring/three": "^10.0.3",

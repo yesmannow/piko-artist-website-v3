@@ -10,7 +10,7 @@ import * as THREE from 'three';
  */
 function AudioReactiveMaterial() {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const [analyserData, setAnalyserData] = useState<Uint8Array | null>(null);
+  const analyserDataRef = useRef<Uint8Array>(new Uint8Array(0));
   const analyserRef = useRef<AnalyserNode | null>(null);
   
   // Initialize analyser
@@ -24,15 +24,10 @@ function AudioReactiveMaterial() {
         analyser.fftSize = 256;
         analyser.smoothingTimeConstant = 0.8;
         
-        // Connect to destination (to capture mix output)
-        // In production, connect to mixer output
-        rtAudio.context.destination;
-        
-        // Pre-allocate buffer (no per-frame allocations)
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        // Pre-allocate buffer without underlying buffer (no ArrayBufferLike)
+        analyserDataRef.current = new Uint8Array(analyser.frequencyBinCount);
         
         analyserRef.current = analyser;
-        setAnalyserData(dataArray);
         
         console.log('[Visualizer] Analyser initialized');
       }
@@ -43,10 +38,12 @@ function AudioReactiveMaterial() {
   
   // Update shader uniforms based on audio data
   useFrame(() => {
-    if (!materialRef.current || !analyserRef.current || !analyserData) return;
+    if (!materialRef.current || !analyserRef.current || analyserDataRef.current.length === 0) return;
     
     // Update analyser data (reuses pre-allocated buffer)
-    analyserRef.current.getByteFrequencyData(analyserData);
+    analyserRef.current.getByteFrequencyData(analyserDataRef.current);
+    
+    const analyserData = analyserDataRef.current;
     
     // Calculate audio metrics
     const average = analyserData.reduce((a, b) => a + b, 0) / analyserData.length;
