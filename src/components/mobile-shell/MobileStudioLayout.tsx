@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Zap } from 'lucide-react';
 import { getAudioEngine } from '@/engine/AudioEngine';
 import { getMIDIManager } from '@/engine/MIDIManager';
+import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
+import { useIOSAudioUnlock } from '@/hooks/useIOSAudioUnlock';
 import { useMIDIStore } from '@/store/useMIDIStore';
 import { AlwaysOnTopBar } from './AlwaysOnTopBar';
 import { AlwaysOnBottomBar } from './AlwaysOnBottomBar';
@@ -21,6 +23,18 @@ export const MobileStudioLayout = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [learnToast, setLearnToast] = useState<string | null>(null);
 
+  // PHASE 4: Real-time audio system
+  const rtAudioSystem = getRealtimeAudioSystem();
+  const [rtAudioContext, setRtAudioContext] = useState<AudioContext | null>(null);
+
+  // PHASE 4: iOS audio unlock hook
+  const isAudioUnlocked = useIOSAudioUnlock(rtAudioContext, {
+    onUnlock: () => {
+      console.log('🔓 iOS Audio unlocked');
+    },
+    debug: true,
+  });
+
   // PHASE 9: Subscribe to MIDI learn mode
   const learnMode = useMIDIStore((state) => state.learnMode);
   const learnTarget = useMIDIStore((state) => state.learnTarget);
@@ -28,19 +42,65 @@ export const MobileStudioLayout = () => {
   const setMapping = useMIDIStore((state) => state.setMapping);
 
   /**
+   * PHASE 4: Initialize Real-time Audio System
+   * This is the new bootstrap layer that runs before legacy AudioEngine
+   */
+  const initializeRealtimeAudio = async () => {
+    try {
+      console.log('🎵 [Phase 4] Initializing real-time audio system...');
+      
+      // Initialize the new real-time audio system
+      await rtAudioSystem.initialize({
+        latencyHint: 'interactive',
+        sampleRate: 44100,
+        workletModules: ['/worklets/mixer-processor.js'], // Will load if exists
+      });
+      
+      // Store context for iOS unlock hook
+      setRtAudioContext(rtAudioSystem.context);
+      
+      console.log('✅ [Phase 4] Real-time audio system initialized');
+      return true;
+    } catch (error) {
+      console.error('❌ [Phase 4] Real-time audio system initialization failed:', error);
+      // Don't fail completely - allow legacy system to try
+      return false;
+    }
+  };
+
+  /**
+   * PHASE 4: Initialize StudioEngine (new high-level API)
+   */
+  const initializeStudioEngine = async () => {
+    try {
+      console.log('🎵 [Phase 4] Initializing StudioEngine...');
+      
+      const { getStudioEngine } = await import('@/engine/rt/StudioEngine');
+      const studio = getStudioEngine();
+      await studio.initialize();
+      
+      console.log('✅ [Phase 4] StudioEngine initialized');
+      return true;
+    } catch (error) {
+      console.error('❌ [Phase 4] StudioEngine initialization failed:', error);
+      return false;
+    }
+  };
+
+  /**
    * REMEDIATION: "Tap to Start" - User-Intent Boot Sequence
-   * Initialize AudioEngine only after user interaction to prevent Safari suspension
+   * PHASE 4: Now initializes StudioEngine instead of legacy AudioEngine
    */
   const handleStartSession = async () => {
     setIsInitializing(true);
     setInitError(null);
 
     try {
-      // Initialize AudioEngine with user interaction
-      const audioSuccess = await getAudioEngine().initialize();
+      // PHASE 4: Initialize new StudioEngine
+      const studioSuccess = await initializeStudioEngine();
       
-      if (!audioSuccess) {
-        setInitError('Failed to initialize audio engine');
+      if (!studioSuccess) {
+        setInitError('Failed to initialize studio engine');
         setIsInitializing(false);
         return;
       }
@@ -113,8 +173,16 @@ export const MobileStudioLayout = () => {
   };
 
   return (
+    // PHASE 4: Fixed viewport container with no scrolling
     // Force landscape and full viewport
-    <main className="fixed inset-0 flex flex-col bg-black overflow-hidden">
+    <main 
+      className="fixed inset-0 flex flex-col bg-black overflow-hidden"
+      style={{
+        touchAction: 'none',
+        overscrollBehavior: 'none',
+        WebkitOverflowScrolling: 'auto',
+      }}
+    >
       {/* REMEDIATION: CSS Orientation Guard - Enforce landscape mode */}
       <OrientationGuard />
 
@@ -202,6 +270,32 @@ export const MobileStudioLayout = () => {
                   )}
                 </div>
               </motion.button>
+
+              {/* Audio Unlock Indicator */}
+              {isInitializing && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <div className="flex items-center gap-2 text-[#FFD700]">
+                    {isAudioUnlocked ? (
+                      <>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-mono">Audio Unlocked</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-mono">Unlocking Audio...</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-zinc-500 font-mono">
+                    {rtAudioContext ? `${rtAudioContext.state} | ${rtAudioContext.sampleRate}Hz` : 'Initializing...'}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Error Message */}
               {initError && (

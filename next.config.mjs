@@ -111,10 +111,8 @@ const nextConfig = {
         ],
       },
     ];
-    // Add COOP only in production (avoids dev warnings on non-trustworthy origins)
-    if (process.env.NODE_ENV === 'production') {
-      headers[0].headers.push({ key: 'Cross-Origin-Opener-Policy', value: 'same-origin' });
-    }
+    // Note: COOP/COEP headers are now set only for studio routes via middleware
+    // to enable SharedArrayBuffer support without breaking other routes
     return headers;
   },
   experimental: {

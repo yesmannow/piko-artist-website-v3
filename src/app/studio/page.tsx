@@ -1,41 +1,18 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import { DJInterface } from "@/components/DJInterface";
-import { HelpProvider } from "@/context/HelpContext";
-import { CrashGuard } from "@/components/dj-ui/CrashGuard";
-import { useAudio } from "@/context/AudioContext";
-// Preload 3D models early
-import "@/components/dj-ui/preload3D";
-import { usePathname } from "next/navigation";
+import { DesktopStudioLayout } from "@/components/desktop-studio/DesktopStudioLayout";
 
-function StudioContent() {
-  const { stop: stopPersistentPlayer, isPlaying, currentTrack } = useAudio();
-  const pathname = usePathname();
-
-  // Stop persistent player audio when entering studio page
-  useEffect(() => {
-    // Only stop if we're on the studio page and audio is playing
-    if (pathname === '/studio' && (isPlaying || currentTrack)) {
-      stopPersistentPlayer();
-    }
-  }, [pathname, isPlaying, currentTrack, stopPersistentPlayer]);
-
-  return (
-    <div className="relative overflow-hidden">
-      <CrashGuard>
-        <DJInterface />
-      </CrashGuard>
-    </div>
-  );
-}
-
+/**
+ * Desktop Studio Page
+ * 
+ * This page serves the desktop-optimized studio interface.
+ * It's completely separate from the mobile studio (served at /studio-v2).
+ * 
+ * The middleware handles device detection and routing:
+ * - Desktop UA: Serves this page at /studio
+ * - Mobile UA: Rewrites /studio to /studio-v2
+ */
 export default function StudioPage() {
-  return (
-    <HelpProvider>
-      <Suspense fallback={<div className="min-h-screen bg-[#121212]" />}>
-        <StudioContent />
-      </Suspense>
-    </HelpProvider>
-  );
+  return <DesktopStudioLayout />;
 }
+
