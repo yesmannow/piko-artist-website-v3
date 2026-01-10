@@ -78,7 +78,7 @@ export function AudioReactiveParticles({
     if (!materialRef.current || !analyser || !frequencyDataRef.current) return;
     
     // Get frequency data
-    // @ts-ignore - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
+    // @ts-expect-error - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
     analyser.getByteFrequencyData(frequencyDataRef.current);
     
     const data = frequencyDataRef.current;
@@ -248,7 +248,7 @@ export function AudioReactivePlane({
   useFrame((state) => {
     if (!materialRef.current || !analyser || !frequencyDataRef.current) return;
     
-    // @ts-ignore - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
+    // @ts-expect-error - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
     analyser.getByteFrequencyData(frequencyDataRef.current);
     const data = frequencyDataRef.current;
     const binCount = data.length;

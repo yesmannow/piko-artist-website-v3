@@ -70,6 +70,9 @@ export function DJInterface() {
   const pathname = usePathname();
   const [audioGraphReady, setAudioGraphReady] = useState(false);
 
+  // Track previous crossfader position for center detent detection
+  const prevCrossfaderRef = useRef(0.5);
+
   // Deck A state
   const [deckAData, setDeckAData] = useState<(typeof tracks)[0] | null>(null);
   const [deckAColors, setDeckAColors] = useState<DominantColors | null>(null);
@@ -209,6 +212,12 @@ export function DJInterface() {
     setIsSlipModeA,
     isSlipModeB,
     setIsSlipModeB,
+    deckAHotCues,
+    deckBHotCues,
+    setDeckAHotCue,
+    clearDeckAHotCue,
+    setDeckBHotCue,
+    clearDeckBHotCue,
   } = useDualDeck();
 
   // Refs
@@ -1150,6 +1159,29 @@ export function DJInterface() {
   }, []);
 
   // Handle sync - syncs the other deck to this deck's speed
+  /**
+   * Handle crossfader change with haptic feedback at center position
+   */
+  const handleCrossfaderChange = useCallback(
+    (newValue: number) => {
+      const prev = prevCrossfaderRef.current;
+      const centerThreshold = 0.02; // 2% tolerance for center detection
+
+      // Check if crossfader crossed the center point (0.5)
+      const crossedCenter =
+        (prev < 0.5 && newValue >= 0.5) || (prev > 0.5 && newValue <= 0.5);
+
+      // Trigger haptic at center position
+      if (crossedCenter && Math.abs(newValue - 0.5) < centerThreshold) {
+        baseTriggerHaptic("medium");
+      }
+
+      prevCrossfaderRef.current = newValue;
+      setCrossfader(newValue);
+    },
+    [baseTriggerHaptic]
+  );
+
   const handleDeckASync = useCallback(() => {
     if (deckARef.current && deckBRef.current) {
       const deckARate = deckARef.current.getPlaybackRate();
@@ -1579,7 +1611,10 @@ export function DJInterface() {
                 </div>
 
                 {/* Keyboard Shortcuts Help */}
-                <div id="keyboard-shortcuts-help" className="px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-xs font-barlow text-gray-400">
+                <div
+                  id="keyboard-shortcuts-help"
+                  className="px-3 py-2 bg-[#1a1a1a] border border-gray-800 rounded text-xs font-barlow text-gray-400"
+                >
                   <div className="font-bold text-gray-300 mb-1">
                     Keyboard Shortcuts:
                   </div>
@@ -1641,7 +1676,10 @@ export function DJInterface() {
                             e.stopPropagation();
                             triggerHaptic();
                             loadTrackToDeckA(track);
-                          } else if (e.shiftKey && (e.key === "b" || e.key === "B")) {
+                          } else if (
+                            e.shiftKey &&
+                            (e.key === "b" || e.key === "B")
+                          ) {
                             e.preventDefault();
                             e.stopPropagation();
                             triggerHaptic();
@@ -1807,7 +1845,10 @@ export function DJInterface() {
                           e.stopPropagation();
                           triggerHaptic();
                           loadTrackToDeckA(track);
-                        } else if (e.shiftKey && (e.key === "b" || e.key === "B")) {
+                        } else if (
+                          e.shiftKey &&
+                          (e.key === "b" || e.key === "B")
+                        ) {
                           e.preventDefault();
                           e.stopPropagation();
                           triggerHaptic();
@@ -2460,6 +2501,9 @@ export function DJInterface() {
                       handleScratch(velocity, isTouching, "A")
                     }
                     deckId="A"
+                    hotCues={deckAHotCues}
+                    onHotCueSet={setDeckAHotCue}
+                    onHotCueClear={clearDeckAHotCue}
                   />
                 )}
                 {/* Enhanced Drop indicator */}
@@ -2586,6 +2630,9 @@ export function DJInterface() {
                       handleScratch(velocity, isTouching, "B")
                     }
                     deckId="B"
+                    hotCues={deckBHotCues}
+                    onHotCueSet={setDeckBHotCue}
+                    onHotCueClear={clearDeckBHotCue}
                   />
                 )}
                 {/* Enhanced Drop indicator */}

@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useImperativeHandle,
+  forwardRef,
+  useCallback,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
 import { JogWheel } from "./dj-ui/JogWheel";
@@ -9,9 +16,23 @@ import { PerformancePads } from "./dj-ui/PerformancePads";
 import { Fader } from "./dj-ui/Fader";
 import { Tooltip } from "./dj-ui/Tooltip";
 import { TrackTransition } from "./dj-ui/TrackTransition";
-import { Play, Pause, RotateCcw, Link2, Repeat, RotateCw, Music, Grid3x3 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Link2,
+  Repeat,
+  RotateCw,
+  Music,
+  Grid3x3,
+} from "lucide-react";
 import { useBPMDetection } from "@/hooks/useBPMDetection";
-import { reverseAudioBuffer, calculateBeatPositions, snapToBeat, quantizeLoop } from "@/utils/audioUtils";
+import {
+  reverseAudioBuffer,
+  calculateBeatPositions,
+  snapToBeat,
+  quantizeLoop,
+} from "@/utils/audioUtils";
 
 // Utility function to format time remaining as -MM:SS
 function formatTimeRemaining(seconds: number): string {
@@ -19,6 +40,14 @@ function formatTimeRemaining(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `-${minutes}:${String(secs).padStart(2, "0")}`;
+}
+
+// Utility function to format time elapsed as MM:SS
+function formatTimeElapsed(seconds: number): string {
+  if (seconds < 0) return "0:00";
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes}:${String(secs).padStart(2, "0")}`;
 }
 
 interface DJDeckProps {
@@ -46,6 +75,10 @@ interface DJDeckProps {
   onSlipModeToggle?: () => void; // Callback to toggle Slip Mode
   onScratch?: (velocity: number, isTouching: boolean) => void; // Callback for scratch/velocity
   deckId?: "A" | "B"; // Deck identifier for scratch callback
+  // Hot Cues props
+  hotCues?: Record<number, number>; // External hot cues state from useDualDeck
+  onHotCueSet?: (padIndex: number, time: number) => void; // Callback to set hot cue
+  onHotCueClear?: (padIndex: number) => void; // Callback to clear hot cue
 }
 
 export interface DJDeckRef {
@@ -59,7 +92,7 @@ export interface DJDeckRef {
 }
 
 export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
-    (
+  (
     {
       trackUrl,
       isPlaying,
@@ -84,8 +117,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       onSlipModeToggle,
       onScratch,
       deckId = "A",
+      hotCues: externalHotCues,
+      onHotCueSet,
+      onHotCueClear,
     },
-    ref
+    ref,
   ) => {
     const waveformRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -102,17 +138,20 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [cuePoint, setCuePoint] = useState<number | null>(null);
     const [isScrubbing, setIsScrubbing] = useState(false);
     const wasPlayingBeforeScrubRef = useRef(false);
-  const [isLooping, setIsLooping] = useState(false);
-  const [, setLoopStart] = useState<number | null>(null); // Used internally for loop logic
-  const [loopBeats, setLoopBeats] = useState<number | null>(null);
+    const [isLooping, setIsLooping] = useState(false);
+    const [, setLoopStart] = useState<number | null>(null); // Used internally for loop logic
+    const [loopBeats, setLoopBeats] = useState<number | null>(null);
     const loopIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const [previousTrackUrl, setPreviousTrackUrl] = useState<string | null>(null);
+    const [previousTrackUrl, setPreviousTrackUrl] = useState<string | null>(
+      null,
+    );
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [showBeatGrid, setShowBeatGrid] = useState(false);
     const [beatPositions, setBeatPositions] = useState<number[]>([]);
     const [quantizeEnabled, setQuantizeEnabled] = useState(false);
     const [beatGridOffset, setBeatGridOffset] = useState(0); // seconds; adjust if BPM grid is slightly off
     const [isReversedState, setIsReversedState] = useState(isReversed || false);
+    const [showElapsedTime, setShowElapsedTime] = useState(false); // Toggle between elapsed and remaining time
 
     // Use internal state for isReversed, sync with prop if it changes
     useEffect(() => {
@@ -122,7 +161,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     }, [isReversed]);
 
     // BPM Detection
-    const { bpm, confidence, isDetecting: isDetectingBPM } = useBPMDetection({
+    const {
+      bpm,
+      confidence,
+      isDetecting: isDetectingBPM,
+    } = useBPMDetection({
       audioBuffer,
       trackTitle: title || "",
       trackArtist: "",
@@ -143,7 +186,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     useEffect(() => {
       if (audioBuffer && audioContext) {
         try {
-          reversedBufferRef.current = reverseAudioBuffer(audioBuffer, audioContext);
+          reversedBufferRef.current = reverseAudioBuffer(
+            audioBuffer,
+            audioContext,
+          );
         } catch {
           reversedBufferRef.current = null;
         }
@@ -169,7 +215,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
       // 2. Initialize WaveSurfer with this element
       // Determine waveform colors based on deck color (cyan for A, magenta for B)
-      const isCyan = deckColor === "#00d9ff" || deckColor.includes("00d9ff") || deckColor.includes("00ffff");
+      const isCyan =
+        deckColor === "#00d9ff" ||
+        deckColor.includes("00d9ff") ||
+        deckColor.includes("00ffff");
       const waveColor = isCyan ? "#004d66" : "#66004d"; // Darker version of deck color for unplayed waveform
       const progressColor = deckColor; // Bright deck color for played portion
       const cursorColor = deckColor; // Deck color for cursor
@@ -188,7 +237,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         height: waveformHeight,
         normalize: true,
         backend: "MediaElement", // Use the element we created
-        media: audio,            // Pass the element explicitly
+        media: audio, // Pass the element explicitly
         mediaControls: false,
         interact: true, // Enable clicking on waveform for scrubbing
         dragToSeek: true, // Enable dragging on waveform for scrubbing
@@ -206,13 +255,16 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             // Only create source once per media element to avoid InvalidStateError
             if (!mediaSourceRef.current) {
               const mediaElement = ws.getMediaElement();
-              const mediaSource = audioContext.createMediaElementSource(mediaElement);
+              const mediaSource =
+                audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
               mediaSource.connect(outputNode);
             } else {
               // Ensure it's connected
-              try { mediaSourceRef.current.connect(outputNode); } catch {}
+              try {
+                mediaSourceRef.current.connect(outputNode);
+              } catch {}
             }
           } catch (error) {
             if (process.env.NODE_ENV === "development") {
@@ -271,17 +323,17 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           setTimeout(() => setIsTransitioning(false), 1000);
         }
         setPreviousTrackUrl(trackUrl);
-        
+
         // Use AbortController to properly cancel pending loads
         const abortController = new AbortController();
-        
+
         try {
           wavesurferRef.current.load(trackUrl);
         } catch (error) {
           // Silently ignore AbortErrors and other loading errors
           // These are expected when tracks change rapidly or component unmounts
         }
-        
+
         return () => {
           abortController.abort();
         };
@@ -322,7 +374,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       // Get current position (from wavesurfer or use 0)
       const currentTime = wavesurferRef.current?.getCurrentTime() || 0;
       const totalDuration = reversedBufferRef.current.duration;
-      reversePositionRef.current = Math.max(0, Math.min(totalDuration - currentTime, totalDuration));
+      reversePositionRef.current = Math.max(
+        0,
+        Math.min(totalDuration - currentTime, totalDuration),
+      );
 
       // Create gain node for reverse playback
       if (!reverseGainRef.current) {
@@ -347,9 +402,17 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       // Update position as it plays
       const updateInterval = 100; // Update every 100ms
       reverseIntervalRef.current = setInterval(() => {
-        if (bufferSourceRef.current && reversedBufferRef.current && audioContext) {
-          const elapsed = audioContext.currentTime - reverseStartTimeRef.current;
-          reversePositionRef.current = Math.max(0, totalDuration - (startOffset + elapsed * speed));
+        if (
+          bufferSourceRef.current &&
+          reversedBufferRef.current &&
+          audioContext
+        ) {
+          const elapsed =
+            audioContext.currentTime - reverseStartTimeRef.current;
+          reversePositionRef.current = Math.max(
+            0,
+            totalDuration - (startOffset + elapsed * speed),
+          );
 
           // Update wavesurfer position for visualization
           if (wavesurferRef.current && totalDuration > 0) {
@@ -432,7 +495,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           if (!isPlayingNow) {
             // Quantize start position before playing
             const t = ws.getCurrentTime();
-            const snapped = snapToBeat(t - beatGridOffset, bpm, 1.0) + beatGridOffset;
+            const snapped =
+              snapToBeat(t - beatGridOffset, bpm, 1.0) + beatGridOffset;
             ws.seekTo(Math.max(0, Math.min(snapped, dur)) / dur);
             ws.play();
           } else {
@@ -456,18 +520,27 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         }
 
         // Ensure media source is connected
-        if (audioContext && outputNode && !mediaSourceRef.current && wavesurferRef.current) {
+        if (
+          audioContext &&
+          outputNode &&
+          !mediaSourceRef.current &&
+          wavesurferRef.current
+        ) {
           try {
             const mediaElement = wavesurferRef.current.getMediaElement();
             if (mediaElement) {
-              const mediaSource = audioContext.createMediaElementSource(mediaElement);
+              const mediaSource =
+                audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               mediaSource.connect(outputNode);
             }
           } catch (error) {
             if (process.env.NODE_ENV === "development") {
               // eslint-disable-next-line no-console
-              console.warn("Could not connect media element to Web Audio:", error);
+              console.warn(
+                "Could not connect media element to Web Audio:",
+                error,
+              );
             }
           }
         }
@@ -520,18 +593,25 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           // Set cue point at current position (with quantize if enabled)
           let currentTime = wavesurferRef.current.getCurrentTime();
           if (quantizeEnabled && bpm) {
-            const snapped = snapToBeat(currentTime - beatGridOffset, bpm, 1.0) + beatGridOffset;
+            const snapped =
+              snapToBeat(currentTime - beatGridOffset, bpm, 1.0) +
+              beatGridOffset;
             currentTime = snapped;
-            wavesurferRef.current.seekTo(currentTime / (wavesurferRef.current.getDuration() || 1));
+            wavesurferRef.current.seekTo(
+              currentTime / (wavesurferRef.current.getDuration() || 1),
+            );
           }
           setCuePoint(currentTime);
         } else {
           // Jump to cue point (with quantize if enabled)
           let seekTime = cuePoint;
           if (quantizeEnabled && bpm) {
-            seekTime = snapToBeat(cuePoint - beatGridOffset, bpm, 1.0) + beatGridOffset;
+            seekTime =
+              snapToBeat(cuePoint - beatGridOffset, bpm, 1.0) + beatGridOffset;
           }
-          wavesurferRef.current.seekTo(seekTime / (wavesurferRef.current.getDuration() || 1));
+          wavesurferRef.current.seekTo(
+            seekTime / (wavesurferRef.current.getDuration() || 1),
+          );
         }
         onCue?.();
       }
@@ -565,47 +645,68 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     };
 
     // Hot cues state (12 cues per deck) - stored for performance pads
+    // Use external hot cues if provided, otherwise use internal state
     const [hotCues, setHotCues] = useState<Record<number, number>>({});
     const hotCuesRef = useRef<Record<number, number>>({});
 
+    // Use external or internal hot cues
+    const activeHotCues = externalHotCues ?? hotCues;
+
     // Sync ref with state
     useEffect(() => {
-      hotCuesRef.current = hotCues;
-    }, [hotCues]);
+      hotCuesRef.current = activeHotCues;
+    }, [activeHotCues]);
 
     // Handle performance pad cues (8 hot cues)
-    const handleCueSet = useCallback((padIndex: number, time: number) => {
-      setHotCues((prev) => ({
-        ...prev,
-        [padIndex]: time,
-      }));
-      // Also update single cue point for backward compatibility
-      if (padIndex === 0) {
-        setCuePoint(time);
-      }
-    }, []);
-
-    const handleCueJump = useCallback((time: number) => {
-      if (wavesurferRef.current && duration) {
-        // Debounce rapid jumps to prevent audio glitches
-        const seekRatio = time / duration;
-        if (seekRatio >= 0 && seekRatio <= 1) {
-          wavesurferRef.current.seekTo(seekRatio);
+    const handleCueSet = useCallback(
+      (padIndex: number, time: number) => {
+        if (onHotCueSet) {
+          onHotCueSet(padIndex, time);
+        } else {
+          setHotCues((prev) => ({
+            ...prev,
+            [padIndex]: time,
+          }));
         }
-      }
-    }, [duration]);
+        // Also update single cue point for backward compatibility
+        if (padIndex === 0) {
+          setCuePoint(time);
+        }
+      },
+      [onHotCueSet],
+    );
 
-    const handleCueClear = useCallback((padIndex: number) => {
-      setHotCues((prev) => {
-        const newCues = { ...prev };
-        delete newCues[padIndex];
-        return newCues;
-      });
-      // Also clear single cue point if it was pad 0
-      if (padIndex === 0) {
-        setCuePoint(null);
-      }
-    }, []);
+    const handleCueJump = useCallback(
+      (time: number) => {
+        if (wavesurferRef.current && duration) {
+          // Debounce rapid jumps to prevent audio glitches
+          const seekRatio = time / duration;
+          if (seekRatio >= 0 && seekRatio <= 1) {
+            wavesurferRef.current.seekTo(seekRatio);
+          }
+        }
+      },
+      [duration],
+    );
+
+    const handleCueClear = useCallback(
+      (padIndex: number) => {
+        if (onHotCueClear) {
+          onHotCueClear(padIndex);
+        } else {
+          setHotCues((prev) => {
+            const newCues = { ...prev };
+            delete newCues[padIndex];
+            return newCues;
+          });
+        }
+        // Also clear single cue point if it was pad 0
+        if (padIndex === 0) {
+          setCuePoint(null);
+        }
+      },
+      [onHotCueClear],
+    );
 
     // Handle stutter effect (jump to cue point repeatedly)
     const handleStutter = useCallback((padIndex: number) => {
@@ -624,69 +725,73 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
     const [loopIn, setLoopIn] = useState<number | null>(null);
     const [loopOut, setLoopOut] = useState<number | null>(null);
 
-    const handleLoop = useCallback((beats: number) => {
-      if (!wavesurferRef.current || !duration) return;
+    const handleLoop = useCallback(
+      (beats: number) => {
+        if (!wavesurferRef.current || !duration) return;
 
-      // Use detected BPM if available, otherwise fallback to 120 BPM
-      const effectiveBPM = bpm || 120;
-      const beatsPerSecond = effectiveBPM / 60;
-      const loopDuration = beats / beatsPerSecond;
-      let currentTime = wavesurferRef.current.getCurrentTime();
+        // Use detected BPM if available, otherwise fallback to 120 BPM
+        const effectiveBPM = bpm || 120;
+        const beatsPerSecond = effectiveBPM / 60;
+        const loopDuration = beats / beatsPerSecond;
+        let currentTime = wavesurferRef.current.getCurrentTime();
 
-      // Quantize loop start if quantize is enabled
-      if (quantizeEnabled && bpm) {
-        const snapped = snapToBeat(currentTime - beatGridOffset, bpm, 1.0) + beatGridOffset;
-        currentTime = snapped;
-        wavesurferRef.current.seekTo(currentTime / duration);
-      }
-
-      if (isLooping && loopBeats === beats && loopIn !== null) {
-        // Disable loop
-        setIsLooping(false);
-        setLoopStart(null);
-        setLoopBeats(null);
-        setLoopIn(null);
-        setLoopOut(null);
-        if (loopIntervalRef.current) {
-          clearInterval(loopIntervalRef.current);
-          loopIntervalRef.current = null;
-        }
-      } else {
-        // Set loop in point at current position
-        const loopInTime = currentTime;
-        const loopOutTime = Math.min(loopInTime + loopDuration, duration);
-
-        // Enable loop
-        setIsLooping(true);
-        setLoopStart(loopInTime);
-        setLoopBeats(beats);
-        setLoopIn(loopInTime);
-        setLoopOut(loopOutTime);
-
-        // Clear existing loop
-        if (loopIntervalRef.current) {
-          clearInterval(loopIntervalRef.current);
+        // Quantize loop start if quantize is enabled
+        if (quantizeEnabled && bpm) {
+          const snapped =
+            snapToBeat(currentTime - beatGridOffset, bpm, 1.0) + beatGridOffset;
+          currentTime = snapped;
+          wavesurferRef.current.seekTo(currentTime / duration);
         }
 
-        // Set up loop check with smooth seeking
-        const checkLoop = () => {
-          if (!wavesurferRef.current || loopInTime === null) return;
-          const now = wavesurferRef.current.getCurrentTime();
-
-          // Check if we've passed the loop out point
-          if (now >= loopOutTime || now < loopInTime) {
-            // Smoothly seek back to loop in point
-            const seekRatio = loopInTime / duration;
-            if (seekRatio >= 0 && seekRatio <= 1) {
-              wavesurferRef.current.seekTo(seekRatio);
-            }
+        if (isLooping && loopBeats === beats && loopIn !== null) {
+          // Disable loop
+          setIsLooping(false);
+          setLoopStart(null);
+          setLoopBeats(null);
+          setLoopIn(null);
+          setLoopOut(null);
+          if (loopIntervalRef.current) {
+            clearInterval(loopIntervalRef.current);
+            loopIntervalRef.current = null;
           }
-        };
+        } else {
+          // Set loop in point at current position
+          const loopInTime = currentTime;
+          const loopOutTime = Math.min(loopInTime + loopDuration, duration);
 
-        // Check more frequently for better accuracy
-        loopIntervalRef.current = setInterval(checkLoop, 30);
-      }
-    }, [isLooping, loopBeats, loopIn, duration]);
+          // Enable loop
+          setIsLooping(true);
+          setLoopStart(loopInTime);
+          setLoopBeats(beats);
+          setLoopIn(loopInTime);
+          setLoopOut(loopOutTime);
+
+          // Clear existing loop
+          if (loopIntervalRef.current) {
+            clearInterval(loopIntervalRef.current);
+          }
+
+          // Set up loop check with smooth seeking
+          const checkLoop = () => {
+            if (!wavesurferRef.current || loopInTime === null) return;
+            const now = wavesurferRef.current.getCurrentTime();
+
+            // Check if we've passed the loop out point
+            if (now >= loopOutTime || now < loopInTime) {
+              // Smoothly seek back to loop in point
+              const seekRatio = loopInTime / duration;
+              if (seekRatio >= 0 && seekRatio <= 1) {
+                wavesurferRef.current.seekTo(seekRatio);
+              }
+            }
+          };
+
+          // Check more frequently for better accuracy
+          loopIntervalRef.current = setInterval(checkLoop, 30);
+        }
+      },
+      [isLooping, loopBeats, loopIn, duration],
+    );
 
     // Set loop in point
     const handleSetLoopIn = useCallback(() => {
@@ -784,7 +889,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 type: "spring",
                 stiffness: 200,
                 damping: 20,
-                opacity: { duration: 0.3 }
+                opacity: { duration: 0.3 },
               }}
             >
               <SpinningVinyl
@@ -793,60 +898,86 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 rotation={rotation}
                 duration={duration}
                 onScratch={(velocity, isTouching) => {
-                if (isTouching) {
-                  if (!isScrubbing) {
-                    handleDragStart();
+                  if (isTouching) {
+                    if (!isScrubbing) {
+                      handleDragStart();
+                    }
+                    // Apply scratch velocity to playback
+                    if (onScratch) {
+                      onScratch(velocity, true);
+                    }
+                  } else {
+                    if (isScrubbing) {
+                      handleDragEnd();
+                    }
+                    if (onScratch) {
+                      onScratch(0, false);
+                    }
                   }
-                  // Apply scratch velocity to playback
-                  if (onScratch) {
-                    onScratch(velocity, true);
-                  }
-                } else {
-                  if (isScrubbing) {
-                    handleDragEnd();
-                  }
-                  if (onScratch) {
-                    onScratch(0, false);
-                  }
-                }
-              }}
-              size={Math.min(200, typeof window !== "undefined" ? window.innerWidth * 0.35 : 200)}
-              deckColor={deckColor}
-            />
-          </motion.div>
+                }}
+                size={Math.min(
+                  200,
+                  typeof window !== "undefined"
+                    ? window.innerWidth * 0.35
+                    : 200,
+                )}
+                deckColor={deckColor}
+              />
+            </motion.div>
           </AnimatePresence>
         </div>
 
         {/* Transport Controls */}
-        <div className="relative z-10 flex gap-2 md:gap-3 items-center flex-wrap justify-center" data-tour="sync-pitch">
+        <div
+          className="relative z-10 flex gap-2 md:gap-3 items-center flex-wrap justify-center"
+          data-tour="sync-pitch"
+        >
           {/* Cue Button */}
           <button
             onClick={handleCue}
-            aria-label={cuePoint !== null ? `Cue point set at ${cuePoint.toFixed(1)} seconds. Click to jump to cue.` : "Set cue point"}
+            aria-label={
+              cuePoint !== null
+                ? `Cue point set at ${cuePoint.toFixed(1)} seconds. Click to jump to cue.`
+                : "Set cue point"
+            }
             className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500 touch-manipulation ${
               cuePoint !== null ? "border-orange-500" : "border-gray-700"
             }`}
             style={{
-              boxShadow: cuePoint !== null
-                ? `0 0 15px rgba(249, 115, 22, 0.3), inset 0 0 8px rgba(249, 115, 22, 0.1)`
-                : "inset 0 2px 4px rgba(0,0,0,0.5)",
+              boxShadow:
+                cuePoint !== null
+                  ? `0 0 15px rgba(249, 115, 22, 0.3), inset 0 0 8px rgba(249, 115, 22, 0.1)`
+                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
             }}
-            title={cuePoint !== null ? `Cue: ${cuePoint.toFixed(1)}s` : "Set Cue Point"}
+            title={
+              cuePoint !== null
+                ? `Cue: ${cuePoint.toFixed(1)}s`
+                : "Set Cue Point"
+            }
           >
-            <RotateCcw className="w-6 h-6" style={{ color: cuePoint !== null ? "#f97316" : deckColor }} />
+            <RotateCcw
+              className="w-6 h-6"
+              style={{ color: cuePoint !== null ? "#f97316" : deckColor }}
+            />
           </button>
 
           {/* Play/Pause Button */}
           <button
             onClick={handlePlayPause}
-            aria-label={isPlaying ? `Pause ${title || "track"} on ${deckLabel}` : `Play ${title || "track"} on ${deckLabel}`}
+            aria-label={
+              isPlaying
+                ? `Pause ${title || "track"} on ${deckLabel}`
+                : `Play ${title || "track"} on ${deckLabel}`
+            }
             className="relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#1a1a1a] border-2 border-gray-700 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation"
-            style={{
-              boxShadow: isPlaying
-                ? `0 0 20px ${deckColor}40, inset 0 0 10px ${deckColor}20`
-                : "inset 0 2px 4px rgba(0,0,0,0.5)",
-              "--focus-ring-color": deckColor,
-            } as React.CSSProperties & { "--focus-ring-color": string }}
+            style={
+              {
+                boxShadow: isPlaying
+                  ? `0 0 20px ${deckColor}40, inset 0 0 10px ${deckColor}20`
+                  : "inset 0 2px 4px rgba(0,0,0,0.5)",
+                "--focus-ring-color": deckColor,
+              } as React.CSSProperties & { "--focus-ring-color": string }
+            }
           >
             {isPlaying ? (
               <Pause className="w-8 h-8" style={{ color: deckColor }} />
@@ -859,7 +990,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           <Tooltip content="Automatically matches this deck's BPM to the other deck">
             <button
               onClick={onSync}
-              aria-label={isSynced ? `${deckLabel} is synced. Click to unsync.` : `Sync ${deckLabel} BPM to other deck`}
+              aria-label={
+                isSynced
+                  ? `${deckLabel} is synced. Click to unsync.`
+                  : `Sync ${deckLabel} BPM to other deck`
+              }
               className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 touch-manipulation ${
                 isSynced ? "border-green-500" : "border-gray-700"
               }`}
@@ -870,7 +1005,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               }}
               title="Sync BPM"
             >
-              <Link2 className="w-6 h-6" style={{ color: isSynced ? "#22c55e" : deckColor }} />
+              <Link2
+                className="w-6 h-6"
+                style={{ color: isSynced ? "#22c55e" : deckColor }}
+              />
             </button>
           </Tooltip>
 
@@ -879,7 +1017,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             <Tooltip content="Slip Mode: Maintains virtual playhead during scratching">
               <button
                 onClick={onSlipModeToggle}
-                aria-label={isSlipMode ? "Disable Slip Mode" : "Enable Slip Mode"}
+                aria-label={
+                  isSlipMode ? "Disable Slip Mode" : "Enable Slip Mode"
+                }
                 className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#FFD700] touch-manipulation ${
                   isSlipMode ? "border-[#FFD700]" : "border-gray-700"
                 } ${isSlipMode ? "animate-pulse" : ""}`}
@@ -948,7 +1088,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               }}
               title="Reverse Playback"
             >
-              <RotateCw className="w-6 h-6" style={{ color: isReversedState ? "#a855f7" : deckColor }} />
+              <RotateCw
+                className="w-6 h-6"
+                style={{ color: isReversedState ? "#a855f7" : deckColor }}
+              />
             </button>
           </Tooltip>
 
@@ -990,16 +1133,25 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   setLoopOut(null);
                   // TODO: Notify parent component to clear track
                   // onTrackRemove?.() - would be better than page reload
-                  console.warn("Track eject - parent component should handle track removal");
+                  console.warn(
+                    "Track eject - parent component should handle track removal",
+                  );
                 }}
                 aria-label="Remove track from deck"
                 className="relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 border-red-700 flex items-center justify-center transition-all hover:border-red-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500 touch-manipulation"
                 style={{
-                  boxShadow: "0 0 15px rgba(239, 68, 68, 0.2), inset 0 0 8px rgba(239, 68, 68, 0.1)",
+                  boxShadow:
+                    "0 0 15px rgba(239, 68, 68, 0.2), inset 0 0 8px rgba(239, 68, 68, 0.1)",
                 }}
                 title="Eject Track"
               >
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                <svg
+                  className="w-6 h-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="2"
+                >
                   <path d="M7 8l5-5 5 5M12 3v12M5 21h14" />
                 </svg>
               </button>
@@ -1007,7 +1159,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           )}
         </div>
 
-          {/* BPM, Key & Time Remaining Display */}
+        {/* BPM, Key & Time Remaining Display */}
         {trackUrl && (
           <div className="flex items-center justify-between w-full px-4 mt-2">
             {/* BPM & Key Display */}
@@ -1019,7 +1171,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                     {bpm} BPM
                   </span>
                   {confidence < 0.5 && (
-                    <span className="text-xs text-gray-500" title="Low confidence BPM detection">
+                    <span
+                      className="text-xs text-gray-500"
+                      title="Low confidence BPM detection"
+                    >
                       ~
                     </span>
                   )}
@@ -1035,22 +1190,31 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             </div>
 
             {/* Time Remaining Countdown */}
-            <div className="flex flex-col items-end gap-1">
-              <span className="text-xs font-barlow text-gray-500">REMAINING</span>
+            <button
+              onClick={() => setShowElapsedTime(!showElapsedTime)}
+              className="flex flex-col items-end gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+              title={`Click to toggle between ${showElapsedTime ? "remaining" : "elapsed"} time`}
+              aria-label={`Toggle time display. Currently showing ${showElapsedTime ? "elapsed" : "remaining"} time`}
+            >
+              <span className="text-xs font-barlow text-gray-500">
+                {showElapsedTime ? "ELAPSED" : "REMAINING"}
+              </span>
               <span
                 className={`text-lg font-barlow font-bold tabular-nums ${
-                  duration - currentPosition < 30
+                  duration - currentPosition < 30 && !showElapsedTime
                     ? "text-red-500 animate-pulse"
                     : "text-gray-300"
                 }`}
               >
-                {formatTimeRemaining(duration - currentPosition)}
+                {showElapsedTime
+                  ? formatTimeElapsed(currentPosition)
+                  : formatTimeRemaining(duration - currentPosition)}
               </span>
-            </div>
+            </button>
           </div>
         )}
 
-          {/* Beat Grid Toggle */}
+        {/* Beat Grid Toggle */}
         {bpm && (
           <div className="flex items-center justify-center gap-3">
             <button
@@ -1112,7 +1276,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 const newSpeed = 0.92 + value * 0.16;
                 onSpeedChange?.(newSpeed);
               }}
-              height={typeof window !== "undefined" && window.innerWidth < 768 ? 120 : 150}
+              height={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 120
+                  : 150
+              }
               helpText="Adjusts playback speed (pitch). Range: -8% to +8%"
             />
             <div className="flex flex-col items-center gap-1 text-xs text-gray-500 font-barlow">
@@ -1121,7 +1289,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               <span>-8%</span>
             </div>
             <div className="text-xs font-barlow uppercase text-gray-400 tracking-wider mt-1">
-              {speed >= 1 ? "+" : ""}{((speed - 1) * 100).toFixed(1)}%
+              {speed >= 1 ? "+" : ""}
+              {((speed - 1) * 100).toFixed(1)}%
             </div>
           </div>
 
@@ -1151,8 +1320,8 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   loopOut !== null
                     ? "bg-[#1a1a1a] border-[#FFD700] text-[#FFD700]"
                     : loopIn === null
-                    ? "bg-[#0a0a0a] border-gray-700 text-gray-500 opacity-50 cursor-not-allowed"
-                    : "bg-[#0a0a0a] border-gray-700 text-gray-500 hover:border-gray-600"
+                      ? "bg-[#0a0a0a] border-gray-700 text-gray-500 opacity-50 cursor-not-allowed"
+                      : "bg-[#0a0a0a] border-gray-700 text-gray-500 hover:border-gray-600"
                 }`}
                 aria-label="Set loop out point"
                 title="Set Loop Out"
@@ -1166,7 +1335,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 <button
                   key={beats}
                   onClick={() => handleLoop(beats)}
-                  aria-label={isLooping && loopBeats === beats ? `${beats} beat loop active. Click to disable.` : `Enable ${beats} beat loop`}
+                  aria-label={
+                    isLooping && loopBeats === beats
+                      ? `${beats} beat loop active. Click to disable.`
+                      : `Enable ${beats} beat loop`
+                  }
                   className={`relative w-14 h-12 md:w-12 md:h-10 rounded-lg border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#FFD700] touch-manipulation min-h-[44px] ${
                     isLooping && loopBeats === beats
                       ? "bg-[#1a1a1a] border-[#FFD700]"
@@ -1183,12 +1356,17 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   <Repeat
                     className="w-4 h-4"
                     style={{
-                      color: isLooping && loopBeats === beats ? "#FFD700" : deckColor,
+                      color:
+                        isLooping && loopBeats === beats
+                          ? "#FFD700"
+                          : deckColor,
                     }}
                   />
                   <span
                     className={`absolute bottom-0.5 text-[8px] font-barlow font-bold ${
-                      isLooping && loopBeats === beats ? "text-[#FFD700]" : "text-gray-500"
+                      isLooping && loopBeats === beats
+                        ? "text-[#FFD700]"
+                        : "text-gray-500"
                     }`}
                   >
                     {beats}
@@ -1219,7 +1397,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           ref={waveformRef}
           className="relative w-full rounded border border-gray-800 p-2 cursor-pointer"
           style={{
-            minHeight: typeof window !== "undefined" && window.innerWidth < 768 ? 80 : 100,
+            minHeight:
+              typeof window !== "undefined" && window.innerWidth < 768
+                ? 80
+                : 100,
             background: `
               linear-gradient(to right, rgba(42, 42, 42, 0.1) 1px, transparent 1px),
               linear-gradient(to bottom, rgba(42, 42, 42, 0.1) 1px, transparent 1px),
@@ -1231,7 +1412,10 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         >
           {/* Beat Grid Overlay */}
           {showBeatGrid && beatPositions.length > 0 && duration > 0 && (
-            <div className="absolute inset-0 pointer-events-none z-10" style={{ padding: "8px" }}>
+            <div
+              className="absolute inset-0 pointer-events-none z-10"
+              style={{ padding: "8px" }}
+            >
               {beatPositions.map((beatTime, index) => {
                 const position = ((beatTime + beatGridOffset) / duration) * 100;
                 return (
@@ -1255,8 +1439,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             onStutter={handleStutter}
             isPlaying={isPlaying}
             getCurrentTime={() => wavesurferRef.current?.getCurrentTime() || 0}
-            helpText="Set Hot Cues (12 pads). Click to set/jump/stutter, Long press or Shift+Click to clear"
-            numPads={typeof window !== "undefined" && window.innerWidth < 768 ? 8 : 12}
+            helpText="Set Hot Cues (8 pads). Click to set/jump/stutter, Long press or Shift+Click to clear"
+            numPads={8}
+            cuePoints={activeHotCues}
           />
         </div>
 
@@ -1268,8 +1453,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
         )}
       </motion.div>
     );
-  }
+  },
 );
 
 DJDeck.displayName = "DJDeck";
-

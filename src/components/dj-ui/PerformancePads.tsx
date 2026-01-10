@@ -12,7 +12,8 @@ interface PerformancePadsProps {
   onStutter?: (padIndex: number) => void; // Stutter effect trigger
   isPlaying?: boolean; // Track playing state for stutter
   helpText?: string;
-  numPads?: number; // Number of pads (default 12, can be 8 for mobile, 4 for very small)
+  numPads?: number; // Number of pads (default 8, can be 12 for desktop)
+  cuePoints?: Record<number, number>; // External cue points state
 }
 
 export function PerformancePads({
@@ -23,7 +24,8 @@ export function PerformancePads({
   onStutter,
   isPlaying = false,
   helpText,
-  numPads = 12,
+  numPads = 8,
+  cuePoints: externalCuePoints,
 }: PerformancePadsProps) {
   const [cuePoints, setCuePoints] = useState<Record<number, number>>({});
   const [stutterActive, setStutterActive] = useState<Record<number, boolean>>(
@@ -33,6 +35,9 @@ export function PerformancePads({
   const stutterIntervalRef = useRef<Record<number, NodeJS.Timeout>>({});
   const longPressDelay = 500; // 500ms for long press
   const stutterRate = 8; // Stutter rate in Hz (8 times per second)
+
+  // Use external cue points if provided
+  const activeCuePoints = externalCuePoints ?? cuePoints;
 
   const clearLongPressTimer = (padIndex: number) => {
     if (longPressTimerRef.current[padIndex]) {
@@ -49,19 +54,21 @@ export function PerformancePads({
 
     if (e.button === 2 || (e.button === 0 && (e.ctrlKey || e.shiftKey))) {
       // Right-click, Ctrl+Click, or Shift+Click = Clear
-      if (cuePoints[padIndex] !== undefined) {
-        setCuePoints((prev) => {
-          const newPoints = { ...prev };
-          delete newPoints[padIndex];
-          return newPoints;
-        });
+      if (activeCuePoints[padIndex] !== undefined) {
+        if (!externalCuePoints) {
+          setCuePoints((prev) => {
+            const newPoints = { ...prev };
+            delete newPoints[padIndex];
+            return newPoints;
+          });
+        }
         onCueClear(padIndex);
       }
       return;
     }
 
     // Left-click
-    if (cuePoints[padIndex] !== undefined) {
+    if (activeCuePoints[padIndex] !== undefined) {
       // Pad is set - trigger stutter if playing, otherwise jump to cue point
       if (isPlaying && onStutter) {
         // Toggle stutter effect
@@ -86,15 +93,17 @@ export function PerformancePads({
         }
       } else {
         // Jump to cue point
-        onCueJump(cuePoints[padIndex]);
+        onCueJump(activeCuePoints[padIndex]);
       }
     } else {
       // Pad is empty - set hot cue
       const currentTime = getCurrentTime();
-      setCuePoints((prev) => ({
-        ...prev,
-        [padIndex]: currentTime,
-      }));
+      if (!externalCuePoints) {
+        setCuePoints((prev) => ({
+          ...prev,
+          [padIndex]: currentTime,
+        }));
+      }
       onCueSet(padIndex, currentTime);
     }
   };
@@ -105,12 +114,14 @@ export function PerformancePads({
       // e is used above
       longPressTimerRef.current[padIndex] = setTimeout(() => {
         // Long press detected - clear cue
-        if (cuePoints[padIndex] !== undefined) {
-          setCuePoints((prev) => {
-            const newPoints = { ...prev };
-            delete newPoints[padIndex];
-            return newPoints;
-          });
+        if (activeCuePoints[padIndex] !== undefined) {
+          if (!externalCuePoints) {
+            setCuePoints((prev) => {
+              const newPoints = { ...prev };
+              delete newPoints[padIndex];
+              return newPoints;
+            });
+          }
           onCueClear(padIndex);
         }
         delete longPressTimerRef.current[padIndex];
@@ -126,12 +137,14 @@ export function PerformancePads({
     // Start long press timer for mobile
     longPressTimerRef.current[padIndex] = setTimeout(() => {
       // Long press detected - clear cue
-      if (cuePoints[padIndex] !== undefined) {
-        setCuePoints((prev) => {
-          const newPoints = { ...prev };
-          delete newPoints[padIndex];
-          return newPoints;
-        });
+      if (activeCuePoints[padIndex] !== undefined) {
+        if (!externalCuePoints) {
+          setCuePoints((prev) => {
+            const newPoints = { ...prev };
+            delete newPoints[padIndex];
+            return newPoints;
+          });
+        }
         onCueClear(padIndex);
       }
       delete longPressTimerRef.current[padIndex];
@@ -145,7 +158,7 @@ export function PerformancePads({
     const touch = e.changedTouches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     if (target && target.closest(`[data-pad-index="${padIndex}"]`)) {
-      if (cuePoints[padIndex] !== undefined) {
+      if (activeCuePoints[padIndex] !== undefined) {
         // Pad is set - trigger stutter if playing, otherwise jump to cue point
         if (isPlaying && onStutter) {
           // Toggle stutter effect
@@ -170,15 +183,17 @@ export function PerformancePads({
           }
         } else {
           // Jump to cue point
-          onCueJump(cuePoints[padIndex]);
+          onCueJump(activeCuePoints[padIndex]);
         }
       } else {
         // Pad is empty - set hot cue
         const currentTime = getCurrentTime();
-        setCuePoints((prev) => ({
-          ...prev,
-          [padIndex]: currentTime,
-        }));
+        if (!externalCuePoints) {
+          setCuePoints((prev) => ({
+            ...prev,
+            [padIndex]: currentTime,
+          }));
+        }
         onCueSet(padIndex, currentTime);
       }
     }
@@ -198,14 +213,14 @@ export function PerformancePads({
   // Determine grid layout based on number of pads
   const getGridCols = () => {
     if (numPads === 12) return "grid-cols-4";
-    if (numPads === 8) return "grid-cols-4";
+    if (numPads === 8) return "grid-cols-4"; // 2x4 grid
     if (numPads === 4) return "grid-cols-2";
     return "grid-cols-2";
   };
 
   const getMaxWidth = () => {
     if (numPads === 12) return "max-w-[500px]";
-    if (numPads === 8) return "max-w-[400px]";
+    if (numPads === 8) return "max-w-[400px]"; // Optimized for 8 pads
     return "max-w-[200px]";
   };
 
@@ -214,7 +229,7 @@ export function PerformancePads({
       className={`grid ${getGridCols()} gap-2 md:gap-3 w-full ${getMaxWidth()}`}
     >
       {Array.from({ length: numPads }, (_, i) => i).map((padIndex) => {
-        const isSet = cuePoints[padIndex] !== undefined;
+        const isSet = activeCuePoints[padIndex] !== undefined;
         const isStuttering = stutterActive[padIndex] === true;
         return (
           <motion.button
@@ -238,18 +253,28 @@ export function PerformancePads({
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            animate={
+              isSet && !isStuttering
+                ? { opacity: [0.7, 1, 0.7], scale: [1, 1.03, 1] }
+                : {}
+            }
+            transition={
+              isSet && !isStuttering
+                ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+                : {}
+            }
             style={{
               boxShadow: isStuttering
                 ? `0 0 20px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.3)`
                 : isSet
-                  ? `0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.1)`
+                  ? `0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.1)`
                   : "inset 0 2px 4px rgba(0,0,0,0.5)",
             }}
             aria-label={
               isStuttering
                 ? `Stutter active on pad ${padIndex + 1}. Click to stop.`
                 : isSet
-                  ? `Hot cue ${padIndex + 1} set at ${cuePoints[padIndex]?.toFixed(1)}s. ${isPlaying && onStutter ? "Click to stutter" : "Click to jump"}, long press or Shift+Click to clear.`
+                  ? `Hot cue ${padIndex + 1} set at ${activeCuePoints[padIndex]?.toFixed(1)}s. ${isPlaying && onStutter ? "Click to stutter" : "Click to jump"}, long press or Shift+Click to clear.`
                   : `Hot cue ${padIndex + 1}. Click to set, long press or Shift+Click to clear.`
             }
           >

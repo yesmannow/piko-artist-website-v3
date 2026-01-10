@@ -146,7 +146,7 @@ export function useMultiWindow() {
     
     if ('getScreenDetails' in window) {
       try {
-        // @ts-ignore - Window Management API
+        // @ts-expect-error - Window Management API not in standard TypeScript lib
         const screenDetails = await window.getScreenDetails();
         const screens = screenDetails.screens;
         
