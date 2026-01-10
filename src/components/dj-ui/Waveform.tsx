@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
+import { ZoomIn, ZoomOut } from "lucide-react";
 
 interface WaveformProps {
   audioUrl: string;
@@ -13,6 +14,7 @@ interface WaveformProps {
   hotCues?: Record<number, number>; // Hot cue points (index -> time in seconds)
   loopStart?: number | null; // Loop start time in seconds
   loopEnd?: number | null; // Loop end time in seconds
+  onHotCueUpdate?: (padIndex: number, newTime: number) => void; // Callback when cue marker is dragged
 }
 
 export function Waveform({
@@ -24,12 +26,15 @@ export function Waveform({
   hotCues = {},
   loopStart = null,
   loopEnd = null,
+  onHotCueUpdate,
 }: WaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const regionsPluginRef = useRef<RegionsPlugin | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isSeekingRef = useRef(false);
+  const [zoomLevel, setZoomLevel] = useState(1); // 1 = no zoom, higher = more zoomed
+  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -140,17 +145,45 @@ export function Waveform({
     // Add new cue markers
     Object.entries(hotCues).forEach(([index, time]) => {
       if (time >= 0 && time <= duration) {
-        regions.addRegion({
+        const region = regions.addRegion({
           id: `cue-${index}`,
           start: time,
           end: time + 0.1, // Small width for visibility
-          color: "rgba(255, 215, 0, 0.3)", // Safety Yellow with transparency
-          drag: false,
+          color:
+            hoveredRegion === `cue-${index}`
+              ? "rgba(255, 215, 0, 0.6)" // Brighter on hover
+              : "rgba(255, 215, 0, 0.3)", // Safety Yellow with transparency
+          drag: !!onHotCueUpdate, // Enable drag if callback provided
           resize: false,
         });
+
+        // Add hover event listeners
+        if (region.element) {
+          region.element.addEventListener("mouseenter", () => {
+            setHoveredRegion(`cue-${index}`);
+            if (region.element) {
+              region.element.style.cursor = onHotCueUpdate ? "grab" : "pointer";
+            }
+          });
+
+          region.element.addEventListener("mouseleave", () => {
+            setHoveredRegion(null);
+            if (region.element) {
+              region.element.style.cursor = "default";
+            }
+          });
+        }
+
+        // Add drag update event listener
+        if (onHotCueUpdate) {
+          region.on("update-end", () => {
+            const newTime = region.start;
+            onHotCueUpdate(parseInt(index), newTime);
+          });
+        }
       }
     });
-  }, [hotCues, isReady]);
+  }, [hotCues, isReady, onHotCueUpdate, hoveredRegion]);
 
   // Update loop region
   useEffect(() => {
@@ -184,14 +217,72 @@ export function Waveform({
     }
   }, [loopStart, loopEnd, isReady]);
 
+  // Handle zoom controls
+  const handleZoomIn = () => {
+    if (wavesurferRef.current) {
+      const newZoom = Math.min(zoomLevel * 1.5, 10); // Max 10x zoom
+      setZoomLevel(newZoom);
+      wavesurferRef.current.zoom(newZoom * 50); // WaveSurfer zoom units
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (wavesurferRef.current) {
+      const newZoom = Math.max(zoomLevel / 1.5, 1); // Min 1x zoom
+      setZoomLevel(newZoom);
+      wavesurferRef.current.zoom(newZoom * 50); // WaveSurfer zoom units
+    }
+  };
+
+  const handleZoomReset = () => {
+    if (wavesurferRef.current) {
+      setZoomLevel(1);
+      wavesurferRef.current.zoom(50); // Reset to default
+    }
+  };
+
   return (
-    <div
-      className="w-full"
-      style={{
-        boxShadow: "0 0 15px rgb(204 255 0 / 0.1)",
-      }}
-    >
-      <div ref={containerRef} className="w-full" />
+    <div className="w-full relative">
+      {/* Zoom Controls */}
+      <div className="absolute top-2 right-2 z-10 flex gap-1 bg-black/50 backdrop-blur-sm rounded-lg p-1">
+        <button
+          onClick={handleZoomOut}
+          disabled={zoomLevel <= 1}
+          className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          title="Zoom Out"
+          aria-label="Zoom out waveform"
+        >
+          <ZoomOut className="w-4 h-4 text-[#FFD700]" />
+        </button>
+        <button
+          onClick={handleZoomReset}
+          disabled={zoomLevel === 1}
+          className="px-2 py-1.5 rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-barlow text-[#FFD700]"
+          title="Reset Zoom"
+          aria-label="Reset zoom to default"
+        >
+          {zoomLevel.toFixed(1)}x
+        </button>
+        <button
+          onClick={handleZoomIn}
+          disabled={zoomLevel >= 10}
+          className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          title="Zoom In"
+          aria-label="Zoom in waveform"
+        >
+          <ZoomIn className="w-4 h-4 text-[#FFD700]" />
+        </button>
+      </div>
+
+      {/* Waveform Container */}
+      <div
+        className="w-full"
+        style={{
+          boxShadow: "0 0 15px rgb(204 255 0 / 0.1)",
+        }}
+      >
+        <div ref={containerRef} className="w-full" />
+      </div>
     </div>
   );
 }
