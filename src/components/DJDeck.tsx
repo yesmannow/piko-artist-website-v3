@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";
 import { JogWheel } from "./dj-ui/JogWheel";
 import { SpinningVinyl } from "./dj-ui/SpinningVinyl";
@@ -12,6 +12,14 @@ import { TrackTransition } from "./dj-ui/TrackTransition";
 import { Play, Pause, RotateCcw, Link2, Repeat, RotateCw, Music, Grid3x3 } from "lucide-react";
 import { useBPMDetection } from "@/hooks/useBPMDetection";
 import { reverseAudioBuffer, calculateBeatPositions, snapToBeat, quantizeLoop } from "@/utils/audioUtils";
+
+// Utility function to format time remaining as -MM:SS
+function formatTimeRemaining(seconds: number): string {
+  if (seconds < 0) return "-0:00";
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `-${minutes}:${String(secs).padStart(2, "0")}`;
+}
 
 interface DJDeckProps {
   trackUrl: string | null;
@@ -766,24 +774,25 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
         {/* Spinning Vinyl with DJ Scratch Interaction */}
         <div className="w-full flex justify-center">
-          <motion.div
-            key={trackUrl || "empty"}
-            initial={{ scale: 0.8, opacity: 0, rotateY: -180 }}
-            animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-            exit={{ scale: 0.8, opacity: 0, rotateY: 180 }}
-            transition={{
-              type: "spring",
-              stiffness: 200,
-              damping: 20,
-              opacity: { duration: 0.3 }
-            }}
-          >
-            <SpinningVinyl
-              isPlaying={isPlaying && !isScrubbing}
-              coverArt={coverArt}
-              rotation={rotation}
-              duration={duration}
-              onScratch={(velocity, isTouching) => {
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={trackUrl || "empty"}
+              initial={{ scale: 0.8, opacity: 0, rotateY: -180 }}
+              animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+              exit={{ scale: 0.8, opacity: 0, rotateY: 180 }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 20,
+                opacity: { duration: 0.3 }
+              }}
+            >
+              <SpinningVinyl
+                isPlaying={isPlaying && !isScrubbing}
+                coverArt={coverArt}
+                rotation={rotation}
+                duration={duration}
+                onScratch={(velocity, isTouching) => {
                 if (isTouching) {
                   if (!isScrubbing) {
                     handleDragStart();
@@ -805,6 +814,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               deckColor={deckColor}
             />
           </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Transport Controls */}
@@ -946,9 +956,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           <Tooltip content="Vinyl Mode: Dragging scratches audio. Off: Dragging bends pitch">
             <button
               onClick={() => {
-                // Toggle vinyl mode state (can be added to component state)
-                const newVinylMode = !isReversedState; // Using isReversed as placeholder - ideally add new state
-                // Note: This would need to be wired to actual vinyl mode logic
+                // TODO: Wire up vinyl mode state management
+                // This would toggle between scratch mode and pitch bend mode
+                // For now, button is placeholder for future implementation
               }}
               aria-label="Toggle vinyl mode"
               className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 flex items-center justify-center transition-all hover:border-gray-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 touch-manipulation border-gray-700`}
@@ -968,7 +978,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             <Tooltip content="Remove track and reset deck">
               <button
                 onClick={() => {
-                  // Clear track and reset deck state
+                  // Clear track state
                   if (wavesurferRef.current) {
                     wavesurferRef.current.pause();
                     wavesurferRef.current.empty();
@@ -978,8 +988,9 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                   setIsLooping(false);
                   setLoopIn(null);
                   setLoopOut(null);
-                  // Notify parent to clear track
-                  window.location.reload(); // Temp - should be handled by parent
+                  // TODO: Notify parent component to clear track
+                  // onTrackRemove?.() - would be better than page reload
+                  console.warn("Track eject - parent component should handle track removal");
                 }}
                 aria-label="Remove track from deck"
                 className="relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-[#1a1a1a] border-2 border-red-700 flex items-center justify-center transition-all hover:border-red-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500 touch-manipulation"
@@ -1033,9 +1044,7 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                     : "text-gray-300"
                 }`}
               >
-                -{Math.floor(duration - currentPosition) >= 0
-                  ? `${Math.floor((duration - currentPosition) / 60)}:${String(Math.floor((duration - currentPosition) % 60)).padStart(2, "0")}`
-                  : "0:00"}
+                {formatTimeRemaining(duration - currentPosition)}
               </span>
             </div>
           </div>
