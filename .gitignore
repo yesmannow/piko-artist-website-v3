@@ -23,5 +23,5 @@ tsconfig.tsbuildinfo
 
 # ONNX model files (use Git LFS if committing)
 # Large model files should use Git LFS or external hosting
-public/models/*.onnx
+# public/models/*.onnx  # Commented out - using Git LFS to track .onnx files
 # Or use external hosting with NEXT_PUBLIC_MODEL_URL
