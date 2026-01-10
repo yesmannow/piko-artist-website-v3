@@ -59,6 +59,8 @@
     "three": "^0.182.0",
     "vaul": "^1.1.2",
     "wavesurfer.js": "^7.12.1",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.29",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
