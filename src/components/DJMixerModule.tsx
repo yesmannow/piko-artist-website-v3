@@ -20,6 +20,7 @@ import { useBPMDetection } from "@/hooks/useBPMDetection";
 import { useBeatGrid } from "@/hooks/useBeatGrid";
 import { useTrackKey } from "@/hooks/useTrackKey";
 import { compatibleKeys } from "@/utils/camelot";
+import { calculateCrossfaderGains, type CrossfaderCurve } from "@/utils/constantPowerSplitter";
 import { Crossfader } from "./dj-ui/Crossfader";
 import { Fader } from "./dj-ui/Fader";
 import { Knob } from "./dj-ui/Knob";
@@ -150,6 +151,7 @@ export function DJMixerModule({
 
   // Crossfader state (0 = Deck A, 1 = Deck B)
   const [crossfaderPosition, setCrossfaderPosition] = useState(0.5);
+  const [crossfaderCurve, setCrossfaderCurve] = useState<CrossfaderCurve>('constant-power');
 
   // Sync state
   const [syncEnabled, setSyncEnabled] = useState(false);
@@ -279,18 +281,17 @@ export function DJMixerModule({
     }
   }, [deckBKey.keyData]);
 
-  // Apply crossfader using constant-power curve
+  // Apply crossfader using selected curve
   useEffect(() => {
     if (!initialized || !engineRef.current) return;
 
-    // Constant-power gain calculation: cos/sin curve
-    const gainA = Math.cos(crossfaderPosition * Math.PI / 2);
-    const gainB = Math.sin(crossfaderPosition * Math.PI / 2);
+    // Calculate gains based on crossfader curve
+    const { gainA, gainB } = calculateCrossfaderGains(crossfaderPosition, crossfaderCurve);
 
     // Apply gains to decks (combined with volume faders)
     engineRef.current.setGain('A', deckAState.volume * gainA);
     engineRef.current.setGain('B', deckBState.volume * gainB);
-  }, [initialized, crossfaderPosition, deckAState.volume, deckBState.volume]);
+  }, [initialized, crossfaderPosition, crossfaderCurve, deckAState.volume, deckBState.volume]);
 
   // Playback controls
   const handleDeckAPlay = useCallback(() => {
@@ -564,13 +565,34 @@ export function DJMixerModule({
           </div>
 
           {/* Crossfader */}
-          <div className="mb-6 flex justify-center">
+          <div className="mb-6 flex flex-col items-center">
             <Crossfader
               value={crossfaderPosition}
               onChange={setCrossfaderPosition}
               width={250}
-              helpText="Equal-power crossfade: cos(x*π/2) for A, sin(x*π/2) for B"
+              helpText={`${crossfaderCurve} crossfade curve`}
             />
+            
+            {/* Crossfader Curve Selector */}
+            <div className="mt-3 flex flex-col items-center gap-2">
+              <span className="text-xs text-gray-500 font-barlow uppercase">Curve</span>
+              <div className="flex gap-2">
+                {(['linear', 'constant-power', 'sharp', 'smooth'] as CrossfaderCurve[]).map((curve) => (
+                  <button
+                    key={curve}
+                    onClick={() => setCrossfaderCurve(curve)}
+                    className={`px-2 py-1 text-[10px] font-barlow uppercase rounded transition-colors ${
+                      crossfaderCurve === curve
+                        ? 'bg-[#00ff00] text-black'
+                        : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
+                    }`}
+                    title={curve}
+                  >
+                    {curve === 'constant-power' ? 'C-PWR' : curve.slice(0, 3).toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Sync Control */}
