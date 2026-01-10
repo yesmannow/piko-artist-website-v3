@@ -89,12 +89,16 @@ async function main() {
     exit(1);
   }
 
-  // Step 3: Check stem assets
-  log('\n📋 Step 3: Check Stem Separation Assets');
-  const assetsCheckSuccess = runCommand('npm run check:stem-assets', 'Stem assets verification');
+  // Step 3: Check stem assets (strict verification)
+  log('\n📋 Step 3: Check Stem Separation Assets (Strict)');
+  const assetsCheckSuccess = runCommand('node scripts/verify-stem-assets-strict.mjs', 'Stem assets strict verification');
   if (!assetsCheckSuccess) {
     header('FAIL: Node 20 build verification failed');
-    error('Stem assets check failed. Run: npm run build:assets');
+    error('Stem assets verification failed.');
+    error('Either:');
+    error('  1. Place model at public/models/demucs_v4_quantized.onnx');
+    error('  2. Set NEXT_PUBLIC_MODEL_URL in Vercel dashboard');
+    error('  3. Use /api/model proxy route (see deployment guide)');
     exit(1);
   }
 

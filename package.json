@@ -13,11 +13,16 @@
     "build:assets": "node scripts/copy-ort-assets.mjs && node scripts/check-stem-assets.mjs",
     "check:workers": "node scripts/check-workers.js",
     "check:stem-assets": "node scripts/check-stem-assets.mjs",
+    "check:model": "node scripts/check-stem-assets.mjs",
     "start": "next start",
     "lint": "next lint",
     "check:case": "node scripts/check-import-case.mjs",
     "verify:vercel": "npx -y node@20 scripts/node20-check.mjs",
-    "verify:vercel:clean": "node scripts/clean-node-modules.mjs && npm install && npm run verify:vercel"
+    "verify:vercel:clean": "node scripts/clean-node-modules.mjs && npm install && npm run verify:vercel",
+    "verify:stem-strict": "node scripts/verify-stem-assets-strict.mjs",
+    "test:model-url": "node scripts/test-model-url.mjs",
+    "download:model": "node scripts/download-model.mjs",
+    "download:fonts": "node scripts/download-fonts.mjs"
   },
   "dependencies": {
     "@react-spring/three": "^10.0.3",

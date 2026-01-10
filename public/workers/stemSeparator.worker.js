@@ -9654,8 +9654,9 @@ ${u}`, c = r.createShaderModule({ code: d, label: t.name });
   var CHUNK_SIZE_SAMPLES = 44100 * 10;
   var OVERLAP_SAMPLES = 44100 * 1;
   var CROSSFADE_SAMPLES = 44100 * 0.5;
-  var MODEL_URL = "/models/demucs_v4_quantized.onnx";
+  var DEFAULT_MODEL_URL = "/models/demucs_v4_quantized.onnx";
   var WASM_PATH = "/ort/";
+  var activeModelUrl = DEFAULT_MODEL_URL;
   async function selectBackend() {
     try {
       if ("gpu" in navigator) {
@@ -9713,20 +9714,20 @@ ${u}`, c = r.createShaderModule({ code: d, label: t.name });
         stage: "Loading ONNX model..."
       });
       try {
-        const modelResponse = await fetch(MODEL_URL, { method: "HEAD" });
+        const modelResponse = await fetch(activeModelUrl, { method: "HEAD" });
         if (!modelResponse.ok) {
-          throw new Error(`Model file not found at ${MODEL_URL}. Status: ${modelResponse.status}`);
+          throw new Error(`Model file not found at ${activeModelUrl}. Status: ${modelResponse.status}`);
         }
       } catch (fetchError) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : "Unknown error";
         self.postMessage({
           type: "ERROR",
-          message: `Model file missing: ${MODEL_URL}. ${errorMessage}. Please ensure the model is placed in public/models/`
+          message: `Model file missing: ${activeModelUrl}. ${errorMessage}. Please ensure the model is accessible at the configured URL.`
         });
         throw new Error(`Model file not found: ${errorMessage}`);
       }
       const executionProviders = backend === "webgpu" ? ["webgpu", "wasm"] : ["wasm"];
-      session = await ort.InferenceSession.create(MODEL_URL, {
+      session = await ort.InferenceSession.create(activeModelUrl, {
         executionProviders,
         graphOptimizationLevel: "all"
       });
@@ -9741,7 +9742,7 @@ ${u}`, c = r.createShaderModule({ code: d, label: t.name });
       console.error("[StemSeparatorWorker] \u274C Failed to load model:", errorMessage);
       self.postMessage({
         type: "ERROR",
-        message: `Model load failed: ${errorMessage}. Check that ${MODEL_URL} exists and is accessible.`
+        message: `Model load failed: ${errorMessage}. Check that ${activeModelUrl} exists and is accessible.`
       });
       throw new Error(`Failed to load model: ${errorMessage}`);
     }
@@ -9869,7 +9870,7 @@ ${u}`, c = r.createShaderModule({ code: d, label: t.name });
       }
       await loadModel();
       if (!session) {
-        const errorMsg = `Model failed to load from ${MODEL_URL}. Please ensure the model file exists.`;
+        const errorMsg = `Model failed to load from ${activeModelUrl}. Please ensure the model file exists.`;
         self.postMessage({
           type: "SEPARATE_ERROR",
           requestId,
@@ -9994,6 +9995,19 @@ ${u}`, c = r.createShaderModule({ code: d, label: t.name });
       switch (type) {
         case "READY":
           await initialize();
+          break;
+        case "CONFIG":
+          if (data && typeof data === "object" && "modelUrl" in data) {
+            const newModelUrl = data.modelUrl;
+            if (newModelUrl && typeof newModelUrl === "string") {
+              activeModelUrl = newModelUrl;
+              console.log(`[StemSeparatorWorker] Model URL configured: ${activeModelUrl}`);
+              if (session) {
+                console.warn("[StemSeparatorWorker] Model URL changed, existing session will be reloaded on next separation");
+                session = null;
+              }
+            }
+          }
           break;
         case "SEPARATE":
           if (!requestId || !data) {

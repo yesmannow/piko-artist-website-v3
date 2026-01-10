@@ -56,6 +56,37 @@ npm run check:workers
 
 **Note:** Workers are automatically compiled during `npm run build`. See [docs/WORKER_BUILD_PROCESS.md](docs/WORKER_BUILD_PROCESS.md) for details.
 
+### Model Provisioning (Stem Separation)
+
+The app requires an ONNX model for stem separation. Choose one:
+
+**Option 1: Download for local development**
+```bash
+npm run download:model
+```
+
+**Option 2: Use external URL (recommended for production)**
+- Set `NEXT_PUBLIC_MODEL_URL` in Vercel dashboard
+- App automatically routes through `/api/model` proxy (COEP compatible)
+
+**Option 3: Ship with app (Git LFS)**
+- Run `npm run download:model`
+- Use Git LFS if model is >90MB
+
+**Verification:**
+```bash
+# Check assets (non-blocking, for development)
+npm run check:model
+
+# Strict verification (fails if model missing, for CI/CD)
+npm run verify:stem-strict
+
+# Full deployment check
+npm run verify:vercel
+```
+
+See [docs/MODEL_PROVISIONING.md](docs/MODEL_PROVISIONING.md) for complete guide.
+
 ### Validation
 
 ```bash

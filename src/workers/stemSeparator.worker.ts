@@ -28,6 +28,7 @@
 
 type WorkerMessageType =
   | 'READY'
+  | 'CONFIG'
   | 'SEPARATE'
   | 'PROGRESS'
   | 'SEPARATE_COMPLETE'
@@ -82,8 +83,11 @@ let backend: 'webgpu' | 'wasm' = 'wasm';
 const CHUNK_SIZE_SAMPLES = 44100 * 10; // 10 seconds at 44.1kHz
 const OVERLAP_SAMPLES = 44100 * 1; // 1 second overlap
 const CROSSFADE_SAMPLES = 44100 * 0.5; // 0.5 second crossfade
-const MODEL_URL = '/models/demucs_v4_quantized.onnx';
+const DEFAULT_MODEL_URL = '/models/demucs_v4_quantized.onnx';
 const WASM_PATH = '/ort/'; // Path to ONNX Runtime WASM files
+
+// Runtime configuration (set via CONFIG message)
+let activeModelUrl: string = DEFAULT_MODEL_URL;
 
 // ============================================================================
 // BACKEND SELECTION
@@ -124,7 +128,6 @@ async function loadONNXRuntime(): Promise<void> {
 
   try {
     // Dynamic import of onnxruntime-web
-    // @ts-ignore - onnxruntime-web may not have types
     ort = await import('onnxruntime-web');
 
     // Configure WASM paths for local assets
@@ -182,15 +185,15 @@ async function loadModel(): Promise<void> {
 
     // Check if model file exists (fast-fail)
     try {
-      const modelResponse = await fetch(MODEL_URL, { method: 'HEAD' });
+      const modelResponse = await fetch(activeModelUrl, { method: 'HEAD' });
       if (!modelResponse.ok) {
-        throw new Error(`Model file not found at ${MODEL_URL}. Status: ${modelResponse.status}`);
+        throw new Error(`Model file not found at ${activeModelUrl}. Status: ${modelResponse.status}`);
       }
     } catch (fetchError) {
       const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
       self.postMessage({
         type: 'ERROR',
-        message: `Model file missing: ${MODEL_URL}. ${errorMessage}. Please ensure the model is placed in public/models/`,
+        message: `Model file missing: ${activeModelUrl}. ${errorMessage}. Please ensure the model is accessible at the configured URL.`,
       } as WorkerMessage);
       throw new Error(`Model file not found: ${errorMessage}`);
     }
@@ -199,7 +202,7 @@ async function loadModel(): Promise<void> {
       ? ['webgpu', 'wasm'] // Try WebGPU first, fallback to WASM
       : ['wasm'];
 
-    session = await ort.InferenceSession.create(MODEL_URL, {
+    session = await ort.InferenceSession.create(activeModelUrl, {
       executionProviders,
       graphOptimizationLevel: 'all',
     });
@@ -217,7 +220,7 @@ async function loadModel(): Promise<void> {
     // Send detailed error to main thread
     self.postMessage({
       type: 'ERROR',
-      message: `Model load failed: ${errorMessage}. Check that ${MODEL_URL} exists and is accessible.`,
+      message: `Model load failed: ${errorMessage}. Check that ${activeModelUrl} exists and is accessible.`,
     } as WorkerMessage);
 
     throw new Error(`Failed to load model: ${errorMessage}`);
@@ -263,7 +266,7 @@ async function processChunk(
 
   // Extract outputs (Demucs outputs 4 stems: vocals, drums, bass, other)
   // Output shape: [batch, stems, channels, samples]
-  const output = results.output as ort.Tensor;
+  const output = results.output as { data: Float32Array; dims: number[] };
   const outputData = output.data as Float32Array;
   const [batch, numStems, channels, samples] = output.dims;
 
@@ -467,14 +470,14 @@ async function stubSeparate(
       stems.other,
     ];
 
-    self.postMessage(
+    (self as DedicatedWorkerGlobalScope).postMessage(
       {
         type: 'SEPARATE_COMPLETE',
         requestId,
         stems,
         message: 'Stub separation complete (all stems = original mix)',
       } as WorkerMessage,
-      transferBuffers // Transfer list: zero-copy
+      transferBuffers as Transferable[] // Transfer list: zero-copy
     );
 
     console.log('[StemSeparatorWorker] ✅ Stub separation complete');
@@ -540,7 +543,7 @@ async function separateAudio(
 
     // Fast-fail if model failed to load
     if (!session) {
-      const errorMsg = `Model failed to load from ${MODEL_URL}. Please ensure the model file exists.`;
+      const errorMsg = `Model failed to load from ${activeModelUrl}. Please ensure the model file exists.`;
       self.postMessage({
         type: 'SEPARATE_ERROR',
         requestId,
@@ -632,14 +635,14 @@ async function separateAudio(
       stems.other,
     ];
 
-    self.postMessage(
+    (self as DedicatedWorkerGlobalScope).postMessage(
       {
         type: 'SEPARATE_COMPLETE',
         requestId,
         stems,
         message: 'Separation complete',
       } as WorkerMessage,
-      transferBuffers // Transfer list: zero-copy
+      transferBuffers as Transferable[] // Transfer list: zero-copy
     );
 
     console.log('[StemSeparatorWorker] ✅ Separation complete');
@@ -714,6 +717,23 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
       case 'READY':
         // Client requesting initialization
         await initialize();
+        break;
+
+      case 'CONFIG':
+        // Configuration message: update model URL
+        if (data && typeof data === 'object' && 'modelUrl' in data) {
+          const newModelUrl = data.modelUrl as string;
+          if (newModelUrl && typeof newModelUrl === 'string') {
+            activeModelUrl = newModelUrl;
+            console.log(`[StemSeparatorWorker] Model URL configured: ${activeModelUrl}`);
+
+            // If session exists, it was loaded with old URL - invalidate it
+            if (session) {
+              console.warn('[StemSeparatorWorker] Model URL changed, existing session will be reloaded on next separation');
+              session = null;
+            }
+          }
+        }
         break;
 
       case 'SEPARATE':

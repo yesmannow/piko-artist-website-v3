@@ -42,8 +42,6 @@ export function PanicStopButton({ className = '', variant = 'desktop' }: PanicSt
       // Stop all AudioEngine decks
       try {
         const audioEngine = getAudioEngine();
-        audioEngine.stop('deckA');
-        audioEngine.stop('deckB');
         audioEngine.pause('deckA');
         audioEngine.pause('deckB');
       } catch (error) {

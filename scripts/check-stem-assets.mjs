@@ -97,23 +97,34 @@ async function checkModelAsset() {
     return true;
   }
 
-  // Check for MODEL_URL env var (external hosting)
-  const modelUrl = process.env.MODEL_URL;
+  // Check for MODEL_URL or NEXT_PUBLIC_MODEL_URL env var (external hosting)
+  const modelUrl = process.env.MODEL_URL || process.env.NEXT_PUBLIC_MODEL_URL;
   if (modelUrl) {
-    console.log(`[check-stem-assets] ⚠️  Model file not found locally, but MODEL_URL is set:`);
-    console.log(`  MODEL_URL=${modelUrl}`);
-    console.log(`[check-stem-assets] ⚠️  Using external model URL (ensure it's accessible)`);
+    console.log(`[check-stem-assets] ⚠️  Model file not found locally, but model URL env var is set:`);
+    if (process.env.MODEL_URL) {
+      console.log(`  MODEL_URL=${process.env.MODEL_URL}`);
+    }
+    if (process.env.NEXT_PUBLIC_MODEL_URL) {
+      console.log(`  NEXT_PUBLIC_MODEL_URL=${process.env.NEXT_PUBLIC_MODEL_URL}`);
+    }
+    console.log(`[check-stem-assets] ⚠️  Using external model URL (ensure it's accessible at runtime)`);
     return true;
   }
 
   // Neither local file nor env var
-  console.error(`[check-stem-assets] ❌ Model file not found: ${MODEL_PATH}`);
-  console.error(`[check-stem-assets] ❌ MODEL_URL environment variable not set`);
-  console.error(`\n  Options:`);
-  console.error(`  1. Place model at: ${MODEL_PATH}`);
-  console.error(`  2. Set MODEL_URL environment variable for external hosting`);
-  console.error(`  3. Update MODEL_URL in src/workers/stemSeparator.worker.ts if using different path`);
-  return false;
+  // Note: Model can be provided at runtime via CONFIG message or environment variables
+  // This is a warning, not an error, for deployment compatibility
+  console.warn(`[check-stem-assets] ⚠️  Model file not found: ${MODEL_PATH}`);
+  console.warn(`[check-stem-assets] ⚠️  MODEL_URL or NEXT_PUBLIC_MODEL_URL environment variable not set`);
+  console.warn(`\n  Options:`);
+  console.warn(`  1. Place model at: ${MODEL_PATH}`);
+  console.warn(`  2. Set NEXT_PUBLIC_MODEL_URL environment variable in Vercel dashboard for client-side external hosting`);
+  console.warn(`  3. Set MODEL_URL environment variable for build-time external hosting`);
+  console.warn(`  4. Configure model URL at runtime via StemService.initialize({ modelUrl })`);
+  console.warn(`\n  Note: The worker supports runtime configuration via CONFIG message.`);
+  console.warn(`  This check is non-blocking - model can be provided at runtime.\n`);
+  // Return true (non-blocking) since model can be provided at runtime
+  return true;
 }
 
 /**
@@ -128,12 +139,22 @@ async function checkStemAssets() {
   const modelOk = await checkModelAsset();
   console.log(''); // Blank line
 
-  if (ortOk && modelOk) {
+  // ORT assets are required (fail if missing)
+  if (!ortOk) {
+    console.error('[check-stem-assets] ❌ FAIL: ORT assets are required\n');
+    return false;
+  }
+
+  // Model is optional (warn if missing, but don't fail)
+  if (modelOk) {
     console.log('[check-stem-assets] ✅ PASS: All required assets found\n');
     return true;
   } else {
-    console.error('[check-stem-assets] ❌ FAIL: Missing required assets\n');
-    return false;
+    console.warn('[check-stem-assets] ⚠️  WARNING: Model not found (non-blocking)\n');
+    console.warn('[check-stem-assets] ⚠️  Stem separation will not work until model is available\n');
+    console.warn('[check-stem-assets] ⚠️  Run: npm run download:model\n');
+    // Return true (non-blocking) since model can be provided at runtime
+    return true;
   }
 }
 

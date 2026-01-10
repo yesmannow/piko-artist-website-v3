@@ -52,6 +52,7 @@ async function loadEssentia(): Promise<boolean> {
     // Try to import Essentia.js
     // Note: This may need adjustment based on how Essentia.js is bundled
     // For now, we'll use a dynamic import that may fail gracefully
+    // @ts-expect-error - essentia.js may not have type definitions
     const EssentiaWASM = await import('essentia.js');
 
     if (!EssentiaWASM || !EssentiaWASM.EssentiaWASM) {

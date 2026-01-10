@@ -13,7 +13,6 @@
 export async function loadONNXRuntimeInWorker(): Promise<any> {
   // Try dynamic import first (for module workers)
   try {
-    // @ts-ignore - onnxruntime-web may not have types
     const ort = await import('onnxruntime-web');
     return ort;
   } catch (error) {

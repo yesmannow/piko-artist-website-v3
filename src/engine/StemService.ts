@@ -36,6 +36,10 @@ export interface SeparationProgress {
 
 export type ProgressCallback = (progress: SeparationProgress) => void;
 
+export interface StemWorkerConfig {
+  modelUrl?: string; // Optional override for model URL (defaults to /models/demucs_v4_quantized.onnx)
+}
+
 /**
  * StemService - Singleton service for stem separation
  *
@@ -71,9 +75,10 @@ class StemService {
    * Initialize the stem service
    * Must be called after user gesture
    *
+   * @param config - Optional configuration for the worker (e.g., modelUrl)
    * @returns Promise that resolves when initialization is complete
    */
-  async initialize(): Promise<void> {
+  async initialize(config?: StemWorkerConfig): Promise<void> {
     if (this.serviceState === 'ready') {
       console.warn('[StemService] Already initialized');
       return;
@@ -110,6 +115,17 @@ class StemService {
             // Set up main message handler after ready
             this.worker!.onmessage = this.handleWorkerMessage.bind(this);
 
+            // Send configuration if provided
+            if (config?.modelUrl) {
+              this.worker!.postMessage({
+                type: 'CONFIG',
+                data: {
+                  modelUrl: config.modelUrl,
+                },
+              });
+              console.log(`[StemService] Configured model URL: ${config.modelUrl}`);
+            }
+
             resolve();
           } else if (event.data.type === 'ERROR') {
             clearTimeout(timeout);
@@ -120,12 +136,14 @@ class StemService {
 
         this.worker?.addEventListener('message', handleReady);
 
-        this.worker.onerror = (error) => {
-          console.error('[StemService] Worker error:', error);
-          this.serviceState = 'error';
-          clearTimeout(timeout);
-          reject(error);
-        };
+        if (this.worker) {
+          this.worker.onerror = (error) => {
+            console.error('[StemService] Worker error:', error);
+            this.serviceState = 'error';
+            clearTimeout(timeout);
+            reject(error);
+          };
+        }
       });
 
       this.serviceState = 'ready';

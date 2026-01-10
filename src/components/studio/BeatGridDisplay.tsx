@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Music, Sync } from 'lucide-react';
+import { Music, Link2 } from 'lucide-react';
 import { useBeatGrid } from '@/hooks/useBeatGrid';
 import { useKey } from '@/hooks/useKey';
 import type { BeatGridData } from '@/engine/BeatGridService';
@@ -150,7 +150,7 @@ export function BeatGridDisplay({
         whileHover={canSync ? { scale: 1.02 } : {}}
         whileTap={canSync ? { scale: 0.98 } : {}}
       >
-        <Sync className="w-4 h-4" />
+        <Link2 className="w-4 h-4" />
         <span>SYNC (TEMPO ONLY)</span>
       </motion.button>
 
