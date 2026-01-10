@@ -1,14 +1,31 @@
 "use client";
 
 import { useEffect } from 'react';
-import { DesktopStudioLayout } from "@/components/desktop-studio/DesktopStudioLayout";
+import dynamic from 'next/dynamic';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
+
+// Dynamically import DJInterface to avoid SSR issues
+const DJInterface = dynamic(
+  () => import('@/components/DJInterface').then(mod => ({ default: mod.DJInterface })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-white text-lg">Loading DJ Mixer...</div>
+      </div>
+    )
+  }
+);
 
 /**
  * Desktop Studio Page
  *
- * This page serves the desktop-optimized studio interface.
- * It's completely separate from the mobile studio (served at /studio-v2).
+ * This page serves the desktop-optimized DJ mixer interface with track library.
+ * Features:
+ * - Track library with drag-and-drop to Deck A/B
+ * - Search and filter controls
+ * - Keyboard shortcuts (Shift+A/B to load tracks)
+ * - Dual deck mixing interface
  *
  * The middleware handles device detection and routing:
  * - Desktop UA: Serves this page at /studio
@@ -20,6 +37,6 @@ export default function StudioPage() {
     verifyStudioCrossOriginIsolation();
   }, []);
 
-  return <DesktopStudioLayout />;
+  return <DJInterface />;
 }
 

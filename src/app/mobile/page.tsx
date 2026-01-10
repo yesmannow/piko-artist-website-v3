@@ -5,12 +5,14 @@ import dynamic from 'next/dynamic';
 import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 
-// Dynamically import with no SSR (mobile-optimized)
-const MobileStudioLayout = dynamic(
-  () => import('@/components/mobile-shell/MobileStudioLayout').then(mod => mod.MobileStudioLayout),
+// Dynamically import DJInterface for mobile
+const DJInterface = dynamic(
+  () => import('@/components/DJInterface').then(mod => ({ default: mod.DJInterface })),
   {
     ssr: false,
-    loading: () => <div className="fixed inset-0 bg-black" />
+    loading: () => <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="text-white text-lg">Loading DJ Mixer...</div>
+    </div>
   }
 );
 
@@ -21,15 +23,16 @@ const MobileStudioLayout = dynamic(
  * Phase 3: Mobile-First UI & PWA
  * 
  * This page serves the mobile-optimized DJ mixer interface with:
- * - App-like mobile UI (gesture-physics based)
+ * - Track library with drag-and-drop to Deck A/B
+ * - Mobile-optimized touch controls
+ * - Keyboard shortcuts for accessibility
+ * - Search and filter functionality
  * - Dual deck audio engine with ultra-low latency (<20ms)
  * - Real-time waveform visualization
  * - Loop & hot cue system
  * - Touch-optimized controls
  * - Offline/PWA support
- * - Fixed-canvas interface (no scrollbars)
  * - Haptic feedback on key interactions
- * - Gesture inertia for physical feel
  * 
  * User-Agent routing in middleware.ts ensures mobile devices are
  * directed here, preventing heavy desktop code from being downloaded.
@@ -40,7 +43,7 @@ const MobileStudioLayout = dynamic(
  * - Enables lock-free parameter updates
  */
 export default function MobilePage() {
-  // PHASE 3: Add mobile-studio class to body for fixed-canvas interface
+  // Add mobile-studio class to body for fixed-canvas interface
   useEffect(() => {
     // Add mobile-studio class to body
     document.body.classList.add('mobile-studio');
@@ -56,7 +59,7 @@ export default function MobilePage() {
 
   return (
     <StudioErrorBoundary>
-      <MobileStudioLayout />
+      <DJInterface />
     </StudioErrorBoundary>
   );
 }
