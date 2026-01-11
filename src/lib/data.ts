@@ -6,6 +6,9 @@ export interface MediaItem {
   src: string;
   coverArt: string; // Image path or Tailwind gradient placeholder (for videos)
   vibe: 'chill' | 'hype' | 'storytelling' | 'classic';
+  bpm?: number | null; // BPM for audio analysis
+  camelot?: string | null; // Camelot key notation (e.g., "8A", "5B")
+  duration?: number | null; // Duration in seconds
 }
 
 export const tracks: MediaItem[] = [
@@ -164,7 +167,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/dejate-llevar.mp3",
     coverArt: "/images/tracks/abstract-1846847_1280.jpg",
-    vibe: "chill"
+    vibe: "chill",
+    bpm: 90,
+    camelot: "8A",
+    duration: 180
   },
   {
     id: "entre-humos",
@@ -173,7 +179,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/entre-humos.mp3",
     coverArt: "/images/tracks/architecture-3189972_1280.jpg",
-    vibe: "chill"
+    vibe: "chill",
+    bpm: 88,
+    camelot: "7A",
+    duration: 195
   },
   {
     id: "ganja",
@@ -182,7 +191,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/ganja.mp3",
     coverArt: "/images/tracks/aurora-borealis-9267515_1280.jpg",
-    vibe: "chill"
+    vibe: "chill",
+    bpm: 92,
+    camelot: "9A",
+    duration: 170
   },
   {
     id: "amor-sincero",
@@ -191,7 +203,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/amor-sincero.mp3",
     coverArt: "/images/tracks/background-1833056_1280.jpg",
-    vibe: "chill"
+    vibe: "chill",
+    bpm: 85,
+    camelot: "5A",
+    duration: 200
   },
   {
     id: "amores-perdidos",
@@ -301,7 +316,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/gunster.mp3",
     coverArt: "/images/tracks/tube-7260586_1280.jpg",
-    vibe: "hype"
+    vibe: "hype",
+    bpm: 98,
+    camelot: "11B",
+    duration: 165
   },
   {
     id: "el-don",
@@ -310,7 +328,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/el-don.mp3",
     coverArt: "/images/tracks/vinyl-1595847_1280.jpg",
-    vibe: "hype"
+    vibe: "hype",
+    bpm: 102,
+    camelot: "1B",
+    duration: 175
   },
   {
     id: "f-7",
@@ -319,7 +340,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/f-7.mp3",
     coverArt: "/images/tracks/wall-2583885_1280.jpg",
-    vibe: "hype"
+    vibe: "hype",
+    bpm: 100,
+    camelot: "12B",
+    duration: 160
   },
   {
     id: "los-5",
@@ -328,7 +352,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/los-5.mp3",
     coverArt: "/images/tracks/wallpaper-5928106_1280.png",
-    vibe: "hype"
+    vibe: "hype",
+    bpm: 96,
+    camelot: "10B",
+    duration: 180
   },
   {
     id: "party",
@@ -337,7 +364,10 @@ export const tracks: MediaItem[] = [
     type: 'audio',
     src: "/audio/tracks/party.mp3",
     coverArt: "/images/tracks/woman-3633737_1280.jpg",
-    vibe: "hype"
+    vibe: "hype",
+    bpm: 104,
+    camelot: "2B",
+    duration: 155
   },
 
   // STORYTELLING VIBE

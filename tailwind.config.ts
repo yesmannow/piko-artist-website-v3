@@ -1,4 +1,4 @@
-// @ts-ignore - tailwindcss types are available but may not resolve with bundler moduleResolution
+// @ts-expect-error tailwindcss types are available but may not resolve with bundler moduleResolution
 import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 

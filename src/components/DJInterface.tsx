@@ -36,9 +36,7 @@ import {
   extractDominantColors,
   type DominantColors,
 } from "@/utils/colorExtractor";
-import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
-import { Sliders, Mic, Music2 } from "lucide-react";
-import { LibraryModal } from "./dj-ui/LibraryModal";
+import { AutomixPanel } from "./dj-ui/AutomixPanel";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;

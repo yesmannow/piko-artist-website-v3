@@ -120,7 +120,6 @@ export function useCollaboration({
     }
     
     // Create WebRTC provider for P2P sync
-    // @ts-expect-error SharedArrayBuffer Uint8Array compatibility issue
     const provider = new WebrtcProvider(roomName, ydoc, {
       signaling: [
         'wss://signaling.yjs.dev', // Public signaling server
@@ -130,7 +129,6 @@ export function useCollaboration({
     });
     
     // Set user awareness data
-    // @ts-expect-error SharedArrayBuffer compatibility
     provider.awareness.setLocalStateField('name', userName);
     
     providerRef.current = provider;

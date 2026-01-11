@@ -124,6 +124,16 @@ class MIDIManager {
       // Map this MIDI input to the target action
       store.setMapping(midiKey, store.learnTarget, `${this.getMIDITypeName(messageType)} ${data1}`);
       store.stopLearn();
+      
+      // Trigger haptic feedback for successful mapping
+      if ("vibrate" in navigator) {
+        try {
+          navigator.vibrate(50); // Short buzz for confirmation
+        } catch (error) {
+          // Silently fail
+        }
+      }
+      
       console.log(`✅ Mapped ${midiKey} -> ${store.learnTarget}`);
       return;
     }
