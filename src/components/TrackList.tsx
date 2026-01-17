@@ -4,7 +4,13 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
 import { Play } from "lucide-react";
-import { useMemo, useState, useRef, useEffect } from "react";
+import {
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  type DragEvent as ReactDragEvent,
+} from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -22,6 +28,13 @@ const vibeColors = {
 
 type VibeFilter = "all" | "chill" | "hype" | "storytelling" | "classic";
 type DeckId = "deckA" | "deckB";
+type DragStartLike =
+  | ReactDragEvent<HTMLElement>
+  | DragEvent
+  | MouseEvent
+  | TouchEvent
+  | PointerEvent;
+type SortMode = "default" | "key";
 
 interface TrackListProps {
   featuredOnly?: boolean;
@@ -98,7 +111,7 @@ interface TrackCardProps {
   index: number;
   isActive: boolean;
   onPlay: () => void;
-  onDragStart: (event: React.DragEvent, track: (typeof tracks)[0]) => void;
+  onDragStart: (event: DragStartLike, track: (typeof tracks)[0]) => void;
   loadedDecks: DeckId[];
 }
 
@@ -307,11 +320,11 @@ function TrackCard({
             <div className="font-header text-sm font-semibold truncate mb-1 tracking-tight">
               {track.title}
             </div>
-            <div className="font-industrial text-xs text-white/80 truncate mb-1">
-              {track.artist}
-            </div>
-            <div className="flex items-center gap-2">
-              <span
+          <div className="font-industrial text-xs text-white/80 truncate mb-1">
+            {track.artist}
+          </div>
+          <div className="flex items-center gap-2">
+            <span
                 className={[
                   "px-2 py-0.5 rounded text-[10px] font-industrial font-bold uppercase tracking-wider border",
                   vibeColors[track.vibe],
@@ -319,11 +332,16 @@ function TrackCard({
               >
                 {track.vibe}
               </span>
-              <span className="text-white/60 text-xs">3:00</span>
-            </div>
+            <span className="text-white/60 text-xs">3:00</span>
+            {track.keyInfo?.camelot ? (
+              <span className="text-safety-yellow text-[11px] uppercase tracking-[0.14em]">
+                Key {track.keyInfo.camelot}
+              </span>
+            ) : null}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
+    </div>
 
       {/* Metadata Below Image - Always Visible */}
       <div className="p-3 md:p-4 bg-[#e5e5e5] border-t-2 border-black/10">
@@ -371,6 +389,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
   const { triggerHaptic } = useHaptic();
   const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
   const [search, setSearch] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("default");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const deckAssignments = useDeckMixerStore((state) => ({
@@ -378,16 +397,15 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
     deckB: state.decks.deckB.track?.id,
   }));
 
-  const handleDragStart = (
-    event: React.DragEvent,
-    track: (typeof tracks)[0],
-  ) => {
-    event.dataTransfer.effectAllowed = "copy";
-    event.dataTransfer.setData(
+  const handleDragStart = (event: DragStartLike, track: (typeof tracks)[0]) => {
+    if (!("dataTransfer" in event) || !event.dataTransfer) return;
+    const dragEvent = event as ReactDragEvent<HTMLElement>;
+    dragEvent.dataTransfer.effectAllowed = "copy";
+    dragEvent.dataTransfer.setData(
       "application/json",
       JSON.stringify({ trackId: track.id, src: track.src }),
     );
-    event.dataTransfer.setData("text/plain", track.id);
+    dragEvent.dataTransfer.setData("text/plain", track.id);
   };
 
   const getLoadedDecks = (trackId: string): DeckId[] => {
@@ -397,10 +415,26 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
     return loaded;
   };
 
+  const keyDistance = (reference: string, candidate?: string | null): number => {
+    if (!candidate) return Number.MAX_SAFE_INTEGER;
+    const refMatch = reference.match(/^(\d{1,2})([AB])$/i);
+    const candMatch = candidate.match(/^(\d{1,2})([AB])$/i);
+    if (!refMatch || !candMatch) return Number.MAX_SAFE_INTEGER - 1;
+    const refNum = parseInt(refMatch[1], 10);
+    const candNum = parseInt(candMatch[1], 10);
+    const refLetter = refMatch[2].toUpperCase();
+    const candLetter = candMatch[2].toUpperCase();
+    const delta = Math.min(Math.abs(refNum - candNum), 12 - Math.abs(refNum - candNum));
+    const letterBonus = refLetter === candLetter ? 0 : 1; // minor penalty for parallel key
+    return delta + letterBonus;
+  };
+
   const audioTracks = useMemo(
     () => tracks.filter((t) => t.type === "audio"),
     [],
   );
+  const referenceKey =
+    useDeckMixerStore((state) => state.decks.deckA.keyInfo?.camelot) ?? null;
 
   const visibleTracks = useMemo(() => {
     const filtered =
@@ -416,9 +450,18 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
             `${t.title} ${t.artist}`.toLowerCase().includes(query),
           );
 
-    if (featuredOnly) return searched.slice(0, 5);
-    return searched;
-  }, [activeFilter, audioTracks, featuredOnly, search]);
+    const sorted =
+      sortMode === "key" && referenceKey
+        ? [...searched].sort((a, b) => {
+            const aScore = keyDistance(referenceKey, a.keyInfo?.camelot);
+            const bScore = keyDistance(referenceKey, b.keyInfo?.camelot);
+            return aScore - bScore;
+          })
+        : searched;
+
+    if (featuredOnly) return sorted.slice(0, 5);
+    return sorted;
+  }, [activeFilter, audioTracks, featuredOnly, search, sortMode, referenceKey]);
 
   return (
     <div className="w-full">
@@ -446,7 +489,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
               );
             })}
           </div>
-          <div className="flex w-full justify-center">
+          <div className="flex w-full flex-wrap items-center justify-center gap-3">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -454,6 +497,15 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
               aria-label="Search tracks"
               className="w-full max-w-xl rounded-full border-2 border-black bg-white/80 px-4 py-2 text-sm font-industrial tracking-wide text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-safety-yellow"
             />
+            <button
+              type="button"
+              onClick={() =>
+                setSortMode((mode) => (mode === "default" ? "key" : "default"))
+              }
+              className="min-w-[140px] rounded-full border-2 border-black bg-black/70 px-4 py-2 text-xs font-industrial uppercase tracking-[0.18em] text-white hover:border-safety-yellow hover:text-safety-yellow transition-colors"
+            >
+              Sort by Key {sortMode === "key" ? "✓" : ""}
+            </button>
           </div>
         </div>
       )}
@@ -595,6 +647,11 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                             >
                               {track.title}
                             </div>
+                            {track.keyInfo?.camelot ? (
+                              <div className="text-[10px] uppercase tracking-[0.12em] text-safety-yellow">
+                                Key: {track.keyInfo.camelot}
+                              </div>
+                            ) : null}
                             {loadedDecks.length > 0 && (
                               <div className="mt-1 flex gap-2 text-[10px] uppercase tracking-[0.12em] text-safety-yellow">
                                 {loadedDecks

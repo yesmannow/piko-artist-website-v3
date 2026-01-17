@@ -10,8 +10,8 @@ import { v4 as uuidv4 } from "uuid";
 
 export default function CollabPage() {
   const searchParams = useSearchParams();
-  const isHost = searchParams.get("host") === "true";
-  const sessionId = searchParams.get("session") || uuidv4();
+  const isHost = searchParams?.get("host") === "true";
+  const sessionId = searchParams?.get("session") || uuidv4();
   const {
     nickname,
     setNickname,

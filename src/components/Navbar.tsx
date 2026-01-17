@@ -134,7 +134,7 @@ const AnimatedLogo = ({
 };
 
 export function Navbar({ items }: { items?: NavItem[] }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();

@@ -54,6 +54,7 @@ export function MobileAutomix() {
         void automixEngine.startAutomix(activeDeck, {
           id: initial.id,
           title: initial.title,
+          artist: initial.artist,
           bpm: initial.bpm ?? undefined,
           camelot: initial.camelot ?? undefined,
           vibe: initial.vibe,
@@ -105,9 +106,10 @@ export function MobileAutomix() {
 
   const skip = async () => {
     const engine = await ensureAudioEngineReady();
-    setActiveDeck((prev) => (prev === "deckA" ? "deckB" : "deckA"));
-    setMasterDeck((prev) => (prev === "deckA" ? "deckB" : "deckA"));
-    await engine.play(activeDeck === "deckA" ? "deckB" : "deckA");
+    const nextDeck: DeckId = activeDeck === "deckA" ? "deckB" : "deckA";
+    setActiveDeck(nextDeck);
+    setMasterDeck(nextDeck);
+    await engine.play(nextDeck);
   };
 
   return (

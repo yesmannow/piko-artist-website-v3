@@ -20,7 +20,7 @@ export function Contact() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const type = searchParams.get("type");
+    const type = searchParams?.get("type");
     const allowed = [
       "general",
       "booking",

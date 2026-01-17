@@ -6,9 +6,9 @@ import { EmbedPlayer } from "@/components/EmbedPlayer";
 
 export default function EmbedPage({ params }: { params: { id: string } }) {
   const search = useSearchParams();
-  const title = search.get("title") ?? `Piko Mix ${params.id}`;
-  const url = search.get("url") ?? "";
-  const cover = search.get("cover") ?? "/images/tracks/dj-2581269_1280.jpg";
+  const title = search?.get("title") ?? `Piko Mix ${params.id}`;
+  const url = search?.get("url") ?? "";
+  const cover = search?.get("cover") ?? "/images/tracks/dj-2581269_1280.jpg";
 
   const meta = useMemo(
     () => ({

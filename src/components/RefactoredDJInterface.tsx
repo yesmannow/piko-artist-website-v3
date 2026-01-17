@@ -13,12 +13,18 @@ import { Pause, Play } from "lucide-react";
 import { useMIDI } from "@/lib/hooks/useMIDI";
 
 type DeckId = "deckA" | "deckB";
+type EQState = {
+  low: number;
+  mid: number;
+  high: number;
+};
 
 interface DeckPanelProps {
   deckId: DeckId;
   track: MediaItem | null;
   duration: number;
   isPlaying: boolean;
+  keyInfo: MediaItem["keyInfo"];
   onDropTrack: (trackId: string) => void;
   onPlay: () => void;
   onPause: () => void;
@@ -30,6 +36,7 @@ function DeckPanel({
   track,
   duration,
   isPlaying,
+  keyInfo,
   onDropTrack,
   onPlay,
   onPause,
@@ -128,6 +135,14 @@ function DeckPanel({
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">
             {track ? track.artist : "Piko Catalog"}
           </p>
+          {keyInfo?.camelot ? (
+            <p className="text-[11px] uppercase tracking-[0.2em] text-safety-yellow">
+              Key: {keyInfo.camelot}
+              {keyInfo.root
+                ? ` (${keyInfo.root}${keyInfo.scale === "minor" ? "m" : ""})`
+                : ""}
+            </p>
+          ) : null}
           <div className="flex gap-2">
             <button
               type="button"
@@ -190,6 +205,11 @@ export function RefactoredDJInterface() {
   });
 
   const deckMeta = useDeckMixerStore((state) => state.decks);
+  const keyWarning = useDeckMixerStore((state) => state.keyWarning);
+  const allowKeyClash = useDeckMixerStore((state) => state.allowKeyClash);
+  const toggleAllowKeyClash = useDeckMixerStore(
+    (state) => state.toggleAllowKeyClash,
+  );
   const loadTrackToDeck = useDeckMixerStore((state) => state.loadTrackToDeck);
   const playbackStore = useAudioStore((state) => ({
     deckA: state.decks.deckA,
@@ -200,6 +220,7 @@ export function RefactoredDJInterface() {
     const engine = await ensureAudioEngineReady();
     setDurations((prev) => ({ ...prev, [deck]: engine.getDuration(deck) }));
   }, []);
+  const [, setCrossfade] = useState(0.5);
 
   const handleLoadTrack = useCallback(
     async (deck: DeckId, track: MediaItem) => {
@@ -290,6 +311,20 @@ export function RefactoredDJInterface() {
       {process.env.NODE_ENV !== "production" ? (
         <DevAudioDebug intervalMs={800} />
       ) : null}
+      {keyWarning ? (
+        <div className="rounded-lg border border-amber-400/60 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.25)] flex items-center justify-between gap-3">
+          <span>{keyWarning}</span>
+          <label className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-amber-100">
+            <input
+              type="checkbox"
+              checked={allowKeyClash}
+              onChange={(e) => toggleAllowKeyClash(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-amber-300 bg-transparent text-amber-300 accent-amber-300"
+            />
+            Allow key clashes
+          </label>
+        </div>
+      ) : null}
       <div className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr]">
           <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4">
@@ -310,6 +345,9 @@ export function RefactoredDJInterface() {
               track={deckMeta.deckA.track ?? initialDecks.deckA}
               duration={durations.deckA}
               isPlaying={playbackStore.deckA.isPlaying}
+              keyInfo={
+                deckMeta.deckA.keyInfo || deckMeta.deckA.track?.keyInfo || null
+              }
               onDropTrack={(id) => handleDropToDeck("deckA", id)}
               onPlay={() => handlePlay("deckA")}
               onPause={() => handlePause("deckA")}
@@ -320,6 +358,9 @@ export function RefactoredDJInterface() {
               track={deckMeta.deckB.track ?? initialDecks.deckB}
               duration={durations.deckB}
               isPlaying={playbackStore.deckB.isPlaying}
+              keyInfo={
+                deckMeta.deckB.keyInfo || deckMeta.deckB.track?.keyInfo || null
+              }
               onDropTrack={(id) => handleDropToDeck("deckB", id)}
               onPlay={() => handlePlay("deckB")}
               onPause={() => handlePause("deckB")}

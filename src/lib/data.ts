@@ -9,6 +9,11 @@ export interface MediaItem {
   bpm?: number | null; // BPM for audio analysis
   camelot?: string | null; // Camelot key notation (e.g., "8A", "5B")
   duration?: number | null; // Duration in seconds
+  keyInfo?: {
+    root: string;
+    scale: "major" | "minor";
+    camelot: string;
+  } | null;
 }
 
 export const tracks: MediaItem[] = [

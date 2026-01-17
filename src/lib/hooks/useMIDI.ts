@@ -2,6 +2,18 @@
 
 import { useEffect } from "react";
 
+type MidiMessageEvent = {
+  data: Uint8Array;
+};
+
+type MidiInput = {
+  onmidimessage: ((event: MidiMessageEvent) => void) | null;
+};
+
+type MidiAccess = {
+  inputs: Iterable<MidiInput>;
+};
+
 /**
  * Basic MIDI subscription hook.
  * Passes raw message.data (Uint8Array) to the callback.
@@ -10,18 +22,28 @@ export function useMIDI(onMidiMessage: (data: Uint8Array) => void) {
   useEffect(() => {
     let cleanup: Array<() => void> = [];
 
-    if (
-      typeof navigator === "undefined" ||
-      !("requestMIDIAccess" in navigator)
-    ) {
+    if (typeof navigator === "undefined") {
       return;
     }
 
-    navigator
-      .requestMIDIAccess()
+    const nav = navigator as Navigator & {
+      requestMIDIAccess?: () => Promise<MidiAccess>;
+    };
+
+    if (!nav.requestMIDIAccess) {
+      return;
+    }
+
+    nav.requestMIDIAccess()
       .then((midiAccess) => {
-        for (const input of midiAccess.inputs.values()) {
-          const handler = (message: WebMidi.MIDIMessageEvent) => {
+        const inputs =
+          "values" in midiAccess.inputs
+            ? (midiAccess.inputs as Iterable<MidiInput> & {
+                values: () => Iterable<MidiInput>;
+              }).values()
+            : midiAccess.inputs;
+        for (const input of inputs) {
+          const handler = (message: MidiMessageEvent) => {
             onMidiMessage(message.data);
           };
           input.onmidimessage = handler;

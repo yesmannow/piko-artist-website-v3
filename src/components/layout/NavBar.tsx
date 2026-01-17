@@ -23,7 +23,7 @@ const baseItems: NavItem[] = [
 ];
 
 export function NavBar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [labs, setLabs] = useState(false);
