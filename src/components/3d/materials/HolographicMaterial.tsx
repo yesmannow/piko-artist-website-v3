@@ -4,7 +4,7 @@ import * as THREE from 'three'
 
 import { shaderMaterial } from '@react-three/drei'
 
-import { extend, ReactThreeFiber, type ThreeElements } from '@react-three/fiber'
+import { extend } from '@react-three/fiber'
 
 
 

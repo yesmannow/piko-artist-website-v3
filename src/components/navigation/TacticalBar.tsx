@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Music, Video, Calendar, Settings } from "lucide-react";
+import Image from "next/image";
+import { Home, Music, Video, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -44,9 +45,11 @@ export function TacticalBar() {
                     animate={{ opacity: 1, y: 0 }}
                     className="absolute -top-1 left-1/2 -translate-x-1/2"
                   >
-                    <img
+                    <Image
                       src="/images/branding/spray-drip-accent.svg"
                       alt=""
+                      width={12}
+                      height={20}
                       className="w-3 h-5"
                     />
                   </motion.div>

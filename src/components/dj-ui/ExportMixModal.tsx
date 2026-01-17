@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Video, Music, FileText, Settings, X } from "lucide-react";
+import { Download, Video, X } from "lucide-react";
 import { getPocketVault, type RecordingMetadata } from "@/engine/PocketVault";
 import { getEnhancedMixRecorder } from "@/engine/EnhancedMixRecorder";
 import { getVideoRenderer } from "@/engine/VideoRenderer";

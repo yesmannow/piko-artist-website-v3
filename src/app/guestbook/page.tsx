@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, User, MapPin, Clock, Trash2, Heart, Flag } from "lucide-react";
-import Image from "next/image";
+import { MessageSquare, Send, User, MapPin, Clock, Trash2, Heart } from "lucide-react";
 
 interface GuestbookEntry {
   id: string;
