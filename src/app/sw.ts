@@ -152,10 +152,21 @@ const customRuntimeCaching: RuntimeCaching[] = [
     matcher: /\/audio\/stems\/.*\.(?:mp3|wav|ogg|m4a)$/i,
     handler: new NetworkOnly(), // Never cache stems - they're too large (prevents quota errors)
   },
-  // Regular audio files - NetworkOnly to avoid caching large media
+  // Regular audio files - CacheFirst with tight limits for offline playbacks
   {
     matcher: /\/audio\/tracks\/.*\.(?:mp3|wav|ogg|m4a)$/i,
-    handler: new NetworkOnly(),
+    handler: new CacheFirst({
+      cacheName: "audio-tracks",
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 16,
+          maxAgeSeconds: 7 * 24 * 60 * 60,
+          maxAgeFrom: "last-used",
+        }),
+        new RangeRequestsPlugin(),
+        SizeMetadataPlugin,
+      ],
+    }),
   },
   // Audio samples - even stricter limit
   {
@@ -182,6 +193,36 @@ const customRuntimeCaching: RuntimeCaching[] = [
         new ExpirationPlugin({
           maxEntries: 4, // CRITICAL: Only cache 4 GLB files max
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          maxAgeFrom: "last-used",
+        }),
+        SizeMetadataPlugin,
+      ],
+    }),
+  },
+  // Track artwork and cover images
+  {
+    matcher: /\/images\/tracks\/.*\.(?:png|jpg|jpeg|webp|avif)$/i,
+    handler: new CacheFirst({
+      cacheName: "track-art",
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 64,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+          maxAgeFrom: "last-used",
+        }),
+        SizeMetadataPlugin,
+      ],
+    }),
+  },
+  // Mix exports (webm)
+  {
+    matcher: /\/mixes\/.*\.(?:webm|mp3)$/i,
+    handler: new CacheFirst({
+      cacheName: "mixes",
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 8,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
           maxAgeFrom: "last-used",
         }),
         SizeMetadataPlugin,

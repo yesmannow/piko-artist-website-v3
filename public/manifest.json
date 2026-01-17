@@ -1,22 +1,22 @@
 {
-  "name": "Piko Artist V3 - Mobile DJ Workstation",
-  "short_name": "Piko V3",
-  "description": "Professional Mobile DJ Workstation - Studio V2",
-  "start_url": "/studio-v2",
+  "name": "Piko DJ Studio",
+  "short_name": "Piko DJ",
+  "description": "Professional Mobile DJ Workstation",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#000000",
-  "theme_color": "#000000",
+  "theme_color": "#FFD700",
   "scope": "/",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

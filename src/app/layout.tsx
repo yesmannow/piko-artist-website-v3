@@ -17,6 +17,7 @@ import { LogoIntro } from "@/components/branding/LogoIntro";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ParticlesBackground } from "@/components/ParticlesBackground";
 import { NavBar } from "@/components/layout/NavBar";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = localFont({
@@ -159,6 +160,7 @@ export default function RootLayout({
       >
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />
+        <PWAInstallPrompt />
         <LogoIntro />
         <ParticlesBackground />
         <AudioProvider>
