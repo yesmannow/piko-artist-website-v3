@@ -325,7 +325,7 @@ export function DJInterface() {
 
   // Clear All FX handlers
   const handleClearAllFXA = () => {
-    setFilterFreqA(1000);
+    setFilterFreqA(20000); // Reset to wide open (neutral/bypass)
     setFilterTypeA("lowpass");
     setReverbDryWetA(0);
     setDelayTimeA(0);
@@ -334,7 +334,7 @@ export function DJInterface() {
   };
 
   const handleClearAllFXB = () => {
-    setFilterFreqB(1000);
+    setFilterFreqB(20000); // Reset to wide open (neutral/bypass)
     setFilterTypeB("lowpass");
     setReverbDryWetB(0);
     setDelayTimeB(0);
@@ -581,7 +581,7 @@ export function DJInterface() {
     // Filter for Deck A
     const fxFilterA = ctx.createBiquadFilter();
     fxFilterA.type = "lowpass";
-    fxFilterA.frequency.value = 1000;
+    fxFilterA.frequency.value = 20000; // Match initial state (wide open, no filtering)
     fxFilterA.Q.value = 1;
     fxFilterARef.current = fxFilterA;
 
@@ -627,7 +627,7 @@ export function DJInterface() {
     // Filter for Deck B
     const fxFilterB = ctx.createBiquadFilter();
     fxFilterB.type = "lowpass";
-    fxFilterB.frequency.value = 1000;
+    fxFilterB.frequency.value = 20000; // Match initial state (wide open, no filtering)
     fxFilterB.Q.value = 1;
     fxFilterBRef.current = fxFilterB;
 
@@ -2756,11 +2756,11 @@ export function DJInterface() {
                   distortionBypassB={distortionBypassB}
                   onFilterBypassChangeA={(bypass) => {
                     setFilterBypassA(bypass);
-                    if (bypass) setFilterFreqA(1000); // Reset to neutral
+                    if (bypass) setFilterFreqA(20000); // Reset to wide open (neutral/bypass)
                   }}
                   onFilterBypassChangeB={(bypass) => {
                     setFilterBypassB(bypass);
-                    if (bypass) setFilterFreqB(1000); // Reset to neutral
+                    if (bypass) setFilterFreqB(20000); // Reset to wide open (neutral/bypass)
                   }}
                   onReverbBypassChangeA={(bypass) => {
                     setReverbBypassA(bypass);
