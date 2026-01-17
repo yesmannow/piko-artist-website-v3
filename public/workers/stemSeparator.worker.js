@@ -987,7 +987,7 @@
             }
           };
           function st(i, l, p = {}) {
-            return function(h, y, S = {}) {
+            return (function(h, y, S = {}) {
               var k = y.name;
               if (!h) throw new Vt(`type "${k}" must have a positive integer typeid pointer`);
               if ($n.hasOwnProperty(h)) {
@@ -995,7 +995,7 @@
                 throw new Vt(`Cannot register type '${k}' twice`);
               }
               $n[h] = y, delete Cc[h], vn.hasOwnProperty(h) && (y = vn[h], delete vn[h], y.forEach((B) => B()));
-            }(i, l, p);
+            })(i, l, p);
           }
           var mi = (i, l, p) => {
             switch (l) {
@@ -1272,7 +1272,7 @@
             }
           }, _t = 0, Xe = null, gi = 0, mr = [], yi = {}, bi = {}, Xc = 0, kn = null, Jc = [];
           function _i(i) {
-            return function(l) {
+            return (function(l) {
               if (!Z) {
                 if (_t === 0) {
                   var p = false, h = false;
@@ -1280,10 +1280,10 @@
                     if (!Z && (gi = y, p = true, h)) {
                       _t = 2, pr(() => Ki(Xe)), typeof MainLoop < "u" && MainLoop.Qb && MainLoop.resume(), y = false;
                       try {
-                        var S = function() {
+                        var S = (function() {
                           var U = O()[Xe + 8 >>> 2 >>> 0];
                           return U = M[bi[U]], --gt, U();
-                        }();
+                        })();
                       } catch (U) {
                         S = U, y = true;
                       }
@@ -1294,16 +1294,16 @@
                       }
                       if (y && !k) throw S;
                     }
-                  }), h = true, p || (_t = 1, Xe = function() {
+                  }), h = true, p || (_t = 1, Xe = (function() {
                     var y = br(65548), S = y + 12;
                     X()[y >>> 2 >>> 0] = S, X()[y + 4 >>> 2 >>> 0] = S + 65536, S = mr[0];
                     var k = yi[S];
                     return k === void 0 && (k = Xc++, yi[S] = k, bi[k] = S), S = k, O()[y + 8 >>> 2 >>> 0] = S, y;
-                  }(), typeof MainLoop < "u" && MainLoop.Qb && MainLoop.pause(), pr(() => qi(Xe)));
+                  })(), typeof MainLoop < "u" && MainLoop.Qb && MainLoop.pause(), pr(() => qi(Xe)));
                 } else _t === 2 ? (_t = 0, pr(Zi), lt(Xe), Xe = null, Jc.forEach(In)) : ht(`invalid state: ${_t}`);
                 return gi;
               }
-            }((l) => {
+            })((l) => {
               i().then(l);
             });
           }
@@ -1558,14 +1558,14 @@
             }
             return X()[h >>> 2 >>> 0] = y, 0;
           }
-          u || function() {
+          u || (function() {
             for (var i = r.numThreads - 1; i--; ) Ko();
             bn.push(() => {
-              ft++, function(l) {
+              ft++, (function(l) {
                 u ? l() : Promise.all(yt.map(jo)).then(l);
-              }(() => No());
+              })(() => No());
             });
-          }();
+          })();
           for (var Mi = Array(256), yr = 0; 256 > yr; ++yr) Mi[yr] = String.fromCharCode(yr);
           pi = Mi, ut.push(0, 1, void 0, 1, null, 1, true, 1, false, 1), r.count_emval_handles = () => ut.length / 2 - 5 - xn.length, u || (v = new WebAssembly.Memory({ initial: 256, maximum: 65536, shared: true }), fe()), r.wasmBinary && (x = r.wasmBinary), r.stackSave = () => Nn(), r.stackRestore = (i) => _r(i), r.stackAlloc = (i) => Un(i), r.setValue = function(i, l, p = "i8") {
             switch (p.endsWith("*") && (p = "*"), p) {
@@ -1880,9 +1880,9 @@
           function Lp() {
             return typeof wasmOffsetConverter < "u";
           }
-          var M = await async function() {
+          var M = await (async function() {
             function i(h, y) {
-              return M = h.exports, M = function() {
+              return M = h.exports, M = (function() {
                 var S = M, k = {};
                 for (let [B, U] of Object.entries(S)) k[B] = typeof U == "function" ? (...G) => {
                   mr.push(B);
@@ -1893,10 +1893,10 @@
                   }
                 } : U;
                 return k;
-              }(), M = function() {
+              })(), M = (function() {
                 var S = M, k = (U) => (G) => U(G) >>> 0, B = (U) => () => U() >>> 0;
                 return (S = Object.assign({}, S)).Ea = k(S.Ea), S.gb = B(S.gb), S.ib = k(S.ib), S.tb = k(S.tb), S.ub = B(S.ub), S.__cxa_get_exception_ptr = k(S.__cxa_get_exception_ptr), S;
-              }(), Ho.push(M.jb), $ = y, No(), M;
+              })(), Ho.push(M.jb), $ = y, No(), M;
             }
             ft++;
             var l = Vo();
@@ -1913,7 +1913,7 @@
             });
             mt ?? (mt = r.locateFile ? r.locateFile ? r.locateFile("ort-wasm-simd-threaded.jsep.wasm", w) : w + "ort-wasm-simd-threaded.jsep.wasm" : new URL("ort-wasm-simd-threaded.jsep.wasm", import_meta.url).href);
             try {
-              var p = await async function(h) {
+              var p = await (async function(h) {
                 var y = mt;
                 if (!x && typeof WebAssembly.instantiateStreaming == "function" && !ce(y)) try {
                   var S = fetch(y, { credentials: "same-origin" });
@@ -1921,9 +1921,9 @@
                 } catch (k) {
                   ie(`wasm streaming compile failed: ${k}`), ie("falling back to ArrayBuffer instantiation");
                 }
-                return async function(k, B) {
+                return (async function(k, B) {
                   try {
-                    var U = await async function(G) {
+                    var U = await (async function(G) {
                       if (!x) try {
                         var Q = await f(G);
                         return new Uint8Array(Q);
@@ -1935,30 +1935,30 @@
                         G = g(G);
                       }
                       return G;
-                    }(k);
+                    })(k);
                     return await WebAssembly.instantiate(U, B);
                   } catch (G) {
                     ie(`failed to asynchronously prepare wasm: ${G}`), ht(G);
                   }
-                }(y, h);
-              }(l);
+                })(y, h);
+              })(l);
               return i(p.instance, p.module);
             } catch (h) {
               return n(h), Promise.reject(h);
             }
-          }(), Ri = (i) => (Ri = M.Ea)(i), Ui = () => (Ui = M.Fa)();
+          })(), Ri = (i) => (Ri = M.Ea)(i), Ui = () => (Ui = M.Fa)();
           r._OrtInit = (i, l) => (r._OrtInit = M.Ga)(i, l), r._OrtGetLastError = (i, l) => (r._OrtGetLastError = M.Ha)(i, l), r._OrtCreateSessionOptions = (i, l, p, h, y, S, k, B, U, G) => (r._OrtCreateSessionOptions = M.Ia)(i, l, p, h, y, S, k, B, U, G), r._OrtAppendExecutionProvider = (i, l, p, h, y) => (r._OrtAppendExecutionProvider = M.Ja)(i, l, p, h, y), r._OrtAddFreeDimensionOverride = (i, l, p) => (r._OrtAddFreeDimensionOverride = M.Ka)(i, l, p), r._OrtAddSessionConfigEntry = (i, l, p) => (r._OrtAddSessionConfigEntry = M.La)(i, l, p), r._OrtReleaseSessionOptions = (i) => (r._OrtReleaseSessionOptions = M.Ma)(i), r._OrtCreateSession = (i, l, p) => (r._OrtCreateSession = M.Na)(i, l, p), r._OrtReleaseSession = (i) => (r._OrtReleaseSession = M.Oa)(i), r._OrtGetInputOutputCount = (i, l, p) => (r._OrtGetInputOutputCount = M.Pa)(i, l, p), r._OrtGetInputOutputMetadata = (i, l, p, h) => (r._OrtGetInputOutputMetadata = M.Qa)(i, l, p, h), r._OrtFree = (i) => (r._OrtFree = M.Ra)(i), r._OrtCreateTensor = (i, l, p, h, y, S) => (r._OrtCreateTensor = M.Sa)(i, l, p, h, y, S), r._OrtGetTensorData = (i, l, p, h, y) => (r._OrtGetTensorData = M.Ta)(i, l, p, h, y), r._OrtReleaseTensor = (i) => (r._OrtReleaseTensor = M.Ua)(i), r._OrtCreateRunOptions = (i, l, p, h) => (r._OrtCreateRunOptions = M.Va)(i, l, p, h), r._OrtAddRunConfigEntry = (i, l, p) => (r._OrtAddRunConfigEntry = M.Wa)(i, l, p), r._OrtReleaseRunOptions = (i) => (r._OrtReleaseRunOptions = M.Xa)(i), r._OrtCreateBinding = (i) => (r._OrtCreateBinding = M.Ya)(i), r._OrtBindInput = (i, l, p) => (r._OrtBindInput = M.Za)(i, l, p), r._OrtBindOutput = (i, l, p, h) => (r._OrtBindOutput = M._a)(i, l, p, h), r._OrtClearBoundOutputs = (i) => (r._OrtClearBoundOutputs = M.$a)(i), r._OrtReleaseBinding = (i) => (r._OrtReleaseBinding = M.ab)(i), r._OrtRunWithBinding = (i, l, p, h, y) => (r._OrtRunWithBinding = M.bb)(i, l, p, h, y), r._OrtRun = (i, l, p, h, y, S, k, B) => (r._OrtRun = M.cb)(i, l, p, h, y, S, k, B), r._OrtEndProfiling = (i) => (r._OrtEndProfiling = M.db)(i), r._JsepOutput = (i, l, p) => (r._JsepOutput = M.eb)(i, l, p), r._JsepGetNodeName = (i) => (r._JsepGetNodeName = M.fb)(i);
           var Bn = () => (Bn = M.gb)(), lt = r._free = (i) => (lt = r._free = M.hb)(i), br = r._malloc = (i) => (br = r._malloc = M.ib)(i), Mn = (i, l, p, h, y, S) => (Mn = M.kb)(i, l, p, h, y, S), Ni = () => (Ni = M.lb)(), Vi = (i, l, p, h, y) => (Vi = M.mb)(i, l, p, h, y), Li = (i) => (Li = M.nb)(i), Rn = (i) => (Rn = M.ob)(i), Wi = (i, l) => (Wi = M.pb)(i, l), Gi = () => (Gi = M.qb)(), Hi = (i, l) => (Hi = M.rb)(i, l), _r = (i) => (_r = M.sb)(i), Un = (i) => (Un = M.tb)(i), Nn = () => (Nn = M.ub)(), Fi = r.dynCall_ii = (i, l) => (Fi = r.dynCall_ii = M.vb)(i, l);
           r.dynCall_vii = (i, l, p) => (r.dynCall_vii = M.dynCall_vii)(i, l, p), r.dynCall_iiiii = (i, l, p, h, y) => (r.dynCall_iiiii = M.dynCall_iiiii)(i, l, p, h, y), r.dynCall_iii = (i, l, p) => (r.dynCall_iii = M.dynCall_iii)(i, l, p), r.dynCall_iiiiii = (i, l, p, h, y, S) => (r.dynCall_iiiiii = M.dynCall_iiiiii)(i, l, p, h, y, S), r.dynCall_iiiiiiii = (i, l, p, h, y, S, k, B) => (r.dynCall_iiiiiiii = M.dynCall_iiiiiiii)(i, l, p, h, y, S, k, B), r.dynCall_iiiiiii = (i, l, p, h, y, S, k) => (r.dynCall_iiiiiii = M.dynCall_iiiiiii)(i, l, p, h, y, S, k), r.dynCall_vi = (i, l) => (r.dynCall_vi = M.dynCall_vi)(i, l), r.dynCall_iiii = (i, l, p, h) => (r.dynCall_iiii = M.dynCall_iiii)(i, l, p, h), r.dynCall_i = (i) => (r.dynCall_i = M.dynCall_i)(i), r.dynCall_viiiiiiii = (i, l, p, h, y, S, k, B, U) => (r.dynCall_viiiiiiii = M.dynCall_viiiiiiii)(i, l, p, h, y, S, k, B, U), r.dynCall_viii = (i, l, p, h) => (r.dynCall_viii = M.dynCall_viii)(i, l, p, h), r.dynCall_viijj = (i, l, p, h, y) => (r.dynCall_viijj = M.dynCall_viijj)(i, l, p, h, y), r.dynCall_viiiiii = (i, l, p, h, y, S, k) => (r.dynCall_viiiiii = M.dynCall_viiiiii)(i, l, p, h, y, S, k), r.dynCall_viiii = (i, l, p, h, y) => (r.dynCall_viiii = M.dynCall_viiii)(i, l, p, h, y), r.dynCall_viiiii = (i, l, p, h, y, S) => (r.dynCall_viiiii = M.dynCall_viiiii)(i, l, p, h, y, S), r.dynCall_vfiii = (i, l, p, h, y) => (r.dynCall_vfiii = M.dynCall_vfiii)(i, l, p, h, y), r.dynCall_viiiiff = (i, l, p, h, y, S, k) => (r.dynCall_viiiiff = M.dynCall_viiiiff)(i, l, p, h, y, S, k), r.dynCall_viiiiiff = (i, l, p, h, y, S, k, B) => (r.dynCall_viiiiiff = M.dynCall_viiiiiff)(i, l, p, h, y, S, k, B), r.dynCall_ffff = (i, l, p, h) => (r.dynCall_ffff = M.dynCall_ffff)(i, l, p, h), r.dynCall_viiff = (i, l, p, h, y) => (r.dynCall_viiff = M.dynCall_viiff)(i, l, p, h, y), r.dynCall_fffffff = (i, l, p, h, y, S, k) => (r.dynCall_fffffff = M.dynCall_fffffff)(i, l, p, h, y, S, k), r.dynCall_jjjjjjj = (i, l, p, h, y, S, k) => (r.dynCall_jjjjjjj = M.dynCall_jjjjjjj)(i, l, p, h, y, S, k), r.dynCall_jjjjjj = (i, l, p, h, y, S) => (r.dynCall_jjjjjj = M.dynCall_jjjjjj)(i, l, p, h, y, S), r.dynCall_iijjii = (i, l, p, h, y, S) => (r.dynCall_iijjii = M.dynCall_iijjii)(i, l, p, h, y, S), r.dynCall_viiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge) => (r.dynCall_viiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge), r.dynCall_viiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q) => (r.dynCall_viiiiiiiiii = M.dynCall_viiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q), r.dynCall_viiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re) => (r.dynCall_viiiiiiiiiii = M.dynCall_viiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re), r.dynCall_viiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de) => (r.dynCall_viiiiiiiiiiii = M.dynCall_viiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de), r.dynCall_viiiiiiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et, Yt) => (r.dynCall_viiiiiiiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et, Yt), r.dynCall_viiiiiiiii = (i, l, p, h, y, S, k, B, U, G) => (r.dynCall_viiiiiiiii = M.dynCall_viiiiiiiii)(i, l, p, h, y, S, k, B, U, G), r.dynCall_viiiiiiiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et, Yt, Vn) => (r.dynCall_viiiiiiiiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et, Yt, Vn), r.dynCall_viiiiiii = (i, l, p, h, y, S, k, B) => (r.dynCall_viiiiiii = M.dynCall_viiiiiii)(i, l, p, h, y, S, k, B), r.dynCall_viiiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue) => (r.dynCall_viiiiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue), r.dynCall_jiji = (i, l, p, h) => (r.dynCall_jiji = M.dynCall_jiji)(i, l, p, h), r.dynCall_v = (i) => (r.dynCall_v = M.dynCall_v)(i), r.dynCall_iidiiii = (i, l, p, h, y, S, k) => (r.dynCall_iidiiii = M.dynCall_iidiiii)(i, l, p, h, y, S, k), r.dynCall_iiiiiiiii = (i, l, p, h, y, S, k, B, U) => (r.dynCall_iiiiiiiii = M.dynCall_iiiiiiiii)(i, l, p, h, y, S, k, B, U), r.dynCall_iiij = (i, l, p, h) => (r.dynCall_iiij = M.dynCall_iiij)(i, l, p, h), r.dynCall_iiiiiiiiii = (i, l, p, h, y, S, k, B, U, G) => (r.dynCall_iiiiiiiiii = M.dynCall_iiiiiiiiii)(i, l, p, h, y, S, k, B, U, G), r.dynCall_iiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de) => (r.dynCall_iiiiiiiiiiiii = M.dynCall_iiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de), r.dynCall_iiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q) => (r.dynCall_iiiiiiiiiii = M.dynCall_iiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q), r.dynCall_ji = (i, l) => (r.dynCall_ji = M.dynCall_ji)(i, l), r.dynCall_iijii = (i, l, p, h, y) => (r.dynCall_iijii = M.dynCall_iijii)(i, l, p, h, y), r.dynCall_vij = (i, l, p) => (r.dynCall_vij = M.dynCall_vij)(i, l, p), r.dynCall_viiijii = (i, l, p, h, y, S, k) => (r.dynCall_viiijii = M.dynCall_viiijii)(i, l, p, h, y, S, k), r.dynCall_viijiiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et) => (r.dynCall_viijiiiiiiiiiiiiii = M.dynCall_viijiiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et), r.dynCall_viiiji = (i, l, p, h, y, S) => (r.dynCall_viiiji = M.dynCall_viiiji)(i, l, p, h, y, S), r.dynCall_fiii = (i, l, p, h) => (r.dynCall_fiii = M.dynCall_fiii)(i, l, p, h), r.dynCall_viijii = (i, l, p, h, y, S) => (r.dynCall_viijii = M.dynCall_viijii)(i, l, p, h, y, S), r.dynCall_viij = (i, l, p, h) => (r.dynCall_viij = M.dynCall_viij)(i, l, p, h), r.dynCall_jiij = (i, l, p, h) => (r.dynCall_jiij = M.dynCall_jiij)(i, l, p, h), r.dynCall_fi = (i, l) => (r.dynCall_fi = M.dynCall_fi)(i, l), r.dynCall_fii = (i, l, p) => (r.dynCall_fii = M.dynCall_fii)(i, l, p), r.dynCall_jii = (i, l, p) => (r.dynCall_jii = M.dynCall_jii)(i, l, p), r.dynCall_dii = (i, l, p) => (r.dynCall_dii = M.dynCall_dii)(i, l, p), r.dynCall_fiiii = (i, l, p, h, y) => (r.dynCall_fiiii = M.dynCall_fiiii)(i, l, p, h, y), r.dynCall_fif = (i, l, p) => (r.dynCall_fif = M.dynCall_fif)(i, l, p), r.dynCall_jfi = (i, l, p) => (r.dynCall_jfi = M.dynCall_jfi)(i, l, p), r.dynCall_viiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie) => (r.dynCall_viiiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie), r.dynCall_viiiiiiiiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et, Yt, Vn, Wp) => (r.dynCall_viiiiiiiiiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt, Et, Yt, Vn, Wp), r.dynCall_viiiiiiiiiiiiiiii = (i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt) => (r.dynCall_viiiiiiiiiiiiiiii = M.dynCall_viiiiiiiiiiiiiiii)(i, l, p, h, y, S, k, B, U, G, Q, re, de, ge, Ie, Ue, dt), r.dynCall_iif = (i, l, p) => (r.dynCall_iif = M.dynCall_iif)(i, l, p), r.dynCall_jiiii = (i, l, p, h, y) => (r.dynCall_jiiii = M.dynCall_jiiii)(i, l, p, h, y), r.dynCall_jiii = (i, l, p, h) => (r.dynCall_jiii = M.dynCall_jiii)(i, l, p, h), r.dynCall_viif = (i, l, p, h) => (r.dynCall_viif = M.dynCall_viif)(i, l, p, h), r.dynCall_viiij = (i, l, p, h, y) => (r.dynCall_viiij = M.dynCall_viiij)(i, l, p, h, y), r.dynCall_viiiijii = (i, l, p, h, y, S, k, B) => (r.dynCall_viiiijii = M.dynCall_viiiijii)(i, l, p, h, y, S, k, B), r.dynCall_iiiiij = (i, l, p, h, y, S) => (r.dynCall_iiiiij = M.dynCall_iiiiij)(i, l, p, h, y, S), r.dynCall_iiiiid = (i, l, p, h, y, S) => (r.dynCall_iiiiid = M.dynCall_iiiiid)(i, l, p, h, y, S), r.dynCall_iiiiijj = (i, l, p, h, y, S, k) => (r.dynCall_iiiiijj = M.dynCall_iiiiijj)(i, l, p, h, y, S, k), r.dynCall_iiiiiijj = (i, l, p, h, y, S, k, B) => (r.dynCall_iiiiiijj = M.dynCall_iiiiiijj)(i, l, p, h, y, S, k, B);
           var qi = (i) => (qi = M.wb)(i), ji = () => (ji = M.xb)(), Ki = (i) => (Ki = M.yb)(i), Zi = () => (Zi = M.zb)();
-          return function i() {
+          return (function i() {
             if (0 < ft) Nt = i;
             else if (u) t(r), Fe();
             else {
               for (; 0 < bn.length; ) bn.shift()(r);
               0 < ft ? Nt = i : (r.calledRun = true, Z || (Fe(), t(r)));
             }
-          }(), r.PTR_SIZE = 4, o;
+          })(), r.PTR_SIZE = 4, o;
         }, Qp = Ea, Yp = globalThis.self?.name?.startsWith("em-pthread");
         Yp && Ea();
       });

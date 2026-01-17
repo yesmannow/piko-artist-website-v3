@@ -16,6 +16,9 @@ import {
   FileAudio,
   ChevronLeft,
   ChevronRight,
+  Sliders,
+  Mic,
+  Music2,
 } from "lucide-react";
 import { useHelp } from "@/context/HelpContext";
 import { ConsoleTour } from "./dj-ui/ConsoleTour";
@@ -37,6 +40,8 @@ import {
   type DominantColors,
 } from "@/utils/colorExtractor";
 import { AutomixPanel } from "./dj-ui/AutomixPanel";
+import { LibraryModal } from "./dj-ui/LibraryModal";
+import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -46,6 +51,7 @@ const DISTORTION_CURVE_BASE = 3;
 const DISTORTION_CURVE_MULTIPLIER = 20;
 const DISTORTION_CURVE_SAMPLES = 44100;
 // Safety cap for feedback loop stability
+const FX_DELAY_FEEDBACK_MAX = 0.9;
 
 /**
  * Generate a symmetrical soft-clipping curve for WaveShaperNode.
@@ -208,17 +214,6 @@ export function DJInterface() {
     setIsLibraryOpen(false);
   }, []);
 
-  const handleLoadTrack = useCallback(
-    (track: (typeof tracks)[0]) => {
-      if (libraryTargetDeck === "A") {
-        loadTrackToDeckA(track);
-      } else {
-        loadTrackToDeckB(track);
-      }
-    },
-    [libraryTargetDeck, loadTrackToDeckA, loadTrackToDeckB]
-  );
-
   // Determine if FX are active for each deck
   const isFxActiveA = useMemo(() => {
     return (
@@ -230,11 +225,12 @@ export function DJInterface() {
       delayTimeA > 0 ||
       delayFeedbackA > 0 ||
       distortionAmountA > 0 ||
-      filterFreqA < 20000 ||
-      flangerDepthA > 0 ||
-      phaserDepthA > 0 ||
-      chorusDepthA > 0 ||
-      echoFeedbackA > 0
+      filterFreqA < 20000
+      // Additional FX are not fully implemented yet
+      // flangerDepthA > 0 ||
+      // phaserDepthA > 0 ||
+      // chorusDepthA > 0 ||
+      // echoFeedbackA > 0
     );
   }, [
     filterBypassA,
@@ -246,10 +242,6 @@ export function DJInterface() {
     delayFeedbackA,
     distortionAmountA,
     filterFreqA,
-    flangerDepthA,
-    phaserDepthA,
-    chorusDepthA,
-    echoFeedbackA,
   ]);
 
   const isFxActiveB = useMemo(() => {
@@ -262,11 +254,12 @@ export function DJInterface() {
       delayTimeB > 0 ||
       delayFeedbackB > 0 ||
       distortionAmountB > 0 ||
-      filterFreqB < 20000 ||
-      flangerDepthB > 0 ||
-      phaserDepthB > 0 ||
-      chorusDepthB > 0 ||
-      echoFeedbackB > 0
+      filterFreqB < 20000
+      // Additional FX are not fully implemented yet
+      // flangerDepthB > 0 ||
+      // phaserDepthB > 0 ||
+      // chorusDepthB > 0 ||
+      // echoFeedbackB > 0
     );
   }, [
     filterBypassB,
@@ -278,10 +271,6 @@ export function DJInterface() {
     delayFeedbackB,
     distortionAmountB,
     filterFreqB,
-    flangerDepthB,
-    phaserDepthB,
-    chorusDepthB,
-    echoFeedbackB,
   ]);
 
   // Clear All FX handlers
@@ -1273,6 +1262,17 @@ export function DJInterface() {
     }
   }, []);
 
+  const handleLoadTrack = useCallback(
+    (track: (typeof tracks)[0]) => {
+      if (libraryTargetDeck === "A") {
+        loadTrackToDeckA(track);
+      } else {
+        loadTrackToDeckB(track);
+      }
+    },
+    [libraryTargetDeck, loadTrackToDeckA, loadTrackToDeckB]
+  );
+
   // Handle sync - syncs the other deck to this deck's speed
   /**
    * Handle crossfader change with haptic feedback at center position
@@ -1412,6 +1412,20 @@ export function DJInterface() {
 
       // Set drag image offset to center
       const offsetX = 60; // Half of drag image width
+      const offsetY = 60; // Half of drag image height
+      e.dataTransfer.setDragImage(dragImage, offsetX, offsetY);
+
+      // Clean up drag image after drag starts
+      setTimeout(() => {
+        document.body.removeChild(dragImage);
+      }, 0);
+    },
+    [isMounted],
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTrack(null);
+  }, []);
 
   const handleDeckADragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -1443,6 +1457,18 @@ export function DJInterface() {
       }
     },
     [loadTrackToDeckA],
+  );
+
+  const handleDeckADragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (!isMounted) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setDragOverDeck("A");
+      const dropZone = document.getElementById("deck-a-drop-zone");
+      if (dropZone) dropZone.style.opacity = "1";
+    },
+    [isMounted],
   );
 
   const handleDeckBDragOver = useCallback(
@@ -2815,17 +2841,4 @@ export function DJInterface() {
       />
     </>
   );
-}
-
-function makeDistortionCurve(amount: number) {
-  const k = Number.isFinite(amount) ? amount : DISTORTION_DEFAULT_K;
-  const curve = new Float32Array(DISTORTION_CURVE_SAMPLES);
-  const deg = Math.PI / 180;
-  for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
-    const x = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
-    curve[i] =
-      ((DISTORTION_CURVE_BASE + k) * x * DISTORTION_CURVE_MULTIPLIER * deg) /
-      (Math.PI + k * Math.abs(x));
-  }
-  return curve;
 }
