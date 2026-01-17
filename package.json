@@ -22,7 +22,8 @@
     "verify:stem-strict": "node scripts/verify-stem-assets-strict.mjs",
     "test:model-url": "node scripts/test-model-url.mjs",
     "download:model": "node scripts/download-model.mjs",
-    "download:fonts": "node scripts/download-fonts.mjs"
+    "download:fonts": "node scripts/download-fonts.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-spring/three": "^10.0.3",
@@ -66,7 +67,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "cross-env": "^10.1.0",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.9",
     "typescript": "5.9.3"

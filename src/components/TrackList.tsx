@@ -3,7 +3,6 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
-import Link from "next/link";
 import { Play } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import Image from "next/image";

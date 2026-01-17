@@ -121,9 +121,9 @@ class TrackHistory {
       title: track.title,
       artist: track.artist,
       startedAt: Date.now(),
-      duration: track.duration,
-      bpm: track.bpm,
-      camelot: track.camelot,
+      duration: track.duration ?? undefined,
+      bpm: track.bpm ?? undefined,
+      camelot: track.camelot ?? undefined,
     };
 
     console.log(`[TrackHistory] Started tracking: ${track.title}`);

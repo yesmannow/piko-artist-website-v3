@@ -293,6 +293,11 @@ export function useDualDeck() {
       return;
     }
 
+    // Resume AudioContext if suspended (browser autoplay policy)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
     // Stop if already playing
     if (deckA.sourceNode) {
       deckA.sourceNode.stop();
@@ -350,6 +355,11 @@ export function useDualDeck() {
   const playDeckB = useCallback(() => {
     if (!audioContext || !deckBGainRef.current || !deckB.audioBuffer) {
       return;
+    }
+
+    // Resume AudioContext if suspended (browser autoplay policy)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
     }
 
     // Stop if already playing

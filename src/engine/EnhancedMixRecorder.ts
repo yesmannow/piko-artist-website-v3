@@ -298,7 +298,7 @@ class EnhancedMixRecorder {
           title: track.title,
           artist: track.artist,
           startTime: Math.round((track.startedAt - (this.currentSession!.startTime!.getTime())) / 1000),
-          endTime: track.endedAt ? Math.round((track.endedAt - (this.currentSession!.startTime!.getTime())) / 1000) : undefined,
+          endTime: track.endedAt ? Math.round((track.endedAt - (this.currentSession!.startTime!.getTime())) / 1000) : 0,
           bpm: track.bpm,
           camelot: track.camelot,
         })),

@@ -21,7 +21,7 @@ export async function GET(req: Request) {
         },
       }
     );
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { images: [], error: "Failed to fetch visuals" },
       { status: 500 }

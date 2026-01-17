@@ -3,25 +3,14 @@
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, User, Video, MoreVertical, Music, Wrench, Calendar, Mail, X, Instagram, Youtube, ExternalLink } from "lucide-react";
+import { Mail, X, Instagram, Youtube, ExternalLink, Menu, Music, Video } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Logo from "@/components/branding/Logo";
 import { useAudio } from "@/context/AudioContext";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-
-const navItems = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/#rap-sheet", label: "About", icon: User },
-  { href: "/videos", label: "Videos", icon: Video },
-];
-
-const moreItems = [
-  { href: "/music", label: "Music", icon: Music },
-  { href: "/studio", label: "Studio", icon: Wrench },
-  { href: "/contact", label: "Contact", icon: Mail },
-];
+import { primaryNavItems, quickNavItems, type NavItem, type NavBadge } from "@/config/nav.config";
 
 // Social links for mobile menu
 const socialLinks = [
@@ -53,17 +42,39 @@ const grainStyle = {
     'url("data:image/svg+xml,%3Csvg%20width%3D%27100%27%20height%3D%27100%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cfilter%20id%3D%27noise%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.9%27%20numOctaves%3D%273%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url(%23noise)%27%20opacity%3D%270.04%27/%3E%3C/svg%3E")',
 };
 
-export function MobileNav() {
+const BadgePill = ({ badge }: { badge: NavBadge }) => {
+  const toneStyles =
+    badge.tone === "live"
+      ? "bg-emerald-500/15 text-emerald-200 border-emerald-400/50"
+      : badge.tone === "beta"
+        ? "bg-fuchsia-500/10 text-fuchsia-200 border-fuchsia-400/60"
+        : "bg-white/10 text-white border-white/20";
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${toneStyles}`}>
+      {badge.text}
+    </span>
+  );
+};
+
+const getHref = (item: NavItem) => (item.sectionId ? `${item.href}#${item.sectionId}` : item.href);
+
+export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems?: NavItem[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const { triggerHaptic } = useHaptic();
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const logoRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const drawerContentRef = useRef<HTMLDivElement>(null);
   const { currentTrack, isPlaying } = useAudio();
+  const menuItems = useMemo(() => items ?? primaryNavItems, [items]);
+  const pinnedItems = useMemo(
+    () => quickItems ?? quickNavItems ?? menuItems.slice(0, 3),
+    [quickItems, menuItems],
+  );
 
   // Check for reduced motion preference
   useEffect(() => {
@@ -79,14 +90,14 @@ export function MobileNav() {
   }, []);
 
   // Body scroll lock when drawer is open
-  useBodyScrollLock(isMoreOpen);
+  useBodyScrollLock(isMenuOpen);
 
   // Focus trap for drawer
-  useFocusTrap(isMoreOpen, drawerContentRef);
+  useFocusTrap(isMenuOpen, drawerContentRef);
 
   // Close mobile menu drawer on route change
   useEffect(() => {
-    setIsMoreOpen(false);
+    setIsMenuOpen(false);
     setIsAboutOpen(false);
   }, [pathname]);
 
@@ -94,31 +105,35 @@ export function MobileNav() {
     triggerHaptic();
   };
 
-  // Handle More button click - manually toggle drawer
-  const handleMoreClick = () => {
+  // Handle menu button click - manually toggle drawer
+  const handleMenuToggle = () => {
     triggerHaptic();
-    setIsMoreOpen(!isMoreOpen);
+    setIsMenuOpen(!isMenuOpen);
   };
 
   // Close drawer on ESC key
   useEffect(() => {
-    if (!isMoreOpen) return;
+    if (!isMenuOpen) return;
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setIsMoreOpen(false);
+        setIsMenuOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [isMoreOpen]);
+  }, [isMenuOpen]);
 
-  const isActive = (href: string) => {
-    if (href === "/#home" || href === "/") {
-      return pathname === "/";
+  const normalizeHref = (href: string) => href.split("#")[0] || href;
+
+  const isActive = (item: NavItem) => {
+    const base = normalizeHref(item.href);
+    if (pathname === base) return true;
+    if (pathname === "/" && item.sectionId) {
+      return item.sectionId === "home";
     }
-    return pathname === href || pathname.startsWith(href.replace("#", ""));
+    return false;
   };
 
   // Long press handler for About Piko panel
@@ -222,32 +237,33 @@ export function MobileNav() {
 
           {/* Nav items - Right side with even spacing */}
           <div className="flex items-center justify-end flex-1 gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
+            {pinnedItems.map((item) => {
+              const Icon = item.icon ?? Music;
+              const active = isActive(item);
+              const href = getHref(item);
 
               return (
                 <Link
-                  key={item.href}
-                  href={item.href}
+                  key={`${item.href}-${item.sectionId || ""}`}
+                  href={href}
                   onClick={handleClick}
                   className="flex flex-col items-center justify-center h-full relative min-h-[44px] px-3 flex-1 touch-manipulation"
+                  aria-label={`Navigate to ${item.label}`}
                 >
                   <motion.div
-                    whileTap={{ scale: 0.9 }}
+                    whileTap={{ scale: 0.92 }}
                     className="flex flex-col items-center gap-1"
                   >
                     <Icon
-                      className={`w-6 h-6 transition-colors ${
-                        active ? "text-toxic-lime" : "text-zinc-400"
-                      }`}
+                      className={`w-6 h-6 transition-colors ${active ? "text-toxic-lime drop-shadow-[0_0_12px_rgba(204,255,0,0.5)]" : "text-zinc-400"}`}
                     />
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider ${
+                      className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                         active ? "text-toxic-lime" : "text-zinc-500"
                       }`}
                     >
                       {item.label}
+                      {item.badge ? <BadgePill badge={item.badge} /> : null}
                     </span>
                   </motion.div>
                   {/* Active indicator - animated pill */}
@@ -263,32 +279,30 @@ export function MobileNav() {
               );
             })}
 
-            {/* More Button */}
+            {/* Menu Button */}
             <button
-              onClick={handleMoreClick}
-              aria-expanded={isMoreOpen}
-              aria-controls="mobile-more-menu"
-              aria-label="More menu"
+              onClick={handleMenuToggle}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-nav-menu"
+              aria-label="Open navigation menu"
               className="flex flex-col items-center justify-center h-full relative min-h-[44px] px-3 flex-1 touch-manipulation"
             >
               <motion.div
                 whileTap={{ scale: 0.9 }}
                 className="flex flex-col items-center gap-1"
               >
-                <MoreVertical
-                  className={`w-6 h-6 transition-colors ${
-                    isMoreOpen ? "text-toxic-lime" : "text-zinc-400"
-                  }`}
+                <Menu
+                  className={`w-6 h-6 transition-colors ${isMenuOpen ? "text-toxic-lime drop-shadow-[0_0_12px_rgba(204,255,0,0.5)]" : "text-zinc-400"}`}
                 />
                 <span
                   className={`text-[10px] font-bold uppercase tracking-wider ${
-                    isMoreOpen ? "text-toxic-lime" : "text-zinc-500"
+                    isMenuOpen ? "text-toxic-lime" : "text-zinc-500"
                   }`}
                 >
-                  More
+                  Menu
                 </span>
               </motion.div>
-              {isMoreOpen && (
+              {isMenuOpen && (
                 <motion.div
                   layoutId="mobileNavIndicatorMore"
                   className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(255,215,0,0.6)]"
@@ -298,9 +312,9 @@ export function MobileNav() {
               )}
             </button>
 
-            {/* More Menu Drawer */}
+            {/* Menu Drawer */}
             <AnimatePresence>
-              {isMoreOpen && (
+              {isMenuOpen && (
                 <>
                   {/* Backdrop Overlay */}
                   <motion.div
@@ -309,17 +323,17 @@ export function MobileNav() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: reducedMotion ? 0.1 : 0.2 }}
                     className="fixed inset-0 bg-black/70 backdrop-blur-sm z-overlay md:hidden"
-                    onClick={() => setIsMoreOpen(false)}
+                    onClick={() => setIsMenuOpen(false)}
                     aria-hidden="true"
                   />
 
                   {/* Drawer Content */}
                   <motion.div
                     ref={drawerContentRef}
-                    id="mobile-more-menu"
+                    id="mobile-nav-menu"
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby="more-menu-title"
+                    aria-labelledby="mobile-menu-title"
                     initial={reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }}
                     animate={reducedMotion ? { opacity: 1, y: 0 } : { y: 0 }}
                     exit={reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }}
@@ -349,24 +363,25 @@ export function MobileNav() {
                     <div className="flex-1 overflow-y-auto px-6 pb-6">
                       {/* Header */}
                       <h2
-                        id="more-menu-title"
+                        id="mobile-menu-title"
                         className="font-header text-2xl font-bold text-toxic-lime mb-6 text-center uppercase tracking-wider"
                       >
-                        More
+                        Navigation
                       </h2>
 
                       {/* Menu Items */}
                       <div className="space-y-3 mb-6">
-                        {moreItems.map((item) => {
-                          const Icon = item.icon;
-                          const active = isActive(item.href);
+                        {menuItems.map((item) => {
+                          const Icon = item.icon ?? Music;
+                          const active = isActive(item);
+                          const href = getHref(item);
                           return (
                             <Link
-                              key={item.href}
-                              href={item.href}
+                              key={`${item.href}-${item.sectionId || ""}`}
+                              href={href}
                               onClick={() => {
                                 handleClick();
-                                setIsMoreOpen(false);
+                                setIsMenuOpen(false);
                               }}
                               className={`flex items-center gap-4 px-4 py-3 rounded-lg border-2 transition-all touch-manipulation ${
                                 active
@@ -374,9 +389,19 @@ export function MobileNav() {
                                   : "bg-zinc-800/50 text-white border-zinc-700 hover:bg-zinc-700/50 hover:border-toxic-lime/30 active:scale-[0.98]"
                               }`}
                             >
-                              <Icon className="w-5 h-5 flex-shrink-0" />
-                              <span className="font-bold uppercase tracking-wider">
+                              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/60 border border-zinc-700">
+                                {active && (
+                                  <motion.span
+                                    className="absolute inset-0 rounded-full bg-toxic-lime/20 blur-md"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                  />
+                                )}
+                                <Icon className="w-5 h-5 relative z-10" />
+                              </div>
+                              <span className="font-bold uppercase tracking-wider flex items-center gap-2">
                                 {item.label}
+                                {item.badge ? <BadgePill badge={item.badge} /> : null}
                               </span>
                             </Link>
                           );
@@ -414,7 +439,7 @@ export function MobileNav() {
                         <button
                           onClick={() => {
                             handleClick();
-                            setIsMoreOpen(false);
+                            setIsMenuOpen(false);
                             router.push("/contact");
                           }}
                           className="w-full px-4 py-3 rounded-lg border-2 border-toxic-lime/30 bg-zinc-800/30 text-white hover:bg-toxic-lime/10 hover:border-toxic-lime/50 transition-all touch-manipulation active:scale-[0.98]"
@@ -517,45 +542,43 @@ export function MobileNav() {
 }
 
 /*
- * TEST PLAN - Mobile "More" Menu
+ * TEST PLAN - Mobile Menu Drawer
  *
- * ✅ FUNCTIONALITY
- * - [ ] Tap "More" button → drawer opens from bottom
- * - [ ] Tap backdrop → drawer closes
- * - [ ] Tap menu item → navigates and closes drawer
- * - [ ] Tap social icon → opens in new tab
- * - [ ] Tap "Book / Contact" → scrolls to contact section
- * - [ ] Tap "Press Kit" → opens press kit page
- * - [ ] ESC key → closes drawer
- * - [ ] Route change → drawer closes automatically
+ * ? FUNCTIONALITY
+ * - [ ] Tap "Menu" button -> drawer opens from bottom
+ * - [ ] Tap backdrop -> drawer closes
+ * - [ ] Tap nav item -> navigates and closes drawer
+ * - [ ] Tap social icon -> opens in new tab
+ * - [ ] Tap "Book / Contact" -> opens contact flow
+ * - [ ] Tap "Press Kit" -> opens press kit page
+ * - [ ] ESC key -> closes drawer
+ * - [ ] Route change -> drawer closes automatically
  *
- * ✅ VISUAL / POLISH
+ * ? VISUAL / POLISH
  * - [ ] Drawer animates smoothly (spring motion)
  * - [ ] Backdrop has blur effect
  * - [ ] Glow effect visible at top of drawer
- * - [ ] Active menu item highlighted with toxic-lime
- * - [ ] Social icons have hover glow effect
+ * - [ ] Active menu item highlighted with toxic-lime + badge visible
+ * - [ ] Menu button indicator mirrors open state
  * - [ ] Tap feedback (scale down) on all interactive elements
  * - [ ] Reduced motion preference respected
  *
- * ✅ ACCESSIBILITY
+ * ? ACCESSIBILITY
  * - [ ] Focus trap works (Tab cycles through items)
- * - [ ] ESC key closes drawer
  * - [ ] aria-expanded updates on button
  * - [ ] aria-controls links button to drawer
  * - [ ] aria-modal="true" on drawer
  * - [ ] Keyboard navigation works
  * - [ ] Screen reader announces drawer state
  *
- * ✅ PERFORMANCE / STABILITY
+ * ? PERFORMANCE / STABILITY
  * - [ ] No console errors
  * - [ ] No layout shift when opening
- * - [ ] No infinite re-renders
  * - [ ] Body scroll locked when open
  * - [ ] Z-index correct (above hero/background)
  * - [ ] No memory leaks on route change
  *
- * ✅ MOBILE DEVICES
+ * ? MOBILE DEVICES
  * - [ ] iPhone Safari (iOS 15+)
  * - [ ] iPhone Chrome
  * - [ ] Android Chrome
@@ -564,3 +587,4 @@ export function MobileNav() {
  * - [ ] No horizontal scroll
  * - [ ] Works in landscape orientation
  */
+

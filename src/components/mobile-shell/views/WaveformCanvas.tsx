@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAudioStore } from '@/store/useAudioStore';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 
 interface WaveformCanvasProps {
   deckId: string;
@@ -26,12 +26,25 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
   const bpmWorkerRef = useRef<Worker | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastPlayheadRef = useRef<number>(0);
+  const enginePromiseRef = useRef<Promise<Awaited<ReturnType<typeof ensureAudioEngineReady>>> | null>(null);
+  const engineRef = useRef<Awaited<ReturnType<typeof ensureAudioEngineReady>> | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Subscribe to deck state
   const deckState = useAudioStore((state) => state.decks[deckId]);
+
+  const getEngine = () => {
+    if (engineRef.current) return Promise.resolve(engineRef.current);
+    if (!enginePromiseRef.current) {
+      enginePromiseRef.current = ensureAudioEngineReady().then((engine) => {
+        engineRef.current = engine;
+        return engine;
+      });
+    }
+    return enginePromiseRef.current;
+  };
 
   // Initialize Web Worker
   useEffect(() => {
@@ -230,8 +243,9 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         
         // Update AudioEngine with detected BPM
         try {
-          const engine = getAudioEngine();
-          engine.setBPM(deckId, bpm, offset);
+          getEngine()
+            .then((engine) => engine.setBPM(deckId, bpm, offset))
+            .catch((err) => console.warn('Failed to set BPM:', err));
         } catch (error) {
           console.warn('Failed to set BPM:', error);
         }
@@ -262,8 +276,8 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
       setError(null);
 
       try {
-        const engine = getAudioEngine();
-        const deck = engine.decks.get(deckId);
+        const engine = await getEngine();
+        const deck = engine?.decks.get(deckId);
         
         if (!deck || !deck.buffer) {
           setError('No audio buffer available');
@@ -347,9 +361,9 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
 
         // PHASE 8: Draw beatgrid (vertical lines at beat positions)
         try {
-          const engine = getAudioEngine();
-          const bpm = engine.getBPM(deckId);
-          const gridOffset = engine.getGridOffset(deckId);
+          const engine = engineRef.current;
+          const bpm = engine?.getBPM(deckId) ?? 0;
+          const gridOffset = engine?.getGridOffset(deckId) ?? 0;
           
           if (bpm > 0 && deckState.duration > 0) {
             const beatLength = 60 / bpm; // Seconds per beat
@@ -368,10 +382,10 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         // Draw playhead indicator
         if (deckState.isPlaying && deckState.duration > 0) {
           try {
-            const engine = getAudioEngine();
-            const deck = engine.decks.get(deckId);
-            
-            if (deck && engine.context) {
+          const engine = engineRef.current;
+          const deck = engine?.decks.get(deckId);
+          
+          if (deck && engine?.context) {
               // Calculate current playback position
               const currentTime = engine.context.currentTime - deck.startTime + deck.pauseTime;
               const progress = Math.min(currentTime / deckState.duration, 1);

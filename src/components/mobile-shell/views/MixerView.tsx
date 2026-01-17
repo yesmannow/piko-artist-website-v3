@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef } from 'react';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
-import { VUMeter } from '../VUMeter';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
 
 export const MixerView = () => {
@@ -36,7 +35,7 @@ export const MixerView = () => {
     }
   };
 
-  const handleVolumeChange = (deckId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = async (deckId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     
     // PHASE 3: Check for midpoint crossing
@@ -50,10 +49,11 @@ export const MixerView = () => {
       lastVolumeB.current = val;
     }
     
-    getAudioEngine().setVolume(deckId, val);
+    const engine = await ensureAudioEngineReady();
+    engine.setVolume(deckId, val);
   };
 
-  const handleMasterVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMasterVolumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     
     // PHASE 3: Check for midpoint crossing
@@ -61,8 +61,8 @@ export const MixerView = () => {
     lastMaster.current = val;
     
     setMasterVolume(val);
-    // Note: Master volume control would need to be added to AudioEngine
-    // For now, this just updates the store
+    const engine = await ensureAudioEngineReady();
+    await engine.setMasterVolume(val);
   };
 
   return (
@@ -83,8 +83,13 @@ export const MixerView = () => {
           </div>
           
           <div className="flex-1 flex items-center justify-center gap-2 w-full">
-            {/* VU Meter */}
-            <VUMeter deckId="deckA" />
+            {/* VU Meter placeholder - requires analyser node */}
+            <div className="w-8 h-32 bg-gray-800 rounded flex flex-col justify-end p-1">
+              <div 
+                className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 rounded transition-all duration-75"
+                style={{ height: `${volumeA * 100}%` }}
+              />
+            </div>
             
             {/* Fader */}
             <div className="flex-1 flex flex-col items-center justify-center gap-3 h-full">
@@ -164,8 +169,13 @@ export const MixerView = () => {
               </div>
             </div>
             
-            {/* VU Meter */}
-            <VUMeter deckId="deckB" />
+            {/* VU Meter placeholder - requires analyser node */}
+            <div className="w-8 h-32 bg-gray-800 rounded flex flex-col justify-end p-1">
+              <div 
+                className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 rounded transition-all duration-75"
+                style={{ height: `${volumeB * 100}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>

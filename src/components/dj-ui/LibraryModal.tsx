@@ -8,12 +8,8 @@ import { useHaptic } from "@/hooks/useHaptic";
 import {
   X,
   Search,
-  Upload,
-  ChevronLeft,
-  ChevronRight,
   Music,
   Play,
-  Pause,
 } from "lucide-react";
 
 interface LibraryModalProps {

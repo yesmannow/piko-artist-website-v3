@@ -27,7 +27,6 @@ export function LatencyMonitor({ audioContext, compact = false }: LatencyMonitor
     isBenchmarking,
     isMonitoring,
     history,
-    runBenchmark,
     startMonitoring,
     stopMonitoring,
     getRecommendations,

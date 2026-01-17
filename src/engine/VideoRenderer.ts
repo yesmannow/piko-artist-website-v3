@@ -150,7 +150,7 @@ class VideoRenderer {
           frameRate,
           totalFrames,
           onProgress,
-          signal: this.abortController.signal,
+          signal: this.abortController?.signal ?? new AbortController().signal,
         }).catch((error) => {
           mediaRecorder.stop();
           reject(error);
@@ -159,7 +159,6 @@ class VideoRenderer {
 
     } catch (error) {
       this.cleanup();
-      onError?.(error as Error);
       throw error;
     } finally {
       this.isRendering = false;

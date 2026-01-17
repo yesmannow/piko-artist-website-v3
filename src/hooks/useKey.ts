@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { getKeyService, type KeyAnalysisResult } from '@/engine/rt/analysis/KeyService';
 
 /**

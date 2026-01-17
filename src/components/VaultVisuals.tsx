@@ -133,11 +133,11 @@ export function VaultVisuals() {
                   />
                   {/* YouTube thumbnail overlay (if available) */}
                   {youtubeId && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={thumbnailUrl}
-                      className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity [filter:grayscale(100%)_contrast(1.2)_brightness(0.8)] group-hover:[filter:grayscale(0%)_contrast(1.2)_brightness(0.8)]"
                       alt={video.title}
+                      fill
+                      className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity [filter:grayscale(100%)_contrast(1.2)_brightness(0.8)] group-hover:[filter:grayscale(0%)_contrast(1.2)_brightness(0.8)]"
                     />
                   )}
                   {/* CRT Scanline Overlay */}

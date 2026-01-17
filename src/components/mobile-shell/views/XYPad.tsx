@@ -3,11 +3,24 @@
 import { useRef, useState } from 'react';
 import { useDrag } from '@use-gesture/react';
 import { useSpring, animated } from '@react-spring/web';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 
 export const XYPad = () => {
   // REMEDIATION: Use ref for high-frequency position tracking (no re-renders during drag)
   const positionRef = useRef({ x: 0.5, y: 0.5 });
+  const enginePromiseRef = useRef<Promise<Awaited<ReturnType<typeof ensureAudioEngineReady>>> | null>(null);
+  const engineRef = useRef<Awaited<ReturnType<typeof ensureAudioEngineReady>> | null>(null);
+
+  const getEngine = () => {
+    if (engineRef.current) return Promise.resolve(engineRef.current);
+    if (!enginePromiseRef.current) {
+      enginePromiseRef.current = ensureAudioEngineReady().then((engine) => {
+        engineRef.current = engine;
+        return engine;
+      });
+    }
+    return enginePromiseRef.current;
+  };
   
   // Only use state for display values (updated on drag end for efficiency)
   const [displayPosition, setDisplayPosition] = useState({ x: 0.5, y: 0.5 });
@@ -42,12 +55,13 @@ export const XYPad = () => {
     });
     
     // Apply filter to audio engine (direct access, no state)
-    try {
-      getAudioEngine().setFilter('deckA', normalizedX, normalizedY);
-    } catch (error) {
-      // Engine might not be initialized yet
-      console.warn('AudioEngine not ready');
-    }
+    getEngine()
+      .then((engine) => {
+        engine.setFilter('deckA', normalizedX, normalizedY);
+      })
+      .catch(() => {
+        // Engine might not be initialized yet
+      });
     
     // REMEDIATION: Only update display state on drag end (reduces re-renders)
     if (last) {

@@ -23,7 +23,6 @@ interface GlitchControllerProps {
 export function GlitchController({ getFrequencyData, impactPulse, remixIntensity = 0 }: GlitchControllerProps) {
   const [flashIntensity, setFlashIntensity] = useState(0);
   const [vignetteIntensity, setVignetteIntensity] = useState(0.5);
-  const [brightnessPulse, setBrightnessPulse] = useState(1.0);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const brightnessPulseRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -45,10 +44,6 @@ export function GlitchController({ getFrequencyData, impactPulse, remixIntensity
   // Environmental Reactivity: remixIntensity > 0.7 triggers visual stress
   useEffect(() => {
     if (remixIntensity > 0.7) {
-      // Apply brightness pulse (1.0 to 1.2)
-      const pulseIntensity = 1.0 + (remixIntensity - 0.7) * 0.67; // Maps 0.7-1.0 to 1.0-1.2
-      setBrightnessPulse(pulseIntensity);
-
       // Trigger screen flicker (CRT scan-line interference)
       const flickerInterval = setInterval(() => {
         setFlashIntensity(0.3);
@@ -58,7 +53,6 @@ export function GlitchController({ getFrequencyData, impactPulse, remixIntensity
       // Clear interval when intensity drops
       const cleanup = () => {
         clearInterval(flickerInterval);
-        setBrightnessPulse(1.0);
       };
 
       brightnessPulseRef.current = setTimeout(cleanup, 1000);
@@ -71,7 +65,6 @@ export function GlitchController({ getFrequencyData, impactPulse, remixIntensity
       };
     } else {
       // Gradual fade when intensity drops
-      setBrightnessPulse(1.0);
       setFlashIntensity(0);
     }
   }, [remixIntensity]);

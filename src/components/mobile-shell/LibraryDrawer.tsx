@@ -2,7 +2,7 @@
 
 import { useSpring, animated } from '@react-spring/web';
 import { useUIStore } from '@/store/useUIStore';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 import { X, Music } from 'lucide-react';
 
 const MOCK_TRACKS = [
@@ -22,9 +22,10 @@ export const LibraryDrawer = () => {
     config: { tension: 280, friction: 30 },
   });
 
-  const handleTrackSelect = (track: typeof MOCK_TRACKS[0]) => {
+  const handleTrackSelect = async (track: typeof MOCK_TRACKS[0]) => {
     // Load track into target deck
-    getAudioEngine().loadTrack(libraryTargetDeck, track.url);
+    const engine = await ensureAudioEngineReady();
+    engine.loadTrack(libraryTargetDeck, track.url);
     // Close drawer
     closeLibrary();
   };

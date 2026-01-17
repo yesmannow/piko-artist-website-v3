@@ -3,7 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { useDrag } from '@use-gesture/react';
 import { useAudioStore } from '@/store/useAudioStore';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
 import { useInertia } from '@/hooks/useInertia';
 
@@ -27,6 +27,14 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
   const deckState = useAudioStore((state) => state.decks[deckId]);
   const lastSeekTime = useRef(0);
   const isDragging = useRef(false);
+  const engineReadyRef = useRef<Promise<Awaited<ReturnType<typeof ensureAudioEngineReady>>> | null>(null);
+
+  const getEngine = () => {
+    if (!engineReadyRef.current) {
+      engineReadyRef.current = ensureAudioEngineReady();
+    }
+    return engineReadyRef.current;
+  };
 
   // PHASE 3: Inertia for jog wheel feel
   const { applyVelocity, stopInertia } = useInertia({
@@ -39,11 +47,12 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
       const delta = velocity * 0.01; // Scale velocity to seek delta
       const newTime = Math.max(0, Math.min(deckState.duration, lastSeekTime.current + delta));
       
-      try {
-        const engine = getAudioEngine();
+      getEngine().then((engine) => {
         engine.seek(deckId, newTime);
         lastSeekTime.current = newTime;
-        
+      }).catch(() => {});
+
+      try {
         // Subtle haptic tick during inertia
         if (Math.random() < 0.1) { // 10% chance per frame to avoid overwhelming
           triggerHaptic(HAPTIC_PATTERNS.JOG_TICK);
@@ -77,13 +86,14 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
       }
 
       // Seek to position
-      try {
-        const engine = getAudioEngine();
-        engine.seek(deckId, seekTime);
-        lastSeekTime.current = seekTime;
-      } catch (error) {
-        console.warn('Seek failed:', error);
-      }
+      getEngine()
+        .then((engine) => {
+          engine.seek(deckId, seekTime);
+          lastSeekTime.current = seekTime;
+        })
+        .catch((error) => {
+          console.warn('Seek failed:', error);
+        });
 
       // PHASE 3: Apply inertia on release
       if (last) {
