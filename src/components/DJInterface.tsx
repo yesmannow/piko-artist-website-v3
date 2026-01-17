@@ -610,7 +610,7 @@ export function DJInterface() {
     fxDelayARef.current = delayA;
 
     const delayGainA = ctx.createGain();
-    delayGainA.gain.value = 0.5;
+    delayGainA.gain.value = 0; // Start at 0 - only increase when delay is active
     fxDelayGainARef.current = delayGainA;
 
     const delayFeedbackGainA = ctx.createGain();
@@ -656,7 +656,7 @@ export function DJInterface() {
     fxDelayBRef.current = delayB;
 
     const delayGainB = ctx.createGain();
-    delayGainB.gain.value = 0.5;
+    delayGainB.gain.value = 0; // Start at 0 - only increase when delay is active
     fxDelayGainBRef.current = delayGainB;
 
     const delayFeedbackGainB = ctx.createGain();
