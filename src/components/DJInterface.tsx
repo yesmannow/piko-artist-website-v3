@@ -70,6 +70,15 @@ const FX_DELAY_FEEDBACK_MAX = 0.9;
 function makeDistortionCurve(amount: number) {
   const k = Number.isFinite(amount) ? amount : DISTORTION_DEFAULT_K;
   const curve = new Float32Array(DISTORTION_CURVE_SAMPLES);
+  
+  // When amount is 0, return linear curve (y = x) for transparent bypass
+  if (k === 0) {
+    for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
+      curve[i] = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
+    }
+    return curve;
+  }
+  
   const deg = Math.PI / 180;
   for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
     const x = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
