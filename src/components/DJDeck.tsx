@@ -275,23 +275,43 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             // Only create source once per media element to avoid InvalidStateError
             if (!mediaSourceRef.current) {
               const mediaElement = ws.getMediaElement();
-              const mediaSource =
-                audioContext.createMediaElementSource(mediaElement);
+              if (!mediaElement) {
+                console.error("DJDeck: No media element available from WaveSurfer");
+                return;
+              }
+              
+              console.log(`DJDeck (${deckLabel}): Creating MediaElementSource and connecting to output`);
+              const mediaSource = audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
               mediaSource.connect(outputNode);
+              console.log(`DJDeck (${deckLabel}): Audio routing connected successfully`);
             } else {
-              // Ensure it's connected
+              // Source already exists, ensure it's connected
+              console.log(`DJDeck (${deckLabel}): MediaElementSource already exists, ensuring connection`);
               try {
                 mediaSourceRef.current.connect(outputNode);
-              } catch {}
+                console.log(`DJDeck (${deckLabel}): Reconnected existing source`);
+              } catch (connectError) {
+                // Already connected or connection failed
+                console.log(`DJDeck (${deckLabel}): Source already connected or connection failed (this is normal)`, connectError);
+              }
             }
           } catch (error) {
-            if (process.env.NODE_ENV === "development") {
-              // eslint-disable-next-line no-console
-              console.warn("Audio Routing Error:", error);
+            console.error(`DJDeck (${deckLabel}): Audio Routing Error:`, error);
+            // Try to recover by clearing the ref and retrying once
+            if (mediaSourceRef.current) {
+              console.log(`DJDeck (${deckLabel}): Attempting to recover from error by clearing stale reference`);
+              try {
+                mediaSourceRef.current.disconnect();
+              } catch (disconnectError) {
+                // Ignore disconnect errors
+              }
+              mediaSourceRef.current = null;
             }
           }
+        } else {
+          console.warn(`DJDeck (${deckLabel}): Missing audioContext or outputNode, cannot connect audio`);
         }
       };
 
@@ -475,13 +495,18 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
 
     // Handle play/pause
     const handlePlayPause = async () => {
+      console.log(`DJDeck (${deckLabel}): handlePlayPause called, isPlaying=${isPlaying}, isReversed=${isReversedState}`);
+      
       // FORCE WAKE UP
       if (audioContext && audioContext.state === "suspended") {
+        console.log(`DJDeck (${deckLabel}): AudioContext is suspended, resuming...`);
         await audioContext.resume();
+        console.log(`DJDeck (${deckLabel}): AudioContext resumed, state=${audioContext.state}`);
       }
 
       // If reverse is enabled, use buffer playback
       if (isReversedState && reversedBufferRef.current) {
+        console.log(`DJDeck (${deckLabel}): Using reverse buffer playback`);
         if (bufferSourceRef.current) {
           // Pause reverse playback
           try {
@@ -509,6 +534,24 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       // Normal forward playback
       if (wavesurferRef.current) {
         const ws = wavesurferRef.current;
+        console.log(`DJDeck (${deckLabel}): Normal forward playback, WaveSurfer isPlaying=${ws.isPlaying()}`);
+        
+        // Verify audio connection before playing
+        if (!mediaSourceRef.current && audioContext && outputNode) {
+          console.warn(`DJDeck (${deckLabel}): MediaElementSource not connected! Attempting emergency connection...`);
+          try {
+            const mediaElement = ws.getMediaElement();
+            if (mediaElement) {
+              const mediaSource = audioContext.createMediaElementSource(mediaElement);
+              mediaSourceRef.current = mediaSource;
+              mediaSource.connect(outputNode);
+              console.log(`DJDeck (${deckLabel}): Emergency connection successful`);
+            }
+          } catch (error) {
+            console.error(`DJDeck (${deckLabel}): Emergency connection failed:`, error);
+          }
+        }
+        
         if (quantizeEnabled && bpm) {
           const isPlayingNow = ws.isPlaying();
           const dur = ws.getDuration() || 1;
@@ -518,11 +561,14 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             const snapped =
               snapToBeat(t - beatGridOffset, bpm, 1.0) + beatGridOffset;
             ws.seekTo(Math.max(0, Math.min(snapped, dur)) / dur);
+            console.log(`DJDeck (${deckLabel}): Quantized playback starting at ${snapped}s`);
             ws.play();
           } else {
+            console.log(`DJDeck (${deckLabel}): Pausing playback`);
             ws.pause();
           }
         } else {
+          console.log(`DJDeck (${deckLabel}): Toggling play/pause (no quantize)`);
           ws.playPause();
         }
       }
@@ -536,10 +582,12 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
       const ensureConnection = async () => {
         // FORCE WAKE UP audio context if suspended
         if (audioContext && audioContext.state === "suspended") {
+          console.log(`DJDeck (${deckLabel}): Resuming suspended AudioContext`);
           await audioContext.resume();
         }
 
-        // Ensure media source is connected
+        // Ensure media source is connected (backup connection attempt)
+        // This should normally be handled by connectMedia in the WaveSurfer init effect
         if (
           audioContext &&
           outputNode &&
@@ -549,19 +597,18 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
           try {
             const mediaElement = wavesurferRef.current.getMediaElement();
             if (mediaElement) {
+              console.log(`DJDeck (${deckLabel}): Backup connection attempt - creating MediaElementSource`);
               const mediaSource =
                 audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               mediaSource.connect(outputNode);
+              console.log(`DJDeck (${deckLabel}): Backup connection successful`);
             }
           } catch (error) {
-            if (process.env.NODE_ENV === "development") {
-              // eslint-disable-next-line no-console
-              console.warn(
-                "Could not connect media element to Web Audio:",
-                error,
-              );
-            }
+            console.error(
+              `DJDeck (${deckLabel}): Could not connect media element to Web Audio:`,
+              error,
+            );
           }
         }
       };
