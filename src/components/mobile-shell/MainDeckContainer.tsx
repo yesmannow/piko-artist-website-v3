@@ -4,7 +4,6 @@ import { useUIStore } from '@/store/useUIStore';
 import { WaveformView } from './views/WaveformView';
 import { MixerView } from './views/MixerView';
 import { FXView } from './views/FXView';
-import { PerformancePads } from './controls/PerformancePads';
 
 export const MainDeckContainer = () => {
   const activeView = useUIStore((state) => state.activeView);
@@ -21,10 +20,12 @@ export const MainDeckContainer = () => {
         return <FXView />;
       case 'PADS':
         return (
-          <div className="h-full w-full flex flex-col">
-            <div className="flex-1 flex flex-col justify-center gap-4 p-4">
-              <PerformancePads deckId="deckA" />
-              <PerformancePads deckId="deckB" />
+          <div className="h-full w-full flex flex-col items-center justify-center p-4">
+            <div className="text-white text-center">
+              <h3 className="text-xl font-bold mb-2">Performance Pads</h3>
+              <p className="text-gray-400">
+                Performance pads are available in the deck view.
+              </p>
             </div>
           </div>
         );

@@ -3,7 +3,6 @@
 import { useRef } from 'react';
 import { getAudioEngine } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
-import { VUMeter } from '../VUMeter';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
 
 export const MixerView = () => {
@@ -83,8 +82,13 @@ export const MixerView = () => {
           </div>
           
           <div className="flex-1 flex items-center justify-center gap-2 w-full">
-            {/* VU Meter */}
-            <VUMeter deckId="deckA" />
+            {/* VU Meter placeholder - requires analyser node */}
+            <div className="w-8 h-32 bg-gray-800 rounded flex flex-col justify-end p-1">
+              <div 
+                className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 rounded transition-all duration-75"
+                style={{ height: `${volumeA * 100}%` }}
+              />
+            </div>
             
             {/* Fader */}
             <div className="flex-1 flex flex-col items-center justify-center gap-3 h-full">
@@ -164,8 +168,13 @@ export const MixerView = () => {
               </div>
             </div>
             
-            {/* VU Meter */}
-            <VUMeter deckId="deckB" />
+            {/* VU Meter placeholder - requires analyser node */}
+            <div className="w-8 h-32 bg-gray-800 rounded flex flex-col justify-end p-1">
+              <div 
+                className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 rounded transition-all duration-75"
+                style={{ height: `${volumeB * 100}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
