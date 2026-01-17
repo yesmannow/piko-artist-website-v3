@@ -1,14 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AudioProvider } from "@/context/AudioContext";
 import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
-import { MobileNav } from "@/components/MobileNav";
 import { TacticalBar } from "@/components/navigation/TacticalBar";
 import { InstallApp } from "@/components/InstallApp";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
@@ -18,6 +16,7 @@ import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
 import { LogoIntro } from "@/components/branding/LogoIntro";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ParticlesBackground } from "@/components/ParticlesBackground";
+import { NavBar } from "@/components/layout/NavBar";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = localFont({
@@ -164,7 +163,7 @@ export default function RootLayout({
         <ParticlesBackground />
         <AudioProvider>
           <VideoProvider>
-            <Navbar />
+            <NavBar />
             <SmoothScroll>
               <ScrollRestorationManager />
               <PageTransition>{children}</PageTransition>
@@ -172,7 +171,6 @@ export default function RootLayout({
             <Footer />
             <FloatingVideoPlayer />
             <PersistentPlayer />
-            <MobileNav />
             <TacticalBar />
             <InstallApp />
             <InstallPrompt />

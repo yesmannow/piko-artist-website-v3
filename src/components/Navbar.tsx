@@ -1,24 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useLenis } from "lenis/react";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { primaryNavItems, type NavItem, type NavBadge } from "@/config/nav.config";
 
-const navItems = [
-  { name: "Home", path: "/", anchor: "home" },
-  { name: "About", path: "/", anchor: "rap-sheet" },
-  { name: "Music", path: "/music", anchor: null },
-  { name: "Videos", path: "/videos", anchor: null },
-  { name: "Studio", path: "/studio", anchor: null },
-  { name: "Contact", path: "/contact", anchor: null },
-];
+const NavPill = ({ badge }: { badge: NavBadge }) => {
+  const toneStyles =
+    badge.tone === "live"
+      ? "bg-emerald-500/15 text-emerald-200 border-emerald-400/50"
+      : badge.tone === "beta"
+        ? "bg-fuchsia-500/10 text-fuchsia-200 border-fuchsia-400/60"
+        : "bg-white/10 text-white border-white/20";
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${toneStyles}`}>
+      {badge.text}
+    </span>
+  );
+};
 
 // Animated Logo Component - Urban/Hip-Hop Style
 const AnimatedLogo = ({
@@ -115,9 +122,8 @@ const AnimatedLogo = ({
 };
 
 
-export function Navbar() {
+export function Navbar({ items }: { items?: NavItem[] }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
@@ -127,6 +133,7 @@ export function Navbar() {
   const { triggerHaptic } = useHaptic();
   const scrollDirection = useScrollDirection(50);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const menuItems = useMemo(() => items ?? primaryNavItems, [items]);
 
   // Check for reduced motion preference
   useEffect(() => {
@@ -187,59 +194,34 @@ export function Navbar() {
   }, [isOpen]);
 
   // Smooth scroll to section helper
-  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, item: typeof navItems[0]) => {
-    // If on home page and has anchor, scroll to section
-    if (pathname === "/" && item.anchor) {
-      e.preventDefault();
-      const element = document.getElementById(item.anchor);
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
+    const targetPath = item.href.split("#")[0] || item.href;
+    const targetSection = item.sectionId;
+
+    if (targetSection && pathname === targetPath) {
+      const element = document.getElementById(targetSection);
       if (element) {
-        // Use Lenis smooth scroll if available (preferred method)
-        // Offset accounts for navbar height (80px mobile, 96px desktop)
+        e.preventDefault();
         const navHeight = window.innerWidth >= 768 ? 96 : 80;
         if (lenis) {
           lenis.scrollTo(element, {
             offset: -navHeight,
             duration: 1.5,
-            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           });
         } else {
-          // Fallback to native smooth scroll with offset
           const elementPosition = element.getBoundingClientRect().top + window.scrollY;
           const offsetPosition = elementPosition - navHeight;
           window.scrollTo({
             top: offsetPosition,
-            behavior: "smooth"
+            behavior: "smooth",
           });
         }
-        setIsOpen(false);
-      } else {
-        // Navigate to home and then scroll
-        router.push("/");
-        setTimeout(() => {
-          const el = document.getElementById(item.anchor!);
-          if (el) {
-            const navHeight = window.innerWidth >= 768 ? 96 : 80;
-            if (lenis) {
-              lenis.scrollTo(el, { offset: -navHeight, duration: 1.5 });
-            } else {
-              const elementPosition = el.getBoundingClientRect().top + window.scrollY;
-              const offsetPosition = elementPosition - navHeight;
-              window.scrollTo({
-                top: offsetPosition,
-                behavior: "smooth"
-              });
-            }
-          }
-        }, 100);
       }
-    } else if (item.path !== pathname) {
-      // Regular navigation
-      setIsOpen(false);
-    } else {
-      // Same page, just close menu
-      setIsOpen(false);
     }
-  }, [pathname, router, lenis]);
+
+    setIsOpen(false);
+  }, [pathname, lenis]);
 
   // Check if nav item is active (considering anchors on home page and route matching)
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -252,11 +234,11 @@ export function Navbar() {
     }
 
     const handleScroll = () => {
-      const sections = navItems
-        .filter(item => item.anchor)
-        .map(item => ({
-          id: item.anchor!,
-          element: document.getElementById(item.anchor!),
+      const sections = menuItems
+        .filter((item) => item.sectionId)
+        .map((item) => ({
+          id: item.sectionId!,
+          element: document.getElementById(item.sectionId!),
         }))
         .filter(s => s.element !== null);
 
@@ -311,15 +293,12 @@ export function Navbar() {
     }
   }, [pathname, lenis]);
 
-  const isActive = (item: typeof navItems[0]) => {
-    // For pages with anchors (home page sections)
-    if (pathname === "/" && item.anchor) {
-      return activeSection === item.anchor;
+  const isActive = (item: NavItem) => {
+    const targetPath = item.href.split("#")[0] || item.href;
+    if (pathname === "/" && item.sectionId) {
+      return activeSection === item.sectionId;
     }
-    // For regular pages, check if we're on that route
-    if (item.path !== pathname) return false;
-    // If it's a regular page route without anchor, it's active
-    return pathname === item.path && !item.anchor;
+    return pathname === targetPath;
   };
 
   return (
@@ -372,25 +351,60 @@ export function Navbar() {
             }}
             role="menubar"
           >
-          {navItems.map((item) => {
+          {menuItems.map((item) => {
             const active = isActive(item);
+            const href = item.sectionId ? `${item.href}#${item.sectionId}` : item.href;
             return (
-              <li key={`${item.path}-${item.anchor || ""}`} className="relative group skew-x-[12deg]" role="none">
+              <li key={`${item.href}-${item.sectionId || ""}`} className="relative group skew-x-[12deg]" role="none">
                 <Link
-                  href={item.anchor ? `${item.path}#${item.anchor}` : item.path}
+                  href={href}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors block ${
-                    active
-                      ? "text-[#FFD700]"
-                      : "text-[#E0E0E0] hover:text-[#FFD700]"
-                  }`}
+                  className={`px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors block ${active ? "text-[#FFD700]" : "text-[#E0E0E0] hover:text-[#FFD700]"}`}
                   style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
                   role="menuitem"
                   aria-current={active ? "page" : undefined}
-                  aria-label={`Navigate to ${item.name}${item.anchor ? ` section` : ""}`}
+                  aria-label={`Navigate to ${item.label}${item.sectionId ? ` section` : ""}`}
                 >
-                  {item.name}
+                  <span className="flex items-center gap-2">
+                    {item.icon && (
+                      <motion.span
+                        className={`relative inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 ${active ? "shadow-[0_0_18px_rgba(255,215,0,0.35)]" : ""}`}
+                        whileHover={reducedMotion ? undefined : { rotate: [0, 8, -8, 0] }}
+                        animate={
+                          reducedMotion
+                            ? {}
+                            : active
+                              ? { rotate: [0, 4, -4, 0], scale: 1.05 }
+                              : { rotate: 0, scale: 1 }
+                        }
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                      >
+                        {!reducedMotion && (
+                          <motion.span
+                            className="absolute inset-0 rounded-full bg-[#FFD700]/20 blur-md opacity-0 group-hover:opacity-100"
+                            transition={{ duration: 0.3 }}
+                          />
+                        )}
+                        <item.icon className="relative z-10 h-4 w-4" />
+                      </motion.span>
+                    )}
+                    <span className="flex items-center gap-2">
+                      {item.label}
+                      {item.badge ? <NavPill badge={item.badge} /> : null}
+                    </span>
+                  </span>
                 </Link>
+
+                {/* Active indicator */}
+                {active && (
+                  <motion.div
+                    layoutId="nav-active-indicator"
+                    className="absolute -bottom-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#FFD700]/0 via-[#FFD700] to-[#FFD700]/0 shadow-[0_0_16px_#FFD700]"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                  />
+                )}
+
                 {/* Hover gradient underline effect */}
                 {!reducedMotion && (
                   <motion.div
@@ -493,11 +507,12 @@ export function Navbar() {
 
               {/* Mobile Menu Items */}
               <nav className="flex flex-col gap-3 text-center w-full max-w-sm px-6" aria-label="Mobile navigation">
-                {navItems.map((item, i) => {
+                {menuItems.map((item, i) => {
                   const active = isActive(item);
+                  const href = item.sectionId ? `${item.href}#${item.sectionId}` : item.href;
                   return (
                     <motion.div
-                      key={`${item.path}-${item.anchor || ""}`}
+                      key={`${item.href}-${item.sectionId || ""}`}
                       initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -30, scale: 0.9 }}
                       animate={reducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
                       transition={
@@ -516,7 +531,7 @@ export function Navbar() {
                         whileTap={{ scale: 0.98 }}
                       >
                         <Link
-                          href={item.anchor ? `${item.path}#${item.anchor}` : item.path}
+                          href={href}
                           onClick={(e) => {
                             triggerHaptic();
                             handleNavClick(e, item);
@@ -527,7 +542,7 @@ export function Navbar() {
                               : "text-zinc-400 hover:text-white hover:bg-white/10"
                           }`}
                           aria-current={active ? "page" : undefined}
-                          aria-label={`Navigate to ${item.name}${item.anchor ? ` section` : ""}`}
+                          aria-label={`Navigate to ${item.label}${item.sectionId ? ` section` : ""}`}
                         >
                           {/* Active indicator background with animated underline */}
                           {active && (
@@ -566,7 +581,28 @@ export function Navbar() {
                           )}
 
                           {/* Text content */}
-                          <span className="relative z-10">{item.name}</span>
+                          <span className="relative z-10 flex items-center gap-3">
+                            {item.icon && (
+                              <motion.span
+                                className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5"
+                                whileHover={reducedMotion ? undefined : { rotate: [0, 10, -10, 0] }}
+                                transition={{ duration: 0.4 }}
+                              >
+                                {active && (
+                                  <motion.span
+                                    className="absolute inset-0 rounded-full bg-[#FFD700]/15 blur-md"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                  />
+                                )}
+                                <item.icon className="relative z-10 h-4 w-4" />
+                              </motion.span>
+                            )}
+                            <span className="flex items-center gap-2">
+                              {item.label}
+                              {item.badge ? <NavPill badge={item.badge} /> : null}
+                            </span>
+                          </span>
 
                           {/* Active dot indicator */}
                           {active && (

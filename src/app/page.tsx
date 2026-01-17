@@ -1,325 +1,296 @@
+// Homepage prioritizes artist showcase (music, videos, brand)
+// DJ Studio is a featured interactive tool, but not the primary identity
 "use client";
 
+import Link from "next/link";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import Image from "next/image";
-import { VaultVisuals } from "@/components/VaultVisuals";
-import { Contact } from "@/components/Contact";
-import { TrackList } from "@/components/TrackList";
-import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
+import { Headphones, Play, Sparkles, Waves, ArrowRight } from "lucide-react";
+import { getAudioEngine } from "@/engine/AudioEngine";
 
-export default function Home() {
-  const scrollToMusic = () => {
+const navLinks = [
+  { label: "Music", href: "/music" },
+  { label: "Videos", href: "/videos" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+  { label: "Studio", href: "/studio" },
+];
+
+const secondaryLinks = [
+  { label: "Studio V2", href: "/studio-v2" },
+  { label: "Vault", href: "/vault" },
+  { label: "Install App", href: "/install" },
+];
+
+function useLastSession() {
+  const [lastTrack, setLastTrack] = useState<string | null>(null);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
-    const musicSection = document.getElementById("latest-drops");
-    if (musicSection) {
-      musicSection.scrollIntoView({ behavior: "smooth" });
+    const saved = window.localStorage.getItem("lastTrack");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setLastTrack(parsed?.title ?? parsed?.name ?? String(saved));
+      } catch {
+        setLastTrack(saved);
+      }
     }
+  }, []);
+
+  return lastTrack;
+}
+
+function useRmsMeter() {
+  const [rms, setRms] = useState(0);
+  const rafRef = useRef<number>();
+
+  useEffect(() => {
+    const tick = () => {
+      try {
+        const engine = getAudioEngine();
+        const ctxState = engine?.context?.state;
+        if (engine?.state === "Running" && ctxState === "running") {
+          const level = Math.max(engine.getRMS("deckA"), engine.getRMS("deckB"));
+          setRms(level);
+        } else {
+          setRms(0);
+        }
+      } catch {
+        setRms(0);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  return rms;
+}
+
+function CtaButton({
+  href,
+  label,
+  icon: Icon,
+  variant = "primary",
+}: {
+  href: string;
+  label: string;
+  icon?: typeof Headphones;
+  variant?: "primary" | "secondary";
+}) {
+  const base =
+    "relative flex items-center justify-center gap-3 rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+  const variants = {
+    primary:
+      "bg-gradient-to-r from-[#facc15] via-[#c1ff00] to-[#7c3aed] text-black shadow-[0_10px_50px_rgba(193,255,0,0.35)] hover:brightness-105",
+    secondary:
+      "border border-white/20 text-white hover:border-[#c1ff00]/60 hover:text-[#c1ff00] bg-white/5",
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section - V3 SYNDICATE */}
-      <section
-        id="home"
-        className="relative h-screen flex items-center justify-center overflow-hidden bg-[#050505]"
-      >
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/hero/hero-white.jpg"
-            alt=""
-            fill
-            priority
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
+    <motion.div whileHover={{ rotate: variant === "primary" ? 0.5 : 0, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+      <Link href={href} className={`${base} ${variants[variant]}`}>
+        {Icon ? <Icon className="h-4 w-4" /> : null}
+        <span>{label}</span>
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </motion.div>
+  );
+}
 
-        {/* Ghosted Stencil "V3 SYNDICATE" Backdrop */}
-        <h1
-          className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none"
-          style={{
-            fontFamily: "var(--font-lexend), system-ui, sans-serif",
-            fontSize: "clamp(12rem, 20vw, 24rem)",
-            fontWeight: 900,
-            fontStyle: "italic",
-            color: "rgba(224, 224, 224, 0.05)", // 5% opacity
-            letterSpacing: "-0.05em",
-            textTransform: "uppercase",
-            lineHeight: 1,
-          }}
-        >
-          V3 SYNDICATE
-        </h1>
+export default function HomePage() {
+  const router = useRouter();
+  const lastTrack = useLastSession();
+  const rms = useRmsMeter();
+  const [showLabs, setShowLabs] = useState(false);
 
-        <div className="relative z-20 flex flex-col items-center gap-6 md:gap-8 text-center px-4 md:px-6">
-          <motion.img
-            src="/images/branding/piko-logo.png"
-            alt="Piko FG logo"
-            className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] cursor-pointer"
-            style={{
-              filter: "grayscale(1) brightness(1.5)",
-            }}
-            initial={{ opacity: 0, scale: 1.2, filter: "blur(10px)" }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              filter: "blur(0px) grayscale(1) brightness(1.5)",
-              y: [0, -10, 0],
-            }}
-            whileHover={{
-              scale: 1.05,
-              filter: "blur(0px) grayscale(0) brightness(1.1)",
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 200,
-              damping: 20,
-              opacity: { duration: 0.6 },
-              scale: { duration: 0.6 },
-              filter: { duration: 0.6 },
-              y: {
-                duration: 7,
-                repeat: Infinity,
-                repeatType: "mirror",
-                ease: "easeInOut",
-                delay: 0.6,
-              },
-            }}
-          />
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        router.push("/studio");
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [router]);
 
-          <motion.button
-            onClick={scrollToMusic}
-            className="px-12 py-6 bg-[#E0E0E0] text-black font-black italic uppercase text-xl md:text-2xl md:skew-x-[-12deg] skew-x-[-6deg] hover:bg-[#FFD700] transition-all"
-            style={{
-              fontFamily: "var(--font-lexend), system-ui, sans-serif",
-              boxShadow: "8px 8px 0px #000",
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            LISTEN NOW
-          </motion.button>
-        </div>
-      </section>
+  const primaryCtas = useMemo(
+    () => [
+      { label: "Listen Now", href: "/music", icon: Headphones, variant: "primary" as const },
+      { label: "Launch DJ Studio", href: "/studio", icon: Waves, variant: "secondary" as const },
+    ],
+    [],
+  );
 
-      {/* Section 1: LATEST DROPS - Warehouse Shipping Manifest */}
-      <section id="latest-drops" className="relative py-12 md:py-20 px-4 md:px-8 bg-[#050505] border-t-2 border-[#E0E0E0]/10">
-        {/* Graffiti Wall Background */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/bg/graffiti-wall-1.jpg"
-            alt=""
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/92" />
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            {/* Warehouse Manifest Header */}
-            <div className="mb-8 border-l-8 border-[#FFD700] pl-6 bg-black/60 backdrop-blur-sm py-4 pr-4">
-              <h2
-                className="text-4xl md:text-6xl font-black italic uppercase mb-2 text-[#E0E0E0]"
-                style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
-              >
-                STUDIO_<span className="text-[#FFD700]">MANIFEST</span>
-              </h2>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="px-3 py-1 bg-[#FFD700] text-black text-[10px] font-mono font-bold uppercase tracking-wider border-2 border-black">
-                  CAUTION
-                </span>
-                <span className="text-xs font-mono text-[#E0E0E0]/80 uppercase">LATEST_RELEASES</span>
-              </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-[#050505] text-white">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_30%_20%,rgba(193,255,0,0.14),transparent_35%),radial-gradient(circle_at_70%_10%,rgba(124,58,237,0.18),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(250,204,21,0.12),transparent_35%)]" />
 
-            {/* Track List with CCTV Scan-line Effect */}
-            <div className="relative">
-              <TrackList featuredOnly={true} />
-              {/* Scan-line overlay on hover */}
-              <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity bg-[linear-gradient(transparent_50%,rgba(255,215,0,0.1)_50%)] bg-[length:100%_4px]" />
-            </div>
-
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Studio Engine Section */}
-      <StudioEngineSection />
-
-      {/* Section 2: VAULT VISUALS (CCTV Monitor Wall) */}
-      <VaultVisuals />
-
-      {/* Section 3: RAP SHEET (Bio) - Paper Texture with Spray Paint */}
-      <section
-        id="rap-sheet"
-        className="relative py-12 md:py-20 px-4 md:px-8 bg-[#0a0a0a]"
-      >
-        {/* Studio Mic Background */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/artist/studio-mic.jpg"
-            alt=""
-            fill
-            className="object-cover opacity-10"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/95 to-black/90" />
-        </div>
-        {/* Paper Texture Overlay */}
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `
-              url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)'/%3E%3C/svg%3E"),
-              linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.08) 50%, transparent 70%),
-              linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.06) 50%, transparent 70%)
-            `,
-            backgroundBlendMode: "overlay, normal, normal",
-          }}
-        />
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-12 items-center">
-            {/* Text Content - Left Column */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-            >
-              {/* Headline */}
-              <h2
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black italic uppercase mb-4 md:mb-6 text-[#E0E0E0] border-l-8 border-[#FFD700] pl-6"
-                style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
-              >
-                RAP_<span className="text-[#FFD700]">SHEET</span>
-              </h2>
-
-              {/* Subheadline */}
-              <p className="text-2xl md:text-3xl font-mono font-bold uppercase tracking-wider text-[#E0E0E0]/70 mb-6">
-                Versos Reales. Ritmo Urbano. Una Mas Music.
-              </p>
-
-              {/* Narrative - "Rap Sheet" Case File Style */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="relative p-6 md:p-8 mb-8 bg-[#0a0a0a] border-2 border-[#E0E0E0]/20"
-                style={{
-                  boxShadow: "8px 8px 0px 0px rgba(0,0,0,1)",
-                }}
-              >
-                {/* Paperclip Element */}
-                <div className="absolute -top-2 right-8 z-10">
-                  <svg
-                    width="24"
-                    height="32"
-                    viewBox="0 0 24 32"
-                    fill="none"
-                    className="text-gray-600"
-                  >
-                    <path
-                      d="M8 2C8 1.44772 8.44772 1 9 1H15C15.5523 1 16 1.44772 16 2V8C16 8.55228 15.5523 9 15 9H9C8.44772 9 8 8.55228 8 8V2Z"
-                      fill="currentColor"
-                    />
-                    <path
-                      d="M8 10C8 9.44772 8.44772 9 9 9H15C15.5523 9 16 9.44772 16 10V16C16 16.5523 15.5523 17 15 17H9C8.44772 17 8 16.5523 8 16V10Z"
-                      fill="currentColor"
-                    />
-                    <path
-                      d="M8 18C8 17.4477 8.44772 17 9 17H15C15.5523 17 16 17.4477 16 18V24C16 24.5523 15.5523 25 15 25H9C8.44772 25 8 24.5523 8 24V18Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </div>
-
-                {/* Text with Spray Paint Highlights */}
-                <p className="text-base md:text-lg font-mono leading-relaxed text-[#E0E0E0]">
-                  Representing the{" "}
-                  <span className="relative inline-block px-2 py-0.5 bg-[#FFD700] text-black font-black italic uppercase" style={{ transform: "skewX(-12deg)" }}>
-                    Una Mas Music
-                  </span>{" "}
-                  movement,{" "}
-                  <span className="relative inline-block px-2 py-0.5 bg-[#FFD700] text-black font-black italic uppercase" style={{ transform: "skewX(-12deg)" }}>
-                    Piko
-                  </span>{" "}
-                  blends the raw energy of the underground with the emotional complexity of real relationships. From the smoke-filled vibes of &apos;Entre Humos&apos; to the heartfelt promises of &apos;Te Prometo,&apos; his music is a mirror of the streets—beautiful, chaotic, and real. As a{" "}
-                  <span className="relative inline-block px-2 py-0.5 bg-[#FFD700] text-black font-black italic uppercase" style={{ transform: "skewX(-12deg)" }}>
-                    Producer
-                  </span>{" "}
-                  and{" "}
-                  <span className="relative inline-block px-2 py-0.5 bg-[#FFD700] text-black font-black italic uppercase" style={{ transform: "skewX(-12deg)" }}>
-                    Artist
-                  </span>
-                  , he continues to push boundaries.
-                </p>
-              </motion.div>
-
-              {/* Featured Quote - Brutalist Chrome Box */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="relative p-6 bg-[#E0E0E0] border-2 border-black"
-                style={{
-                  transform: "skewX(-12deg)",
-                  boxShadow: "12px 12px 0px #FFD700",
-                }}
-              >
-                <div style={{ transform: "skewX(12deg)" }}>
-                  <p className="text-xl md:text-2xl font-mono font-medium text-black italic leading-relaxed">
-                    &quot;Ella se quedó porque lo amaba, él cambió para que no se fuera. Ella aprendió a amarlo otra vez, y él a mejorar por ella.&quot;
-                  </p>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            {/* Image - Right Column */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="relative group">
-                <div className="relative">
-                  <Image
-                    src="/images/artist/portrait-close.jpg"
-                    alt="Piko Portrait"
-                    width={600}
-                    height={800}
-                    priority
-                    quality={100}
-                    className="w-full h-auto border-2 border-[#E0E0E0]/20 object-cover transition-all duration-300 group-hover:scale-105"
-                    style={{
-                      filter: "grayscale(1) contrast(1.1) brightness(0.9)",
-                      boxShadow: "8px 8px 0px 0px rgba(0,0,0,1)",
-                    }}
-                  />
-                  {/* Subtle Noise Texture Overlay */}
-                  <div
-                    className="absolute inset-0 pointer-events-none opacity-20"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                      mixBlendMode: "overlay",
-                    }}
-                  />
-                </div>
-              </div>
-            </motion.div>
+      <header className="flex items-center justify-between px-6 py-4 md:px-10">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-[#c1ff00]" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">Piko Studio</p>
+            <p className="text-sm font-semibold text-white/90">Hip Hop / Visuals / Remix</p>
           </div>
         </div>
-      </section>
+        <nav className="hidden md:flex items-center gap-6 text-sm uppercase tracking-[0.16em]">
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="text-white/70 hover:text-[#c1ff00] transition-colors">
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
 
-      {/* Contact Section */}
-      <Contact />
+      <main className="px-6 pb-16 md:px-10 lg:px-16">
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-black/60 via-black/40 to-black/70 px-6 py-12 shadow-[0_20px_80px_rgba(0,0,0,0.55)] md:px-12 lg:px-16">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -left-10 top-10 h-48 w-48 rounded-full bg-[#c1ff00]/10 blur-3xl" />
+            <div className="absolute right-10 bottom-0 h-64 w-64 rounded-full bg-[#7c3aed]/15 blur-3xl" />
+          </div>
+
+          <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/70">
+                Artist First • Hip Hop • Visuals
+              </div>
+              <h1 className="text-4xl font-black leading-tight sm:text-5xl md:text-6xl">
+                Piko Studio
+              </h1>
+              <p className="text-lg text-white/70 sm:text-xl">
+                Showcasing original hip hop, visuals, and remix-ready audio tools. Mix and explore the artist&apos;s world — tracks, videos, and collaborations.
+              </p>
+
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                {primaryCtas.map((cta) => (
+                  <CtaButton key={cta.href} {...cta} />
+                ))}
+              </div>
+
+              {lastTrack ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c1ff00]/15 text-[#c1ff00]">
+                      <Play className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/60">Resume Last Session</p>
+                      <p className="text-sm font-semibold text-white/90">{lastTrack}</p>
+                    </div>
+                  </div>
+                  <CtaButton href="/studio" label="Resume DJ Session" icon={Waves} variant="secondary" />
+                </div>
+              ) : null}
+
+              <div className="flex flex-col gap-3 text-sm text-white/70">
+                <p className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-[#c1ff00] animate-pulse" />
+                  Press S to open Studio
+                </p>
+
+                <label className="inline-flex cursor-pointer items-center gap-3 text-white/80">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-white/40 bg-black/40 text-[#c1ff00] accent-[#c1ff00]"
+                    checked={showLabs}
+                    onChange={(e) => setShowLabs(e.target.checked)}
+                  />
+                  <span className="flex items-center gap-2 text-sm">
+                    Show Labs <span className="rounded-full bg-[#7c3aed]/20 px-2 py-0.5 text-xs text-[#c1ff00]">🧪 Labs</span>
+                  </span>
+                </label>
+
+                {showLabs ? (
+                  <div className="inline-flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-4 w-4 text-[#c1ff00]" />
+                    <Link href="/studio-v2" className="underline decoration-[#c1ff00]/60 underline-offset-4 hover:text-[#c1ff00]">
+                      Jump into Studio V2 Labs
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-b from-[#c1ff00]/15 via-transparent to-[#7c3aed]/25 blur-3xl" />
+              <div className="relative rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/60">Live Visual Meter</p>
+                    <p className="text-xl font-semibold">Artist Signal</p>
+                  </div>
+                  <Sparkles className="h-5 w-5 text-[#c1ff00]" />
+                </div>
+                <div className="mt-6 h-40 rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="flex h-full items-end gap-2">
+                    {Array.from({ length: 12 }).map((_, i) => {
+                      const phase = Math.sin((i / 12) * Math.PI * 2);
+                      const height = Math.max(8, Math.min(100, (rms * 120 + phase * 20)));
+                      return (
+                        <motion.div
+                          key={i}
+                          animate={{ height }}
+                          transition={{ type: "spring", stiffness: 140, damping: 18 }}
+                          className="w-3 rounded-full bg-gradient-to-t from-[#7c3aed] via-[#c1ff00] to-white shadow-[0_0_20px_rgba(193,255,0,0.35)]"
+                          aria-hidden
+                        />
+                      );
+                    })}
+                  </div>
+                  <p className="mt-3 text-xs text-white/60">Live RMS (visual only) — active when audio is running</p>
+                </div>
+
+                <div className="mt-6 grid gap-3 text-sm text-white/75">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-[#c1ff00]" />
+                    Interactive DJ tools ready to load stems + waveforms
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-[#7c3aed]" />
+                    Visual storytelling: videos, collaborations, behind the scenes
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-white/70" />
+                    Community ready: producers, rappers, and fans
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-3">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="group flex items-center justify-between rounded-xl border border-white/5 bg-black/30 px-4 py-3 transition-colors hover:border-[#c1ff00]/40 hover:text-white"
+            >
+              <span>{link.label}</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          ))}
+          {secondaryLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="group flex items-center justify-between rounded-xl border border-white/5 bg-black/20 px-4 py-3 transition-colors hover:border-[#7c3aed]/50 hover:text-white"
+            >
+              <span>{link.label}</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          ))}
+        </section>
+      </main>
     </div>
   );
 }

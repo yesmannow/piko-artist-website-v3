@@ -23,11 +23,14 @@ export function RefactoredDJDeck({
   const [trackUrl, setTrackUrl] = useState(initialTrackUrl);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [scratchOffset, setScratchOffset] = useState(0);
+  const [pitchBend, setPitchBend] = useState(0);
 
   const deckState = useAudioStore(
     useMemo(
       () => (state) => ({
         volume: state.decks[deckId]?.volume ?? 1,
+        currentTime: state.decks[deckId]?.currentTime ?? 0,
       }),
       [deckId],
     ),
@@ -68,6 +71,22 @@ export function RefactoredDJDeck({
   const handleVolumeChange = async (value: number) => {
     const engine = await ensureAudioEngineReady();
     await engine.setVolume(deckId, value);
+  };
+
+  const handleScratch = async (value: number) => {
+    // Map -1..1 -> +/- 0.5s nudge using seek
+    setScratchOffset(value);
+    const engine = await ensureAudioEngineReady();
+    const target = Math.max(0, deckState.currentTime + value * 0.5);
+    await engine.seek(deckId, target);
+  };
+
+  const handlePitchBend = async (value: number) => {
+    // Use small forward/backward seeks to simulate pitch bend without rate API
+    setPitchBend(value);
+    const engine = await ensureAudioEngineReady();
+    const target = Math.max(0, deckState.currentTime + value * 0.2);
+    await engine.seek(deckId, target);
   };
 
   return (
@@ -113,6 +132,30 @@ export function RefactoredDJDeck({
         <span className="w-10 text-right text-xs text-gray-300">
           {(deckState.volume * 100).toFixed(0)}%
         </span>
+      </div>
+
+      <div className="space-y-2 rounded-md border border-gray-800/80 bg-black/30 p-3">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">Scratch / Pitch</p>
+        <label className="text-xs uppercase text-gray-400">Scratch (nudge)</label>
+        <input
+          type="range"
+          min={-1}
+          max={1}
+          step={0.05}
+          value={scratchOffset}
+          onChange={(e) => handleScratch(parseFloat(e.target.value))}
+          className="w-full"
+        />
+        <label className="text-xs uppercase text-gray-400">Pitch Bend</label>
+        <input
+          type="range"
+          min={-1}
+          max={1}
+          step={0.05}
+          value={pitchBend}
+          onChange={(e) => handlePitchBend(parseFloat(e.target.value))}
+          className="w-full"
+        />
       </div>
     </div>
   );
