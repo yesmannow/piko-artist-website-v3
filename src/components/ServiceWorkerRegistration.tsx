@@ -60,10 +60,12 @@ export function ServiceWorkerRegistration() {
           console.log("[SW Purge] Cleanup complete. Reloading page...");
 
           // 3. Reload the page to ensure a fresh session
-          // Use setTimeout to ensure log messages are flushed before reload
+          // Use setTimeout to ensure console logs are flushed before reload
+          // 250ms provides sufficient time for browsers to flush logs and complete pending operations
+          const RELOAD_DELAY_MS = 250;
           setTimeout(() => {
             window.location.reload();
-          }, 100);
+          }, RELOAD_DELAY_MS);
         }
       } catch (error) {
         console.error("[SW Purge] Failed to purge service workers and caches:", error);
