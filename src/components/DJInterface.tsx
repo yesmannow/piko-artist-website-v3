@@ -164,11 +164,6 @@ export function DJInterface() {
   // Active deck for FX control
   const [activeDeck, setActiveDeck] = useState<"A" | "B">("A");
 
-  // Headphone cue monitoring
-  const [deckACue, setDeckACue] = useState(false);
-  const [deckBCue, setDeckBCue] = useState(false);
-  const [cueEnabled, setCueEnabled] = useState(false);
-  const [cueLevel, setCueLevel] = useState(0.3);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [theme, setTheme] = useState<"default" | "high-contrast" | "oled">(
     "default",
@@ -402,9 +397,6 @@ export function DJInterface() {
   const masterLimiterRef = useRef<DynamicsCompressorNode | null>(null);
   const vuAnalyserLeftRef = useRef<AnalyserNode | null>(null);
   const vuAnalyserRightRef = useRef<AnalyserNode | null>(null);
-  const cueMasterGainRef = useRef<GainNode | null>(null);
-  const deckACueSendRef = useRef<GainNode | null>(null);
-  const deckBCueSendRef = useRef<GainNode | null>(null);
   const [limiterThreshold, setLimiterThreshold] = useState(-3); // dB threshold
 
   // Recording hook - records from limiter output (post-master FX, what listener hears)
@@ -699,27 +691,6 @@ export function DJInterface() {
     const echoB = createEcho(ctx, echoTimeB, echoFeedbackB);
     fxEchoBRef.current = echoB;
 
-    // ========= CUE MONITOR BUS =========
-    const cueMaster = ctx.createGain();
-    cueMaster.gain.value = 1.0;
-    cueMasterGainRef.current = cueMaster;
-
-    const cueSendA = ctx.createGain();
-    cueSendA.gain.value = 0;
-    deckACueSendRef.current = cueSendA;
-
-    const cueSendB = ctx.createGain();
-    cueSendB.gain.value = 0;
-    deckBCueSendRef.current = cueSendB;
-
-    // tap pre‑FX signals into cue sends
-    preFxGainA.connect(cueSendA);
-    preFxGainB.connect(cueSendB);
-    cueSendA.connect(cueMaster);
-    cueSendB.connect(cueMaster);
-    // route headphones monitor to device output (separate from master chain)
-    cueMaster.connect(ctx.destination);
-
     // Connect filter chains: Low -> Mid -> High -> Gain (Volume)
     deckALowFilter.connect(deckAMidFilter);
     deckAMidFilter.connect(deckAHighFilter);
@@ -903,15 +874,6 @@ export function DJInterface() {
       setIsSidebarMinimized(true);
     }
   }, []);
-
-  // Update cue send levels
-  useEffect(() => {
-    const level = cueEnabled ? cueLevel : 0;
-    if (deckACueSendRef.current)
-      deckACueSendRef.current.gain.value = deckACue ? level : 0;
-    if (deckBCueSendRef.current)
-      deckBCueSendRef.current.gain.value = deckBCue ? level : 0;
-  }, [cueEnabled, cueLevel, deckACue, deckBCue]);
 
   // 2. VOLUME UPDATES
   // Calculate crossfader curve
@@ -2945,14 +2907,6 @@ export function DJInterface() {
                   onClearRecording={mixRecorder.clear}
                   limiterThreshold={limiterThreshold}
                   onLimiterThresholdChange={setLimiterThreshold}
-                  deckACue={deckACue}
-                  onDeckACueChange={setDeckACue}
-                  deckBCue={deckBCue}
-                  onDeckBCueChange={setDeckBCue}
-                  cueEnabled={cueEnabled}
-                  onCueEnabledChange={setCueEnabled}
-                  cueLevel={cueLevel}
-                  onCueLevelChange={setCueLevel}
                   hapticsEnabled={hapticsEnabled}
                   onHapticsEnabledChange={setHapticsEnabled}
                   theme={theme}
