@@ -27,12 +27,10 @@ export function ServiceWorkerRegistration() {
           console.log("[SW Purge] Starting service worker and cache cleanup...");
 
           // 1. Unregister all service workers
-          if ("serviceWorker" in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const registration of registrations) {
-              await registration.unregister();
-              console.log("[SW Purge] Unregistered service worker:", registration.scope);
-            }
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+            console.log("[SW Purge] Unregistered service worker:", registration.scope);
           }
 
           // 2. Delete all caches
@@ -50,17 +48,21 @@ export function ServiceWorkerRegistration() {
 
           // 3. Reload the page to ensure a fresh session
           window.location.reload();
-          return; // Exit early since we're reloading
         }
       } catch (error) {
         console.error("[SW Purge] Failed to purge service workers and caches:", error);
+        // Continue execution even if purge fails to avoid breaking functionality
       }
     };
 
-    // Execute purge first
-    purgeServiceWorkersAndCaches().then(() => {
-      // Only register in production or when explicitly enabled
-      if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_SW === "true") {
+    // Execute purge first, then register service worker
+    purgeServiceWorkersAndCaches()
+      .catch((error) => {
+        console.error("[SW Purge] Unexpected error during purge:", error);
+      })
+      .finally(() => {
+        // Only register in production or when explicitly enabled
+        if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_SW === "true") {
         const registerSW = async () => {
           try {
             const registration = await navigator.serviceWorker.register("/sw.js", {
@@ -118,8 +120,8 @@ export function ServiceWorkerRegistration() {
         };
 
         registerSW();
-      }
-    });
+        }
+      });
   }, []);
 
   return null;
