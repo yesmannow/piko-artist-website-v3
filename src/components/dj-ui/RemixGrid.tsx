@@ -49,6 +49,7 @@ export function RemixGrid({
   const [assignPosition, setAssignPosition] = useState<{row: number, col: number} | null>(null);
 
   // Sample packs for organization
+  const samplePacks = sampleLibrary.getAllPacks();
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
 
   // Initialize services
