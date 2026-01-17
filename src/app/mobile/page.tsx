@@ -6,6 +6,7 @@ import { StudioErrorBoundary } from "@/components/mobile-shell/StudioErrorBounda
 import { HelpProvider } from "@/context/HelpContext";
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
 import { DevAudioDebug } from "@/components/DevAudioDebug";
+import { MobileAutomix } from "@/components/mobile-shell/MobileAutomix";
 
 // Dynamically import refactored DJInterface for mobile
 const DJInterface = dynamic(
@@ -67,7 +68,12 @@ export default function MobilePage() {
   return (
     <StudioErrorBoundary>
       <HelpProvider>
-        <DJInterface />
+        <div className="md:hidden">
+          <MobileAutomix />
+        </div>
+        <div className="hidden md:block">
+          <DJInterface />
+        </div>
         {process.env.NODE_ENV === "development" && <DevAudioDebug />}
       </HelpProvider>
     </StudioErrorBoundary>

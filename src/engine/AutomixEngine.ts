@@ -36,6 +36,7 @@ export interface AutomixSettings {
   vibeMatching: boolean;
   autoStartNext: boolean;
   crossfadeCurve: "linear" | "constant-power";
+  cycleMode?: boolean; // simplified A/B cycling
 }
 
 /**
@@ -66,6 +67,7 @@ class AutomixEngine {
 
   private transitionTimer: NodeJS.Timeout | null = null;
   private libraryTracks: TrackMetadata[] = [];
+  private crossfadeTimer: NodeJS.Timeout | null = null;
 
   // Private constructor enforces singleton
   private constructor() {}
@@ -107,6 +109,20 @@ class AutomixEngine {
     initialTrack: TrackMetadata,
     settings?: Partial<AutomixSettings>,
   ): Promise<boolean> {
+    // Lightweight mode for mobile: if no library provided, just alternate decks with timed crossfade
+    if (this.libraryTracks.length === 0) {
+      this.settings = { ...this.settings, ...settings };
+      this.state = {
+        ...this.state,
+        isActive: true,
+        masterDeck,
+        transitionDuration:
+          settings?.transitionDuration ?? this.settings.transitionDuration,
+      };
+      this.startTimedCrossfadeCycle();
+      return true;
+    }
+
     if (this.state.isActive) {
       console.warn("[AutomixEngine] Automix already active");
       return false;
@@ -151,6 +167,10 @@ class AutomixEngine {
     if (this.transitionTimer) {
       clearTimeout(this.transitionTimer);
       this.transitionTimer = null;
+    }
+    if (this.crossfadeTimer) {
+      clearInterval(this.crossfadeTimer);
+      this.crossfadeTimer = null;
     }
 
     this.state = {
@@ -415,6 +435,49 @@ class AutomixEngine {
     this.prepareNextTrack(newTrack);
 
     console.log("[AutomixEngine] Transition completed. New master:", newMaster);
+  }
+
+  /**
+   * Simplified timed crossfade cycle used for mobile automix.
+   * Alternates master deck every transitionDuration seconds.
+   */
+  private startTimedCrossfadeCycle() {
+    if (!this.state.masterDeck) return;
+    const durationMs = (this.settings.transitionDuration || 10) * 1000;
+    const stepMs = 250; // coarse updates are sufficient for mobile
+
+    if (this.crossfadeTimer) {
+      clearInterval(this.crossfadeTimer);
+    }
+
+    let targetDeck: "deckA" | "deckB" =
+      this.state.masterDeck === "deckA" ? "deckB" : "deckA";
+
+    const doCrossfade = async () => {
+      const engine = this.audioEngine;
+      const steps = durationMs / stepMs;
+      let step = 0;
+      const fade = setInterval(async () => {
+        step += 1;
+        const progress = Math.min(1, step / steps);
+        if (this.settings.crossfadeCurve === "constant-power") {
+          const gains = calculateConstantPowerCrossfade(progress);
+          await engine.setVolume(this.state.masterDeck!, gains.left);
+          await engine.setVolume(targetDeck, gains.right);
+        } else {
+          await engine.setVolume(this.state.masterDeck!, 1 - progress);
+          await engine.setVolume(targetDeck, progress);
+        }
+        if (progress >= 1) {
+          clearInterval(fade);
+          this.state.masterDeck = targetDeck;
+          targetDeck = targetDeck === "deckA" ? "deckB" : "deckA";
+        }
+      }, stepMs);
+    };
+
+    this.crossfadeTimer = setInterval(doCrossfade, durationMs);
+    void doCrossfade();
   }
 
   private getCurrentTrackId(deck: "deckA" | "deckB"): string | null {
