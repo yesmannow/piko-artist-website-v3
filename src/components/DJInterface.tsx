@@ -42,6 +42,7 @@ import {
 import { AutomixPanel } from "./dj-ui/AutomixPanel";
 import { LibraryModal } from "./dj-ui/LibraryModal";
 import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
+import { Toast, type ToastType } from "./dj-ui/Toast";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -158,6 +159,21 @@ export function DJInterface() {
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [theme, setTheme] = useState<"default" | "high-contrast" | "oled">(
     "default",
+  );
+
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string>("");
+  const [toastType, setToastType] = useState<ToastType>("info");
+  const [showToast, setShowToast] = useState(false);
+
+  // Helper function to show toast
+  const showToastNotification = useCallback(
+    (message: string, type: ToastType = "info") => {
+      setToastMessage(message);
+      setToastType(type);
+      setShowToast(true);
+    },
+    [],
   );
 
   // Gate haptics behind user toggle
@@ -1112,14 +1128,20 @@ export function DJInterface() {
       !validTypes.includes(file.type) &&
       !validExtensions.includes(fileExtension)
     ) {
-      alert("Invalid file format. Accepted: MP3, WAV, OGG, M4A, AAC");
+      showToastNotification(
+        "Invalid file format. Accepted: MP3, WAV, OGG, M4A, AAC",
+        "error",
+      );
       return;
     }
 
     // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      alert("File exceeds maximum size (50MB)");
+      showToastNotification(
+        "File exceeds maximum size (50MB)",
+        "error",
+      );
       return;
     }
 
@@ -1148,12 +1170,19 @@ export function DJInterface() {
       };
 
       setUploadedTracks((prev) => [...prev, newTrack]);
+      showToastNotification(
+        `Track "${trackName}" uploaded successfully!`,
+        "success",
+      );
       triggerHaptic();
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Failed to upload file. Please try again.");
+      showToastNotification(
+        "Failed to upload file. Please try again.",
+        "error",
+      );
     }
-  }, []);
+  }, [showToastNotification, triggerHaptic]);
 
   // Combine original tracks with uploaded tracks
   const allTracks = useMemo(
@@ -2838,6 +2867,15 @@ export function DJInterface() {
             ? deckAData?.title || null
             : deckBData?.title || null
         }
+      />
+
+      {/* Toast Notifications */}
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        show={showToast}
+        onClose={() => setShowToast(false)}
+        duration={4000}
       />
     </>
   );
