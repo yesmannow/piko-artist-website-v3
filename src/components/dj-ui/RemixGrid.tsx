@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Square, Settings, Shuffle, Music, Drum, Mic, Grid3X3 } from "lucide-react";
+import { Play, Square, Music, Drum, Mic, Grid3X3 } from "lucide-react";
 import { getStepSequencer, type GridStep } from "@/engine/StepSequencer";
-import { getSampleLibrary, type SamplePack } from "@/engine/SampleLibrary";
+import { getSampleLibrary } from "@/engine/SampleLibrary";
 import { type SampleInfo } from "@/engine/SamplePlayer";
 import { Tooltip } from "./Tooltip";
 
@@ -21,7 +21,6 @@ export function RemixGrid({
   width = 400,
   height = 400,
   bpm = 120,
-  isPlaying = false,
   onSampleTrigger,
   helpText,
 }: RemixGridProps) {
@@ -50,7 +49,6 @@ export function RemixGrid({
   const [assignPosition, setAssignPosition] = useState<{row: number, col: number} | null>(null);
 
   // Sample packs for organization
-  const [samplePacks, setSamplePacks] = useState(() => sampleLibrary.getAllPacks());
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
 
   // Initialize services
@@ -79,24 +77,6 @@ export function RemixGrid({
     setTempo(bpm);
     stepSequencer.setTempo(bpm);
   }, [bpm, stepSequencer]);
-
-  // Sample triggering
-  const triggerSample = useCallback(async (sample: SampleInfo, velocity: number = 0.8) => {
-    try {
-      // For now, use direct audio playback
-      // In production, this would use the SamplePlayer service
-      const audio = new Audio(sample.url);
-      audio.volume = velocity;
-
-      // Optional: sync to beat (simplified for now)
-      audio.play();
-
-      // Notify parent component
-      onSampleTrigger?.(sample, velocity);
-    } catch (error) {
-      console.error('Failed to trigger sample:', error);
-    }
-  }, [onSampleTrigger]);
 
   // Handle grid cell click
   const handleCellClick = (row: number, col: number) => {

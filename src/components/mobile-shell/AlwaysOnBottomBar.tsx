@@ -5,7 +5,6 @@ import { getAudioEngine } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
 import { Play, Pause } from 'lucide-react';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
-import { PanicStopButton } from '@/components/studio/PanicStopButton';
 
 export const AlwaysOnBottomBar = () => {
   // Get deck states

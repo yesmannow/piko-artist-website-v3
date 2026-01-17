@@ -10,7 +10,7 @@
  * - Mood-based track filtering
  */
 
-import { areKeysCompatible, type KeyResult } from './camelot';
+import { areKeysCompatible } from './camelot';
 
 export interface TrackMetadata {
   id: string;
