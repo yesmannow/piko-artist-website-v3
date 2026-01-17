@@ -21,7 +21,15 @@ export function ServiceWorkerRegistration() {
     const purgeServiceWorkersAndCaches = async () => {
       try {
         // Check if this is the first load after the fix (using a flag in sessionStorage)
-        const hasPerformedPurge = sessionStorage.getItem("sw-cache-purged");
+        // Wrap in try-catch as sessionStorage can throw in private browsing mode
+        let hasPerformedPurge = false;
+        try {
+          hasPerformedPurge = sessionStorage.getItem("sw-cache-purged") === "true";
+        } catch (storageError) {
+          console.warn("[SW Purge] sessionStorage not available:", storageError);
+          // If sessionStorage is unavailable, skip purge to avoid infinite reload loops
+          return;
+        }
         
         if (!hasPerformedPurge) {
           console.log("[SW Purge] Starting service worker and cache cleanup...");
@@ -42,12 +50,20 @@ export function ServiceWorkerRegistration() {
             }
           }
 
-          // Mark purge as complete
-          sessionStorage.setItem("sw-cache-purged", "true");
+          // Mark purge as complete (with error handling)
+          try {
+            sessionStorage.setItem("sw-cache-purged", "true");
+          } catch (storageError) {
+            console.warn("[SW Purge] Could not set sessionStorage flag:", storageError);
+          }
+          
           console.log("[SW Purge] Cleanup complete. Reloading page...");
 
           // 3. Reload the page to ensure a fresh session
-          window.location.reload();
+          // Use setTimeout to ensure log messages are flushed before reload
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
         }
       } catch (error) {
         console.error("[SW Purge] Failed to purge service workers and caches:", error);
@@ -63,7 +79,7 @@ export function ServiceWorkerRegistration() {
       .finally(() => {
         // Only register in production or when explicitly enabled
         if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_SW === "true") {
-        const registerSW = async () => {
+          const registerSW = async () => {
           try {
             const registration = await navigator.serviceWorker.register("/sw.js", {
               scope: "/",
@@ -120,8 +136,8 @@ export function ServiceWorkerRegistration() {
         };
 
         registerSW();
-        }
-      });
+      }
+    });
   }, []);
 
   return null;
