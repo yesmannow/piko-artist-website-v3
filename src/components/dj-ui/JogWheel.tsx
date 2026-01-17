@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
+import Image from "next/image";
 import { JogWheel3D } from "./JogWheel3D";
 import { DeskProps } from "./DeskProps";
 import { Expand, Music } from "lucide-react";
@@ -359,10 +360,10 @@ export function JogWheel({
           }}
         >
           {coverArt ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={coverArt}
               alt="Vinyl Label"
+              fill
               className="w-full h-full object-cover"
               onError={(e) => {
                 // Fallback if image fails to load
@@ -406,10 +407,10 @@ export function JogWheel({
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
             className="relative max-w-[min(92vw,500px)] w-full aspect-square rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={coverArt}
               alt="Album Artwork"
+              fill
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/30" />

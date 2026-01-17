@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { useFrame, ThreeEvent, extend } from "@react-three/fiber";
+import { useFrame, extend } from "@react-three/fiber";
 import { useSpring, animated } from "@react-spring/three";
 import { useDrag } from "@use-gesture/react";
 import * as THREE from "three";
@@ -37,7 +37,7 @@ export function HolographicDeck({
   }));
 
   // Gesture Control: One-finger drag to rotate
-  const bind = useDrag(({ offset: [x, y], active }) => {
+  const bind = useDrag(({ offset: [x], active }) => {
     setIsDragging(active);
     // Rotate Y axis based on horizontal drag
     api.start({ rotation: [0, x / 50, 0] });
