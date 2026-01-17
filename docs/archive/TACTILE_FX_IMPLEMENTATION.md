@@ -7,6 +7,7 @@
 **File**: `src/components/dj-ui/XYPad.tsx`
 
 **Features**:
+
 - ✅ **Physics-Based Movement**: Uses framer-motion `useSpring` for smooth cursor animation
 - ✅ **Snap-Back to Neutral**: Automatically returns to (0.5, 0) on release
 - ✅ **Safety Yellow Cursor**: Square reticle with 0px border-radius (Brutalist design)
@@ -15,10 +16,12 @@
 - ✅ **Touch-Optimized**: 44x44px minimum interaction area, `touchAction: none`
 
 **Audio Mapping**:
+
 - **X-Axis (0-1)**: Maps to Filter Cutoff Frequency (20Hz → 20kHz, logarithmic)
 - **Y-Axis (0-1)**: Maps to Effect Mix (Reverb/Delay Wet/Dry 0% → 50%)
 
 **Integration Code**:
+
 ```tsx
 // In DJInterface.tsx or FXUnit.tsx
 import { XYPad } from "@/components/dj-ui/XYPad";
@@ -65,7 +68,7 @@ const handleXYPadChange = (x: number, y: number) => {
     // Optional: Reset effects when released
     // handleXYPadChange(0.5, 0);
   }}
-/>
+/>;
 ```
 
 ### 2. Slip Mode Audio Engine ⭐
@@ -73,18 +76,21 @@ const handleXYPadChange = (x: number, y: number) => {
 **File**: `src/hooks/useDualDeck.ts`
 
 **Features**:
+
 - ✅ **Virtual Playhead Tracking**: Maintains continuous time tracking based on BPM
 - ✅ **Background Advancement**: Virtual playhead continues even during scratching/looping
 - ✅ **Seek on Release**: Automatically seeks to virtual playhead position when manipulation ends
 - ✅ **Per-Deck Control**: Independent slip mode for Deck A and Deck B
 
 **How It Works**:
+
 1. When Slip Mode is enabled and track starts playing, virtual playhead initializes at 0
 2. Virtual playhead advances continuously: `virtualPlayhead = lastActualTime + elapsed * playbackRate`
 3. During scratching/looping, audible audio changes but virtual playhead continues
 4. On release, `seekToVirtualPlayhead()` creates new source at virtual position
 
 **Usage**:
+
 ```tsx
 const {
   isSlipModeA,
@@ -105,17 +111,20 @@ seekToVirtualPlayheadA();
 **File**: `src/components/dj-ui/JogWheel.tsx`
 
 **Features**:
+
 - ✅ **Angular Velocity Calculation**: Tracks degrees per millisecond during drag
 - ✅ **PlaybackRate Mapping**: Fast forward = +2.0x, backward = -1.5x
 - ✅ **Inertia Physics**: Friction coefficient (0.95 per frame) for natural spin-down
 - ✅ **Smooth Deceleration**: Platter spins down to 1.0x (or 0.0x if paused) naturally
 
 **Physics Formula**:
+
 - Angular Velocity: `velocity = deltaAngle / timeDelta` (degrees/ms)
 - PlaybackRate: `playbackRate = 1.0 + (velocity * 0.01)` (clamped -1.5 to +2.0)
 - Inertia: `velocity = velocity * 0.95` per frame until < 0.01
 
 **Integration with Slip Mode**:
+
 ```tsx
 const { handleScratch, isSlipModeA } = useDualDeck();
 
@@ -146,6 +155,7 @@ const { handleScratch, isSlipModeA } = useDualDeck();
 ## 📋 Integration Checklist
 
 ### XY Pad Audio Wiring
+
 - [ ] Add XY Pad state to DJInterface
 - [ ] Create `mapXToFilterFreq()` utility function
 - [ ] Create `mapYToEffectMix()` utility function
@@ -154,12 +164,14 @@ const { handleScratch, isSlipModeA } = useDualDeck();
 - [ ] Test latch mode toggle
 
 ### Slip Mode Integration
+
 - [ ] Add Slip Mode toggle button to deck UI
 - [ ] Call `seekToVirtualPlayheadA/B()` when releasing scratch/loop
 - [ ] Ensure virtual playhead initializes on play
 - [ ] Test that virtual playhead continues during manipulation
 
 ### Velocity Scratch Integration
+
 - [ ] Add `onVelocityChange` handler to JogWheel usage
 - [ ] Update `sourceNode.playbackRate.value` in real-time
 - [ ] Test inertia spin-down behavior
@@ -168,6 +180,7 @@ const { handleScratch, isSlipModeA } = useDualDeck();
 ## 🎚️ Audio Graph Integration
 
 ### Filter Cutoff (X-Axis)
+
 ```typescript
 // In DJInterface.tsx useEffect for filter updates
 useEffect(() => {
@@ -179,6 +192,7 @@ useEffect(() => {
 ```
 
 ### Effect Mix (Y-Axis)
+
 ```typescript
 // In DJInterface.tsx useEffect for reverb updates
 useEffect(() => {
@@ -209,4 +223,3 @@ useEffect(() => {
 ---
 
 **Status**: Core mechanics complete. Ready for audio graph integration.
-

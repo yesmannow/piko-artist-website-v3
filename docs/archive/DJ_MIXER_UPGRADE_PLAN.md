@@ -87,6 +87,7 @@ Master:
 **Location**: `src/components/DJInterface.tsx`
 
 **Implementation**:
+
 - Add MediaRecorder to capture master output
 - Create recording node: `masterGain → MediaStreamDestination`
 - Add UI section in DJMixer or separate component
@@ -96,11 +97,13 @@ Master:
 - Cleanup: Stop recorder on unmount/route change, revoke object URLs
 
 **Risks**:
+
 - MediaRecorder may not be supported in all browsers (Safari)
 - Need to handle audio context state (suspended/resumed)
 - Memory: Large recordings could consume memory
 
 **Files to Modify**:
+
 - `src/components/DJInterface.tsx` - Add recording logic
 - `src/components/DJMixer.tsx` - Add recording UI section
 
@@ -109,6 +112,7 @@ Master:
 **Location**: `src/components/DJDeck.tsx` and `src/components/dj-ui/PerformancePads.tsx`
 
 **Implementation**:
+
 - Extend PerformancePads from 4 to 8 pads
 - Store cues in deck state (useState in DJDeck or pass from parent)
 - Cue operations:
@@ -119,11 +123,13 @@ Master:
 - Ensure click-safe: Debounce rapid clicks, prevent re-render storms
 
 **Risks**:
+
 - Rapid cue triggering could cause audio glitches
 - Need to handle seek while playing
 - Mobile long-press detection
 
 **Files to Modify**:
+
 - `src/components/dj-ui/PerformancePads.tsx` - Extend to 8 pads, add long-press
 - `src/components/DJDeck.tsx` - Update cue handlers, store 8 cues
 
@@ -134,6 +140,7 @@ Master:
 **Current State**: Basic loop exists (4/8/16 beats), but needs enhancement
 
 **Implementation**:
+
 - Add loop in/out markers
 - Selectable loop lengths: 2/4/8/16 beats (or fallback seconds if BPM unknown)
 - Loop on/off toggle
@@ -142,11 +149,13 @@ Master:
 - Use WaveSurfer's `on('finish')` or interval check for loop detection
 
 **Risks**:
+
 - Rapid loop toggles could cause audio glitches
 - Need to handle BPM detection (or use fallback time-based)
 - Loop boundaries must be precise
 
 **Files to Modify**:
+
 - `src/components/DJDeck.tsx` - Enhance loop logic
 
 ### Feature 4: FX Rack (Enhancement)
@@ -156,6 +165,7 @@ Master:
 **Current State**: FX rack exists with filter, reverb, delay, distortion
 
 **Enhancement Needed**:
+
 - Filter: Already has LP/HP/BP (good)
 - Echo/Delay: Already exists (time + feedback) - verify it's working correctly
 - Reverb: Already exists (amount) - verify it's working correctly
@@ -164,15 +174,18 @@ Master:
   - Connect: `masterGain → limiter → analyser → destination`
 
 **Implementation**:
+
 - Add master limiter node in DJInterface initialization
 - Add limiter threshold control in DJMixer or FXUnit
 - Ensure FX nodes are disabled when amount = 0 (CPU optimization)
 
 **Risks**:
+
 - Limiter could affect sound quality if too aggressive
 - Need to balance CPU usage vs. audio quality
 
 **Files to Modify**:
+
 - `src/components/DJInterface.tsx` - Add master limiter node
 - `src/components/DJMixer.tsx` or `src/components/FXUnit.tsx` - Add limiter control
 
@@ -181,6 +194,7 @@ Master:
 **Location**: `src/components/DJInterface.tsx`, `src/components/DJDeck.tsx`, `src/components/DJMixer.tsx`
 
 **Implementation**:
+
 - Detect screen size (use existing `isMounted` pattern)
 - On small screens (< 768px):
   - Render "DJ Lite" controls:
@@ -197,11 +211,13 @@ Master:
 - Ensure touch targets >= 44px (already using `min-h-[44px]` in many places)
 
 **Risks**:
+
 - Feature parity between desktop and mobile
 - Touch interactions (long-press, multi-touch)
 - Performance on mobile devices
 
 **Files to Modify**:
+
 - `src/components/DJInterface.tsx` - Add responsive mode detection
 - `src/components/DJDeck.tsx` - Conditional rendering for mobile
 - `src/components/DJMixer.tsx` - Simplified mobile layout
@@ -210,10 +226,12 @@ Master:
 ## Risks & Considerations
 
 ### SSR (Server-Side Rendering)
+
 - **Risk**: AudioContext, MediaRecorder, WebAudio APIs are browser-only
 - **Mitigation**: All audio code is in `"use client"` components, wrapped in `useEffect` with proper checks
 
 ### Mobile Performance
+
 - **Risk**: WebAudio processing, multiple FX nodes, recording could be CPU-intensive
 - **Mitigation**:
   - Disable FX nodes when amount = 0
@@ -222,6 +240,7 @@ Master:
   - Mobile mode reduces active features
 
 ### Memory Leaks
+
 - **Risk**: MediaRecorder chunks, object URLs, audio nodes not cleaned up
 - **Mitigation**:
   - Proper cleanup in useEffect return functions
@@ -230,10 +249,12 @@ Master:
   - Stop MediaRecorder on route change
 
 ### Browser Compatibility
+
 - **Risk**: MediaRecorder support varies (Safari, older browsers)
 - **Mitigation**: Feature detection, fallback messaging
 
 ### Audio Glitches
+
 - **Risk**: Rapid cue jumps, loop toggles could cause clicks/pops
 - **Mitigation**:
   - Smooth seek operations
@@ -258,9 +279,11 @@ Master:
 ## File Summary
 
 **Files to Create**:
+
 - None (extend existing components)
 
 **Files to Modify**:
+
 1. `src/components/DJInterface.tsx` - Recording, limiter, mobile detection
 2. `src/components/DJDeck.tsx` - Hot cues (8), enhanced loops
 3. `src/components/DJMixer.tsx` - Recording UI, limiter control
@@ -268,6 +291,6 @@ Master:
 5. `src/components/FXUnit.tsx` - Mobile layout (optional)
 
 **Files to Remove**:
+
 - Check for unused imports/components after implementation
 - Remove any old loop/cue code if replaced
-

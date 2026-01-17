@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useEffect } from 'react';
-import { useDrag } from '@use-gesture/react';
-import { useAudioStore } from '@/store/useAudioStore';
-import { ensureAudioEngineReady } from '@/engine/AudioEngine';
-import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
-import { useInertia } from '@/hooks/useInertia';
+import { useRef, useEffect } from "react";
+import { useDrag } from "@use-gesture/react";
+import { useAudioStore } from "@/store/useAudioStore";
+import { ensureAudioEngineReady } from "@/engine/AudioEngine";
+import { triggerHaptic, HAPTIC_PATTERNS } from "@/utils/haptics";
+import { useInertia } from "@/hooks/useInertia";
 
 interface ScrubLayerProps {
   deckId: string;
@@ -13,10 +13,10 @@ interface ScrubLayerProps {
 
 /**
  * PHASE 3 & 5: Scrub Layer for Waveform Seeking
- * 
+ *
  * Transparent touch layer over waveform that allows seeking by dragging.
  * Maps X position to track time and calls AudioEngine.seek().
- * 
+ *
  * PHASE 3 Enhancements:
  * - Inertia/momentum scrolling after release
  * - Velocity-based haptic feedback
@@ -27,7 +27,9 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
   const deckState = useAudioStore((state) => state.decks[deckId]);
   const lastSeekTime = useRef(0);
   const isDragging = useRef(false);
-  const engineReadyRef = useRef<Promise<Awaited<ReturnType<typeof ensureAudioEngineReady>>> | null>(null);
+  const engineReadyRef = useRef<Promise<
+    Awaited<ReturnType<typeof ensureAudioEngineReady>>
+  > | null>(null);
 
   const getEngine = () => {
     if (!engineReadyRef.current) {
@@ -43,18 +45,24 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
     onUpdate: (velocity) => {
       // Apply velocity to seek position
       if (!deckState.duration || isDragging.current) return;
-      
+
       const delta = velocity * 0.01; // Scale velocity to seek delta
-      const newTime = Math.max(0, Math.min(deckState.duration, lastSeekTime.current + delta));
-      
-      getEngine().then((engine) => {
-        engine.seek(deckId, newTime);
-        lastSeekTime.current = newTime;
-      }).catch(() => {});
+      const newTime = Math.max(
+        0,
+        Math.min(deckState.duration, lastSeekTime.current + delta),
+      );
+
+      getEngine()
+        .then((engine) => {
+          engine.seek(deckId, newTime);
+          lastSeekTime.current = newTime;
+        })
+        .catch(() => {});
 
       try {
         // Subtle haptic tick during inertia
-        if (Math.random() < 0.1) { // 10% chance per frame to avoid overwhelming
+        if (Math.random() < 0.1) {
+          // 10% chance per frame to avoid overwhelming
           triggerHaptic(HAPTIC_PATTERNS.JOG_TICK);
         }
       } catch (error) {
@@ -92,19 +100,19 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
           lastSeekTime.current = seekTime;
         })
         .catch((error) => {
-          console.warn('Seek failed:', error);
+          console.warn("Seek failed:", error);
         });
 
       // PHASE 3: Apply inertia on release
       if (last) {
         isDragging.current = false;
-        
+
         // Apply velocity for inertia effect
         const scaledVelocity = vx * 0.5; // Scale down gesture velocity
         if (Math.abs(scaledVelocity) > 0.1) {
           applyVelocity(scaledVelocity);
         }
-        
+
         // Haptic feedback on release
         triggerHaptic(HAPTIC_PATTERNS.CLICK);
       }
@@ -112,7 +120,7 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
     {
       filterTaps: false, // Allow taps to seek
       pointer: { touch: true },
-    }
+    },
   );
 
   // Stop inertia when component unmounts or deck changes
@@ -127,7 +135,7 @@ export const ScrubLayer = ({ deckId }: ScrubLayerProps) => {
       ref={containerRef}
       {...bind()}
       className="absolute inset-0 z-10 cursor-pointer touch-none"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: "none" }}
     />
   );
 };

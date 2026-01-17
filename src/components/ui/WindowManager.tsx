@@ -44,7 +44,7 @@ export function WindowManager({
       setDraggedWindow(windowId);
       onWindowFocus(windowId);
     },
-    [onWindowFocus]
+    [onWindowFocus],
   );
 
   const handleMouseMove = useCallback(
@@ -58,7 +58,7 @@ export function WindowManager({
         position: { x: Math.max(0, newX), y: Math.max(0, newY) },
       });
     },
-    [draggedWindow, onWindowUpdate]
+    [draggedWindow, onWindowUpdate],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -69,11 +69,11 @@ export function WindowManager({
   // Global mouse event listeners
   React.useEffect(() => {
     if (draggedWindow) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [draggedWindow, handleMouseMove, handleMouseUp]);
@@ -83,7 +83,9 @@ export function WindowManager({
   };
 
   const handleMaximize = (windowId: string) => {
-    onWindowUpdate(windowId, { isMaximized: !windows.find(w => w.id === windowId)?.isMaximized });
+    onWindowUpdate(windowId, {
+      isMaximized: !windows.find((w) => w.id === windowId)?.isMaximized,
+    });
   };
 
   return (
@@ -103,8 +105,8 @@ export function WindowManager({
                 opacity: 1,
                 x: window.position.x,
                 y: window.position.y,
-                width: window.isMaximized ? '100vw' : window.size.width,
-                height: window.isMaximized ? '100vh' : window.size.height,
+                width: window.isMaximized ? "100vw" : window.size.width,
+                height: window.isMaximized ? "100vh" : window.size.height,
               }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
@@ -118,7 +120,9 @@ export function WindowManager({
               >
                 <div className="flex items-center gap-2">
                   <Move className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-white">{window.title}</span>
+                  <span className="text-sm font-medium text-white">
+                    {window.title}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -182,14 +186,17 @@ export function useWindowManager() {
       component: React.ComponentType<any>,
       props: Record<string, any> = {},
       position?: { x: number; y: number },
-      size?: { width: number; height: number }
+      size?: { width: number; height: number },
     ) => {
       const newWindow: WindowConfig = {
         id,
         title,
         component,
         props,
-        position: position || { x: 100 + windows.length * 30, y: 100 + windows.length * 30 },
+        position: position || {
+          x: 100 + windows.length * 30,
+          y: 100 + windows.length * 30,
+        },
         size: size || { width: 400, height: 400 },
         isMinimized: false,
         isMaximized: false,
@@ -199,24 +206,27 @@ export function useWindowManager() {
       setWindows((prev) => [...prev, newWindow]);
       setNextZIndex((prev) => prev + 1);
     },
-    [windows.length, nextZIndex]
+    [windows.length, nextZIndex],
   );
 
-  const updateWindow = useCallback((id: string, updates: Partial<WindowConfig>) => {
-    setWindows((prev) =>
-      prev.map((window) => {
-        if (window.id === id) {
-          // If focusing, bring to front
-          if (updates.zIndex === undefined && !updates.isMinimized) {
-            setNextZIndex((prevZ) => prevZ + 1);
-            updates.zIndex = nextZIndex + 1;
+  const updateWindow = useCallback(
+    (id: string, updates: Partial<WindowConfig>) => {
+      setWindows((prev) =>
+        prev.map((window) => {
+          if (window.id === id) {
+            // If focusing, bring to front
+            if (updates.zIndex === undefined && !updates.isMinimized) {
+              setNextZIndex((prevZ) => prevZ + 1);
+              updates.zIndex = nextZIndex + 1;
+            }
+            return { ...window, ...updates };
           }
-          return { ...window, ...updates };
-        }
-        return window;
-      })
-    );
-  }, [nextZIndex]);
+          return window;
+        }),
+      );
+    },
+    [nextZIndex],
+  );
 
   const closeWindow = useCallback((id: string) => {
     setWindows((prev) => prev.filter((window) => window.id !== id));
@@ -227,7 +237,7 @@ export function useWindowManager() {
       updateWindow(id, { zIndex: nextZIndex });
       setNextZIndex((prev) => prev + 1);
     },
-    [nextZIndex, updateWindow]
+    [nextZIndex, updateWindow],
   );
 
   return {

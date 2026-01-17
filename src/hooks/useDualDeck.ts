@@ -294,7 +294,7 @@ export function useDualDeck() {
     }
 
     // Resume AudioContext if suspended (browser autoplay policy)
-    if (audioContext.state === 'suspended') {
+    if (audioContext.state === "suspended") {
       audioContext.resume();
     }
 
@@ -358,7 +358,7 @@ export function useDualDeck() {
     }
 
     // Resume AudioContext if suspended (browser autoplay policy)
-    if (audioContext.state === 'suspended') {
+    if (audioContext.state === "suspended") {
       audioContext.resume();
     }
 

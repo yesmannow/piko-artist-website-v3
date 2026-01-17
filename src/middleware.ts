@@ -5,13 +5,13 @@ import type { NextRequest } from "next/server";
  * Middleware - Route redirects and request handling
  *
  * Phase 1: DJ Mixer Enhancement - User-Agent Routing
- * 
+ *
  * Device-aware routing:
  * - Mobile UA → /mobile (app-like mobile UI)
  * - Desktop UA → /studio (full studio UI)
  * - Legacy: /beatmaker → /studio redirect
  * - Legacy: mobile UA on /studio → /studio-v2 rewrite
- * 
+ *
  * This enforces separate "app-like" mobile UI and full "studio" UI,
  * preventing mobile devices from downloading heavy desktop code.
  *
@@ -39,14 +39,14 @@ export function middleware(request: NextRequest) {
   // Phase 1: Route mobile requests to /mobile for app-like UI
   // Desktop requests continue to /studio for full studio UI
   // Note: /studio still supports legacy mobile routing to /studio-v2 (see below)
-  
+
   // Add Cross-Origin-Isolation headers for /mobile route
   if (pathname.startsWith("/mobile")) {
     const response = NextResponse.next();
-    
+
     response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
     response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-    
+
     return response;
   }
 
@@ -88,6 +88,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/beatmaker/:path*", "/studio/:path*", "/studio-v2/:path*", "/mobile/:path*"],
+  matcher: [
+    "/beatmaker/:path*",
+    "/studio/:path*",
+    "/studio-v2/:path*",
+    "/mobile/:path*",
+  ],
 };
-

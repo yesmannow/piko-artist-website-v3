@@ -30,7 +30,8 @@ export function Toast({
     }
   }, [show, duration, onClose]);
 
-  const Icon = type === "error" ? AlertCircle : type === "success" ? CheckCircle : Info;
+  const Icon =
+    type === "error" ? AlertCircle : type === "success" ? CheckCircle : Info;
   const colors = {
     error: "bg-red-500/90 border-red-600",
     success: "bg-green-500/90 border-green-600",

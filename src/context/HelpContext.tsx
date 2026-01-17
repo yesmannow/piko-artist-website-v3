@@ -24,7 +24,9 @@ export function HelpProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <HelpContext.Provider value={{ isHelpMode, toggleHelp, triggerTour, tourTrigger }}>
+    <HelpContext.Provider
+      value={{ isHelpMode, toggleHelp, triggerTour, tourTrigger }}
+    >
       {children}
     </HelpContext.Provider>
   );
@@ -37,4 +39,3 @@ export function useHelp() {
   }
   return context;
 }
-

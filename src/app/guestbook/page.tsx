@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, User, MapPin, Clock, Trash2, Heart } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  User,
+  MapPin,
+  Clock,
+  Trash2,
+  Heart,
+} from "lucide-react";
 
 interface GuestbookEntry {
   id: string;
@@ -33,7 +41,8 @@ export default function GuestbookPage() {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [message, setMessage] = useState("");
-  const [selectedVibe, setSelectedVibe] = useState<GuestbookEntry["vibe"]>("fire");
+  const [selectedVibe, setSelectedVibe] =
+    useState<GuestbookEntry["vibe"]>("fire");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filter, setFilter] = useState<"all" | GuestbookEntry["vibe"]>("all");
 
@@ -87,7 +96,7 @@ export default function GuestbookPage() {
 
   const handleLike = (id: string) => {
     const newEntries = entries.map((entry) =>
-      entry.id === id ? { ...entry, likes: entry.likes + 1 } : entry
+      entry.id === id ? { ...entry, likes: entry.likes + 1 } : entry,
     );
     saveEntries(newEntries);
   };
@@ -97,7 +106,8 @@ export default function GuestbookPage() {
     saveEntries(newEntries);
   };
 
-  const filteredEntries = filter === "all" ? entries : entries.filter((e) => e.vibe === filter);
+  const filteredEntries =
+    filter === "all" ? entries : entries.filter((e) => e.vibe === filter);
 
   const formatTimestamp = (timestamp: number) => {
     const now = Date.now();
@@ -163,7 +173,8 @@ export default function GuestbookPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg text-[#E0E0E0]/70 max-w-2xl mx-auto"
           >
-            Leave your mark. Share your vibe. Connect with the community. This is where the real ones speak.
+            Leave your mark. Share your vibe. Connect with the community. This
+            is where the real ones speak.
           </motion.p>
 
           <motion.div
@@ -241,7 +252,11 @@ export default function GuestbookPage() {
                       Your Vibe
                     </label>
                     <div className="grid grid-cols-4 gap-2">
-                      {(Object.keys(vibeEmojis) as Array<keyof typeof vibeEmojis>).map((vibe) => (
+                      {(
+                        Object.keys(vibeEmojis) as Array<
+                          keyof typeof vibeEmojis
+                        >
+                      ).map((vibe) => (
                         <button
                           key={vibe}
                           type="button"
@@ -300,7 +315,12 @@ export default function GuestbookPage() {
                       boxShadow: "4px 4px 0px #000",
                     }}
                   >
-                    <span style={{ transform: "skewX(12deg)", display: "inline-block" }}>
+                    <span
+                      style={{
+                        transform: "skewX(12deg)",
+                        display: "inline-block",
+                      }}
+                    >
                       {isSubmitting ? (
                         "POSTING..."
                       ) : (
@@ -333,13 +353,14 @@ export default function GuestbookPage() {
               >
                 All ({entries.length})
               </button>
-              {(Object.keys(vibeEmojis) as Array<keyof typeof vibeEmojis>).map((vibe) => {
-                const count = entries.filter((e) => e.vibe === vibe).length;
-                return (
-                  <button
-                    key={vibe}
-                    onClick={() => setFilter(vibe)}
-                    className={`
+              {(Object.keys(vibeEmojis) as Array<keyof typeof vibeEmojis>).map(
+                (vibe) => {
+                  const count = entries.filter((e) => e.vibe === vibe).length;
+                  return (
+                    <button
+                      key={vibe}
+                      onClick={() => setFilter(vibe)}
+                      className={`
                       px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 transition-all flex items-center gap-2
                       ${
                         filter === vibe
@@ -347,12 +368,13 @@ export default function GuestbookPage() {
                           : "bg-black/60 text-[#E0E0E0]/70 border-[#E0E0E0]/20 hover:border-[#FFD700]/50"
                       }
                     `}
-                  >
-                    <span>{vibeEmojis[vibe]}</span>
-                    {count > 0 && <span>({count})</span>}
-                  </button>
-                );
-              })}
+                    >
+                      <span>{vibeEmojis[vibe]}</span>
+                      {count > 0 && <span>({count})</span>}
+                    </button>
+                  );
+                },
+              )}
             </div>
 
             {/* Entries List */}
@@ -391,7 +413,9 @@ export default function GuestbookPage() {
 
                     {/* Header */}
                     <div className="mb-4 pr-14">
-                      <h3 className="text-lg font-bold text-[#FFD700] mb-1">{entry.name}</h3>
+                      <h3 className="text-lg font-bold text-[#FFD700] mb-1">
+                        {entry.name}
+                      </h3>
                       <div className="flex items-center gap-4 text-xs text-[#E0E0E0]/50 font-mono">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
@@ -405,7 +429,9 @@ export default function GuestbookPage() {
                     </div>
 
                     {/* Message */}
-                    <p className="text-[#E0E0E0]/80 leading-relaxed mb-4">{entry.message}</p>
+                    <p className="text-[#E0E0E0]/80 leading-relaxed mb-4">
+                      {entry.message}
+                    </p>
 
                     {/* Actions */}
                     <div className="flex items-center gap-4">

@@ -10,17 +10,17 @@
  * - Mood-based track filtering
  */
 
-import { areKeysCompatible } from './camelot';
+import { areKeysCompatible } from "./camelot";
 
 export interface TrackMetadata {
   id: string;
   title: string;
   artist: string;
   src: string;
-  type: 'audio' | 'video';
+  type: "audio" | "video";
   bpm?: number | null;
   camelot?: string | null;
-  vibe?: 'chill' | 'hype' | 'classic' | 'storytelling' | null;
+  vibe?: "chill" | "hype" | "classic" | "storytelling" | null;
   duration?: number | null;
 }
 
@@ -42,7 +42,10 @@ export interface CompatibilityScore {
  * ±20% difference: 20-39
  * Beyond ±20%: 0-19
  */
-export function calculateBPMCompatibility(masterBPM: number, trackBPM: number): number {
+export function calculateBPMCompatibility(
+  masterBPM: number,
+  trackBPM: number,
+): number {
   if (!masterBPM || !trackBPM) return 0;
 
   const difference = Math.abs(trackBPM - masterBPM) / masterBPM;
@@ -62,28 +65,37 @@ export function calculateBPMCompatibility(masterBPM: number, trackBPM: number): 
 export function calculateCompatibilityScore(
   masterTrack: TrackMetadata,
   candidateTrack: TrackMetadata,
-  vibeMatching: boolean = true
+  vibeMatching: boolean = true,
 ): CompatibilityScore {
-  const bpmScore = calculateBPMCompatibility(masterTrack.bpm || 120, candidateTrack.bpm || 120);
-  const harmonicScore = areKeysCompatible(masterTrack.camelot || null, candidateTrack.camelot || null) ? 100 : 0;
+  const bpmScore = calculateBPMCompatibility(
+    masterTrack.bpm || 120,
+    candidateTrack.bpm || 120,
+  );
+  const harmonicScore = areKeysCompatible(
+    masterTrack.camelot || null,
+    candidateTrack.camelot || null,
+  )
+    ? 100
+    : 0;
   const vibeMatch = vibeMatching && masterTrack.vibe === candidateTrack.vibe;
 
   // Weighted scoring: BPM (40%), Harmony (50%), Vibe (10%)
-  let totalScore = (bpmScore * 0.4) + (harmonicScore * 0.5);
+  let totalScore = bpmScore * 0.4 + harmonicScore * 0.5;
   if (vibeMatching) {
     totalScore += vibeMatch ? 10 : 0;
   }
 
-  const bpmDifference = masterTrack.bpm && candidateTrack.bpm
-    ? Math.abs(candidateTrack.bpm - masterTrack.bpm) / masterTrack.bpm * 100
-    : 0;
+  const bpmDifference =
+    masterTrack.bpm && candidateTrack.bpm
+      ? (Math.abs(candidateTrack.bpm - masterTrack.bpm) / masterTrack.bpm) * 100
+      : 0;
 
   return {
     trackId: candidateTrack.id,
     score: Math.round(totalScore),
     bpmDifference,
     isHarmonic: harmonicScore > 0,
-    vibeMatch
+    vibeMatch,
   };
 }
 
@@ -94,11 +106,13 @@ export function rankCompatibleTracks(
   masterTrack: TrackMetadata,
   libraryTracks: TrackMetadata[],
   limit: number = 10,
-  vibeMatching: boolean = true
+  vibeMatching: boolean = true,
 ): CompatibilityScore[] {
   const scores = libraryTracks
-    .filter(track => track.id !== masterTrack.id) // Exclude master track
-    .map(track => calculateCompatibilityScore(masterTrack, track, vibeMatching))
+    .filter((track) => track.id !== masterTrack.id) // Exclude master track
+    .map((track) =>
+      calculateCompatibilityScore(masterTrack, track, vibeMatching),
+    )
     .sort((a, b) => b.score - a.score) // Sort by score descending
     .slice(0, limit);
 
@@ -111,20 +125,28 @@ export function rankCompatibleTracks(
 export function findNextCompatibleTrack(
   masterTrack: TrackMetadata,
   libraryTracks: TrackMetadata[],
-  vibeMatching: boolean = true
+  vibeMatching: boolean = true,
 ): TrackMetadata | null {
-  const ranked = rankCompatibleTracks(masterTrack, libraryTracks, 1, vibeMatching);
+  const ranked = rankCompatibleTracks(
+    masterTrack,
+    libraryTracks,
+    1,
+    vibeMatching,
+  );
   if (ranked.length === 0) return null;
 
   const bestMatch = ranked[0];
-  return libraryTracks.find(track => track.id === bestMatch.trackId) || null;
+  return libraryTracks.find((track) => track.id === bestMatch.trackId) || null;
 }
 
 /**
  * Constant-Power Crossfade Curve
  * Based on DJ Studio 5's algorithm for smooth, natural-sounding transitions
  */
-export function calculateConstantPowerCrossfade(position: number): { left: number; right: number } {
+export function calculateConstantPowerCrossfade(position: number): {
+  left: number;
+  right: number;
+} {
   // position: 0 = full left, 0.5 = center, 1 = full right
 
   // Use sine/cosine for constant power (equal loudness)
@@ -133,7 +155,7 @@ export function calculateConstantPowerCrossfade(position: number): { left: numbe
 
   return {
     left: leftGain,
-    right: rightGain
+    right: rightGain,
   };
 }
 
@@ -143,7 +165,7 @@ export function calculateConstantPowerCrossfade(position: number): { left: numbe
  */
 export function findNextPhraseBoundary(
   currentBeat: number,
-  beatsPerPhrase: number = 4
+  beatsPerPhrase: number = 4,
 ): number {
   const nextPhrase = Math.ceil(currentBeat / beatsPerPhrase) * beatsPerPhrase;
   return nextPhrase;
@@ -158,7 +180,7 @@ export function calculatePhaseAlignment(
   outgoingCurrentTime: number,
   outgoingGridOffset: number,
   incomingBPM: number,
-  incomingGridOffset: number
+  incomingGridOffset: number,
 ): number {
   // Calculate current beat position for outgoing track
   const outgoingBeatLength = 60 / outgoingBPM;
@@ -174,10 +196,12 @@ export function calculatePhaseAlignment(
 
   // Calculate equivalent position in incoming track
   const incomingBeatLength = 60 / incomingBPM;
-  const incomingBeatsFromGrid = (outgoingBeatsElapsed + beatsUntilBoundary) * (outgoingBPM / incomingBPM);
+  const incomingBeatsFromGrid =
+    (outgoingBeatsElapsed + beatsUntilBoundary) * (outgoingBPM / incomingBPM);
 
   // Calculate required start time for incoming track
-  const incomingStartTime = incomingBeatsFromGrid * incomingBeatLength + incomingGridOffset;
+  const incomingStartTime =
+    incomingBeatsFromGrid * incomingBeatLength + incomingGridOffset;
 
   return incomingStartTime;
 }
@@ -187,8 +211,8 @@ export function calculatePhaseAlignment(
  */
 export function filterTracksByMood(
   tracks: TrackMetadata[],
-  mood: 'chill' | 'hype' | 'classic' | 'storytelling' | 'all' = 'all'
+  mood: "chill" | "hype" | "classic" | "storytelling" | "all" = "all",
 ): TrackMetadata[] {
-  if (mood === 'all') return tracks;
-  return tracks.filter(track => track.vibe === mood);
+  if (mood === "all") return tracks;
+  return tracks.filter((track) => track.vibe === mood);
 }

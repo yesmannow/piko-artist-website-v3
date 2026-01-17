@@ -28,13 +28,17 @@ export function RemixGrid({
   const sampleLibrary = getSampleLibrary();
 
   const [grid, setGrid] = useState<GridStep[][]>(() =>
-    Array(4).fill(null).map(() =>
-      Array(4).fill(null).map(() => ({
-        sampleId: null,
-        active: false,
-        velocity: 0.8
-      }))
-    )
+    Array(4)
+      .fill(null)
+      .map(() =>
+        Array(4)
+          .fill(null)
+          .map(() => ({
+            sampleId: null,
+            active: false,
+            velocity: 0.8,
+          })),
+      ),
   );
 
   const [currentStep, setCurrentStep] = useState({ row: 0, col: 0 });
@@ -46,7 +50,10 @@ export function RemixGrid({
 
   // Sample assignment mode
   const [assignMode, setAssignMode] = useState(false);
-  const [assignPosition, setAssignPosition] = useState<{row: number, col: number} | null>(null);
+  const [assignPosition, setAssignPosition] = useState<{
+    row: number;
+    col: number;
+  } | null>(null);
 
   // Sample packs for organization
   const samplePacks = sampleLibrary.getAllPacks();
@@ -57,7 +64,7 @@ export function RemixGrid({
     const initServices = async () => {
       await stepSequencer.initialize();
       // Load default packs
-      samplePacks.forEach(pack => {
+      samplePacks.forEach((pack) => {
         sampleLibrary.loadPack(pack.id);
       });
     };
@@ -87,7 +94,7 @@ export function RemixGrid({
       newGrid[row][col] = {
         sampleId: selectedSample.id,
         active: true,
-        velocity: 0.8
+        velocity: 0.8,
       };
       setGrid(newGrid);
       stepSequencer.setStep(row, col, newGrid[row][col]);
@@ -98,7 +105,7 @@ export function RemixGrid({
       const newGrid = [...grid];
       newGrid[row][col] = {
         ...newGrid[row][col],
-        active: !newGrid[row][col].active
+        active: !newGrid[row][col].active,
       };
       setGrid(newGrid);
       stepSequencer.setStep(row, col, newGrid[row][col]);
@@ -119,10 +126,14 @@ export function RemixGrid({
       newGrid[assignPosition.row][assignPosition.col] = {
         sampleId: sample.id,
         active: true,
-        velocity: 0.8
+        velocity: 0.8,
       };
       setGrid(newGrid);
-      stepSequencer.setStep(assignPosition.row, assignPosition.col, newGrid[assignPosition.row][assignPosition.col]);
+      stepSequencer.setStep(
+        assignPosition.row,
+        assignPosition.col,
+        newGrid[assignPosition.row][assignPosition.col],
+      );
     }
     setAssignMode(false);
     setAssignPosition(null);
@@ -133,14 +144,14 @@ export function RemixGrid({
   // Get filtered samples based on selected pack
   const getFilteredSamples = () => {
     if (!selectedPack) return samples;
-    const pack = samplePacks.find(p => p.id === selectedPack);
+    const pack = samplePacks.find((p) => p.id === selectedPack);
     return pack ? pack.samples : [];
   };
 
   // Get sample info for display
   const getSampleInfo = (sampleId: string | null) => {
     if (!sampleId) return null;
-    return samples.find(s => s.id === sampleId);
+    return samples.find((s) => s.id === sampleId);
   };
 
   // Handle tempo changes
@@ -169,11 +180,15 @@ export function RemixGrid({
           onClick={handleSequencerToggle}
           className={`p-2 rounded ${
             isSequencerPlaying
-              ? 'bg-red-500 hover:bg-red-600 text-white'
-              : 'bg-green-500 hover:bg-green-600 text-white'
+              ? "bg-red-500 hover:bg-red-600 text-white"
+              : "bg-green-500 hover:bg-green-600 text-white"
           } transition-colors`}
         >
-          {isSequencerPlaying ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          {isSequencerPlaying ? (
+            <Square className="w-4 h-4" />
+          ) : (
+            <Play className="w-4 h-4" />
+          )}
         </button>
 
         <div className="flex items-center gap-2">
@@ -194,11 +209,11 @@ export function RemixGrid({
           onClick={() => setAssignMode(!assignMode)}
           className={`px-3 py-1 rounded text-sm ${
             assignMode
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-600 hover:bg-gray-500 text-gray-300'
+              ? "bg-blue-500 text-white"
+              : "bg-gray-600 hover:bg-gray-500 text-gray-300"
           } transition-colors`}
         >
-          {assignMode ? 'Assigning...' : 'Assign Samples'}
+          {assignMode ? "Assigning..." : "Assign Samples"}
         </button>
       </div>
 
@@ -210,7 +225,8 @@ export function RemixGrid({
         {grid.map((row, rowIndex) =>
           row.map((cell, colIndex) => {
             const sample = getSampleInfo(cell.sampleId);
-            const isCurrentStep = isSequencerPlaying &&
+            const isCurrentStep =
+              isSequencerPlaying &&
               currentStep.row === rowIndex &&
               currentStep.col === colIndex;
             const isActive = cell.active;
@@ -225,17 +241,22 @@ export function RemixGrid({
                 }}
                 className={`
                   relative w-full aspect-square rounded border-2 transition-all duration-150
-                  ${isActive
-                    ? 'border-toxic-lime bg-toxic-lime/20'
-                    : 'border-gray-600 bg-gray-800/50 hover:bg-gray-700/50'
+                  ${
+                    isActive
+                      ? "border-toxic-lime bg-toxic-lime/20"
+                      : "border-gray-600 bg-gray-800/50 hover:bg-gray-700/50"
                   }
-                  ${isCurrentStep
-                    ? 'ring-2 ring-cyan-400 ring-opacity-75 animate-pulse'
-                    : ''
+                  ${
+                    isCurrentStep
+                      ? "ring-2 ring-cyan-400 ring-opacity-75 animate-pulse"
+                      : ""
                   }
-                  ${assignMode && assignPosition?.row === rowIndex && assignPosition?.col === colIndex
-                    ? 'border-blue-400 bg-blue-400/20'
-                    : ''
+                  ${
+                    assignMode &&
+                    assignPosition?.row === rowIndex &&
+                    assignPosition?.col === colIndex
+                      ? "border-blue-400 bg-blue-400/20"
+                      : ""
                   }
                 `}
                 whileHover={{ scale: 1.05 }}
@@ -245,11 +266,21 @@ export function RemixGrid({
                 {sample && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-xs text-center">
-                      {sample.category === 'drum' && <Drum className="w-3 h-3 mx-auto mb-1 text-yellow-400" />}
-                      {sample.category === 'scratch' && <Music className="w-3 h-3 mx-auto mb-1 text-purple-400" />}
-                      {sample.category === 'stem' && <Mic className="w-3 h-3 mx-auto mb-1 text-green-400" />}
-                      {sample.category === 'fx' && <Grid3X3 className="w-3 h-3 mx-auto mb-1 text-red-400" />}
-                      {sample.category === 'vocal' && <Mic className="w-3 h-3 mx-auto mb-1 text-pink-400" />}
+                      {sample.category === "drum" && (
+                        <Drum className="w-3 h-3 mx-auto mb-1 text-yellow-400" />
+                      )}
+                      {sample.category === "scratch" && (
+                        <Music className="w-3 h-3 mx-auto mb-1 text-purple-400" />
+                      )}
+                      {sample.category === "stem" && (
+                        <Mic className="w-3 h-3 mx-auto mb-1 text-green-400" />
+                      )}
+                      {sample.category === "fx" && (
+                        <Grid3X3 className="w-3 h-3 mx-auto mb-1 text-red-400" />
+                      )}
+                      {sample.category === "vocal" && (
+                        <Mic className="w-3 h-3 mx-auto mb-1 text-pink-400" />
+                      )}
                       <div className="text-[10px] truncate px-1">
                         {sample.name}
                       </div>
@@ -262,7 +293,7 @@ export function RemixGrid({
                   {isActive && (
                     <motion.div
                       className="h-full bg-toxic-lime rounded-b"
-                      initial={{ width: '0%' }}
+                      initial={{ width: "0%" }}
                       animate={{ width: `${cell.velocity * 100}%` }}
                       transition={{ duration: 0.2 }}
                     />
@@ -270,7 +301,7 @@ export function RemixGrid({
                 </div>
               </motion.button>
             );
-          })
+          }),
         )}
       </div>
 
@@ -292,7 +323,7 @@ export function RemixGrid({
             {/* Pack selector */}
             <div className="mb-4">
               <select
-                value={selectedPack || ''}
+                value={selectedPack || ""}
                 onChange={(e) => setSelectedPack(e.target.value || null)}
                 className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
               >
@@ -313,15 +344,29 @@ export function RemixGrid({
                   className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded flex items-center gap-3 transition-colors"
                 >
                   <div className="flex-shrink-0">
-                    {sample.category === 'drum' && <Drum className="w-4 h-4 text-yellow-400" />}
-                    {sample.category === 'scratch' && <Music className="w-4 h-4 text-purple-400" />}
-                    {sample.category === 'stem' && <Mic className="w-4 h-4 text-green-400" />}
-                    {sample.category === 'fx' && <Grid3X3 className="w-4 h-4 text-red-400" />}
-                    {sample.category === 'vocal' && <Mic className="w-4 h-4 text-pink-400" />}
+                    {sample.category === "drum" && (
+                      <Drum className="w-4 h-4 text-yellow-400" />
+                    )}
+                    {sample.category === "scratch" && (
+                      <Music className="w-4 h-4 text-purple-400" />
+                    )}
+                    {sample.category === "stem" && (
+                      <Mic className="w-4 h-4 text-green-400" />
+                    )}
+                    {sample.category === "fx" && (
+                      <Grid3X3 className="w-4 h-4 text-red-400" />
+                    )}
+                    {sample.category === "vocal" && (
+                      <Mic className="w-4 h-4 text-pink-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white truncate">{sample.name}</div>
-                    <div className="text-sm text-gray-400 capitalize">{sample.category}</div>
+                    <div className="font-medium text-white truncate">
+                      {sample.name}
+                    </div>
+                    <div className="text-sm text-gray-400 capitalize">
+                      {sample.category}
+                    </div>
                   </div>
                   {sample.bpm && (
                     <div className="text-xs text-gray-500">

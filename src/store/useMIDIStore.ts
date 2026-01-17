@@ -1,24 +1,24 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 /**
  * PHASE 7: MIDI Mapping Store
- * 
+ *
  * Stores MIDI control mappings and learn mode state.
  * Allows users to map physical MIDI controls to app actions.
  */
 
-export type MIDIAction = 
-  | 'deckA_play'
-  | 'deckA_pause'
-  | 'deckA_cue'
-  | 'deckA_volume'
-  | 'deckB_play'
-  | 'deckB_pause'
-  | 'deckB_cue'
-  | 'deckB_volume'
-  | 'crossfader'
-  | 'masterVolume';
+export type MIDIAction =
+  | "deckA_play"
+  | "deckA_pause"
+  | "deckA_cue"
+  | "deckA_volume"
+  | "deckB_play"
+  | "deckB_pause"
+  | "deckB_cue"
+  | "deckB_volume"
+  | "crossfader"
+  | "masterVolume";
 
 interface MIDIMapping {
   action: MIDIAction;
@@ -30,15 +30,15 @@ interface MIDIStore {
   isConnected: boolean;
   deviceName: string | null;
   lastActivity: number; // Timestamp of last MIDI message
-  
+
   // MIDI mappings: "statusByte:dataByte" -> action
   // e.g., "144:50" (Note On, note 50) -> "deckA_play"
   mappings: Record<string, MIDIMapping>;
-  
+
   // Learn mode: when true, next MIDI input will be mapped to target action
   learnMode: boolean;
   learnTarget: MIDIAction | null;
-  
+
   // Actions
   setConnected: (connected: boolean, deviceName?: string) => void;
   setActivity: () => void;
@@ -50,7 +50,7 @@ interface MIDIStore {
 }
 
 // localStorage key for MIDI mappings
-const MIDI_STORAGE_KEY = 'piko-dj-midi-mappings';
+const MIDI_STORAGE_KEY = "piko-dj-midi-mappings";
 
 export const useMIDIStore = create<MIDIStore>()(
   persist(
@@ -62,37 +62,33 @@ export const useMIDIStore = create<MIDIStore>()(
       mappings: {},
       learnMode: false,
       learnTarget: null,
-      
+
       // Actions
-      setConnected: (connected, deviceName) => 
+      setConnected: (connected, deviceName) =>
         set({ isConnected: connected, deviceName: deviceName || null }),
-      
-      setActivity: () => 
-        set({ lastActivity: Date.now() }),
-      
-      setMapping: (midiKey, action, label) => 
+
+      setActivity: () => set({ lastActivity: Date.now() }),
+
+      setMapping: (midiKey, action, label) =>
         set((state) => ({
           mappings: {
             ...state.mappings,
-            [midiKey]: { action, label }
-          }
+            [midiKey]: { action, label },
+          },
         })),
-      
-      removeMapping: (midiKey) => 
+
+      removeMapping: (midiKey) =>
         set((state) => {
           const newMappings = { ...state.mappings };
           delete newMappings[midiKey];
           return { mappings: newMappings };
         }),
-      
-      startLearn: (action) => 
-        set({ learnMode: true, learnTarget: action }),
-      
-      stopLearn: () => 
-        set({ learnMode: false, learnTarget: null }),
-      
-      clearMappings: () => 
-        set({ mappings: {} }),
+
+      startLearn: (action) => set({ learnMode: true, learnTarget: action }),
+
+      stopLearn: () => set({ learnMode: false, learnTarget: null }),
+
+      clearMappings: () => set({ mappings: {} }),
     }),
     {
       name: MIDI_STORAGE_KEY,
@@ -112,6 +108,6 @@ export const useMIDIStore = create<MIDIStore>()(
           state.lastActivity = 0;
         }
       },
-    }
-  )
+    },
+  ),
 );

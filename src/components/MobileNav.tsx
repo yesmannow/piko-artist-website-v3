@@ -3,14 +3,28 @@
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, X, Instagram, Youtube, ExternalLink, Menu, Music, Video } from "lucide-react";
+import {
+  Mail,
+  X,
+  Instagram,
+  Youtube,
+  ExternalLink,
+  Menu,
+  Music,
+  Video,
+} from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useState, useEffect, useRef, useMemo } from "react";
 import Logo from "@/components/branding/Logo";
 import { useAudio } from "@/context/AudioContext";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-import { primaryNavItems, quickNavItems, type NavItem, type NavBadge } from "@/config/nav.config";
+import {
+  primaryNavItems,
+  quickNavItems,
+  type NavItem,
+  type NavBadge,
+} from "@/config/nav.config";
 
 // Social links for mobile menu
 const socialLinks = [
@@ -51,15 +65,24 @@ const BadgePill = ({ badge }: { badge: NavBadge }) => {
         : "bg-white/10 text-white border-white/20";
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${toneStyles}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${toneStyles}`}
+    >
       {badge.text}
     </span>
   );
 };
 
-const getHref = (item: NavItem) => (item.sectionId ? `${item.href}#${item.sectionId}` : item.href);
+const getHref = (item: NavItem) =>
+  item.sectionId ? `${item.href}#${item.sectionId}` : item.href;
 
-export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems?: NavItem[] }) {
+export function MobileNav({
+  items,
+  quickItems,
+}: {
+  items?: NavItem[];
+  quickItems?: NavItem[];
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { triggerHaptic } = useHaptic();
@@ -229,7 +252,10 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
                 aria-label="Go to Home"
               >
                 <motion.div whileTap={{ scale: 0.9 }}>
-                  <Logo size={32} className="drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]" />
+                  <Logo
+                    size={32}
+                    className="drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]"
+                  />
                 </motion.div>
               </Link>
             </div>
@@ -272,7 +298,11 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
                       layoutId="mobileNavIndicator"
                       className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-toxic-lime rounded-b-full shadow-[0_0_8px_rgba(255,215,0,0.6)]"
                       initial={false}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                      }}
                     />
                   )}
                 </Link>
@@ -334,9 +364,13 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="mobile-menu-title"
-                    initial={reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }}
+                    initial={
+                      reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }
+                    }
                     animate={reducedMotion ? { opacity: 1, y: 0 } : { y: 0 }}
-                    exit={reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }}
+                    exit={
+                      reducedMotion ? { opacity: 0, y: "100%" } : { y: "100%" }
+                    }
                     transition={
                       reducedMotion
                         ? { duration: 0.2 }
@@ -401,7 +435,9 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
                               </div>
                               <span className="font-bold uppercase tracking-wider flex items-center gap-2">
                                 {item.label}
-                                {item.badge ? <BadgePill badge={item.badge} /> : null}
+                                {item.badge ? (
+                                  <BadgePill badge={item.badge} />
+                                ) : null}
                               </span>
                             </Link>
                           );
@@ -518,7 +554,9 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
                     className="flex items-center gap-4 px-4 py-3 rounded-lg border-2 border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-700/50 hover:border-toxic-lime/50 transition-colors touch-manipulation"
                   >
                     <Music className="w-5 h-5" />
-                    <span className="font-bold uppercase tracking-wider">Listen</span>
+                    <span className="font-bold uppercase tracking-wider">
+                      Listen
+                    </span>
                   </Link>
                   <Link
                     href="/videos"
@@ -529,7 +567,9 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
                     className="flex items-center gap-4 px-4 py-3 rounded-lg border-2 border-zinc-700 bg-zinc-800/50 text-white hover:bg-zinc-700/50 hover:border-toxic-lime/50 transition-colors touch-manipulation"
                   >
                     <Video className="w-5 h-5" />
-                    <span className="font-bold uppercase tracking-wider">Videos</span>
+                    <span className="font-bold uppercase tracking-wider">
+                      Videos
+                    </span>
                   </Link>
                 </div>
               </div>
@@ -587,4 +627,3 @@ export function MobileNav({ items, quickItems }: { items?: NavItem[]; quickItems
  * - [ ] No horizontal scroll
  * - [ ] Works in landscape orientation
  */
-

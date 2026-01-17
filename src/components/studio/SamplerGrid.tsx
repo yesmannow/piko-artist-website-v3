@@ -49,14 +49,54 @@ export function SamplerGrid() {
 
   // Sampler pads configuration
   const pads: SamplerPad[] = [
-    { id: "tag", label: "TAG", src: "/audio/samples/piko-tag.mp3", color: "#FFD700" },
-    { id: "clap", label: "CLAP", src: "/audio/samples/industrial-clap.wav", color: "#E0E0E0" },
-    { id: "horn", label: "HORN", src: "/audio/samples/air-horn-v3.wav", color: "#FFD700" },
-    { id: "808", label: "808", src: "/audio/samples/deep-808-impact.wav", color: "#E0E0E0" },
-    { id: "kick", label: "KICK", src: "/audio/samples/kick-drum-426037.mp3", color: "#E0E0E0" },
-    { id: "snare", label: "SNARE", src: "/audio/samples/tr909-snare-drum-241413.mp3", color: "#E0E0E0" },
-    { id: "shaker", label: "SHAKER", src: "/audio/samples/shaker-drum-434902.mp3", color: "#E0E0E0" },
-    { id: "tom", label: "TOM", src: "/audio/samples/tom-2-85124.mp3", color: "#E0E0E0" },
+    {
+      id: "tag",
+      label: "TAG",
+      src: "/audio/samples/piko-tag.mp3",
+      color: "#FFD700",
+    },
+    {
+      id: "clap",
+      label: "CLAP",
+      src: "/audio/samples/industrial-clap.wav",
+      color: "#E0E0E0",
+    },
+    {
+      id: "horn",
+      label: "HORN",
+      src: "/audio/samples/air-horn-v3.wav",
+      color: "#FFD700",
+    },
+    {
+      id: "808",
+      label: "808",
+      src: "/audio/samples/deep-808-impact.wav",
+      color: "#E0E0E0",
+    },
+    {
+      id: "kick",
+      label: "KICK",
+      src: "/audio/samples/kick-drum-426037.mp3",
+      color: "#E0E0E0",
+    },
+    {
+      id: "snare",
+      label: "SNARE",
+      src: "/audio/samples/tr909-snare-drum-241413.mp3",
+      color: "#E0E0E0",
+    },
+    {
+      id: "shaker",
+      label: "SHAKER",
+      src: "/audio/samples/shaker-drum-434902.mp3",
+      color: "#E0E0E0",
+    },
+    {
+      id: "tom",
+      label: "TOM",
+      src: "/audio/samples/tom-2-85124.mp3",
+      color: "#E0E0E0",
+    },
   ];
 
   /**
@@ -84,7 +124,7 @@ export function SamplerGrid() {
         return null;
       }
     },
-    [audioContext]
+    [audioContext],
   );
 
   /**
@@ -132,7 +172,7 @@ export function SamplerGrid() {
         setIsPlaying((prev) => ({ ...prev, [pad.id]: false }));
       };
     },
-    [audioContext, loadBuffer, triggerHaptic]
+    [audioContext, loadBuffer, triggerHaptic],
   );
 
   return (
@@ -188,4 +228,3 @@ export function SamplerGrid() {
     </div>
   );
 }
-

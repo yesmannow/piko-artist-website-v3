@@ -46,11 +46,14 @@ function checkRateLimit(ip: string): boolean {
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
         { success: false, error: "Too many requests. Please try again later." },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       return NextResponse.json(
         { success: false, error: "Email service not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (type !== "booking" && type !== "contact") {
       return NextResponse.json(
         { success: false, error: "Invalid form type" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
       if (!formData.email || !isValidEmail(formData.email)) {
         return NextResponse.json(
           { success: false, error: "Valid email is required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -109,21 +112,21 @@ export async function POST(request: NextRequest) {
       if (!formData.email || !isValidEmail(formData.email)) {
         return NextResponse.json(
           { success: false, error: "Valid email is required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (!formData.name || formData.name.trim().length < 2) {
         return NextResponse.json(
           { success: false, error: "Name must be at least 2 characters" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (!formData.message || formData.message.trim().length < 10) {
         return NextResponse.json(
           { success: false, error: "Message must be at least 10 characters" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -185,8 +188,10 @@ Reply to this email to contact the promoter directly.
         production: "🎹 Beat / Production",
         press: "Press / Media",
       };
-      
-      const inquiryLabel = inquiryTypeLabels[sanitizedData.inquiryType || "general"] || "General Inquiry";
+
+      const inquiryLabel =
+        inquiryTypeLabels[sanitizedData.inquiryType || "general"] ||
+        "General Inquiry";
       subject = `${inquiryLabel}: ${sanitizedData.name || "Unknown"}`;
 
       htmlContent = `
@@ -224,7 +229,8 @@ Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
     }
 
     // Send email
-    const recipientEmail = process.env.RECIPIENT_EMAIL || "Manospintadas420@gmail.com";
+    const recipientEmail =
+      process.env.RECIPIENT_EMAIL || "Manospintadas420@gmail.com";
     const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: recipientEmail,
@@ -243,9 +249,12 @@ Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
     return NextResponse.json({ success: true });
   } catch (error) {
     // Log error details in development, generic message in production
-    const errorMessage = process.env.NODE_ENV === "development"
-      ? (error instanceof Error ? error.message : "Unknown error")
-      : "Failed to send email";
+    const errorMessage =
+      process.env.NODE_ENV === "development"
+        ? error instanceof Error
+          ? error.message
+          : "Unknown error"
+        : "Failed to send email";
 
     if (process.env.NODE_ENV === "development") {
       // eslint-disable-next-line no-console
@@ -254,8 +263,7 @@ Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
 
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

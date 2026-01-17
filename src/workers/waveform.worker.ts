@@ -1,9 +1,9 @@
 /**
  * PHASE 5: Waveform Analyzer Web Worker
- * 
+ *
  * Processes audio data off the main thread to prevent UI freezing.
  * Calculates RMS peaks for efficient waveform rendering.
- * 
+ *
  * Input: { audioBuffer: Float32Array[], sampleRate: number, samplesPerPixel: number }
  * Output: { peaks: Float32Array }
  */
@@ -22,7 +22,11 @@ interface WaveformWorkerOutput {
  * Calculate Root Mean Square (RMS) for a chunk of samples
  * RMS provides a better visual representation than simple peak detection
  */
-function calculateRMS(samples: Float32Array, start: number, end: number): number {
+function calculateRMS(
+  samples: Float32Array,
+  start: number,
+  end: number,
+): number {
   let sum = 0;
   let count = 0;
 
@@ -41,7 +45,7 @@ function calculateRMS(samples: Float32Array, start: number, end: number): number
  */
 function generateWaveformPeaks(
   channelData: Float32Array[],
-  samplesPerPixel: number
+  samplesPerPixel: number,
 ): Float32Array {
   // Use first channel (mono) or mix down if stereo
   const channel = channelData[0];
@@ -97,7 +101,9 @@ self.onmessage = (event: MessageEvent<WaveformWorkerInput>) => {
     self.postMessage(response);
   } catch (error) {
     // Send error back to main thread
-    self.postMessage({ error: error instanceof Error ? error.message : 'Unknown error' });
+    self.postMessage({
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
 

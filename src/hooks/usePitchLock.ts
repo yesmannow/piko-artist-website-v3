@@ -10,12 +10,12 @@
  * Future: Integration with WASM audio library (e.g., Rubber Band, Sonic)
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 export interface PitchLockOptions {
   enabled: boolean;
-  algorithm?: 'phase-vocoder' | 'sola' | 'wsola';
-  quality?: 'low' | 'medium' | 'high';
+  algorithm?: "phase-vocoder" | "sola" | "wsola";
+  quality?: "low" | "medium" | "high";
 }
 
 export interface PitchLockState {
@@ -45,7 +45,10 @@ export function usePitchLock(options: PitchLockOptions = { enabled: false }) {
    * @returns Stretched audio buffer (placeholder - returns original for now)
    */
   const applyTimeStretch = useCallback(
-    async (audioBuffer: AudioBuffer, stretchFactor: number): Promise<AudioBuffer> => {
+    async (
+      audioBuffer: AudioBuffer,
+      stretchFactor: number,
+    ): Promise<AudioBuffer> => {
       if (!options.enabled) {
         return audioBuffer;
       }
@@ -55,8 +58,8 @@ export function usePitchLock(options: PitchLockOptions = { enabled: false }) {
       try {
         // PLACEHOLDER: Future WASM implementation goes here
         console.warn(
-          '[usePitchLock] Time-stretching not yet implemented. ' +
-          `Would stretch by factor ${stretchFactor.toFixed(2)} using ${options.algorithm || 'phase-vocoder'}`
+          "[usePitchLock] Time-stretching not yet implemented. " +
+            `Would stretch by factor ${stretchFactor.toFixed(2)} using ${options.algorithm || "phase-vocoder"}`,
         );
 
         // For now, just return the original buffer
@@ -66,12 +69,17 @@ export function usePitchLock(options: PitchLockOptions = { enabled: false }) {
         setState((prev) => ({ ...prev, isProcessing: false }));
         return audioBuffer;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Time-stretching failed';
-        setState((prev) => ({ ...prev, isProcessing: false, error: errorMessage }));
+        const errorMessage =
+          error instanceof Error ? error.message : "Time-stretching failed";
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: errorMessage,
+        }));
         throw error;
       }
     },
-    [options]
+    [options],
   );
 
   /**
@@ -89,12 +97,14 @@ export function usePitchLock(options: PitchLockOptions = { enabled: false }) {
       if (options.enabled) {
         // Pitch lock enabled: keep playback rate at 1.0
         // Tempo change would be achieved by time-stretching the buffer
-        console.warn('[usePitchLock] Pitch lock enabled but not implemented - using normal rate');
+        console.warn(
+          "[usePitchLock] Pitch lock enabled but not implemented - using normal rate",
+        );
         return requestedRate; // Fallback to normal behavior for now
       }
       return requestedRate;
     },
-    [options.enabled]
+    [options.enabled],
   );
 
   return {

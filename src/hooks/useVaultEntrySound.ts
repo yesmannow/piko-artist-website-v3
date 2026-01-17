@@ -28,7 +28,10 @@ export function useVaultEntrySound(shouldPlay: boolean) {
     // Configure for low-frequency hydraulic sound
     oscillator.type = "sawtooth";
     oscillator.frequency.setValueAtTime(60, audioContext.currentTime); // Low frequency
-    oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.8); // Descend
+    oscillator.frequency.exponentialRampToValueAtTime(
+      40,
+      audioContext.currentTime + 0.8,
+    ); // Descend
 
     // Filter for hydraulic character
     filterNode.type = "lowpass";
@@ -38,7 +41,10 @@ export function useVaultEntrySound(shouldPlay: boolean) {
     // Gain envelope: quick attack, slow release
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
     gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.2);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + 1.2,
+    );
 
     // Connect: oscillator -> filter -> gain -> destination
     oscillator.connect(filterNode);
@@ -62,4 +68,3 @@ export function useVaultEntrySound(shouldPlay: boolean) {
     };
   }, [shouldPlay, audioContext]);
 }
-

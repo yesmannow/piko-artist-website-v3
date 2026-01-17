@@ -30,6 +30,7 @@ npm run build
 ```
 
 This command:
+
 - Compiles all TypeScript/JavaScript files
 - Generates static pages where possible
 - Bundles and optimizes assets
@@ -45,6 +46,7 @@ npx tsc --noEmit
 ```
 
 This validates:
+
 - Type definitions are correct
 - No type errors exist
 - All imports resolve correctly
@@ -53,6 +55,7 @@ This validates:
 ### 3. Configuration Validation
 
 Checks critical configuration files:
+
 - `package.json` - Dependencies and scripts
 - `next.config.mjs` - Next.js configuration
 - `tsconfig.json` - TypeScript settings
@@ -62,6 +65,7 @@ Checks critical configuration files:
 ### 4. Build Output Analysis
 
 Analyzes the build output for:
+
 - Successful page generation counts
 - Bundle sizes and optimization
 - Missing or broken routes
@@ -76,6 +80,7 @@ Analyzes the build output for:
 These will **prevent deployment** and must be fixed:
 
 #### 1. **Compilation Errors**
+
 ```
 Error: Cannot find module 'xyz'
 Error: Unexpected token
@@ -87,12 +92,14 @@ Error: 'variable' is not defined
 **How to identify**: Build fails with error messages pointing to specific files and line numbers.
 
 **How to fix**:
+
 - Install missing dependencies: `npm install <package-name>`
 - Fix syntax errors (missing brackets, quotes, etc.)
 - Check import paths are correct
 - Verify file extensions match imports
 
 #### 2. **TypeScript Errors**
+
 ```
 error TS2307: Cannot find module 'xyz'
 error TS2322: Type 'X' is not assignable to type 'Y'
@@ -104,12 +111,14 @@ error TS2339: Property 'xyz' does not exist on type 'ABC'
 **How to identify**: TypeScript compiler reports errors during build.
 
 **How to fix**:
+
 - Add missing type definitions: `npm install --save-dev @types/<package>`
 - Fix type mismatches (e.g., `string` vs `number`)
 - Add proper type annotations
 - Use type assertions when necessary: `value as Type`
 
 #### 3. **Missing Dependencies**
+
 ```
 Module not found: Can't resolve 'xyz'
 ```
@@ -119,11 +128,13 @@ Module not found: Can't resolve 'xyz'
 **How to identify**: Build error shows module resolution failure.
 
 **How to fix**:
+
 - Install the package: `npm install <package-name>`
 - Check `package.json` includes the dependency
 - Verify `node_modules` exists and is up to date: `npm install`
 
 #### 4. **Configuration Errors**
+
 ```
 Error: Invalid next.config.js
 Error: Missing required environment variable
@@ -134,12 +145,14 @@ Error: Missing required environment variable
 **How to identify**: Build fails during configuration parsing.
 
 **How to fix**:
+
 - Validate `next.config.mjs` syntax
 - Check all required environment variables are set
 - Verify configuration options match Next.js version
 - Review Vercel-specific settings
 
 #### 5. **Server/Client Component Errors**
+
 ```
 Error: use client must be in a file whose extension is .tsx or .jsx
 Error: You're importing a component that needs "use client"
@@ -150,11 +163,13 @@ Error: You're importing a component that needs "use client"
 **How to identify**: Build error mentions "use client" or component boundaries.
 
 **How to fix**:
+
 - Add `"use client"` directive to components using hooks, browser APIs, or interactivity
 - Keep Server Components for data fetching and static content
 - Ensure proper component boundaries
 
 #### 6. **Static Generation Failures**
+
 ```
 Error: Failed to generate static page
 Error: getStaticProps returned invalid props
@@ -165,6 +180,7 @@ Error: getStaticProps returned invalid props
 **How to identify**: Build output shows specific page generation failures.
 
 **How to fix**:
+
 - Check `generateStaticParams` returns valid data
 - Ensure all data fetching completes successfully
 - Handle errors in static generation functions
@@ -177,6 +193,7 @@ Error: getStaticProps returned invalid props
 These **won't prevent deployment** but should be addressed for code quality:
 
 #### 1. **ESLint Warnings**
+
 ```
 Warning: 'variable' is defined but never used
 Warning: Unexpected any. Specify a different type
@@ -188,12 +205,14 @@ Warning: React Hook has missing dependencies
 **How to identify**: Build completes but shows warnings in output.
 
 **How to fix**:
+
 - Remove unused variables or prefix with `_` (e.g., `_unusedVar`)
 - Replace `any` types with specific types
 - Add missing dependencies to React Hook dependency arrays
 - Fix import/export issues
 
 #### 2. **Performance Warnings**
+
 ```
 Warning: Using <img> could result in slower LCP
 Warning: Image optimization suggestions
@@ -204,12 +223,14 @@ Warning: Image optimization suggestions
 **How to identify**: Next.js build warnings about images or assets.
 
 **How to fix**:
+
 - Use `next/image` instead of `<img>` tags
 - Optimize image formats (WebP, AVIF)
 - Implement proper image sizing
 - Use lazy loading where appropriate
 
 #### 3. **Bundle Size Warnings**
+
 ```
 Warning: First Load JS shared by all is large
 ```
@@ -219,6 +240,7 @@ Warning: First Load JS shared by all is large
 **How to identify**: Build output shows large bundle sizes.
 
 **How to fix**:
+
 - Code split large components
 - Use dynamic imports: `const Component = dynamic(() => import('./Component'))`
 - Remove unused dependencies
@@ -231,28 +253,34 @@ Warning: First Load JS shared by all is large
 ### Manual Audit Process
 
 1. **Run Production Build**
+
    ```bash
    npm run build
    ```
+
    Look for:
    - `✓ Compiled successfully` (good)
    - `✗ Error:` (blocking issue)
    - `Warning:` (non-blocking)
 
 2. **Check TypeScript**
+
    ```bash
    npx tsc --noEmit
    ```
+
    Should exit with code 0 (no errors).
 
 3. **Verify Build Output**
    Check the build summary:
+
    ```
    Route (app)                                 Size  First Load JS
    ┌ ○ /                                    12.4 kB         192 kB
    ├ ○ /_not-found                             1 kB         104 kB
    └ ○ /studio                              70.4 kB         485 kB
    ```
+
    All routes should show sizes (not errors).
 
 4. **Check Configuration Files**
@@ -268,12 +296,14 @@ Warning: First Load JS shared by all is large
 ### Problem 1: "Cannot find module" Errors
 
 **Symptoms**:
+
 ```
 Error: Cannot find module '@/components/Button'
 Module not found: Can't resolve 'three'
 ```
 
 **Solutions**:
+
 1. Check import paths match file structure
 2. Verify `tsconfig.json` path aliases:
    ```json
@@ -291,13 +321,16 @@ Module not found: Can't resolve 'three'
 ### Problem 2: TypeScript Type Errors
 
 **Symptoms**:
+
 ```
 error TS2322: Type 'string' is not assignable to type 'number'
 error TS2339: Property 'xyz' does not exist
 ```
 
 **Solutions**:
+
 1. Add proper type annotations:
+
    ```typescript
    // Bad
    const value: any = getData();
@@ -307,8 +340,9 @@ error TS2339: Property 'xyz' does not exist
    ```
 
 2. Use type guards:
+
    ```typescript
-   if (typeof value === 'string') {
+   if (typeof value === "string") {
      // TypeScript knows value is string here
    }
    ```
@@ -321,17 +355,20 @@ error TS2339: Property 'xyz' does not exist
 ### Problem 3: Server/Client Component Issues
 
 **Symptoms**:
+
 ```
 Error: use client must be in a file whose extension is .tsx
 Error: You're importing a component that needs "use client"
 ```
 
 **Solutions**:
-1. Add `"use client"` directive to interactive components:
-   ```typescript
-   "use client"
 
-   import { useState } from 'react';
+1. Add `"use client"` directive to interactive components:
+
+   ```typescript
+   "use client";
+
+   import { useState } from "react";
 
    export function InteractiveComponent() {
      const [state, setState] = useState(0);
@@ -340,6 +377,7 @@ Error: You're importing a component that needs "use client"
    ```
 
 2. Keep Server Components for data fetching:
+
    ```typescript
    // No "use client" - this is a Server Component
    import { fetchData } from '@/lib/api';
@@ -351,24 +389,26 @@ Error: You're importing a component that needs "use client"
    ```
 
 3. Use dynamic imports for client-only components:
-   ```typescript
-   import dynamic from 'next/dynamic';
 
-   const ClientOnlyComponent = dynamic(
-     () => import('./ClientOnlyComponent'),
-     { ssr: false }
-   );
+   ```typescript
+   import dynamic from "next/dynamic";
+
+   const ClientOnlyComponent = dynamic(() => import("./ClientOnlyComponent"), {
+     ssr: false,
+   });
    ```
 
 ### Problem 4: Build Timeout or Memory Issues
 
 **Symptoms**:
+
 ```
 Error: Build exceeded maximum time
 Error: JavaScript heap out of memory
 ```
 
 **Solutions**:
+
 1. Optimize large files (images, videos, 3D models)
 2. Use dynamic imports for heavy components
 3. Split large pages into smaller components
@@ -381,13 +421,16 @@ Error: JavaScript heap out of memory
 ### Problem 5: Environment Variable Errors
 
 **Symptoms**:
+
 ```
 Error: Missing required environment variable: API_KEY
 Error: process.env is undefined
 ```
 
 **Solutions**:
+
 1. Document required variables in `.env.example`:
+
    ```
    API_KEY=your_api_key_here
    DATABASE_URL=your_database_url
@@ -398,6 +441,7 @@ Error: process.env is undefined
    - Add variables for Production, Preview, and Development
 
 3. Access variables correctly:
+
    ```typescript
    // Server Component
    const apiKey = process.env.API_KEY;
@@ -409,13 +453,16 @@ Error: process.env is undefined
 ### Problem 6: Static Generation Failures
 
 **Symptoms**:
+
 ```
 Error: Failed to generate static page: /products/[id]
 Error: getStaticProps returned invalid props
 ```
 
 **Solutions**:
+
 1. Handle errors in `generateStaticParams`:
+
    ```typescript
    export async function generateStaticParams() {
      try {
@@ -424,15 +471,16 @@ Error: getStaticProps returned invalid props
          id: product.id.toString(),
        }));
      } catch (error) {
-       console.error('Failed to generate params:', error);
+       console.error("Failed to generate params:", error);
        return []; // Return empty array on error
      }
    }
    ```
 
 2. Use dynamic rendering if needed:
+
    ```typescript
-   export const dynamic = 'force-dynamic'; // Force dynamic rendering
+   export const dynamic = "force-dynamic"; // Force dynamic rendering
    ```
 
 3. Add error boundaries for client-side errors
@@ -478,11 +526,13 @@ Route (app)                                 Size  First Load JS
 ```
 
 **Symbols**:
+
 - `○` = Static page (pre-rendered at build time)
 - `ƒ` = Dynamic route (server-rendered on demand)
 - `λ` = API route (serverless function)
 
 **What to look for**:
+
 - All routes show sizes (not errors)
 - Static pages are marked with `○`
 - Bundle sizes are reasonable (< 500KB for most pages)
@@ -495,6 +545,7 @@ Error: Failed to fetch product data
 ```
 
 **What to do**:
+
 1. Check the error message for the specific route
 2. Review the data fetching logic
 3. Verify API endpoints are accessible
@@ -508,42 +559,43 @@ You can create a script to automate the audit:
 
 ```javascript
 // scripts/audit-deployment.js
-import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { execSync } from "child_process";
+import { readFileSync } from "fs";
 
-console.log('🔍 Running Vercel Deployment Audit...\n');
+console.log("🔍 Running Vercel Deployment Audit...\n");
 
 // 1. Check package.json
-console.log('1. Checking package.json...');
-const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+console.log("1. Checking package.json...");
+const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
 if (!packageJson.engines?.node) {
-  console.warn('⚠️  Warning: No Node version specified in engines');
+  console.warn("⚠️  Warning: No Node version specified in engines");
 }
 
 // 2. Run build
-console.log('\n2. Running production build...');
+console.log("\n2. Running production build...");
 try {
-  execSync('npm run build', { stdio: 'inherit' });
-  console.log('✅ Build successful');
+  execSync("npm run build", { stdio: "inherit" });
+  console.log("✅ Build successful");
 } catch (error) {
-  console.error('❌ Build failed');
+  console.error("❌ Build failed");
   process.exit(1);
 }
 
 // 3. Type check
-console.log('\n3. Running TypeScript check...');
+console.log("\n3. Running TypeScript check...");
 try {
-  execSync('npx tsc --noEmit', { stdio: 'inherit' });
-  console.log('✅ TypeScript check passed');
+  execSync("npx tsc --noEmit", { stdio: "inherit" });
+  console.log("✅ TypeScript check passed");
 } catch (error) {
-  console.error('❌ TypeScript errors found');
+  console.error("❌ TypeScript errors found");
   process.exit(1);
 }
 
-console.log('\n✅ Audit complete - Ready for deployment!');
+console.log("\n✅ Audit complete - Ready for deployment!");
 ```
 
 Run with:
+
 ```bash
 node scripts/audit-deployment.js
 ```
@@ -555,6 +607,7 @@ node scripts/audit-deployment.js
 ### 1. Edge Runtime Compatibility
 
 If using Edge Runtime, ensure:
+
 - No Node.js-specific APIs (use Web APIs instead)
 - Compatible dependencies (check Vercel's Edge compatibility)
 - Proper middleware configuration
@@ -590,6 +643,7 @@ Vercel automatically detects Next.js projects, but you can customize:
 ## Troubleshooting Tips
 
 1. **Clear Build Cache**
+
    ```bash
    rm -rf .next node_modules
    npm install
@@ -597,16 +651,19 @@ Vercel automatically detects Next.js projects, but you can customize:
    ```
 
 2. **Check Node Version**
+
    ```bash
    node --version  # Should match package.json engines.node
    ```
 
 3. **Verify Dependencies**
+
    ```bash
    npm ls  # Check for missing or conflicting packages
    ```
 
 4. **Test Locally**
+
    ```bash
    npm run build
    npm start  # Test production build locally
@@ -624,6 +681,7 @@ Vercel automatically detects Next.js projects, but you can customize:
 The Vercel Deployment Blocker Audit ensures your Next.js application is ready for production deployment. By systematically checking compilation, types, configuration, and build output, you can identify and fix issues before they block deployment.
 
 **Key Takeaways**:
+
 - ✅ Always run `npm run build` before deploying
 - ✅ Fix all TypeScript errors (blocking)
 - ✅ Address ESLint warnings (non-blocking but important)
@@ -641,4 +699,3 @@ The Vercel Deployment Blocker Audit ensures your Next.js application is ready fo
 - [Vercel Deployment Guide](https://vercel.com/docs/deployments/overview)
 - [TypeScript Configuration](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
 - [Next.js Error Handling](https://nextjs.org/docs/app/building-your-application/routing/error-handling)
-

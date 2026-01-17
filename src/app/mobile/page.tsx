@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
-import { HelpProvider } from '@/context/HelpContext';
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import { StudioErrorBoundary } from "@/components/mobile-shell/StudioErrorBoundary";
+import { HelpProvider } from "@/context/HelpContext";
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
-import { DevAudioDebug } from '@/components/DevAudioDebug';
+import { DevAudioDebug } from "@/components/DevAudioDebug";
 
 // Dynamically import refactored DJInterface for mobile
 const DJInterface = dynamic(
-  () => import('@/components/RefactoredDJInterface').then(mod => mod.RefactoredDJInterface),
+  () =>
+    import("@/components/RefactoredDJInterface").then(
+      (mod) => mod.RefactoredDJInterface,
+    ),
   {
     ssr: false,
-    loading: () => <div className="fixed inset-0 bg-black flex items-center justify-center">
-      <div className="text-white text-lg">Loading DJ Mixer...</div>
-    </div>
-  }
+    loading: () => (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-white text-lg">Loading DJ Mixer...</div>
+      </div>
+    ),
+  },
 );
 
 /**
@@ -23,7 +28,7 @@ const DJInterface = dynamic(
  *
  * Phase 1: Mobile-optimized entry point for DJ mixer application
  * Phase 3: Mobile-First UI & PWA
- * 
+ *
  * This page serves the mobile-optimized DJ mixer interface with:
  * - Track library with drag-and-drop to Deck A/B
  * - Mobile-optimized touch controls
@@ -35,10 +40,10 @@ const DJInterface = dynamic(
  * - Touch-optimized controls
  * - Offline/PWA support
  * - Haptic feedback on key interactions
- * 
+ *
  * User-Agent routing in middleware.ts ensures mobile devices are
  * directed here, preventing heavy desktop code from being downloaded.
- * 
+ *
  * Cross-Origin Isolation:
  * - Middleware sets COOP/COEP headers for SharedArrayBuffer support
  * - Required for multi-threaded audio engine
@@ -48,14 +53,14 @@ export default function MobilePage() {
   // Add mobile-studio class to body for fixed-canvas interface
   useEffect(() => {
     // Add mobile-studio class to body
-    document.body.classList.add('mobile-studio');
-    
+    document.body.classList.add("mobile-studio");
+
     // Verify crossOriginIsolated on mount
     verifyStudioCrossOriginIsolation();
-    
+
     // Cleanup: remove class when unmounting
     return () => {
-      document.body.classList.remove('mobile-studio');
+      document.body.classList.remove("mobile-studio");
     };
   }, []);
 
@@ -63,7 +68,7 @@ export default function MobilePage() {
     <StudioErrorBoundary>
       <HelpProvider>
         <DJInterface />
-        {process.env.NODE_ENV === 'development' && <DevAudioDebug />}
+        {process.env.NODE_ENV === "development" && <DevAudioDebug />}
       </HelpProvider>
     </StudioErrorBoundary>
   );

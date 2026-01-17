@@ -1,22 +1,18 @@
 "use client";
 
-import * as THREE from 'three'
+import * as THREE from "three";
 
-import { shaderMaterial } from '@react-three/drei'
+import { shaderMaterial } from "@react-three/drei";
 
-import { extend } from '@react-three/fiber'
-
-
+import { extend } from "@react-three/fiber";
 
 // This creates a declarative <holographicMaterial /> component
 
 const HolographicMaterial = shaderMaterial(
-
   {
-
     uTime: 0,
 
-    uColor: new THREE.Color('#E0E0E0'), // Industrial Chrome default
+    uColor: new THREE.Color("#E0E0E0"), // Industrial Chrome default
 
     uAudio: 0.0, // Audio reactivity (0.0 to 1.0)
 
@@ -25,7 +21,6 @@ const HolographicMaterial = shaderMaterial(
     uFresnelPower: 3.0, // Higher power for more intense edge reflections
 
     uImpactFlash: 0.0, // Blinding flash intensity (0.0 to 1.0)
-
   },
 
   // Vertex Shader
@@ -194,21 +189,13 @@ const HolographicMaterial = shaderMaterial(
 
     }
 
-  `
-
-)
-
-
+  `,
+);
 
 // Extend R3F to recognize the new component
 
-extend({ HolographicMaterial })
-
-
+extend({ HolographicMaterial });
 
 // TypeScript support is in src/types/holographic-material.d.ts
 
-
-
-export { HolographicMaterial }
-
+export { HolographicMaterial };

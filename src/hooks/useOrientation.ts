@@ -48,4 +48,3 @@ export function useOrientation(): boolean {
   // Return false during SSR to prevent hydration mismatches
   return isMounted ? isLandscape : false;
 }
-

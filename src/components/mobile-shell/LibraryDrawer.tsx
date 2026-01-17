@@ -1,14 +1,23 @@
 "use client";
 
-import { useSpring, animated } from '@react-spring/web';
-import { useUIStore } from '@/store/useUIStore';
-import { ensureAudioEngineReady } from '@/engine/AudioEngine';
-import { X, Music } from 'lucide-react';
+import { useSpring, animated } from "@react-spring/web";
+import { useUIStore } from "@/store/useUIStore";
+import { ensureAudioEngineReady } from "@/engine/AudioEngine";
+import { X, Music } from "lucide-react";
 
 const MOCK_TRACKS = [
-  { title: "JLS - ATI (Techno)", url: "https://archive.org/download/mythium/JLS_ATI.mp3" },
-  { title: "BS - TF (House)", url: "https://archive.org/download/mythium/BS_TF.mp3" },
-  { title: "SS - BF (DnB)", url: "https://archive.org/download/mythium/SS_BF.mp3" },
+  {
+    title: "JLS - ATI (Techno)",
+    url: "https://archive.org/download/mythium/JLS_ATI.mp3",
+  },
+  {
+    title: "BS - TF (House)",
+    url: "https://archive.org/download/mythium/BS_TF.mp3",
+  },
+  {
+    title: "SS - BF (DnB)",
+    url: "https://archive.org/download/mythium/SS_BF.mp3",
+  },
 ];
 
 export const LibraryDrawer = () => {
@@ -18,11 +27,11 @@ export const LibraryDrawer = () => {
 
   // Animate drawer slide up/down
   const springProps = useSpring({
-    transform: isLibraryOpen ? 'translateY(0%)' : 'translateY(100%)',
+    transform: isLibraryOpen ? "translateY(0%)" : "translateY(100%)",
     config: { tension: 280, friction: 30 },
   });
 
-  const handleTrackSelect = async (track: typeof MOCK_TRACKS[0]) => {
+  const handleTrackSelect = async (track: (typeof MOCK_TRACKS)[0]) => {
     // Load track into target deck
     const engine = await ensureAudioEngineReady();
     engine.loadTrack(libraryTargetDeck, track.url);
@@ -43,7 +52,7 @@ export const LibraryDrawer = () => {
             Track Library
           </h2>
           <span className="text-xs text-gray-500 font-mono">
-            → {libraryTargetDeck === 'deckA' ? 'DECK A' : 'DECK B'}
+            → {libraryTargetDeck === "deckA" ? "DECK A" : "DECK B"}
           </span>
         </div>
         <button
@@ -83,7 +92,10 @@ export const LibraryDrawer = () => {
         {/* Empty State Hint */}
         <div className="mt-8 text-center text-gray-600 text-sm">
           <p>More tracks coming soon...</p>
-          <p className="text-xs mt-2">Tap any track to load it into {libraryTargetDeck === 'deckA' ? 'Deck A' : 'Deck B'}</p>
+          <p className="text-xs mt-2">
+            Tap any track to load it into{" "}
+            {libraryTargetDeck === "deckA" ? "Deck A" : "Deck B"}
+          </p>
         </div>
       </div>
     </animated.div>

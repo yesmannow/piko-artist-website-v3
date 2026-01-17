@@ -84,10 +84,14 @@ export function SyndicateEQ({ stems, onStemGainChange }: SyndicateEQProps) {
       // Notify parent component
       onStemGainChange?.(stem, clampedValue);
     },
-    [audioContext, onStemGainChange]
+    [audioContext, onStemGainChange],
   );
 
-  const stemConfigs: Array<{ key: keyof StemGains; label: string; color: string }> = [
+  const stemConfigs: Array<{
+    key: keyof StemGains;
+    label: string;
+    color: string;
+  }> = [
     { key: "vocals", label: "VOX", color: "#FFD700" },
     { key: "bass", label: "BASS", color: "#E0E0E0" },
     { key: "drums", label: "DRUM", color: "#FFD700" },
@@ -144,7 +148,9 @@ export function SyndicateEQ({ stems, onStemGainChange }: SyndicateEQProps) {
                   max="2"
                   step="0.01"
                   value={gain}
-                  onChange={(e) => handleGainChange(config.key, parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    handleGainChange(config.key, parseFloat(e.target.value))
+                  }
                   disabled={!isActive}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                   style={{
@@ -186,4 +192,3 @@ export function SyndicateEQ({ stems, onStemGainChange }: SyndicateEQProps) {
     </div>
   );
 }
-

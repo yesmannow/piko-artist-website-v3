@@ -16,9 +16,9 @@
  * - Zero-copy buffer transfer using Transferables
  */
 
-import { getRealtimeAudioSystem } from './rt/RealtimeAudioSystem';
+import { getRealtimeAudioSystem } from "./rt/RealtimeAudioSystem";
 
-export type StemType = 'vocals' | 'drums' | 'bass' | 'other';
+export type StemType = "vocals" | "drums" | "bass" | "other";
 
 export interface SeparatedStems {
   vocals: AudioBuffer | null;
@@ -27,7 +27,12 @@ export interface SeparatedStems {
   other: AudioBuffer | null;
 }
 
-export type StemServiceState = 'uninitialized' | 'initializing' | 'ready' | 'processing' | 'error';
+export type StemServiceState =
+  | "uninitialized"
+  | "initializing"
+  | "ready"
+  | "processing"
+  | "error";
 
 export interface SeparationProgress {
   progress: number; // 0-100
@@ -49,7 +54,7 @@ export interface StemWorkerConfig {
 class StemService {
   private static instance: StemService | null = null;
 
-  private serviceState: StemServiceState = 'uninitialized';
+  private serviceState: StemServiceState = "uninitialized";
   private worker: Worker | null = null;
   private currentRequestId: string | null = null;
   private progressCallback: ProgressCallback | null = null;
@@ -79,38 +84,40 @@ class StemService {
    * @returns Promise that resolves when initialization is complete
    */
   async initialize(config?: StemWorkerConfig): Promise<void> {
-    if (this.serviceState === 'ready') {
-      console.warn('[StemService] Already initialized');
+    if (this.serviceState === "ready") {
+      console.warn("[StemService] Already initialized");
       return;
     }
 
-    if (this.serviceState === 'initializing') {
-      console.warn('[StemService] Initialization already in progress');
+    if (this.serviceState === "initializing") {
+      console.warn("[StemService] Initialization already in progress");
       return;
     }
 
-    if (typeof window === 'undefined') {
-      throw new Error('[StemService] Cannot initialize on server');
+    if (typeof window === "undefined") {
+      throw new Error("[StemService] Cannot initialize on server");
     }
 
     try {
-      this.serviceState = 'initializing';
-      console.log('[StemService] Initializing...');
+      this.serviceState = "initializing";
+      console.log("[StemService] Initializing...");
 
       // Create Web Worker
       // Note: Worker is served from public/workers/
-      this.worker = new Worker('/workers/stemSeparator.worker.js', { type: 'classic' });
+      this.worker = new Worker("/workers/stemSeparator.worker.js", {
+        type: "classic",
+      });
 
       // Wait for worker ready signal (worker auto-initializes on load)
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('[StemService] Worker initialization timeout'));
+          reject(new Error("[StemService] Worker initialization timeout"));
         }, 10000);
 
         const handleReady = (event: MessageEvent) => {
-          if (event.data.type === 'READY') {
+          if (event.data.type === "READY") {
             clearTimeout(timeout);
-            this.worker?.removeEventListener('message', handleReady);
+            this.worker?.removeEventListener("message", handleReady);
 
             // Set up main message handler after ready
             this.worker!.onmessage = this.handleWorkerMessage.bind(this);
@@ -118,40 +125,43 @@ class StemService {
             // Send configuration if provided
             if (config?.modelUrl) {
               this.worker!.postMessage({
-                type: 'CONFIG',
+                type: "CONFIG",
                 data: {
                   modelUrl: config.modelUrl,
                 },
               });
-              console.log(`[StemService] Configured model URL: ${config.modelUrl}`);
+              console.log(
+                `[StemService] Configured model URL: ${config.modelUrl}`,
+              );
             }
 
             resolve();
-          } else if (event.data.type === 'ERROR') {
+          } else if (event.data.type === "ERROR") {
             clearTimeout(timeout);
-            this.worker?.removeEventListener('message', handleReady);
-            reject(new Error(event.data.message || 'Worker initialization failed'));
+            this.worker?.removeEventListener("message", handleReady);
+            reject(
+              new Error(event.data.message || "Worker initialization failed"),
+            );
           }
         };
 
-        this.worker?.addEventListener('message', handleReady);
+        this.worker?.addEventListener("message", handleReady);
 
         if (this.worker) {
           this.worker.onerror = (error) => {
-            console.error('[StemService] Worker error:', error);
-            this.serviceState = 'error';
+            console.error("[StemService] Worker error:", error);
+            this.serviceState = "error";
             clearTimeout(timeout);
             reject(error);
           };
         }
       });
 
-      this.serviceState = 'ready';
-      console.log('[StemService] ✅ Initialization complete');
-
+      this.serviceState = "ready";
+      console.log("[StemService] ✅ Initialization complete");
     } catch (error) {
-      this.serviceState = 'error';
-      console.error('[StemService] ❌ Initialization failed:', error);
+      this.serviceState = "error";
+      console.error("[StemService] ❌ Initialization failed:", error);
       throw error;
     }
   }
@@ -167,22 +177,22 @@ class StemService {
   async separate(
     audioBuffer: AudioBuffer,
     onProgress?: ProgressCallback,
-    cacheKey?: string
+    cacheKey?: string,
   ): Promise<SeparatedStems> {
     this.ensureReady();
 
     // Check cache
     if (cacheKey && this.stemCache.has(cacheKey)) {
-      console.log('[StemService] Using cached stems');
+      console.log("[StemService] Using cached stems");
       return this.stemCache.get(cacheKey)!;
     }
 
     // Cancel any existing separation
-    if (this.serviceState === 'processing') {
+    if (this.serviceState === "processing") {
       await this.cancel();
     }
 
-    this.serviceState = 'processing';
+    this.serviceState = "processing";
     this.progressCallback = onProgress || null;
     this.cancellationToken = new AbortController();
     const requestId = this.generateRequestId();
@@ -210,7 +220,7 @@ class StemService {
       // Send separation request to worker with transferables
       this.worker!.postMessage(
         {
-          type: 'SEPARATE',
+          type: "SEPARATE",
           requestId,
           data: {
             numberOfChannels,
@@ -219,19 +229,22 @@ class StemService {
             channelBuffers,
           },
         },
-        channelBuffers // Transfer list: moves ownership, zero-copy
+        channelBuffers, // Transfer list: moves ownership, zero-copy
       );
 
       // Wait for completion
       const result = await new Promise<SeparatedStems>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('[StemService] Separation timeout'));
+          reject(new Error("[StemService] Separation timeout"));
         }, 300000); // 5 minute timeout
 
         const handleComplete = (event: MessageEvent) => {
-          if (event.data.type === 'SEPARATE_COMPLETE' && event.data.requestId === requestId) {
+          if (
+            event.data.type === "SEPARATE_COMPLETE" &&
+            event.data.requestId === requestId
+          ) {
             clearTimeout(timeout);
-            this.worker?.removeEventListener('message', handleComplete);
+            this.worker?.removeEventListener("message", handleComplete);
 
             // Convert ArrayBuffers back to AudioBuffers
             const rtAudio = getRealtimeAudioSystem();
@@ -242,25 +255,25 @@ class StemService {
                 context,
                 event.data.stems.vocals,
                 sampleRate,
-                1 // Mono for stub
+                1, // Mono for stub
               ),
               drums: this.arrayBufferToAudioBuffer(
                 context,
                 event.data.stems.drums,
                 sampleRate,
-                1 // Mono for stub
+                1, // Mono for stub
               ),
               bass: this.arrayBufferToAudioBuffer(
                 context,
                 event.data.stems.bass,
                 sampleRate,
-                1 // Mono for stub
+                1, // Mono for stub
               ),
               other: this.arrayBufferToAudioBuffer(
                 context,
                 event.data.stems.other,
                 sampleRate,
-                1 // Mono for stub
+                1, // Mono for stub
               ),
             };
 
@@ -270,35 +283,37 @@ class StemService {
             }
 
             resolve(stems);
-          } else if (event.data.type === 'SEPARATE_ERROR' && event.data.requestId === requestId) {
+          } else if (
+            event.data.type === "SEPARATE_ERROR" &&
+            event.data.requestId === requestId
+          ) {
             clearTimeout(timeout);
-            this.worker?.removeEventListener('message', handleComplete);
-            reject(new Error(event.data.message || 'Separation failed'));
+            this.worker?.removeEventListener("message", handleComplete);
+            reject(new Error(event.data.message || "Separation failed"));
           }
         };
 
-        this.worker?.addEventListener('message', handleComplete);
+        this.worker?.addEventListener("message", handleComplete);
       });
 
-      this.serviceState = 'ready';
+      this.serviceState = "ready";
       this.currentRequestId = null;
       this.progressCallback = null;
       this.cancellationToken = null;
 
       return result;
-
     } catch (error) {
-      this.serviceState = 'ready';
+      this.serviceState = "ready";
       this.currentRequestId = null;
       this.progressCallback = null;
       this.cancellationToken = null;
 
-      if (error instanceof Error && error.message === 'Cancelled') {
+      if (error instanceof Error && error.message === "Cancelled") {
         throw error;
       }
 
-      this.serviceState = 'error';
-      console.error('[StemService] ❌ Separation failed:', error);
+      this.serviceState = "error";
+      console.error("[StemService] ❌ Separation failed:", error);
       throw error;
     }
   }
@@ -307,7 +322,7 @@ class StemService {
    * Cancel current separation
    */
   async cancel(): Promise<void> {
-    if (this.serviceState !== 'processing' || !this.currentRequestId) {
+    if (this.serviceState !== "processing" || !this.currentRequestId) {
       return;
     }
 
@@ -317,17 +332,17 @@ class StemService {
 
     if (this.worker && this.currentRequestId) {
       this.worker.postMessage({
-        type: 'CANCEL',
+        type: "CANCEL",
         requestId: this.currentRequestId,
       });
     }
 
-    this.serviceState = 'ready';
+    this.serviceState = "ready";
     this.currentRequestId = null;
     this.progressCallback = null;
     this.cancellationToken = null;
 
-    console.log('[StemService] Cancellation requested');
+    console.log("[StemService] Cancellation requested");
   }
 
   /**
@@ -335,7 +350,7 @@ class StemService {
    */
   clearCache(): void {
     this.stemCache.clear();
-    console.log('[StemService] Cache cleared');
+    console.log("[StemService] Cache cleared");
   }
 
   /**
@@ -349,7 +364,7 @@ class StemService {
    * Check if service is processing
    */
   get isProcessing(): boolean {
-    return this.serviceState === 'processing';
+    return this.serviceState === "processing";
   }
 
   // ==========================================================================
@@ -360,21 +375,21 @@ class StemService {
     const { type, requestId } = event.data;
 
     // Handle progress updates
-    if (type === 'PROGRESS' && requestId === this.currentRequestId) {
+    if (type === "PROGRESS" && requestId === this.currentRequestId) {
       if (this.progressCallback) {
         this.progressCallback({
           progress: event.data.progress || 0,
-          stage: event.data.stage || 'Processing',
+          stage: event.data.stage || "Processing",
         });
       }
       return;
     }
 
     // Handle errors
-    if (type === 'ERROR') {
-      console.error('[StemService] Worker error:', event.data.message);
-      if (this.serviceState === 'processing') {
-        this.serviceState = 'error';
+    if (type === "ERROR") {
+      console.error("[StemService] Worker error:", event.data.message);
+      if (this.serviceState === "processing") {
+        this.serviceState = "error";
       }
       return;
     }
@@ -384,7 +399,7 @@ class StemService {
     context: AudioContext,
     arrayBuffer: ArrayBuffer | null,
     sampleRate: number,
-    numberOfChannels: number = 1
+    numberOfChannels: number = 1,
   ): AudioBuffer | null {
     if (!arrayBuffer) {
       return null;
@@ -394,7 +409,7 @@ class StemService {
     const audioBuffer = context.createBuffer(
       numberOfChannels,
       float32Array.length,
-      sampleRate
+      sampleRate,
     );
 
     // For mono, set the single channel
@@ -416,8 +431,10 @@ class StemService {
   }
 
   private ensureReady(): void {
-    if (this.serviceState !== 'ready') {
-      throw new Error(`[StemService] Service not ready. Current state: ${this.serviceState}`);
+    if (this.serviceState !== "ready") {
+      throw new Error(
+        `[StemService] Service not ready. Current state: ${this.serviceState}`,
+      );
     }
   }
 
@@ -434,9 +451,9 @@ class StemService {
     this.currentRequestId = null;
     this.progressCallback = null;
     this.cancellationToken = null;
-    this.serviceState = 'uninitialized';
+    this.serviceState = "uninitialized";
 
-    console.log('[StemService] Disposed');
+    console.log("[StemService] Disposed");
   }
 }
 

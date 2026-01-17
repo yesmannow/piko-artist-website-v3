@@ -14,6 +14,7 @@ This phase implements two critical improvements:
 ### Problem
 
 The stem separation worker was hard-coded to use `/models/demucs_v4_quantized.onnx`, preventing:
+
 - External model hosting (R2/S3/CDN)
 - Environment-based configuration
 - Runtime model URL switching
@@ -33,6 +34,7 @@ Implemented a message-based configuration system that allows the worker to accep
 - ✅ Session invalidation when model URL changes
 
 **Key Changes:**
+
 ```typescript
 // Before
 const MODEL_URL = '/models/demucs_v4_quantized.onnx';
@@ -59,6 +61,7 @@ case 'CONFIG':
 - ✅ Sends `CONFIG` message to worker after initialization if `modelUrl` is provided
 
 **Key Changes:**
+
 ```typescript
 export interface StemWorkerConfig {
   modelUrl?: string;
@@ -84,6 +87,7 @@ async initialize(config?: StemWorkerConfig): Promise<void> {
 - ✅ Falls back to default local path if not configured
 
 **Key Changes:**
+
 ```typescript
 const modelUrl = process.env.NEXT_PUBLIC_MODEL_URL || undefined;
 const config: StemWorkerConfig | undefined = modelUrl
@@ -114,6 +118,7 @@ NEXT_PUBLIC_MODEL_URL=https://your-cdn.com/models/demucs_v4_quantized.onnx
 ```
 
 **Important:**
+
 - Use `NEXT_PUBLIC_MODEL_URL` for client-side access (required for Web Workers)
 - Ensure CORS is properly configured on your CDN
 - Model must be accessible via HTTP/HTTPS HEAD request for validation
@@ -127,6 +132,7 @@ npm run check:stem-assets
 ```
 
 This will pass if either:
+
 - Local model file exists at `public/models/demucs_v4_quantized.onnx`, OR
 - `MODEL_URL` or `NEXT_PUBLIC_MODEL_URL` is set
 
@@ -137,6 +143,7 @@ This will pass if either:
 ### Problem
 
 Using `next/font/google` requires external network access during build, which can fail in:
+
 - Restricted build environments
 - Offline development
 - CI/CD with network restrictions
@@ -154,6 +161,7 @@ Switched to `next/font/local` with self-hosted WOFF2 font files.
 - ✅ Maintained all CSS variables and className usage (no design changes)
 
 **Fonts Migrated:**
+
 - Permanent Marker (400)
 - Sedgwick Ave (400)
 - Anton (400)
@@ -201,6 +209,7 @@ ls public/fonts/
 ```
 
 Expected files:
+
 - `permanent-marker-400.woff2`
 - `sedgwick-ave-400.woff2`
 - `anton-400.woff2`
@@ -254,12 +263,14 @@ Build should complete without any external font requests.
 ## Files Modified
 
 ### Core Implementation
+
 - `src/workers/stemSeparator.worker.ts` - Worker CONFIG message support
 - `src/engine/StemService.ts` - Config parameter support
 - `src/hooks/useStemService.ts` - Environment variable reading
 - `src/app/layout.tsx` - Local font imports
 
 ### Scripts & Documentation
+
 - `scripts/check-stem-assets.mjs` - Updated env var checks
 - `scripts/download-fonts.mjs` - New font download script
 - `package.json` - Added download:fonts script

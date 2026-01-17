@@ -5,11 +5,11 @@
  * automatic metadata generation, and local storage in Pocket Vault.
  */
 
-import { getPocketVault, type RecordingMetadata } from './PocketVault';
-import { getTrackHistory, type SessionHistory } from './TrackHistory';
+import { getPocketVault, type RecordingMetadata } from "./PocketVault";
+import { getTrackHistory, type SessionHistory } from "./TrackHistory";
 
 export interface RecordingOptions {
-  format?: 'audio/webm' | 'audio/ogg' | 'video/webm';
+  format?: "audio/webm" | "audio/ogg" | "video/webm";
   bitRate?: number; // kbps (default 320)
   includeVideo?: boolean;
   canvasSelector?: string;
@@ -61,7 +61,7 @@ class EnhancedMixRecorder {
    */
   async initialize(): Promise<void> {
     await this.pocketVault.initialize();
-    console.log('[EnhancedMixRecorder] Initialized');
+    console.log("[EnhancedMixRecorder] Initialized");
   }
 
   /**
@@ -70,14 +70,14 @@ class EnhancedMixRecorder {
   async startRecording(
     audioContext: AudioContext,
     masterNode: AudioNode,
-    options: RecordingOptions = {}
+    options: RecordingOptions = {},
   ): Promise<string> {
     const {
-      format = 'audio/webm',
+      format = "audio/webm",
       bitRate = 320,
       includeVideo = false,
-      canvasSelector = 'canvas',
-      djName = 'Piko DJ',
+      canvasSelector = "canvas",
+      djName = "Piko DJ",
       title = `Mix Session ${new Date().toLocaleDateString()}`,
     } = options;
 
@@ -103,7 +103,7 @@ class EnhancedMixRecorder {
 
     try {
       // Ensure audio context is running
-      if (audioContext.state === 'suspended') {
+      if (audioContext.state === "suspended") {
         await audioContext.resume();
       }
 
@@ -115,7 +115,9 @@ class EnhancedMixRecorder {
 
       if (includeVideo) {
         // Capture video from canvas
-        const canvas = document.querySelector(canvasSelector) as HTMLCanvasElement;
+        const canvas = document.querySelector(
+          canvasSelector,
+        ) as HTMLCanvasElement;
         if (!canvas) {
           throw new Error(`Canvas element not found: ${canvasSelector}`);
         }
@@ -136,8 +138,11 @@ class EnhancedMixRecorder {
       };
 
       // Set bitrate if supported
-      if ('audioBitsPerSecond' in recorderOptions || 'videoBitsPerSecond' in recorderOptions) {
-        if (format.startsWith('audio/')) {
+      if (
+        "audioBitsPerSecond" in recorderOptions ||
+        "videoBitsPerSecond" in recorderOptions
+      ) {
+        if (format.startsWith("audio/")) {
           (recorderOptions as any).audioBitsPerSecond = bitRate * 1000; // Convert to bps
         } else {
           (recorderOptions as any).videoBitsPerSecond = 2500000; // 2.5 Mbps for video
@@ -156,11 +161,16 @@ class EnhancedMixRecorder {
       };
 
       this.mediaRecorder.onstop = async () => {
-        await this.finalizeRecording(djName, title, options.description, options.tags);
+        await this.finalizeRecording(
+          djName,
+          title,
+          options.description,
+          options.tags,
+        );
       };
 
       this.mediaRecorder.onerror = (event) => {
-        console.error('[EnhancedMixRecorder] Recording error:', event);
+        console.error("[EnhancedMixRecorder] Recording error:", event);
         this.currentSession = null;
       };
 
@@ -169,11 +179,12 @@ class EnhancedMixRecorder {
       this.currentSession.isRecording = true;
       this.currentSession.startTime = new Date();
 
-      console.log(`[EnhancedMixRecorder] Started HD recording: ${format} at ${bitRate}kbps`);
+      console.log(
+        `[EnhancedMixRecorder] Started HD recording: ${format} at ${bitRate}kbps`,
+      );
       return sessionId;
-
     } catch (error) {
-      console.error('[EnhancedMixRecorder] Failed to start recording:', error);
+      console.error("[EnhancedMixRecorder] Failed to start recording:", error);
       this.cleanup();
       throw error;
     }
@@ -193,7 +204,7 @@ class EnhancedMixRecorder {
       this.mediaRecorder!.onstop = async () => {
         // Call original handler
         if (originalOnStop) {
-          originalOnStop.call(this.mediaRecorder!, new Event('stop'));
+          originalOnStop.call(this.mediaRecorder!, new Event("stop"));
         }
 
         // End track history session
@@ -207,7 +218,7 @@ class EnhancedMixRecorder {
       this.mediaRecorder!.stop();
       this.currentSession!.isRecording = false;
 
-      console.log('[EnhancedMixRecorder] Stopped recording');
+      console.log("[EnhancedMixRecorder] Stopped recording");
     });
   }
 
@@ -220,7 +231,7 @@ class EnhancedMixRecorder {
     // Update duration if recording
     if (this.currentSession.isRecording && this.currentSession.startTime) {
       this.currentSession.duration = Math.floor(
-        (Date.now() - this.currentSession.startTime.getTime()) / 1000
+        (Date.now() - this.currentSession.startTime.getTime()) / 1000,
       );
     }
 
@@ -237,7 +248,7 @@ class EnhancedMixRecorder {
     }
 
     this.cleanup();
-    console.log('[EnhancedMixRecorder] Recording cancelled');
+    console.log("[EnhancedMixRecorder] Recording cancelled");
   }
 
   // ==========================================================================
@@ -248,10 +259,10 @@ class EnhancedMixRecorder {
     const formats = [
       `${format};codecs=opus`,
       format,
-      'audio/webm;codecs=opus',
-      'audio/webm',
-      'audio/ogg;codecs=opus',
-      'audio/ogg',
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/ogg",
     ];
 
     for (const mimeType of formats) {
@@ -261,14 +272,14 @@ class EnhancedMixRecorder {
     }
 
     // Fallback
-    return 'audio/webm';
+    return "audio/webm";
   }
 
   private async finalizeRecording(
     djName: string,
     title: string,
     description?: string,
-    tags?: string[]
+    tags?: string[],
   ): Promise<void> {
     if (!this.currentSession || this.recordedChunks.length === 0) {
       this.cleanup();
@@ -277,14 +288,17 @@ class EnhancedMixRecorder {
 
     try {
       // Create final blob
-      const mimeType = this.getBestMimeType(this.currentSession.format, this.currentSession.bitRate);
+      const mimeType = this.getBestMimeType(
+        this.currentSession.format,
+        this.currentSession.bitRate,
+      );
       const blob = new Blob(this.recordedChunks, { type: mimeType });
 
       // Get tracklist from history
       const tracklist = this.trackHistory.getCurrentTracklist();
 
       // Create metadata
-      const metadata: Omit<RecordingMetadata, 'id'> = {
+      const metadata: Omit<RecordingMetadata, "id"> = {
         title,
         djName,
         description,
@@ -293,12 +307,20 @@ class EnhancedMixRecorder {
         format: this.currentSession.format as any,
         bitRate: this.currentSession.bitRate,
         fileSize: blob.size,
-        tracklist: tracklist.map(track => ({
+        tracklist: tracklist.map((track) => ({
           id: track.trackId,
           title: track.title,
           artist: track.artist,
-          startTime: Math.round((track.startedAt - (this.currentSession!.startTime!.getTime())) / 1000),
-          endTime: track.endedAt ? Math.round((track.endedAt - (this.currentSession!.startTime!.getTime())) / 1000) : 0,
+          startTime: Math.round(
+            (track.startedAt - this.currentSession!.startTime!.getTime()) /
+              1000,
+          ),
+          endTime: track.endedAt
+            ? Math.round(
+                (track.endedAt - this.currentSession!.startTime!.getTime()) /
+                  1000,
+              )
+            : 0,
           bpm: track.bpm,
           camelot: track.camelot,
         })),
@@ -308,10 +330,14 @@ class EnhancedMixRecorder {
       // Store in Pocket Vault
       const recordingId = await this.pocketVault.storeRecording(metadata, blob);
 
-      console.log(`[EnhancedMixRecorder] Recording saved to Pocket Vault: ${recordingId}`);
-
+      console.log(
+        `[EnhancedMixRecorder] Recording saved to Pocket Vault: ${recordingId}`,
+      );
     } catch (error) {
-      console.error('[EnhancedMixRecorder] Failed to finalize recording:', error);
+      console.error(
+        "[EnhancedMixRecorder] Failed to finalize recording:",
+        error,
+      );
     } finally {
       this.cleanup();
     }
@@ -330,7 +356,7 @@ class EnhancedMixRecorder {
 
     // Stop video stream
     if (this.videoStream) {
-      this.videoStream.getTracks().forEach(track => track.stop());
+      this.videoStream.getTracks().forEach((track) => track.stop());
       this.videoStream = null;
     }
 
@@ -348,7 +374,7 @@ class EnhancedMixRecorder {
     this.cancelRecording();
     this.pocketVault.dispose();
     this.trackHistory.dispose();
-    console.log('[EnhancedMixRecorder] Disposed');
+    console.log("[EnhancedMixRecorder] Disposed");
   }
 }
 

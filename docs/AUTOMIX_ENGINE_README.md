@@ -7,21 +7,25 @@ The AI-Driven Automix Engine is an intelligent mixing assistant that leverages e
 ## Features
 
 ### 🎯 Compatibility Scoring
+
 - **BPM Analysis**: Ranks tracks by BPM compatibility (±5% tolerance)
 - **Camelot Harmony**: Identifies harmonic keys using the Camelot wheel system
 - **Weighted Scoring**: Combines BPM (40%), Harmony (50%), and Vibe matching (10%)
 
 ### 🔄 Automated Crossfading
+
 - **Constant-Power Transitions**: Smooth, natural-sounding crossfades
 - **Phrase Boundary Detection**: Transitions at optimal musical moments
 - **Configurable Duration**: 2-16 second transitions
 
 ### ⚡ Sync Automation
+
 - **PLL Phase Sync**: Drift-free handoff between tracks
 - **Beat Alignment**: Maintains rhythmic continuity
 - **Seamless Transitions**: No audible artifacts
 
 ### 🎵 Vibe Filtering
+
 - **Mood-Based Selection**: Filter by Chill, Hype, Classic, Storytelling
 - **Energy Matching**: Maintains consistent atmosphere
 - **Intelligent Sequencing**: Creates coherent sets
@@ -61,8 +65,8 @@ Track Selection → Analysis → Compatibility Scoring → Transition Planning �
 ### Starting Automix
 
 ```typescript
-import { getAutomixEngine } from '@/engine/AutomixEngine';
-import { tracks } from '@/lib/data';
+import { getAutomixEngine } from "@/engine/AutomixEngine";
+import { tracks } from "@/lib/data";
 
 const automix = getAutomixEngine();
 
@@ -70,10 +74,10 @@ const automix = getAutomixEngine();
 await automix.initialize(tracks);
 
 // Start automix on deck A with current track
-const success = await automix.startAutomix('deckA', currentTrack, {
+const success = await automix.startAutomix("deckA", currentTrack, {
   transitionDuration: 8,
   vibeMatching: true,
-  crossfadeCurve: 'constant-power'
+  crossfadeCurve: "constant-power",
 });
 ```
 
@@ -90,7 +94,10 @@ automix.stopAutomix();
 ### Compatibility Analysis
 
 ```typescript
-import { calculateCompatibilityScore, rankCompatibleTracks } from '@/utils/automix';
+import {
+  calculateCompatibilityScore,
+  rankCompatibleTracks,
+} from "@/utils/automix";
 
 // Score individual track compatibility
 const score = calculateCompatibilityScore(masterTrack, candidateTrack, true);
@@ -105,10 +112,10 @@ const ranked = rankCompatibleTracks(masterTrack, libraryTracks, 10, true);
 
 ```typescript
 interface AutomixSettings {
-  transitionDuration: number;    // 2-16 seconds
-  vibeMatching: boolean;         // Match energy levels
-  autoStartNext: boolean;        // Auto-advance tracks
-  crossfadeCurve: 'linear' | 'constant-power';
+  transitionDuration: number; // 2-16 seconds
+  vibeMatching: boolean; // Match energy levels
+  autoStartNext: boolean; // Auto-advance tracks
+  crossfadeCurve: "linear" | "constant-power";
 }
 ```
 
@@ -127,10 +134,10 @@ interface TrackMetadata {
   title: string;
   artist: string;
   src: string;
-  type: 'audio' | 'video';
+  type: "audio" | "video";
   bpm?: number | null;
-  camelot?: string | null;    // e.g., "8A", "5B"
-  vibe?: 'chill' | 'hype' | 'classic' | 'storytelling' | null;
+  camelot?: string | null; // e.g., "8A", "5B"
+  vibe?: "chill" | "hype" | "classic" | "storytelling" | null;
   duration?: number | null;
 }
 ```

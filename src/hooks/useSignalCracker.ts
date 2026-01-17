@@ -151,11 +151,11 @@ export function useSignalCracker() {
               length: audioBuffer.length,
             },
           },
-          [audioData.buffer] // Transfer list: moves ownership, zero-copy
+          [audioData.buffer], // Transfer list: moves ownership, zero-copy
         );
       });
     },
-    [isProcessing]
+    [isProcessing],
   );
 
   /**
@@ -170,7 +170,9 @@ export function useSignalCracker() {
   }, [isProcessing]);
 
   // Expose separated stems state
-  const [separatedStems, setSeparatedStems] = useState<SeparatedStems | null>(null);
+  const [separatedStems, setSeparatedStems] = useState<SeparatedStems | null>(
+    null,
+  );
 
   // Update stems when processing completes - listen to all worker messages
   useEffect(() => {
@@ -197,4 +199,3 @@ export function useSignalCracker() {
     separatedStems,
   };
 }
-

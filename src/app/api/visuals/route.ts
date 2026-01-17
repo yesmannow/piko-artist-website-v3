@@ -19,12 +19,12 @@ export async function GET(req: Request) {
           // Cache at the edge for 30 minutes, allow SWR for a day
           "Cache-Control": "s-maxage=1800, stale-while-revalidate=86400",
         },
-      }
+      },
     );
   } catch {
     return NextResponse.json(
       { images: [], error: "Failed to fetch visuals" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

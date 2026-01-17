@@ -46,9 +46,7 @@ export function TrackDrawer({ track, children }: TrackDrawerProps) {
   // On mobile, render drawer
   return (
     <Drawer.Root>
-      <Drawer.Trigger asChild>
-        {children}
-      </Drawer.Trigger>
+      <Drawer.Trigger asChild>{children}</Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Drawer.Content
@@ -67,7 +65,8 @@ export function TrackDrawer({ track, children }: TrackDrawerProps) {
             <div
               className="w-full h-full rounded-full"
               style={{
-                background: "linear-gradient(90deg, #FFD700 0%, #FFD700 25%, #000 25%, #000 50%, #FFD700 50%, #FFD700 75%, #000 75%, #000 100%)",
+                background:
+                  "linear-gradient(90deg, #FFD700 0%, #FFD700 25%, #000 25%, #000 50%, #FFD700 50%, #FFD700 75%, #000 75%, #000 100%)",
                 boxShadow: "0 0 8px rgb(204 255 0 / 0.5)",
               }}
             />
@@ -85,7 +84,9 @@ export function TrackDrawer({ track, children }: TrackDrawerProps) {
                   sizes="(max-width: 768px) 100vw, 400px"
                 />
               ) : (
-                <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+                <div
+                  className={`w-full h-full bg-gradient-to-r ${track.coverArt}`}
+                />
               )}
             </div>
 
@@ -129,4 +130,3 @@ export function TrackDrawer({ track, children }: TrackDrawerProps) {
     </Drawer.Root>
   );
 }
-

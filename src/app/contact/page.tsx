@@ -51,7 +51,8 @@ export default function ContactPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-white/70 max-w-2xl mb-8"
           >
-            Looking to bring heat to your record, lock a set, or build something wild? Pick your lane and drop the details.
+            Looking to bring heat to your record, lock a set, or build something
+            wild? Pick your lane and drop the details.
           </motion.p>
 
           {/* Quick Actions */}

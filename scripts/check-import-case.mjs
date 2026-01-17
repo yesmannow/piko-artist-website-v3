@@ -5,14 +5,14 @@
  * Verifies that @/ imports match exact file casing on Linux filesystem
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, dirname, resolve, relative, parse, sep } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { join, dirname, resolve, relative, parse, sep } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '..');
-const srcRoot = join(projectRoot, 'src');
+const projectRoot = resolve(__dirname, "..");
+const srcRoot = join(projectRoot, "src");
 
 const errors = [];
 
@@ -69,11 +69,19 @@ function extractImports(content) {
  */
 function resolveImportPath(importPath) {
   // Remove @/ prefix
-  const relativePath = importPath.replace(/^@\//, '');
+  const relativePath = importPath.replace(/^@\//, "");
   const fullPath = join(srcRoot, relativePath);
 
   // Try common extensions
-  const extensions = ['', '.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.tsx'];
+  const extensions = [
+    "",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    "/index.ts",
+    "/index.tsx",
+  ];
 
   for (const ext of extensions) {
     const testPath = fullPath + ext;
@@ -101,7 +109,7 @@ function getExactCasePath(filePath) {
     for (const part of parts) {
       const dirEntries = readdirSync(currentPath);
       const exactName = dirEntries.find(
-        (name) => name.toLowerCase() === part.toLowerCase()
+        (name) => name.toLowerCase() === part.toLowerCase(),
       );
       if (!exactName) {
         return null;
@@ -131,7 +139,7 @@ function checkImportCase(filePath, importPath) {
 
   if (!exactCasePath) {
     return {
-      error: 'FILE_NOT_FOUND',
+      error: "FILE_NOT_FOUND",
       file: filePath,
       import: importPath,
       resolved: resolvedPath,
@@ -141,7 +149,7 @@ function checkImportCase(filePath, importPath) {
   // Compare normalized paths (case-insensitive) but check if casing differs
   if (exactCasePath.toLowerCase() !== resolvedPath.toLowerCase()) {
     return {
-      error: 'CASE_MISMATCH',
+      error: "CASE_MISMATCH",
       file: filePath,
       import: importPath,
       expected: exactCasePath,
@@ -150,23 +158,25 @@ function checkImportCase(filePath, importPath) {
   }
 
   // Check if the import path itself has wrong casing
-  const relativeFromSrc = relative(srcRoot, exactCasePath).replace(/\\/g, '/');
-  const importRelative = importPath.replace(/^@\//, '');
+  const relativeFromSrc = relative(srcRoot, exactCasePath).replace(/\\/g, "/");
+  const importRelative = importPath.replace(/^@\//, "");
 
   // Normalize both for comparison (remove extensions, handle index files)
   const normalizePath = (p) => {
     return p
-      .replace(/\/index\.(ts|tsx|js|jsx)$/, '')
-      .replace(/\.(ts|tsx|js|jsx)$/, '');
+      .replace(/\/index\.(ts|tsx|js|jsx)$/, "")
+      .replace(/\.(ts|tsx|js|jsx)$/, "");
   };
 
   const normalizedImport = normalizePath(importRelative);
   const normalizedActual = normalizePath(relativeFromSrc);
 
-  if (normalizedImport.toLowerCase() === normalizedActual.toLowerCase() &&
-      normalizedImport !== normalizedActual) {
+  if (
+    normalizedImport.toLowerCase() === normalizedActual.toLowerCase() &&
+    normalizedImport !== normalizedActual
+  ) {
     return {
-      error: 'IMPORT_CASE_MISMATCH',
+      error: "IMPORT_CASE_MISMATCH",
       file: filePath,
       import: importPath,
       expected: `@/${relativeFromSrc}`,
@@ -178,7 +188,7 @@ function checkImportCase(filePath, importPath) {
 }
 
 // Main execution
-console.log('🔍 Checking import case-sensitivity...\n');
+console.log("🔍 Checking import case-sensitivity...\n");
 
 const tsFiles = getAllTsFiles(srcRoot);
 let checkedCount = 0;
@@ -186,7 +196,7 @@ let importCount = 0;
 
 for (const filePath of tsFiles) {
   try {
-    const content = readFileSync(filePath, 'utf-8');
+    const content = readFileSync(filePath, "utf-8");
     const imports = extractImports(content);
 
     for (const importPath of imports) {
@@ -216,20 +226,21 @@ if (errors.length === 0) {
     console.error(`📄 ${relFile}`);
     console.error(`   Import: ${error.import}`);
 
-    if (error.error === 'CASE_MISMATCH') {
+    if (error.error === "CASE_MISMATCH") {
       console.error(`   ❌ Case mismatch:`);
       console.error(`      Expected: ${relative(projectRoot, error.expected)}`);
       console.error(`      Actual:   ${relative(projectRoot, error.actual)}`);
-    } else if (error.error === 'IMPORT_CASE_MISMATCH') {
+    } else if (error.error === "IMPORT_CASE_MISMATCH") {
       console.error(`   ❌ Import path casing incorrect:`);
       console.error(`      Expected: ${error.expected}`);
       console.error(`      Actual:   ${error.actual}`);
-    } else if (error.error === 'FILE_NOT_FOUND') {
-      console.error(`   ⚠️  File not found: ${relative(projectRoot, error.resolved)}`);
+    } else if (error.error === "FILE_NOT_FOUND") {
+      console.error(
+        `   ⚠️  File not found: ${relative(projectRoot, error.resolved)}`,
+      );
     }
-    console.error('');
+    console.error("");
   }
 
   process.exit(1);
 }
-

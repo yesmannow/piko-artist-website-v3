@@ -20,7 +20,11 @@ interface GlitchControllerProps {
  * flash effects when peaks exceed threshold, mimicking
  * professional music video editing.
  */
-export function GlitchController({ getFrequencyData, impactPulse, remixIntensity = 0 }: GlitchControllerProps) {
+export function GlitchController({
+  getFrequencyData,
+  impactPulse,
+  remixIntensity = 0,
+}: GlitchControllerProps) {
   const [flashIntensity, setFlashIntensity] = useState(0);
   const [vignetteIntensity, setVignetteIntensity] = useState(0.5);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -133,7 +137,10 @@ export function GlitchController({ getFrequencyData, impactPulse, remixIntensity
       <ChromaticAberration
         offset={
           flashIntensity > 0 || remixIntensity > 0.7
-            ? [0.002 * Math.max(flashIntensity, remixIntensity), 0.0015 * Math.max(flashIntensity, remixIntensity)]
+            ? [
+                0.002 * Math.max(flashIntensity, remixIntensity),
+                0.0015 * Math.max(flashIntensity, remixIntensity),
+              ]
             : [0.0003, 0.0003]
         }
         radialModulation={true}
@@ -159,4 +166,3 @@ export function BrightnessFilter({ intensity }: { intensity: number }) {
     />
   );
 }
-

@@ -16,6 +16,7 @@
 **Location:** `src/components/DJInterface.tsx` (lines 854-887)
 
 **Current Structure:**
+
 - Simple `div` container with:
   - Track title (text-xs, uppercase, gray-400)
   - Artist name (text-[10px], gray-500)
@@ -50,19 +51,21 @@
 **Location:** `src/lib/data.ts`
 
 **MediaItem Interface:**
+
 ```typescript
 {
   id: string;
   title: string;
   artist: string;
-  type: 'audio' | 'video';
+  type: "audio" | "video";
   src: string;
   coverArt: string; // Image path or Tailwind gradient
-  vibe: 'chill' | 'hype' | 'storytelling' | 'classic';
+  vibe: "chill" | "hype" | "storytelling" | "classic";
 }
 ```
 
 **Available Fields:**
+
 - ✅ title
 - ✅ artist
 - ✅ coverArt (image path or gradient)
@@ -74,6 +77,7 @@
 ### 6. Load-to-Deck Mechanism
 
 **Methods:**
+
 1. **A/B Buttons:** Direct click handlers (lines 872-886)
 2. **Drag-and-Drop:**
    - `handleDragStart` (line 624)
@@ -82,6 +86,7 @@
    - Drop zones with visual feedback (lines 966-978, 1045-1057)
 
 **State Flow:**
+
 ```
 Track Card Click/Drag → loadTrackToDeckA/B → setDeckAData/setDeckBData → DJDeck receives trackUrl
 ```
@@ -106,12 +111,12 @@ DJInterface (state owner)
 
 ### File Paths & Exports
 
-| Component | File Path | Export | Used In |
-|-----------|-----------|--------|---------|
-| Track Card (DJInterface) | `src/components/DJInterface.tsx` | Inline JSX | DJInterface |
-| TrackCard (Music Page) | `src/components/TrackList.tsx` | `TrackCard` | TrackList |
-| TrackDrawer | `src/components/TrackDrawer.tsx` | `TrackDrawer` | TrackList (mobile only) |
-| Track Data | `src/lib/data.ts` | `tracks`, `MediaItem` | Multiple |
+| Component                | File Path                        | Export                | Used In                 |
+| ------------------------ | -------------------------------- | --------------------- | ----------------------- |
+| Track Card (DJInterface) | `src/components/DJInterface.tsx` | Inline JSX            | DJInterface             |
+| TrackCard (Music Page)   | `src/components/TrackList.tsx`   | `TrackCard`           | TrackList               |
+| TrackDrawer              | `src/components/TrackDrawer.tsx` | `TrackDrawer`         | TrackList (mobile only) |
+| Track Data               | `src/lib/data.ts`                | `tracks`, `MediaItem` | Multiple                |
 
 ---
 
@@ -120,6 +125,7 @@ DJInterface (state owner)
 ### Phase 1B — Upgrade Track Card Layout
 
 **Tasks:**
+
 1. Extract inline track card JSX into a reusable `TrackCard` component (or create new `DJTrackCard`)
 2. Add cover art thumbnail display (using `track.coverArt`)
 3. Add hover reveal panel with:
@@ -138,14 +144,17 @@ DJInterface (state owner)
    - aria-labels for external link
 
 **Files to Modify:**
+
 - `src/components/DJInterface.tsx` (extract/upgrade track card)
 
 **Optional Helper:**
+
 - Utility function for safe external link handling
 
 ### Phase 1C — Track Drawer Integration (Future)
 
 **Tasks:**
+
 1. Add drawer/sheet component to DJInterface track cards
 2. Track details view with:
    - Large cover art
@@ -167,4 +176,3 @@ DJInterface (state owner)
 - **Hover Reveal:** ❌ Not implemented
 - **Duration:** ❌ Not in data structure
 - **External Link:** ❌ Not in data structure (but can be constructed)
-

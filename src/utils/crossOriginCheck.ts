@@ -10,18 +10,18 @@
  * @returns true if crossOriginIsolated is available and true
  */
 export function isCrossOriginIsolated(): boolean {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return false;
   }
 
   // Check if crossOriginIsolated is available (Chrome 92+)
-  if (typeof (window as any).crossOriginIsolated !== 'undefined') {
+  if (typeof (window as any).crossOriginIsolated !== "undefined") {
     return (window as any).crossOriginIsolated === true;
   }
 
   // Fallback: Check if SharedArrayBuffer is available
   // If SharedArrayBuffer exists, crossOriginIsolated is likely true
-  if (typeof SharedArrayBuffer !== 'undefined') {
+  if (typeof SharedArrayBuffer !== "undefined") {
     return true;
   }
 
@@ -32,16 +32,18 @@ export function isCrossOriginIsolated(): boolean {
  * Verify crossOriginIsolated and log warnings if not enabled
  * @param context - Context string for logging (e.g., "StudioEngine")
  */
-export function verifyCrossOriginIsolated(context: string = 'Unknown'): boolean {
+export function verifyCrossOriginIsolated(
+  context: string = "Unknown",
+): boolean {
   const isIsolated = isCrossOriginIsolated();
 
   if (!isIsolated) {
     console.warn(
       `[${context}] ⚠️ crossOriginIsolated is false. SharedArrayBuffer may not work.\n` +
-        'Required headers:\n' +
-        '  Cross-Origin-Opener-Policy: same-origin\n' +
-        '  Cross-Origin-Embedder-Policy: require-corp\n' +
-        'These should be set by middleware.ts for /studio* routes.'
+        "Required headers:\n" +
+        "  Cross-Origin-Opener-Policy: same-origin\n" +
+        "  Cross-Origin-Embedder-Policy: require-corp\n" +
+        "These should be set by middleware.ts for /studio* routes.",
     );
   } else {
     console.log(`[${context}] ✅ crossOriginIsolated is true`);
@@ -55,11 +57,11 @@ export function verifyCrossOriginIsolated(context: string = 'Unknown'): boolean 
  * @returns true if current pathname starts with /studio
  */
 export function isStudioRoute(): boolean {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return false;
   }
 
-  return window.location.pathname.startsWith('/studio');
+  return window.location.pathname.startsWith("/studio");
 }
 
 /**
@@ -71,13 +73,13 @@ export function verifyStudioCrossOriginIsolation(): void {
     return;
   }
 
-  const isIsolated = verifyCrossOriginIsolated('StudioRoute');
+  const isIsolated = verifyCrossOriginIsolated("StudioRoute");
 
   if (!isIsolated) {
     console.error(
-      '[StudioRoute] ❌ CRITICAL: crossOriginIsolated is false on studio route!\n' +
-        'This will break SharedArrayBuffer and ControlBus functionality.\n' +
-        'Check middleware.ts to ensure COOP/COEP headers are set correctly.'
+      "[StudioRoute] ❌ CRITICAL: crossOriginIsolated is false on studio route!\n" +
+        "This will break SharedArrayBuffer and ControlBus functionality.\n" +
+        "Check middleware.ts to ensure COOP/COEP headers are set correctly.",
     );
   }
 }

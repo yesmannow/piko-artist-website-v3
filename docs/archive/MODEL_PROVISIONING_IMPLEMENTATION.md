@@ -13,10 +13,12 @@ A complete "never get stuck again" model provisioning workflow has been implemen
 **Standard filename:** `public/models/demucs_v4_quantized.onnx`
 
 **Default external source:**
+
 - Hugging Face: `https://huggingface.co/timcsy/demucs-web-onnx/resolve/main/htdemucs_embedded.onnx?download=true`
 - Override via `MODEL_DOWNLOAD_URL` env var
 
 **Git safety:**
+
 - `.gitignore` updated with comment about Git LFS
 - Download script never auto-commits
 - Size warnings prevent accidental large commits
@@ -28,6 +30,7 @@ A complete "never get stuck again" model provisioning workflow has been implemen
 **File:** `scripts/download-model.mjs`
 
 **Features:**
+
 - ✅ Downloads to `public/models/demucs_v4_quantized.onnx`
 - ✅ Uses `MODEL_DOWNLOAD_URL` env var (defaults to HF URL)
 - ✅ Shows download progress with speed and percentage
@@ -39,6 +42,7 @@ A complete "never get stuck again" model provisioning workflow has been implemen
 - ✅ Handles redirects (301/302)
 
 **Usage:**
+
 ```bash
 npm run download:model
 MODEL_DOWNLOAD_URL=https://custom-url.com/model.onnx npm run download:model
@@ -51,18 +55,21 @@ MODEL_DOWNLOAD_URL=https://custom-url.com/model.onnx npm run download:model
 **File:** `src/hooks/useStemService.ts`
 
 **Priority order:**
+
 1. `NEXT_PUBLIC_MODEL_URL` environment variable:
    - Same-origin path (`/models/...`): use directly
    - External URL (`http://...` or `https://...`): route through `/api/model?url=ENCODED`
 2. Fallback: `/models/demucs_v4_quantized.onnx` (local file)
 
 **Implementation:**
+
 - Detects URL type automatically
 - Encodes external URLs as query parameter for proxy
 - Logs source type in development mode
 - No code changes needed - fully automatic
 
 **Example flow:**
+
 ```
 NEXT_PUBLIC_MODEL_URL=https://cdn.com/model.onnx
   → Detected as external
@@ -77,6 +84,7 @@ NEXT_PUBLIC_MODEL_URL=https://cdn.com/model.onnx
 **File:** `src/app/api/model/route.ts`
 
 **Features:**
+
 - ✅ Reads `NEXT_PUBLIC_MODEL_URL` or `MODEL_URL`
 - ✅ Supports query parameter: `/api/model?url=ENCODED_URL`
 - ✅ Returns 400 if URL not set
@@ -89,6 +97,7 @@ NEXT_PUBLIC_MODEL_URL=https://cdn.com/model.onnx
 - ✅ Clear JSON error responses with status codes
 
 **Security:**
+
 ```bash
 # Restrict proxy to specific hosts
 MODEL_HOST_ALLOWLIST="huggingface.co,cdn.example.com"
@@ -99,19 +108,24 @@ MODEL_HOST_ALLOWLIST="huggingface.co,cdn.example.com"
 ### 5. Verification Behavior ✅
 
 #### Development Mode (Non-blocking)
+
 **File:** `scripts/check-stem-assets.mjs`
+
 - ✅ **FAILS** if ORT WASM assets missing (required)
 - ⚠️ **WARNS** if model missing (non-blocking)
 - Allows builds to proceed for development velocity
 
 #### Strict Mode (CI/CD)
+
 **File:** `scripts/verify-stem-assets-strict.mjs`
+
 - ✅ **FAILS** if ORT assets missing (required)
 - ✅ **FAILS** if (model missing AND `NEXT_PUBLIC_MODEL_URL` not set)
 - ✅ **PASSES** if model file exists OR URL configured
 - Respects `STEM_STRICT=1` (fail) or `STEM_STRICT=0` (allow)
 
 **Commands:**
+
 ```bash
 npm run check:model          # Non-blocking (dev)
 npm run verify:stem-strict   # Strict (CI/CD)
@@ -123,6 +137,7 @@ npm run verify:vercel        # Full deployment check
 ### 6. Documentation ✅
 
 **Created:** `docs/MODEL_PROVISIONING.md`
+
 - ✅ Complete guide for all 3 options
 - ✅ Quick "unblock me" section
 - ✅ Troubleshooting guide
@@ -130,6 +145,7 @@ npm run verify:vercel        # Full deployment check
 - ✅ Best practices
 
 **Updated:** `README.md`
+
 - ✅ Added model provisioning section
 - ✅ Quick reference commands
 - ✅ Links to detailed documentation
@@ -139,6 +155,7 @@ npm run verify:vercel        # Full deployment check
 ### 7. Package.json Scripts ✅
 
 **Added:**
+
 ```json
 {
   "download:model": "node scripts/download-model.mjs",
@@ -148,6 +165,7 @@ npm run verify:vercel        # Full deployment check
 ```
 
 **Existing (updated):**
+
 - `check:stem-assets` - Non-blocking check
 - `verify:vercel` - Uses strict verification
 
@@ -156,25 +174,33 @@ npm run verify:vercel        # Full deployment check
 ## Acceptance Test Results
 
 ### ✅ Test 1: `npm run build`
+
 **Result:** ✅ **PASS**
+
 - Build succeeds even if model missing
 - Warns if model missing (non-blocking)
 - All routes generate successfully
 
 ### ✅ Test 2: `npm run verify:vercel` (no model)
+
 **Result:** ✅ **PASS**
+
 - Correctly fails when model missing AND no URL configured
 - Provides clear error messages with solutions
 - ORT assets check passes
 
 ### ⏳ Test 3: `npm run download:model`
+
 **Status:** Ready for testing (requires internet)
+
 - Script created and tested for syntax
 - Will download ~50-200MB file
 - Shows progress and size warnings
 
 ### ⏳ Test 4: `npm run verify:vercel` (with model/URL)
+
 **Status:** Ready for testing
+
 - Should pass after `download:model`
 - Should pass with `NEXT_PUBLIC_MODEL_URL` set
 
@@ -205,6 +231,7 @@ public/models/
 ## Workflow Examples
 
 ### Development Workflow
+
 ```bash
 # 1. Download model for local testing
 npm run download:model
@@ -218,6 +245,7 @@ npm run dev
 ```
 
 ### Production Deployment Workflow
+
 ```bash
 # Option A: External URL (recommended)
 # 1. Set NEXT_PUBLIC_MODEL_URL in Vercel dashboard
@@ -239,6 +267,7 @@ git push
 ```
 
 ### CI/CD Workflow
+
 ```bash
 # Pre-deployment check (fails if model missing)
 npm run verify:vercel
@@ -264,12 +293,12 @@ STEM_STRICT=0 npm run verify:stem-strict
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-|---------|----------|---------|
-| `NEXT_PUBLIC_MODEL_URL` | Optional* | External model URL (Option A) |
-| `MODEL_DOWNLOAD_URL` | Optional | Override default download URL |
-| `MODEL_HOST_ALLOWLIST` | Optional | Restrict proxy to specific hosts |
-| `STEM_STRICT` | Optional | Control strict verification (0/1) |
+| Variable                | Required   | Purpose                           |
+| ----------------------- | ---------- | --------------------------------- |
+| `NEXT_PUBLIC_MODEL_URL` | Optional\* | External model URL (Option A)     |
+| `MODEL_DOWNLOAD_URL`    | Optional   | Override default download URL     |
+| `MODEL_HOST_ALLOWLIST`  | Optional   | Restrict proxy to specific hosts  |
+| `STEM_STRICT`           | Optional   | Control strict verification (0/1) |
 
 \* Required if model is not in `public/models/`
 

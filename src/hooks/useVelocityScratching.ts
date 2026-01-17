@@ -17,7 +17,7 @@ import { useRef, useCallback, useEffect } from "react";
 export function useVelocityScratching(
   sourceNode: AudioBufferSourceNode | null,
   isPlaying: boolean,
-  onVelocityChange?: (velocity: number) => void
+  onVelocityChange?: (velocity: number) => void,
 ) {
   const velocityRef = useRef(0);
   const lastTimeRef = useRef<number | null>(null);
@@ -81,7 +81,7 @@ export function useVelocityScratching(
         sourceNode.playbackRate.setTargetAtTime(clampedRate, currentTime, 0.01);
       }
     },
-    [sourceNode, isPlaying]
+    [sourceNode, isPlaying],
   );
 
   /**
@@ -93,7 +93,7 @@ export function useVelocityScratching(
       applyVelocity(velocity);
       onVelocityChange?.(velocity);
     },
-    [calculateVelocity, applyVelocity, onVelocityChange]
+    [calculateVelocity, applyVelocity, onVelocityChange],
   );
 
   /**
@@ -169,4 +169,3 @@ export function useVelocityScratching(
     currentVelocity: velocityRef.current,
   };
 }
-

@@ -3,6 +3,7 @@
 ## Problem
 
 Workers were manually copied to `public/workers/` without a consistent build process, risking:
+
 - Forgetting to compile workers before deployment
 - Out-of-sync source and compiled files
 - No verification that workers are ready
@@ -12,22 +13,26 @@ Workers were manually copied to `public/workers/` without a consistent build pro
 Implemented an **automated worker build system** using esbuild:
 
 ### 1. Build Script (`scripts/build-workers.js`)
+
 - Compiles all `*.worker.ts` files from `src/workers/` to `public/workers/`
 - Uses esbuild for fast TypeScript compilation
 - Outputs IIFE format (compatible with classic workers)
 - Adds header comments warning not to edit compiled files
 
 ### 2. Check Script (`scripts/check-workers.js`)
+
 - Verifies all source workers have compiled versions
 - Detects missing or orphaned compiled files
 - Non-blocking (warns but doesn't fail build)
 
 ### 3. Integration
+
 - `npm run build` now automatically runs `build:workers` first
 - `npm run build:workers` for manual compilation
 - `npm run check:workers` for verification
 
 ### 4. Documentation
+
 - Created `docs/WORKER_BUILD_PROCESS.md` with full workflow
 - Updated `README.md` with build commands
 - Added warnings in compiled files
@@ -64,12 +69,14 @@ npm run check:workers
 ## Future Considerations
 
 Consider migrating to Next.js native worker imports (`?worker` suffix) for:
+
 - Automatic bundling
 - Better tree-shaking
 - TypeScript support in workers
 - No manual compilation step
 
 However, current approach is:
+
 - Explicit and reliable
 - Works with classic workers
 - Easy to debug

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from 'react';
-import { areKeysCompatible, compatibleKeys } from '@/utils/camelot';
-import type { KeyAnalysisResult } from '@/engine/rt/analysis/KeyService';
+import { useMemo } from "react";
+import { areKeysCompatible, compatibleKeys } from "@/utils/camelot";
+import type { KeyAnalysisResult } from "@/engine/rt/analysis/KeyService";
 
 interface KeyDisplayProps {
   keyData: KeyAnalysisResult | null;
@@ -19,7 +19,7 @@ interface KeyDisplayProps {
 export function KeyDisplay({
   keyData,
   referenceKey,
-  className = '',
+  className = "",
   showCompatibility = false,
 }: KeyDisplayProps) {
   const isCompatible = useMemo(() => {
@@ -46,8 +46,8 @@ export function KeyDisplay({
         transition-colors
         ${
           isCompatible
-            ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-            : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50'
+            ? "bg-green-500/20 text-green-400 border border-green-500/50"
+            : "bg-zinc-800/50 text-zinc-400 border border-zinc-700/50"
         }
         ${className}
       `}
@@ -56,10 +56,10 @@ export function KeyDisplay({
           ? `Compatible with ${referenceKey}`
           : keyData.camelot
             ? `${keyData.camelot} - ${keyData.root} ${keyData.scale}`
-            : 'Key information'
+            : "Key information"
       }
     >
-      {keyData.camelot || '--'}
+      {keyData.camelot || "--"}
     </span>
   );
 }

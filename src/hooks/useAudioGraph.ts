@@ -64,11 +64,15 @@ export function useAudioGraph() {
       // This runs on the audio thread (not main thread) for zero-latency DSP
       // Note: AudioWorklet may fail if worklet module isn't loaded yet - make it optional
       try {
-        const sidechainNode = new AudioWorkletNode(audioContext, "sidechain-processor", {
-          numberOfInputs: 2, // Music input + Trigger input
-          numberOfOutputs: 1, // Processed output
-          channelCount: 2, // Stereo
-        });
+        const sidechainNode = new AudioWorkletNode(
+          audioContext,
+          "sidechain-processor",
+          {
+            numberOfInputs: 2, // Music input + Trigger input
+            numberOfOutputs: 1, // Processed output
+            channelCount: 2, // Stereo
+          },
+        );
 
         // Set default sidechain parameters
         sidechainNode.parameters.get("threshold")!.value = 0.5;
@@ -78,7 +82,10 @@ export function useAudioGraph() {
       } catch (workletError) {
         // AudioWorklet may not be available or module not loaded yet
         // This is non-critical - the audio graph will still work without sidechain
-        console.warn("[useAudioGraph] AudioWorklet not available, continuing without sidechain:", workletError);
+        console.warn(
+          "[useAudioGraph] AudioWorklet not available, continuing without sidechain:",
+          workletError,
+        );
         sidechainNodeRef.current = null;
       }
 
@@ -90,7 +97,6 @@ export function useAudioGraph() {
 
       // Note: Sidechain node is created but not connected yet
       // It will be connected when decks are set up (music -> sidechain -> masterGain)
-
     } catch (error) {
       console.error("[useAudioGraph] Failed to create audio graph:", error);
     }
@@ -137,7 +143,10 @@ export function useAudioGraph() {
     const bufferLength = analyserRef.current.frequencyBinCount;
 
     // Initialize or resize buffer if needed (only when bufferLength changes)
-    if (!frequencyDataBufferRef.current || frequencyDataBufferRef.current.length !== bufferLength) {
+    if (
+      !frequencyDataBufferRef.current ||
+      frequencyDataBufferRef.current.length !== bufferLength
+    ) {
       frequencyDataBufferRef.current = new Uint8Array(bufferLength);
     }
 
@@ -163,20 +172,20 @@ export function useAudioGraph() {
    */
   const stopWithTapeEffect = (
     sourceNode: AudioBufferSourceNode,
-    duration: number = 0.8
+    duration: number = 0.8,
   ) => {
     if (!audioContext || !sourceNode.playbackRate) {
       return;
     }
 
     const currentTime = audioContext.currentTime;
-      const _currentRate = sourceNode.playbackRate.value;
+    const _currentRate = sourceNode.playbackRate.value;
 
     // Exponential deceleration to near-zero (0.001 to avoid division by zero)
     // This creates the smooth "tape stop" feel
     sourceNode.playbackRate.exponentialRampToValueAtTime(
       0.001,
-      currentTime + duration
+      currentTime + duration,
     );
 
     // Stop the source after deceleration completes
@@ -198,4 +207,3 @@ export function useAudioGraph() {
     isReady: isReady && analyserRef.current !== null,
   };
 }
-

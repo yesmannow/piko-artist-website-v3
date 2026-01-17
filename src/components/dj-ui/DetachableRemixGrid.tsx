@@ -23,14 +23,15 @@ export function DetachableRemixGrid({
   onSampleTrigger,
   helpText,
 }: DetachableRemixGridProps) {
-  const { windows, addWindow, updateWindow, closeWindow, focusWindow } = useWindowManager();
+  const { windows, addWindow, updateWindow, closeWindow, focusWindow } =
+    useWindowManager();
   const [isDetached, setIsDetached] = useState(false);
 
   const handleDetach = () => {
     setIsDetached(true);
     addWindow(
-      'remix-grid',
-      'Live Remix Grid',
+      "remix-grid",
+      "Live Remix Grid",
       RemixGrid,
       {
         width: 500,
@@ -41,19 +42,19 @@ export function DetachableRemixGrid({
         helpText,
       },
       { x: 200, y: 200 },
-      { width: 500, height: 500 }
+      { width: 500, height: 500 },
     );
   };
 
   const handleAttach = () => {
     setIsDetached(false);
-    closeWindow('remix-grid');
+    closeWindow("remix-grid");
   };
 
   // Update detached window when props change
   useEffect(() => {
     if (isDetached) {
-      updateWindow('remix-grid', {
+      updateWindow("remix-grid", {
         props: {
           width: 500,
           height: 500,

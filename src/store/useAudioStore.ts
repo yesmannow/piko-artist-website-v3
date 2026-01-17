@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface DeckState {
   url: string | null;
@@ -26,14 +26,14 @@ export const useAudioStore = create<AudioStore>((set) => ({
       isPlaying: false,
       volume: 1,
       currentTime: 0,
-      duration: 0
+      duration: 0,
     },
     deckB: {
       url: null,
       isPlaying: false,
       volume: 1,
       currentTime: 0,
-      duration: 0
+      duration: 0,
     },
   },
   masterVolume: 1,

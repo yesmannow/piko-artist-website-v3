@@ -11,7 +11,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallApp() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const { triggerHaptic } = useHaptic();
@@ -32,13 +33,18 @@ export function InstallApp() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // Check if iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+      !(window as unknown as { MSStream?: unknown }).MSStream;
     if (isIOS) {
       setShowIOSPrompt(true);
     }
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
     };
   }, []);
 
@@ -89,4 +95,3 @@ export function InstallApp() {
     </AnimatePresence>
   );
 }
-

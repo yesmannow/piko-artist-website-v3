@@ -27,14 +27,14 @@
 // ============================================================================
 
 type WorkerMessageType =
-  | 'READY'
-  | 'CONFIG'
-  | 'SEPARATE'
-  | 'PROGRESS'
-  | 'SEPARATE_COMPLETE'
-  | 'SEPARATE_ERROR'
-  | 'CANCEL'
-  | 'ERROR';
+  | "READY"
+  | "CONFIG"
+  | "SEPARATE"
+  | "PROGRESS"
+  | "SEPARATE_COMPLETE"
+  | "SEPARATE_ERROR"
+  | "CANCEL"
+  | "ERROR";
 
 interface WorkerMessage {
   type: WorkerMessageType;
@@ -77,14 +77,14 @@ let isProcessing = false;
 let cancellationRequested = false;
 let ort: any = null; // onnxruntime-web
 let session: any = null; // ONNX inference session
-let backend: 'webgpu' | 'wasm' = 'wasm';
+let backend: "webgpu" | "wasm" = "wasm";
 
 // Configuration constants
 const CHUNK_SIZE_SAMPLES = 44100 * 10; // 10 seconds at 44.1kHz
 const OVERLAP_SAMPLES = 44100 * 1; // 1 second overlap
 const CROSSFADE_SAMPLES = 44100 * 0.5; // 0.5 second crossfade
-const DEFAULT_MODEL_URL = '/models/demucs_v4_quantized.onnx';
-const WASM_PATH = '/ort/'; // Path to ONNX Runtime WASM files
+const DEFAULT_MODEL_URL = "/models/demucs_v4_quantized.onnx";
+const WASM_PATH = "/ort/"; // Path to ONNX Runtime WASM files
 
 // Runtime configuration (set via CONFIG message)
 let activeModelUrl: string = DEFAULT_MODEL_URL;
@@ -97,22 +97,25 @@ let activeModelUrl: string = DEFAULT_MODEL_URL;
  * Detect and select the best available backend
  * Priority: WebGPU > WASM
  */
-async function selectBackend(): Promise<'webgpu' | 'wasm'> {
+async function selectBackend(): Promise<"webgpu" | "wasm"> {
   try {
     // Check for WebGPU support
-    if ('gpu' in navigator) {
+    if ("gpu" in navigator) {
       const adapter = await (navigator as any).gpu.requestAdapter();
       if (adapter) {
-        console.log('[StemSeparatorWorker] WebGPU backend available');
-        return 'webgpu';
+        console.log("[StemSeparatorWorker] WebGPU backend available");
+        return "webgpu";
       }
     }
   } catch (error) {
-    console.warn('[StemSeparatorWorker] WebGPU not available, falling back to WASM:', error);
+    console.warn(
+      "[StemSeparatorWorker] WebGPU not available, falling back to WASM:",
+      error,
+    );
   }
 
-  console.log('[StemSeparatorWorker] Using WASM backend');
-  return 'wasm';
+  console.log("[StemSeparatorWorker] Using WASM backend");
+  return "wasm";
 }
 
 /**
@@ -128,7 +131,7 @@ async function loadONNXRuntime(): Promise<void> {
 
   try {
     // Dynamic import of onnxruntime-web
-    ort = await import('onnxruntime-web');
+    ort = await import("onnxruntime-web");
 
     // Configure WASM paths for local assets
     // This ensures ONNX Runtime loads WASM files from /ort/ instead of CDN
@@ -141,21 +144,27 @@ async function loadONNXRuntime(): Promise<void> {
     backend = await selectBackend();
 
     // Configure execution providers based on backend
-    if (backend === 'webgpu') {
+    if (backend === "webgpu") {
       ort.env.wasm.numThreads = 1; // WebGPU doesn't need threading
     } else {
       ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
       ort.env.wasm.simd = true; // Enable SIMD for WASM
     }
 
-    console.log(`[StemSeparatorWorker] ONNX Runtime loaded with ${backend} backend`);
+    console.log(
+      `[StemSeparatorWorker] ONNX Runtime loaded with ${backend} backend`,
+    );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[StemSeparatorWorker] ❌ Failed to load ONNX Runtime:', errorMessage);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error(
+      "[StemSeparatorWorker] ❌ Failed to load ONNX Runtime:",
+      errorMessage,
+    );
 
     // Send error to main thread for UI display
     self.postMessage({
-      type: 'ERROR',
+      type: "ERROR",
       message: `ONNX Runtime failed to load: ${errorMessage}. Please ensure onnxruntime-web is installed and WASM files are available at ${WASM_PATH}`,
     } as WorkerMessage);
 
@@ -173,53 +182,61 @@ async function loadModel(): Promise<void> {
   }
 
   if (!ort) {
-    throw new Error('ONNX Runtime not loaded. Cannot load model.');
+    throw new Error("ONNX Runtime not loaded. Cannot load model.");
   }
 
   try {
     self.postMessage({
-      type: 'PROGRESS',
+      type: "PROGRESS",
       progress: 5,
-      stage: 'Loading ONNX model...',
+      stage: "Loading ONNX model...",
     } as WorkerMessage);
 
     // Check if model file exists (fast-fail)
     try {
-      const modelResponse = await fetch(activeModelUrl, { method: 'HEAD' });
+      const modelResponse = await fetch(activeModelUrl, { method: "HEAD" });
       if (!modelResponse.ok) {
-        throw new Error(`Model file not found at ${activeModelUrl}. Status: ${modelResponse.status}`);
+        throw new Error(
+          `Model file not found at ${activeModelUrl}. Status: ${modelResponse.status}`,
+        );
       }
     } catch (fetchError) {
-      const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+      const errorMessage =
+        fetchError instanceof Error ? fetchError.message : "Unknown error";
       self.postMessage({
-        type: 'ERROR',
+        type: "ERROR",
         message: `Model file missing: ${activeModelUrl}. ${errorMessage}. Please ensure the model is accessible at the configured URL.`,
       } as WorkerMessage);
       throw new Error(`Model file not found: ${errorMessage}`);
     }
 
-    const executionProviders = backend === 'webgpu'
-      ? ['webgpu', 'wasm'] // Try WebGPU first, fallback to WASM
-      : ['wasm'];
+    const executionProviders =
+      backend === "webgpu"
+        ? ["webgpu", "wasm"] // Try WebGPU first, fallback to WASM
+        : ["wasm"];
 
     session = await ort.InferenceSession.create(activeModelUrl, {
       executionProviders,
-      graphOptimizationLevel: 'all',
+      graphOptimizationLevel: "all",
     });
 
-    console.log('[StemSeparatorWorker] ✅ Model loaded');
+    console.log("[StemSeparatorWorker] ✅ Model loaded");
     self.postMessage({
-      type: 'PROGRESS',
+      type: "PROGRESS",
       progress: 10,
-      stage: 'Model loaded',
+      stage: "Model loaded",
     } as WorkerMessage);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[StemSeparatorWorker] ❌ Failed to load model:', errorMessage);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error(
+      "[StemSeparatorWorker] ❌ Failed to load model:",
+      errorMessage,
+    );
 
     // Send detailed error to main thread
     self.postMessage({
-      type: 'ERROR',
+      type: "ERROR",
       message: `Model load failed: ${errorMessage}. Check that ${activeModelUrl} exists and is accessible.`,
     } as WorkerMessage);
 
@@ -237,19 +254,20 @@ async function loadModel(): Promise<void> {
 async function processChunk(
   audioData: Float32Array,
   chunkIndex: number,
-  totalChunks: number
+  totalChunks: number,
 ): Promise<ChunkResult> {
   if (cancellationRequested) {
-    throw new Error('Cancelled');
+    throw new Error("Cancelled");
   }
 
   // Update progress
   const baseProgress = 10; // After model loading
   const processingProgress = 80; // 80% for processing
-  const progress = baseProgress + (processingProgress * (chunkIndex + 1)) / totalChunks;
+  const progress =
+    baseProgress + (processingProgress * (chunkIndex + 1)) / totalChunks;
 
   self.postMessage({
-    type: 'PROGRESS',
+    type: "PROGRESS",
     requestId: currentRequestId,
     progress: Math.round(progress),
     stage: `Processing chunk ${chunkIndex + 1}/${totalChunks}`,
@@ -258,7 +276,11 @@ async function processChunk(
   // Prepare input tensor
   // Demucs expects shape: [batch, channels, samples]
   // For mono input, we use [1, 1, samples]
-  const inputTensor = new ort.Tensor('float32', audioData, [1, 1, audioData.length]);
+  const inputTensor = new ort.Tensor("float32", audioData, [
+    1,
+    1,
+    audioData.length,
+  ]);
 
   // Run inference
   const feeds = { input: inputTensor };
@@ -303,9 +325,11 @@ async function processChunk(
 function crossfadeChunks(
   previous: Float32Array,
   current: Float32Array,
-  fadeLength: number = CROSSFADE_SAMPLES
+  fadeLength: number = CROSSFADE_SAMPLES,
 ): Float32Array {
-  const result = new Float32Array(previous.length + current.length - fadeLength);
+  const result = new Float32Array(
+    previous.length + current.length - fadeLength,
+  );
 
   // Copy previous chunk (except fade region)
   result.set(previous.slice(0, previous.length - fadeLength), 0);
@@ -332,7 +356,10 @@ function crossfadeChunks(
 /**
  * Stitch chunks together with crossfading
  */
-function stitchChunks(chunks: ChunkResult[], totalLength: number): {
+function stitchChunks(
+  chunks: ChunkResult[],
+  totalLength: number,
+): {
   vocals: Float32Array;
   drums: Float32Array;
   bass: Float32Array;
@@ -350,19 +377,19 @@ function stitchChunks(chunks: ChunkResult[], totalLength: number): {
       // Crossfade with previous chunk
       const prevVocals = vocals.slice(
         previousChunk.startSample,
-        previousChunk.endSample
+        previousChunk.endSample,
       );
       const prevDrums = drums.slice(
         previousChunk.startSample,
-        previousChunk.endSample
+        previousChunk.endSample,
       );
       const prevBass = bass.slice(
         previousChunk.startSample,
-        previousChunk.endSample
+        previousChunk.endSample,
       );
       const prevOther = other.slice(
         previousChunk.startSample,
-        previousChunk.endSample
+        previousChunk.endSample,
       );
 
       const fadedVocals = crossfadeChunks(prevVocals, chunk.vocals);
@@ -394,13 +421,13 @@ function stitchChunks(chunks: ChunkResult[], totalLength: number): {
  */
 async function stubSeparate(
   request: SeparateRequest,
-  requestId: string
+  requestId: string,
 ): Promise<void> {
   if (isProcessing) {
     self.postMessage({
-      type: 'SEPARATE_ERROR',
+      type: "SEPARATE_ERROR",
       requestId,
-      message: 'Already processing',
+      message: "Already processing",
     } as WorkerMessage);
     return;
   }
@@ -412,23 +439,23 @@ async function stubSeparate(
   try {
     // Report progress stages
     const stages = [
-      { progress: 10, stage: 'Loading audio data' },
-      { progress: 30, stage: 'Preparing separation (stub mode)' },
-      { progress: 50, stage: 'Processing stems (stub mode)' },
-      { progress: 70, stage: 'Finalizing stems' },
-      { progress: 100, stage: 'Complete' },
+      { progress: 10, stage: "Loading audio data" },
+      { progress: 30, stage: "Preparing separation (stub mode)" },
+      { progress: 50, stage: "Processing stems (stub mode)" },
+      { progress: 70, stage: "Finalizing stems" },
+      { progress: 100, stage: "Complete" },
     ];
 
     for (const stage of stages) {
       if (cancellationRequested) {
-        throw new Error('Cancelled');
+        throw new Error("Cancelled");
       }
 
       // Simulate processing time
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       self.postMessage({
-        type: 'PROGRESS',
+        type: "PROGRESS",
         requestId,
         progress: stage.progress,
         stage: stage.stage,
@@ -472,29 +499,28 @@ async function stubSeparate(
 
     (self as DedicatedWorkerGlobalScope).postMessage(
       {
-        type: 'SEPARATE_COMPLETE',
+        type: "SEPARATE_COMPLETE",
         requestId,
         stems,
-        message: 'Stub separation complete (all stems = original mix)',
+        message: "Stub separation complete (all stems = original mix)",
       } as WorkerMessage,
-      transferBuffers as Transferable[] // Transfer list: zero-copy
+      transferBuffers as Transferable[], // Transfer list: zero-copy
     );
 
-    console.log('[StemSeparatorWorker] ✅ Stub separation complete');
-
+    console.log("[StemSeparatorWorker] ✅ Stub separation complete");
   } catch (error) {
-    if (error instanceof Error && error.message === 'Cancelled') {
+    if (error instanceof Error && error.message === "Cancelled") {
       self.postMessage({
-        type: 'SEPARATE_ERROR',
+        type: "SEPARATE_ERROR",
         requestId,
-        message: 'Separation cancelled',
+        message: "Separation cancelled",
       } as WorkerMessage);
     } else {
-      console.error('[StemSeparatorWorker] ❌ Separation failed:', error);
+      console.error("[StemSeparatorWorker] ❌ Separation failed:", error);
       self.postMessage({
-        type: 'SEPARATE_ERROR',
+        type: "SEPARATE_ERROR",
         requestId,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       } as WorkerMessage);
     }
   } finally {
@@ -509,13 +535,13 @@ async function stubSeparate(
  */
 async function separateAudio(
   request: SeparateRequest,
-  requestId: string
+  requestId: string,
 ): Promise<void> {
   if (isProcessing) {
     self.postMessage({
-      type: 'SEPARATE_ERROR',
+      type: "SEPARATE_ERROR",
       requestId,
-      message: 'Already processing',
+      message: "Already processing",
     } as WorkerMessage);
     return;
   }
@@ -530,9 +556,10 @@ async function separateAudio(
 
     // Fast-fail if ONNX Runtime failed to load (no silent stub fallback in production)
     if (!ort) {
-      const errorMsg = 'ONNX Runtime failed to load. Stem separation unavailable.';
+      const errorMsg =
+        "ONNX Runtime failed to load. Stem separation unavailable.";
       self.postMessage({
-        type: 'SEPARATE_ERROR',
+        type: "SEPARATE_ERROR",
         requestId,
         message: errorMsg,
       } as WorkerMessage);
@@ -545,7 +572,7 @@ async function separateAudio(
     if (!session) {
       const errorMsg = `Model failed to load from ${activeModelUrl}. Please ensure the model file exists.`;
       self.postMessage({
-        type: 'SEPARATE_ERROR',
+        type: "SEPARATE_ERROR",
         requestId,
         message: errorMsg,
       } as WorkerMessage);
@@ -574,7 +601,7 @@ async function separateAudio(
     const numChunks = Math.ceil((totalSamples - OVERLAP_SAMPLES) / chunkStep);
 
     self.postMessage({
-      type: 'PROGRESS',
+      type: "PROGRESS",
       requestId,
       progress: 15,
       stage: `Processing ${numChunks} chunks...`,
@@ -585,7 +612,7 @@ async function separateAudio(
 
     for (let i = 0; i < numChunks; i++) {
       if (cancellationRequested) {
-        throw new Error('Cancelled');
+        throw new Error("Cancelled");
       }
 
       const start = i * chunkStep;
@@ -611,10 +638,10 @@ async function separateAudio(
 
     // Stitch chunks together
     self.postMessage({
-      type: 'PROGRESS',
+      type: "PROGRESS",
       requestId,
       progress: 90,
-      stage: 'Stitching chunks...',
+      stage: "Stitching chunks...",
     } as WorkerMessage);
 
     const stitched = stitchChunks(chunkResults, totalSamples);
@@ -637,29 +664,28 @@ async function separateAudio(
 
     (self as DedicatedWorkerGlobalScope).postMessage(
       {
-        type: 'SEPARATE_COMPLETE',
+        type: "SEPARATE_COMPLETE",
         requestId,
         stems,
-        message: 'Separation complete',
+        message: "Separation complete",
       } as WorkerMessage,
-      transferBuffers as Transferable[] // Transfer list: zero-copy
+      transferBuffers as Transferable[], // Transfer list: zero-copy
     );
 
-    console.log('[StemSeparatorWorker] ✅ Separation complete');
-
+    console.log("[StemSeparatorWorker] ✅ Separation complete");
   } catch (error) {
-    if (error instanceof Error && error.message === 'Cancelled') {
+    if (error instanceof Error && error.message === "Cancelled") {
       self.postMessage({
-        type: 'SEPARATE_ERROR',
+        type: "SEPARATE_ERROR",
         requestId,
-        message: 'Separation cancelled',
+        message: "Separation cancelled",
       } as WorkerMessage);
     } else {
-      console.error('[StemSeparatorWorker] ❌ Separation failed:', error);
+      console.error("[StemSeparatorWorker] ❌ Separation failed:", error);
       self.postMessage({
-        type: 'SEPARATE_ERROR',
+        type: "SEPARATE_ERROR",
         requestId,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       } as WorkerMessage);
     }
   } finally {
@@ -682,7 +708,7 @@ async function initialize(): Promise<void> {
     return;
   }
 
-  console.log('[StemSeparatorWorker] Initializing...');
+  console.log("[StemSeparatorWorker] Initializing...");
 
   try {
     // Load ONNX Runtime (model will be loaded on first use)
@@ -691,16 +717,16 @@ async function initialize(): Promise<void> {
     isInitialized = true;
 
     self.postMessage({
-      type: 'READY',
-      message: 'Stem separator worker ready',
+      type: "READY",
+      message: "Stem separator worker ready",
     } as WorkerMessage);
 
-    console.log('[StemSeparatorWorker] ✅ Ready');
+    console.log("[StemSeparatorWorker] ✅ Ready");
   } catch (error) {
-    console.error('[StemSeparatorWorker] ❌ Initialization failed:', error);
+    console.error("[StemSeparatorWorker] ❌ Initialization failed:", error);
     self.postMessage({
-      type: 'ERROR',
-      message: error instanceof Error ? error.message : 'Initialization failed',
+      type: "ERROR",
+      message: error instanceof Error ? error.message : "Initialization failed",
     } as WorkerMessage);
   }
 }
@@ -714,33 +740,37 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 
   try {
     switch (type) {
-      case 'READY':
+      case "READY":
         // Client requesting initialization
         await initialize();
         break;
 
-      case 'CONFIG':
+      case "CONFIG":
         // Configuration message: update model URL
-        if (data && typeof data === 'object' && 'modelUrl' in data) {
+        if (data && typeof data === "object" && "modelUrl" in data) {
           const newModelUrl = data.modelUrl as string;
-          if (newModelUrl && typeof newModelUrl === 'string') {
+          if (newModelUrl && typeof newModelUrl === "string") {
             activeModelUrl = newModelUrl;
-            console.log(`[StemSeparatorWorker] Model URL configured: ${activeModelUrl}`);
+            console.log(
+              `[StemSeparatorWorker] Model URL configured: ${activeModelUrl}`,
+            );
 
             // If session exists, it was loaded with old URL - invalidate it
             if (session) {
-              console.warn('[StemSeparatorWorker] Model URL changed, existing session will be reloaded on next separation');
+              console.warn(
+                "[StemSeparatorWorker] Model URL changed, existing session will be reloaded on next separation",
+              );
               session = null;
             }
           }
         }
         break;
 
-      case 'SEPARATE':
+      case "SEPARATE":
         if (!requestId || !data) {
           self.postMessage({
-            type: 'ERROR',
-            message: 'Invalid SEPARATE request: missing requestId or data',
+            type: "ERROR",
+            message: "Invalid SEPARATE request: missing requestId or data",
           } as WorkerMessage);
           return;
         }
@@ -748,21 +778,21 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         await separateAudio(data as SeparateRequest, requestId);
         break;
 
-      case 'CANCEL':
+      case "CANCEL":
         if (requestId === currentRequestId && isProcessing) {
           cancellationRequested = true;
-          console.log('[StemSeparatorWorker] Cancellation requested');
+          console.log("[StemSeparatorWorker] Cancellation requested");
         }
         break;
 
       default:
-        console.warn('[StemSeparatorWorker] Unknown message type:', type);
+        console.warn("[StemSeparatorWorker] Unknown message type:", type);
     }
   } catch (error) {
-    console.error('[StemSeparatorWorker] Error handling message:', error);
+    console.error("[StemSeparatorWorker] Error handling message:", error);
     self.postMessage({
-      type: 'ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      type: "ERROR",
+      message: error instanceof Error ? error.message : "Unknown error",
     } as WorkerMessage);
   }
 };

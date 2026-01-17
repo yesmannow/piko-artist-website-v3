@@ -5,7 +5,9 @@ import { useState, useEffect, useRef } from "react";
  * Returns 'up' | 'down' | null (null on initial load or no scroll)
  */
 export function useScrollDirection(threshold: number = 50) {
-  const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(null);
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(
+    null,
+  );
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
 
@@ -15,7 +17,10 @@ export function useScrollDirection(threshold: number = 50) {
 
       // Only update if scroll has moved beyond threshold
       if (Math.abs(currentScrollY - lastScrollY.current) >= threshold) {
-        if (currentScrollY > lastScrollY.current && currentScrollY > threshold) {
+        if (
+          currentScrollY > lastScrollY.current &&
+          currentScrollY > threshold
+        ) {
           setScrollDirection("down");
         } else if (currentScrollY < lastScrollY.current) {
           setScrollDirection("up");
@@ -46,4 +51,3 @@ export function useScrollDirection(threshold: number = 50) {
 
   return scrollDirection;
 }
-

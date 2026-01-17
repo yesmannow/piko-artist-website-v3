@@ -1,6 +1,7 @@
 # Phase 4: Thread Optimization (Transient Updates)
 
 ## Objective
+
 Prevent UI freezing by decoupling high-frequency audio data (60fps) from React State.
 
 ## Problem: Main Thread Starvation
@@ -23,11 +24,11 @@ const meshRef = useRef<THREE.Mesh>(null);
 
 useFrame(() => {
   if (!meshRef.current) return;
-  
+
   // DIRECT ACCESS: Bypass React State
   const audioEngine = getAudioEngine();
-  const bassLevel = audioEngine.getRMS('deckA');
-  
+  const bassLevel = audioEngine.getRMS("deckA");
+
   // DIRECT MUTATION: Bypass React Reconciliation
   meshRef.current.scale.y = bassLevel * 2;
 });
@@ -46,7 +47,7 @@ useEffect(() => {
     }
     rafRef.current = requestAnimationFrame(updateMeter);
   };
-  
+
   rafRef.current = requestAnimationFrame(updateMeter);
   return () => cancelAnimationFrame(rafRef.current!);
 }, [deckId]);
@@ -60,10 +61,10 @@ const [audioLevel, setAudioLevel] = useState(0);
 
 useEffect(() => {
   const interval = setInterval(() => {
-    const level = getAudioEngine().getRMS('deckA');
+    const level = getAudioEngine().getRMS("deckA");
     setAudioLevel(level); // ❌ Triggers React reconciliation
   }, 16); // 60fps
-  
+
   return () => clearInterval(interval);
 }, []);
 
@@ -99,6 +100,7 @@ return <div style={{ height: `${audioLevel * 100}%` }} />;
 ### ✅ Store Design (Already Optimal)
 
 **`useAudioStore.ts`** contains only **low-frequency state**:
+
 - `isPlaying` - Changes on play/pause only
 - `volume` - Changes on user slider adjustment
 - `duration` - Set once on track load
@@ -109,17 +111,20 @@ return <div style={{ height: `${audioLevel * 100}%` }} />;
 ## Best Practices
 
 ### When to Use React State
+
 - User interactions (button clicks, slider changes)
 - Low-frequency updates (< 1 update per second)
 - Data that affects component structure (conditional rendering)
 
 ### When to Use Transient State (Refs)
+
 - High-frequency updates (> 10 updates per second)
 - Animation loops (60fps)
 - Audio visualizations
 - Real-time sensor data (gyroscope, accelerometer)
 
 ### When to Use Zustand Store
+
 - Global application state
 - Data shared across multiple components
 - Persistent state (survives component unmount)
@@ -128,11 +133,13 @@ return <div style={{ height: `${audioLevel * 100}%` }} />;
 ## Performance Metrics
 
 ### Before Optimization (Hypothetical Bad Implementation)
+
 - React reconciliations: **60 per second** (per visualizer)
 - Main thread utilization: **~80%**
 - Touch response latency: **100-200ms**
 
 ### After Optimization (Current Implementation)
+
 - React reconciliations: **< 5 per second** (only on user interactions)
 - Main thread utilization: **~30%**
 - Touch response latency: **< 16ms** (sub-frame)
@@ -140,6 +147,7 @@ return <div style={{ height: `${audioLevel * 100}%` }} />;
 ## Conclusion
 
 The Piko Artist Website V3 Studio V2 already follows transient state best practices:
+
 - ✅ VU meters use `requestAnimationFrame` + direct DOM manipulation
 - ✅ 3D visualizers use `useFrame` + ref mutations
 - ✅ Zustand store contains only low-frequency state

@@ -32,14 +32,13 @@ export function hasSufficientComputePower(): boolean {
  *
  * @returns {'high' | 'medium' | 'low'} - Device capability level
  */
-export function getComputePowerLevel(): 'high' | 'medium' | 'low' {
+export function getComputePowerLevel(): "high" | "medium" | "low" {
   if (typeof window === "undefined" || !navigator.hardwareConcurrency) {
-    return 'low';
+    return "low";
   }
 
   const cores = navigator.hardwareConcurrency;
-  if (cores >= 8) return 'high';
-  if (cores >= 4) return 'medium';
-  return 'low';
+  if (cores >= 8) return "high";
+  if (cores >= 4) return "medium";
+  return "low";
 }
-

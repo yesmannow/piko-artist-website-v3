@@ -72,11 +72,23 @@ export function StemDeck({
         }}
       >
         {/* Industrial Screw Heads - Top Corners */}
-        <div className="absolute -top-1 -left-1 w-3 h-3 bg-[#E0E0E0] border border-black" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#E0E0E0] border border-black" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
+        <div
+          className="absolute -top-1 -left-1 w-3 h-3 bg-[#E0E0E0] border border-black"
+          style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
+        />
+        <div
+          className="absolute -top-1 -right-1 w-3 h-3 bg-[#E0E0E0] border border-black"
+          style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
+        />
         {/* Industrial Screw Heads - Bottom Corners */}
-        <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-[#E0E0E0] border border-black" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
-        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[#E0E0E0] border border-black" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
+        <div
+          className="absolute -bottom-1 -left-1 w-3 h-3 bg-[#E0E0E0] border border-black"
+          style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
+        />
+        <div
+          className="absolute -bottom-1 -right-1 w-3 h-3 bg-[#E0E0E0] border border-black"
+          style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
+        />
         {/* Header: White Stenciled Spray Paint Label */}
         <div className="flex items-center justify-between">
           <span
@@ -85,7 +97,8 @@ export function StemDeck({
               color: isMuted ? "#666" : isSolo ? "#FFD700" : "#FFFFFF",
               fontFamily: "var(--font-lexend), system-ui, sans-serif",
               fontStyle: "italic",
-              textShadow: "2px 2px 0px rgba(0,0,0,0.8), -1px -1px 0px rgba(0,0,0,0.5)",
+              textShadow:
+                "2px 2px 0px rgba(0,0,0,0.8), -1px -1px 0px rgba(0,0,0,0.5)",
               letterSpacing: "0.1em",
             }}
           >
@@ -105,7 +118,9 @@ export function StemDeck({
                   : "bg-[#1a1a1a] text-[#E0E0E0]/60 hover:text-[#FFD700] hover:border-[#FFD700]/50"
               }`}
               style={{
-                boxShadow: isSolo ? "0 0 10px rgba(255, 215, 0, 0.5), inset 0 0 5px rgba(0,0,0,0.3)" : "inset 0 0 5px rgba(0,0,0,0.5)",
+                boxShadow: isSolo
+                  ? "0 0 10px rgba(255, 215, 0, 0.5), inset 0 0 5px rgba(0,0,0,0.3)"
+                  : "inset 0 0 5px rgba(0,0,0,0.5)",
               }}
               aria-label={`Solo ${label}`}
             >
@@ -124,7 +139,9 @@ export function StemDeck({
                   : "bg-[#1a1a1a] text-[#E0E0E0]/60 hover:text-[#FFD700] hover:border-[#FFD700]/50"
               }`}
               style={{
-                boxShadow: isMuted ? "0 0 10px rgba(220, 38, 38, 0.5), inset 0 0 5px rgba(0,0,0,0.3)" : "inset 0 0 5px rgba(0,0,0,0.5)",
+                boxShadow: isMuted
+                  ? "0 0 10px rgba(220, 38, 38, 0.5), inset 0 0 5px rgba(0,0,0,0.3)"
+                  : "inset 0 0 5px rgba(0,0,0,0.5)",
               }}
               aria-label={`Mute ${label}`}
             >
@@ -170,33 +187,45 @@ export function StemDeck({
                 appearance: none;
                 width: 20px;
                 height: 24px;
-                background: linear-gradient(to bottom, #E0E0E0 0%, #E0E0E0 60%, #1a1a1a 60%, #1a1a1a 100%);
+                background: linear-gradient(
+                  to bottom,
+                  #e0e0e0 0%,
+                  #e0e0e0 60%,
+                  #1a1a1a 60%,
+                  #1a1a1a 100%
+                );
                 cursor: pointer;
                 box-shadow:
-                  0 0 0 1px rgba(0,0,0,0.8),
-                  0 2px 4px rgba(0,0,0,0.6),
+                  0 0 0 1px rgba(0, 0, 0, 0.8),
+                  0 2px 4px rgba(0, 0, 0, 0.6),
                   inset 0 0 8px rgba(224, 224, 224, 0.3),
-                  inset 0 12px 0 rgba(0,0,0,0.4);
+                  inset 0 12px 0 rgba(0, 0, 0, 0.4);
                 border: none;
                 /* Knurled texture effect */
                 background-image: repeating-linear-gradient(
                   90deg,
                   transparent,
                   transparent 2px,
-                  rgba(0,0,0,0.3) 2px,
-                  rgba(0,0,0,0.3) 3px
+                  rgba(0, 0, 0, 0.3) 2px,
+                  rgba(0, 0, 0, 0.3) 3px
                 );
               }
               input[type="range"]::-moz-range-thumb {
                 width: 20px;
                 height: 24px;
-                background: linear-gradient(to bottom, #E0E0E0 0%, #E0E0E0 60%, #1a1a1a 60%, #1a1a1a 100%);
+                background: linear-gradient(
+                  to bottom,
+                  #e0e0e0 0%,
+                  #e0e0e0 60%,
+                  #1a1a1a 60%,
+                  #1a1a1a 100%
+                );
                 cursor: pointer;
                 box-shadow:
-                  0 0 0 1px rgba(0,0,0,0.8),
-                  0 2px 4px rgba(0,0,0,0.6),
+                  0 0 0 1px rgba(0, 0, 0, 0.8),
+                  0 2px 4px rgba(0, 0, 0, 0.6),
                   inset 0 0 8px rgba(224, 224, 224, 0.3),
-                  inset 0 12px 0 rgba(0,0,0,0.4);
+                  inset 0 12px 0 rgba(0, 0, 0, 0.4);
                 border: none;
               }
             `}</style>
@@ -211,7 +240,8 @@ export function StemDeck({
           <div
             className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700]"
             style={{
-              boxShadow: "0 0 10px rgba(255, 215, 0, 0.8), inset 0 0 5px rgba(255, 215, 0, 0.5)",
+              boxShadow:
+                "0 0 10px rgba(255, 215, 0, 0.8), inset 0 0 5px rgba(255, 215, 0, 0.5)",
               opacity: isSolo ? 1.0 : 0.6,
             }}
           />
@@ -244,7 +274,12 @@ interface StemDeckContainerProps {
   stems: {
     vocals: { isMuted: boolean; isSolo: boolean; volume: number };
     drums: { isMuted: boolean; isSolo: boolean; volume: number };
-    bass: { isMuted: boolean; isSolo: boolean; volume: number; isSidechainEnabled?: boolean };
+    bass: {
+      isMuted: boolean;
+      isSolo: boolean;
+      volume: number;
+      isSidechainEnabled?: boolean;
+    };
     other: { isMuted: boolean; isSolo: boolean; volume: number };
   };
   onMute: (type: StemType) => void;
@@ -316,4 +351,3 @@ export function StemDeckContainer({
     </motion.div>
   );
 }
-

@@ -160,4 +160,3 @@ export function StemControls({ stems, onMute, onSolo }: StemControlsProps) {
     </motion.div>
   );
 }
-

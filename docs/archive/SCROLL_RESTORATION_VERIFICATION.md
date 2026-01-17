@@ -10,6 +10,7 @@
 ### ✅ Basic Navigation Tests
 
 #### Test 1: Videos → Music Navigation
+
 - [ ] Navigate to `/videos`
 - [ ] Scroll down to near the bottom of the page
 - [ ] Click navigation link to `/music`
@@ -17,12 +18,14 @@
 - [ ] **Verify**: Content is immediately visible
 
 #### Test 2: Rapid Navigation
+
 - [ ] Navigate quickly between multiple pages:
   - `/` → `/videos` → `/music` → `/tour` → `/beatmaker` → `/`
 - [ ] **Expected**: Each page loads at top, no blank screens
 - [ ] **Verify**: No visual glitches or content jumping
 
 #### Test 3: Videos → Other Routes
+
 - [ ] Navigate to `/videos`
 - [ ] Scroll to middle of page
 - [ ] Navigate to `/music`
@@ -36,6 +39,7 @@
 ### ✅ Modal Integration Tests
 
 #### Test 4: Modal Scroll Lock
+
 - [ ] Open any modal (e.g., video player, event modal)
 - [ ] **Expected**: Lenis is paused/stopped while modal is open
 - [ ] **Verify**: Cannot scroll page content behind modal
@@ -43,6 +47,7 @@
 - [ ] **Expected**: Lenis resumes, scrolling works normally
 
 #### Test 5: Modal Close on Route Change
+
 - [ ] Open a modal (e.g., event modal on `/tour`)
 - [ ] Navigate to another route (e.g., `/music`)
 - [ ] **Expected**:
@@ -52,6 +57,7 @@
 - [ ] **Verify**: Navigation works smoothly
 
 #### Test 6: Multiple Modals
+
 - [ ] Open video player modal
 - [ ] Open event modal (if applicable)
 - [ ] **Expected**: Lenis remains stopped
@@ -63,12 +69,14 @@
 ### ✅ Smooth Scrolling Tests
 
 #### Test 7: Anchor Links Still Work
+
 - [ ] Navigate to home page (`/`)
 - [ ] Click "About" link (should scroll to `#rap-sheet`)
 - [ ] **Expected**: Smooth scroll to section with offset
 - [ ] **Verify**: Navbar scroll-to-section still works
 
 #### Test 8: Logo Click Scroll
+
 - [ ] Scroll down on home page
 - [ ] Click logo
 - [ ] **Expected**: Smooth scroll to top
@@ -79,6 +87,7 @@
 ### ✅ Edge Cases
 
 #### Test 9: Browser Back/Forward
+
 - [ ] Navigate: `/` → `/videos` → `/music`
 - [ ] Use browser back button
 - [ ] **Expected**: `/videos` loads at top
@@ -86,12 +95,14 @@
 - [ ] **Expected**: `/music` loads at top
 
 #### Test 10: Direct URL Navigation
+
 - [ ] Type `/videos` directly in address bar
 - [ ] **Expected**: Page loads at top
 - [ ] Navigate to another route
 - [ ] **Expected**: New route loads at top
 
 #### Test 11: Page Refresh
+
 - [ ] Navigate to `/videos` and scroll down
 - [ ] Refresh page (F5 or Cmd+R)
 - [ ] **Expected**: Page loads at top (browser default behavior)
@@ -102,6 +113,7 @@
 ### ✅ Performance Tests
 
 #### Test 12: Rapid Clicking
+
 - [ ] Rapidly click between navigation links (5-10 times quickly)
 - [ ] **Expected**:
   - No console errors
@@ -110,6 +122,7 @@
   - No infinite loops
 
 #### Test 13: Scroll During Navigation
+
 - [ ] Start scrolling on `/videos`
 - [ ] Immediately click navigation link to `/music`
 - [ ] **Expected**:
@@ -122,6 +135,7 @@
 ### ✅ Visual/UX Tests
 
 #### Test 14: Page Transitions
+
 - [ ] Navigate between pages
 - [ ] **Expected**:
   - PageTransition animations still work
@@ -129,6 +143,7 @@
   - Smooth transitions
 
 #### Test 15: Navbar Interaction
+
 - [ ] Navigate to any page
 - [ ] Click navbar links
 - [ ] **Expected**:
@@ -137,6 +152,7 @@
   - No delays or freezes
 
 #### Test 16: Mobile Navigation
+
 - [ ] Test on mobile device or mobile viewport
 - [ ] Navigate: `/videos` → scroll down → navigate to `/music`
 - [ ] **Expected**:
@@ -241,4 +257,3 @@ When running in production (`npm run build && npm start`):
 **Last Updated**: 2024-12-19
 **Component**: `ScrollRestorationManager.tsx`
 **Integration**: `src/app/layout.tsx` (inside `<SmoothScroll>`)
-

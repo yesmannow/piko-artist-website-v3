@@ -3,23 +3,28 @@
 ## Current Implementation Map
 
 ### Files to Replace
+
 - `src/app/videos/page.tsx` - Current videos page implementation
 
 ### Files That May Be Deleted (if unused after rebuild)
+
 - `src/components/video/VideoHero.tsx` - Only used in `/videos` page
 - `src/components/video/VideoGrid.tsx` - Only used in `/videos` page
 
 ### Files to Keep (used elsewhere)
+
 - `src/components/VideoGallery.tsx` - Used on home page (`featuredOnly` mode)
 - `src/components/FloatingVideoPlayer.tsx` - Global floating video player (uses VideoContext)
 - `src/context/VideoContext.tsx` - Global video context (used by FloatingVideoPlayer and VideoGallery)
 
 ### Assets to Check
+
 - No specific video-page-only assets found in `/public/images/` - all images appear to be shared across the site
 
 ## Rebuild Strategy
 
 ### New Implementation
+
 - Self-contained `/videos` page with minimal dependencies
 - Inline components (no separate VideoHero/VideoGrid files)
 - Stable modal overlay with proper teardown
@@ -28,6 +33,7 @@
 - Defensive rendering (never assume arrays are non-empty)
 
 ### Key Features
+
 1. **Data Flow**: Loads from `tracks` array, filters by `type === 'video'`
 2. **Featured Video**: Last video in array (if exists)
 3. **Grid Videos**: All videos except featured
@@ -50,6 +56,7 @@
 ## Deletion Plan
 
 After verification:
+
 - ✅ Deleted `src/components/video/VideoHero.tsx` (confirmed unused)
 - ✅ Deleted `src/components/video/VideoGrid.tsx` (confirmed unused)
 - ⚠️ `src/components/video/` directory is now empty (can be removed manually if desired)
@@ -61,18 +68,21 @@ After verification:
 ✅ **Type Check**: Passed
 
 ### Build Output
+
 ```
 Route (app)                                 Size  First Load JS
 └ ○ /videos                              4.69 kB         112 kB
 ```
 
 ### Lint Warnings (Intentional)
+
 - `@next/next/no-img-element` - Using `<img>` instead of `<Image />` is intentional to avoid remotePatterns config failures
 - `@typescript-eslint/no-explicit-any` in `lenis-react.d.ts` - Pre-existing type definition file
 
 ## Implementation Summary
 
 ### What Was Replaced
+
 - `src/app/videos/page.tsx` - Completely rebuilt with:
   - Self-contained components (VideoThumbnail, VideoCard, FeaturedVideoHero, VideoModal)
   - Defensive rendering (never assumes arrays are non-empty)
@@ -81,15 +91,18 @@ Route (app)                                 Size  First Load JS
   - Thumbnail fallback strategy (maxresdefault → hqdefault)
 
 ### What Was Deleted
+
 - ✅ `src/components/video/VideoHero.tsx` - Replaced by inline `FeaturedVideoHero` component
 - ✅ `src/components/video/VideoGrid.tsx` - Replaced by inline grid rendering
 
 ### What Was Kept
+
 - `src/components/VideoGallery.tsx` - Still used on home page
 - `src/components/FloatingVideoPlayer.tsx` - Global floating video player
 - `src/context/VideoContext.tsx` - Global video context
 
 ### Key Features Implemented
+
 1. ✅ **Defensive Rendering**: All arrays checked before use, null checks for featured video
 2. ✅ **Stable Modal**: Proper teardown on route change, ESC key, backdrop click
 3. ✅ **Scroll Sanity**: Lenis integration with fallback, cleanup on unmount
@@ -104,11 +117,13 @@ Route (app)                                 Size  First Load JS
 ### 1) Static Checks ✅
 
 **Lint Status**: ✅ PASSED
+
 - Command: `npx next lint`
 - Result: Only intentional warnings (img element, pre-existing type definition)
 - No errors, build-ready
 
 **Build Status**: ✅ PASSED
+
 - Command: `npm run build`
 - Result: Compiled successfully, all pages generated
 - `/videos` route: 4.69 kB (112 kB First Load JS)
@@ -118,6 +133,7 @@ Route (app)                                 Size  First Load JS
 ### 2) Leftovers Hunt ✅
 
 #### Unused Exports Check
+
 - ✅ **No unused exports found**
 - All video-related exports are actively used:
   - `VideoProvider` / `useVideo` - Used by FloatingVideoPlayer and VideoGallery
@@ -126,16 +142,19 @@ Route (app)                                 Size  First Load JS
   - `EventModalContent` - Used in tour page
 
 #### Unused Components Check
+
 - ✅ **Deleted**: `src/components/video/VideoHero.tsx` (confirmed zero imports)
 - ✅ **Deleted**: `src/components/video/VideoGrid.tsx` (confirmed zero imports)
 - ✅ **Directory**: `src/components/video/` is now empty (safe to remove manually)
 
 #### Unused Assets Check
+
 - ✅ **No video-specific assets found** in `/public/images/`
 - All images in `/public/images/` are shared across the site
 - No video-page-only icons or images
 
 #### Documentation Updates
+
 - ✅ **Updated**: `README.md` - Fixed outdated reference to `VideoGrid.tsx` (now references `VideoGallery.tsx`)
 
 ---
@@ -143,21 +162,25 @@ Route (app)                                 Size  First Load JS
 ### 3) Teardown Verification ✅
 
 #### Iframe Unmounting
+
 - ✅ **Verified**: Iframe unmounts when modal closes
 - Implementation: Conditional rendering `if (!videoId) return null;` (line 155)
 - When `selectedVideoId` is set to `null`, entire modal component unmounts, including iframe
 
 #### Modal Route Change Cleanup
+
 - ✅ **Verified**: Modal closes on route change
 - Implementation: `useEffect` with `pathname` dependency (lines 134-139, 221-226)
 - Both `VideoModal` component and parent `VideosPage` close modal on pathname change
 
 #### Body/HTML Inline Styles
+
 - ✅ **Verified**: No inline styles introduced
 - Search result: Zero matches for `body.style`, `html.style`, `document.body`, `document.html`
 - Modal uses only CSS classes and `data-modal-open` attribute
 
 #### data-modal-open Attribute
+
 - ✅ **Verified**: Only exists when modal is open
 - Implementation: Conditional rendering ensures `data-modal-open="true"` only renders when `videoId` is truthy
 - When modal closes (`videoId === null`), entire div with attribute unmounts
@@ -167,6 +190,7 @@ Route (app)                                 Size  First Load JS
 ### 4) Candidates Not Deleted (Still Used)
 
 #### Files Kept (Verified Active Usage)
+
 1. **`src/components/VideoGallery.tsx`**
    - **Status**: ✅ KEPT (actively used)
    - **Usage**: Home page (`src/app/page.tsx`) uses `<VideoGallery featuredOnly={true} />`
@@ -183,9 +207,10 @@ Route (app)                                 Size  First Load JS
    - **Reason**: Global video context provider
 
 #### Empty Directory
+
 - **`src/components/video/`**
-   - **Status**: ⚠️ EMPTY (safe to delete manually)
-   - **Action**: Can be removed if desired, but harmless to keep
+  - **Status**: ⚠️ EMPTY (safe to delete manually)
+  - **Action**: Can be removed if desired, but harmless to keep
 
 ---
 
@@ -196,12 +221,14 @@ Route (app)                                 Size  First Load JS
 Before deploying, manually verify:
 
 #### Test 1: Basic Navigation ✅
+
 - [ ] Navigate to `/videos`
 - [ ] Page loads without blank/black screen
 - [ ] Featured video displays (if videos exist)
 - [ ] Grid of videos displays below featured
 
 #### Test 2: Modal Functionality ✅
+
 - [ ] Click a video card → Modal opens
 - [ ] YouTube iframe loads and plays
 - [ ] Click close button (X) → Modal closes, iframe unmounts
@@ -209,6 +236,7 @@ Before deploying, manually verify:
 - [ ] Click backdrop → Modal closes
 
 #### Test 3: Route Change Cleanup ✅
+
 - [ ] Open video modal on `/videos`
 - [ ] Navigate to `/music` (or any other route)
 - [ ] Modal closes automatically
@@ -216,6 +244,7 @@ Before deploying, manually verify:
 - [ ] Navbar remains clickable
 
 #### Test 4: Rapid Navigation Stress Test ✅
+
 - [ ] Navigate: `/videos → /music → /tour → /studio → /contact`
 - [ ] Repeat 20+ times quickly
 - [ ] Verify:
@@ -226,6 +255,7 @@ Before deploying, manually verify:
   - [ ] No console errors
 
 #### Test 5: Scroll Sanity ✅
+
 - [ ] Navigate to `/videos`
 - [ ] Scroll down significantly
 - [ ] Navigate away to another page
@@ -234,12 +264,14 @@ Before deploying, manually verify:
 - [ ] Verify page starts at top
 
 #### Test 6: Filter Functionality ✅
+
 - [ ] Navigate to `/videos`
 - [ ] Click filter buttons (ALL, HYPE, CHILL, etc.)
 - [ ] Verify videos filter correctly
 - [ ] Verify no crashes with empty filter results
 
 #### Test 7: Empty State ✅
+
 - [ ] If possible, test with zero videos in data
 - [ ] Verify empty state displays cleanly
 - [ ] Verify no crashes or errors

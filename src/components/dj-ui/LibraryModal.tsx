@@ -5,18 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { tracks } from "@/lib/data";
 import { useHaptic } from "@/hooks/useHaptic";
-import {
-  X,
-  Search,
-  Music,
-  Play,
-} from "lucide-react";
+import { X, Search, Music, Play } from "lucide-react";
 
 interface LibraryModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetDeck: "A" | "B";
-  onLoadTrack: (track: typeof tracks[0]) => void;
+  onLoadTrack: (track: (typeof tracks)[0]) => void;
   currentTrack?: string | null;
 }
 
@@ -53,7 +48,9 @@ export function LibraryModal({
     .filter((track) => {
       const matchesSearch =
         debouncedSearchQuery === "" ||
-        track.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        track.title
+          .toLowerCase()
+          .includes(debouncedSearchQuery.toLowerCase()) ||
         track.artist.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       const matchesVibe = vibeFilter === "all" || track.vibe === vibeFilter;
       return matchesSearch && matchesVibe;
@@ -75,12 +72,12 @@ export function LibraryModal({
     });
 
   const handleTrackSelect = useCallback(
-    (track: typeof tracks[0]) => {
+    (track: (typeof tracks)[0]) => {
       triggerHaptic();
       onLoadTrack(track);
       onClose();
     },
-    [triggerHaptic, onLoadTrack, onClose]
+    [triggerHaptic, onLoadTrack, onClose],
   );
 
   if (!isOpen) return null;
@@ -170,7 +167,9 @@ export function LibraryModal({
                     <option value="vibe">Vibe</option>
                   </select>
                   <button
-                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    onClick={() =>
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    }
                     className="px-3 py-3 bg-[#1a1a1a] border border-gray-800 rounded-lg text-white hover:border-[#FFD700] transition-colors"
                     title={`Sort ${sortOrder === "asc" ? "descending" : "ascending"}`}
                   >

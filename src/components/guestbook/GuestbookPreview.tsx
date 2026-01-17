@@ -58,7 +58,9 @@ export function GuestbookPreview() {
             </div>
             <h2
               className="text-2xl md:text-4xl font-black italic text-white"
-              style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
+              style={{
+                fontFamily: "var(--font-lexend), system-ui, sans-serif",
+              }}
             >
               Latest Signatures
             </h2>
@@ -73,7 +75,9 @@ export function GuestbookPreview() {
 
         {latest.length === 0 ? (
           <div className="text-center py-12 text-white/70">
-            <p className="mb-6 text-lg">No signatures yet. Be the first to drop a line.</p>
+            <p className="mb-6 text-lg">
+              No signatures yet. Be the first to drop a line.
+            </p>
             <Link
               href="/guestbook"
               className="inline-flex items-center gap-2 px-5 py-3 bg-[#FFD700] text-black font-black uppercase tracking-wider border-2 border-black"
@@ -95,7 +99,9 @@ export function GuestbookPreview() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl" aria-hidden>{vibeEmojis[e.vibe]}</span>
+                    <span className="text-xl" aria-hidden>
+                      {vibeEmojis[e.vibe]}
+                    </span>
                     <span className="font-black text-white">{e.name}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-white/50">
@@ -103,12 +109,16 @@ export function GuestbookPreview() {
                   </div>
                 </div>
 
-                <p className="text-white/80 leading-relaxed line-clamp-3 mb-4">{e.message}</p>
+                <p className="text-white/80 leading-relaxed line-clamp-3 mb-4">
+                  {e.message}
+                </p>
 
                 <div className="flex items-center justify-between text-xs text-white/50">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5" />
-                    <span className="uppercase tracking-wide">{e.location || "Unknown"}</span>
+                    <span className="uppercase tracking-wide">
+                      {e.location || "Unknown"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Heart className="w-3.5 h-3.5" /> {e.likes}

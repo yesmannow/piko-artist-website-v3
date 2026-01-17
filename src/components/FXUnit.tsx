@@ -118,87 +118,161 @@ interface FXUnitProps {
 }
 
 export function FXUnit({
-  filterFreqA, filterTypeA, onFilterFreqChangeA, onFilterTypeChangeA,
-  reverbDryWetA, onReverbDryWetChangeA,
-  delayTimeA, delayFeedbackA, onDelayTimeChangeA, onDelayFeedbackChangeA,
-  distortionAmountA, onDistortionChangeA,
+  filterFreqA,
+  filterTypeA,
+  onFilterFreqChangeA,
+  onFilterTypeChangeA,
+  reverbDryWetA,
+  onReverbDryWetChangeA,
+  delayTimeA,
+  delayFeedbackA,
+  onDelayTimeChangeA,
+  onDelayFeedbackChangeA,
+  distortionAmountA,
+  onDistortionChangeA,
   audioContext,
   masterLimiterNode,
-  filterFreqB, filterTypeB, onFilterFreqChangeB, onFilterTypeChangeB,
-  reverbDryWetB, onReverbDryWetChangeB,
-  delayTimeB, delayFeedbackB, onDelayTimeChangeB, onDelayFeedbackChangeB,
-  distortionAmountB, onDistortionChangeB,
-  activeDeck, onActiveDeckChange,
-  onClearAllA, onClearAllB,
-  filterBypassA = false, filterBypassB = false,
-  reverbBypassA = false, reverbBypassB = false,
-  delayBypassA = false, delayBypassB = false,
-  distortionBypassA = false, distortionBypassB = false,
-  onFilterBypassChangeA, onFilterBypassChangeB,
-  onReverbBypassChangeA, onReverbBypassChangeB,
-  onDelayBypassChangeA, onDelayBypassChangeB,
-  onDistortionBypassChangeA, onDistortionBypassChangeB,
+  filterFreqB,
+  filterTypeB,
+  onFilterFreqChangeB,
+  onFilterTypeChangeB,
+  reverbDryWetB,
+  onReverbDryWetChangeB,
+  delayTimeB,
+  delayFeedbackB,
+  onDelayTimeChangeB,
+  onDelayFeedbackChangeB,
+  distortionAmountB,
+  onDistortionChangeB,
+  activeDeck,
+  onActiveDeckChange,
+  onClearAllA,
+  onClearAllB,
+  filterBypassA = false,
+  filterBypassB = false,
+  reverbBypassA = false,
+  reverbBypassB = false,
+  delayBypassA = false,
+  delayBypassB = false,
+  distortionBypassA = false,
+  distortionBypassB = false,
+  onFilterBypassChangeA,
+  onFilterBypassChangeB,
+  onReverbBypassChangeA,
+  onReverbBypassChangeB,
+  onDelayBypassChangeA,
+  onDelayBypassChangeB,
+  onDistortionBypassChangeA,
+  onDistortionBypassChangeB,
   // Additional FX
-  flangerRateA = 0.5, flangerDepthA = 0, onFlangerRateChangeA, onFlangerDepthChangeA,
-  phaserRateA = 0.5, phaserDepthA = 0, onPhaserRateChangeA, onPhaserDepthChangeA,
-  chorusRateA = 1.5, chorusDepthA = 0, onChorusRateChangeA, onChorusDepthChangeA,
-  echoTimeA = 0.25, echoFeedbackA = 0, onEchoTimeChangeA, onEchoFeedbackChangeA,
-  flangerRateB = 0.5, flangerDepthB = 0, onFlangerRateChangeB, onFlangerDepthChangeB,
-  phaserRateB = 0.5, phaserDepthB = 0, onPhaserRateChangeB, onPhaserDepthChangeB,
-  chorusRateB = 1.5, chorusDepthB = 0, onChorusRateChangeB, onChorusDepthChangeB,
-  echoTimeB = 0.25, echoFeedbackB = 0, onEchoTimeChangeB, onEchoFeedbackChangeB,
+  flangerRateA = 0.5,
+  flangerDepthA = 0,
+  onFlangerRateChangeA,
+  onFlangerDepthChangeA,
+  phaserRateA = 0.5,
+  phaserDepthA = 0,
+  onPhaserRateChangeA,
+  onPhaserDepthChangeA,
+  chorusRateA = 1.5,
+  chorusDepthA = 0,
+  onChorusRateChangeA,
+  onChorusDepthChangeA,
+  echoTimeA = 0.25,
+  echoFeedbackA = 0,
+  onEchoTimeChangeA,
+  onEchoFeedbackChangeA,
+  flangerRateB = 0.5,
+  flangerDepthB = 0,
+  onFlangerRateChangeB,
+  onFlangerDepthChangeB,
+  phaserRateB = 0.5,
+  phaserDepthB = 0,
+  onPhaserRateChangeB,
+  onPhaserDepthChangeB,
+  chorusRateB = 1.5,
+  chorusDepthB = 0,
+  onChorusRateChangeB,
+  onChorusDepthChangeB,
+  echoTimeB = 0.25,
+  echoFeedbackB = 0,
+  onEchoTimeChangeB,
+  onEchoFeedbackChangeB,
 }: FXUnitProps) {
   // Select active deck's values
   const filterFreq = activeDeck === "A" ? filterFreqA : filterFreqB;
   const filterType = activeDeck === "A" ? filterTypeA : filterTypeB;
-  const onFilterFreqChange = activeDeck === "A" ? onFilterFreqChangeA : onFilterFreqChangeB;
-  const onFilterTypeChange = activeDeck === "A" ? onFilterTypeChangeA : onFilterTypeChangeB;
+  const onFilterFreqChange =
+    activeDeck === "A" ? onFilterFreqChangeA : onFilterFreqChangeB;
+  const onFilterTypeChange =
+    activeDeck === "A" ? onFilterTypeChangeA : onFilterTypeChangeB;
   const reverbDryWet = activeDeck === "A" ? reverbDryWetA : reverbDryWetB;
-  const onReverbDryWetChange = activeDeck === "A" ? onReverbDryWetChangeA : onReverbDryWetChangeB;
+  const onReverbDryWetChange =
+    activeDeck === "A" ? onReverbDryWetChangeA : onReverbDryWetChangeB;
   const delayTime = activeDeck === "A" ? delayTimeA : delayTimeB;
   const delayFeedback = activeDeck === "A" ? delayFeedbackA : delayFeedbackB;
-  const onDelayTimeChange = activeDeck === "A" ? onDelayTimeChangeA : onDelayTimeChangeB;
-  const onDelayFeedbackChange = activeDeck === "A" ? onDelayFeedbackChangeA : onDelayFeedbackChangeB;
-  const distortionAmount = activeDeck === "A" ? distortionAmountA : distortionAmountB;
-  const onDistortionChange = activeDeck === "A" ? onDistortionChangeA : onDistortionChangeB;
+  const onDelayTimeChange =
+    activeDeck === "A" ? onDelayTimeChangeA : onDelayTimeChangeB;
+  const onDelayFeedbackChange =
+    activeDeck === "A" ? onDelayFeedbackChangeA : onDelayFeedbackChangeB;
+  const distortionAmount =
+    activeDeck === "A" ? distortionAmountA : distortionAmountB;
+  const onDistortionChange =
+    activeDeck === "A" ? onDistortionChangeA : onDistortionChangeB;
 
   // Bypass states for active deck
   const filterBypass = activeDeck === "A" ? filterBypassA : filterBypassB;
   const reverbBypass = activeDeck === "A" ? reverbBypassA : reverbBypassB;
   const delayBypass = activeDeck === "A" ? delayBypassA : delayBypassB;
-  const distortionBypass = activeDeck === "A" ? distortionBypassA : distortionBypassB;
-  const onFilterBypassChange = activeDeck === "A" ? onFilterBypassChangeA : onFilterBypassChangeB;
-  const onReverbBypassChange = activeDeck === "A" ? onReverbBypassChangeA : onReverbBypassChangeB;
-  const onDelayBypassChange = activeDeck === "A" ? onDelayBypassChangeA : onDelayBypassChangeB;
-  const onDistortionBypassChange = activeDeck === "A" ? onDistortionBypassChangeA : onDistortionBypassChangeB;
+  const distortionBypass =
+    activeDeck === "A" ? distortionBypassA : distortionBypassB;
+  const onFilterBypassChange =
+    activeDeck === "A" ? onFilterBypassChangeA : onFilterBypassChangeB;
+  const onReverbBypassChange =
+    activeDeck === "A" ? onReverbBypassChangeA : onReverbBypassChangeB;
+  const onDelayBypassChange =
+    activeDeck === "A" ? onDelayBypassChangeA : onDelayBypassChangeB;
+  const onDistortionBypassChange =
+    activeDeck === "A" ? onDistortionBypassChangeA : onDistortionBypassChangeB;
 
   // Additional FX values for active deck
   const flangerRate = activeDeck === "A" ? flangerRateA : flangerRateB;
   const flangerDepth = activeDeck === "A" ? flangerDepthA : flangerDepthB;
-  const onFlangerRateChange = activeDeck === "A" ? onFlangerRateChangeA : onFlangerRateChangeB;
-  const onFlangerDepthChange = activeDeck === "A" ? onFlangerDepthChangeA : onFlangerDepthChangeB;
+  const onFlangerRateChange =
+    activeDeck === "A" ? onFlangerRateChangeA : onFlangerRateChangeB;
+  const onFlangerDepthChange =
+    activeDeck === "A" ? onFlangerDepthChangeA : onFlangerDepthChangeB;
   const phaserRate = activeDeck === "A" ? phaserRateA : phaserRateB;
   const phaserDepth = activeDeck === "A" ? phaserDepthA : phaserDepthB;
-  const onPhaserRateChange = activeDeck === "A" ? onPhaserRateChangeA : onPhaserRateChangeB;
-  const onPhaserDepthChange = activeDeck === "A" ? onPhaserDepthChangeA : onPhaserDepthChangeB;
+  const onPhaserRateChange =
+    activeDeck === "A" ? onPhaserRateChangeA : onPhaserRateChangeB;
+  const onPhaserDepthChange =
+    activeDeck === "A" ? onPhaserDepthChangeA : onPhaserDepthChangeB;
   const chorusRate = activeDeck === "A" ? chorusRateA : chorusRateB;
   const chorusDepth = activeDeck === "A" ? chorusDepthA : chorusDepthB;
-  const onChorusRateChange = activeDeck === "A" ? onChorusRateChangeA : onChorusRateChangeB;
-  const onChorusDepthChange = activeDeck === "A" ? onChorusDepthChangeA : onChorusDepthChangeB;
+  const onChorusRateChange =
+    activeDeck === "A" ? onChorusRateChangeA : onChorusRateChangeB;
+  const onChorusDepthChange =
+    activeDeck === "A" ? onChorusDepthChangeA : onChorusDepthChangeB;
   const echoTime = activeDeck === "A" ? echoTimeA : echoTimeB;
   const echoFeedback = activeDeck === "A" ? echoFeedbackA : echoFeedbackB;
-  const onEchoTimeChange = activeDeck === "A" ? onEchoTimeChangeA : onEchoTimeChangeB;
-  const onEchoFeedbackChange = activeDeck === "A" ? onEchoFeedbackChangeA : onEchoFeedbackChangeB;
+  const onEchoTimeChange =
+    activeDeck === "A" ? onEchoTimeChangeA : onEchoTimeChangeB;
+  const onEchoFeedbackChange =
+    activeDeck === "A" ? onEchoFeedbackChangeA : onEchoFeedbackChangeB;
 
   const filterButtonClasses = (type: "lowpass" | "highpass" | "bandpass") =>
     `px-2 py-1 text-[10px] rounded border transition-colors ${
-      filterType === type ? "bg-blue-500 text-white border-blue-500" : "border-gray-700 text-gray-500 hover:border-gray-600"
+      filterType === type
+        ? "bg-blue-500 text-white border-blue-500"
+        : "border-gray-700 text-gray-500 hover:border-gray-600"
     }`;
 
   return (
     <div className="p-4 md:p-6 bg-[#0a0a0a] rounded-lg border border-gray-800">
       <div className="flex items-center justify-center gap-2 md:gap-4 mb-4 flex-wrap">
-        <h3 className="text-base md:text-lg font-barlow uppercase tracking-wider text-gray-300">FX RACK</h3>
+        <h3 className="text-base md:text-lg font-barlow uppercase tracking-wider text-gray-300">
+          FX RACK
+        </h3>
         {/* Deck Toggle */}
         <div className="flex gap-2">
           <button
@@ -240,19 +314,24 @@ export function FXUnit({
           </button>
         )}
         {/* Session Recorder (Desktop) */}
-        {typeof window !== "undefined" && window.innerWidth >= 768 && audioContext && masterLimiterNode && (
-          <SessionRecorder
-            canvasSelector="canvas"
-            audioContext={audioContext}
-            audioDestination={masterLimiterNode}
-          />
-        )}
+        {typeof window !== "undefined" &&
+          window.innerWidth >= 768 &&
+          audioContext &&
+          masterLimiterNode && (
+            <SessionRecorder
+              canvasSelector="canvas"
+              audioContext={audioContext}
+              audioDestination={masterLimiterNode}
+            />
+          )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6">
         {/* FILTER */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 uppercase tracking-widest">FILTER</span>
+            <span className="text-xs text-gray-400 uppercase tracking-widest">
+              FILTER
+            </span>
             {onFilterBypassChange && (
               <button
                 onClick={() => onFilterBypassChange(!filterBypass)}
@@ -269,9 +348,24 @@ export function FXUnit({
             )}
           </div>
           <div className="flex gap-1 mb-2 flex-wrap justify-center">
-            <button onClick={() => onFilterTypeChange("lowpass")} className={filterButtonClasses("lowpass")}>LPF</button>
-            <button onClick={() => onFilterTypeChange("highpass")} className={filterButtonClasses("highpass")}>HPF</button>
-            <button onClick={() => onFilterTypeChange("bandpass")} className={filterButtonClasses("bandpass")}>BPF</button>
+            <button
+              onClick={() => onFilterTypeChange("lowpass")}
+              className={filterButtonClasses("lowpass")}
+            >
+              LPF
+            </button>
+            <button
+              onClick={() => onFilterTypeChange("highpass")}
+              className={filterButtonClasses("highpass")}
+            >
+              HPF
+            </button>
+            <button
+              onClick={() => onFilterTypeChange("bandpass")}
+              className={filterButtonClasses("bandpass")}
+            >
+              BPF
+            </button>
           </div>
           <Knob
             value={normalizeFilterFreq(filterFreq)}
@@ -279,7 +373,9 @@ export function FXUnit({
             label="FREQ"
             min={0}
             max={1}
-            size={typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60}
+            size={
+              typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60
+            }
             color="mid"
             helpText="Adjusts filter cutoff frequency. LPF = Low Pass, HPF = High Pass, BPF = Band Pass"
           />
@@ -288,7 +384,9 @@ export function FXUnit({
         {/* DISTORTION (GRIT) */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 uppercase tracking-widest">GRIT</span>
+            <span className="text-xs text-gray-400 uppercase tracking-widest">
+              GRIT
+            </span>
             {onDistortionBypassChange && (
               <button
                 onClick={() => onDistortionBypassChange(!distortionBypass)}
@@ -297,21 +395,37 @@ export function FXUnit({
                     ? "bg-red-600 border-red-500 text-white"
                     : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-600"
                 }`}
-                title={distortionBypass ? "Enable distortion" : "Bypass distortion"}
-                aria-label={distortionBypass ? "Enable distortion" : "Bypass distortion"}
+                title={
+                  distortionBypass ? "Enable distortion" : "Bypass distortion"
+                }
+                aria-label={
+                  distortionBypass ? "Enable distortion" : "Bypass distortion"
+                }
               >
                 {distortionBypass ? "ON" : "BYP"}
               </button>
             )}
           </div>
           <div className="h-[26px]"></div> {/* Spacer */}
-          <Knob value={distortionAmount} onChange={onDistortionChange} label="DRIVE" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60} color="low" />
+          <Knob
+            value={distortionAmount}
+            onChange={onDistortionChange}
+            label="DRIVE"
+            min={0}
+            max={1}
+            size={
+              typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60
+            }
+            color="low"
+          />
         </div>
 
         {/* REVERB */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 uppercase tracking-widest">REVERB</span>
+            <span className="text-xs text-gray-400 uppercase tracking-widest">
+              REVERB
+            </span>
             {onReverbBypassChange && (
               <button
                 onClick={() => onReverbBypassChange(!reverbBypass)}
@@ -328,13 +442,25 @@ export function FXUnit({
             )}
           </div>
           <div className="h-[26px]"></div>
-          <Knob value={reverbDryWet} onChange={onReverbDryWetChange} label="DRY/WET" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60} color="high" />
+          <Knob
+            value={reverbDryWet}
+            onChange={onReverbDryWetChange}
+            label="DRY/WET"
+            min={0}
+            max={1}
+            size={
+              typeof window !== "undefined" && window.innerWidth < 768 ? 70 : 60
+            }
+            color="high"
+          />
         </div>
 
         {/* DELAY */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 uppercase tracking-widest">DELAY</span>
+            <span className="text-xs text-gray-400 uppercase tracking-widest">
+              DELAY
+            </span>
             {onDelayBypassChange && (
               <button
                 onClick={() => onDelayBypassChange(!delayBypass)}
@@ -352,8 +478,30 @@ export function FXUnit({
           </div>
           <div className="h-[26px]"></div>
           <div className="flex gap-3 md:gap-4">
-            <Knob value={delayTime} onChange={onDelayTimeChange} label="TIME" min={0} max={1} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />
-            <Knob value={delayFeedback} onChange={onDelayFeedbackChange} label="FDBK" min={0} max={DELAY_FEEDBACK_MAX} size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40} />
+            <Knob
+              value={delayTime}
+              onChange={onDelayTimeChange}
+              label="TIME"
+              min={0}
+              max={1}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
+            />
+            <Knob
+              value={delayFeedback}
+              onChange={onDelayFeedbackChange}
+              label="FDBK"
+              min={0}
+              max={DELAY_FEEDBACK_MAX}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
+            />
           </div>
         </div>
 
@@ -382,7 +530,9 @@ export function FXUnit({
 
         {/* FLANGER */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">FLANGER</span>
+          <span className="text-xs text-gray-400 uppercase tracking-widest">
+            FLANGER
+          </span>
           <div className="h-[26px]"></div>
           <div className="flex gap-3 md:gap-4">
             <Knob
@@ -391,7 +541,11 @@ export function FXUnit({
               label="RATE"
               min={0}
               max={5}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
             <Knob
               value={flangerDepth || 0}
@@ -399,14 +553,20 @@ export function FXUnit({
               label="DEPTH"
               min={0}
               max={1}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
           </div>
         </div>
 
         {/* PHASER */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">PHASER</span>
+          <span className="text-xs text-gray-400 uppercase tracking-widest">
+            PHASER
+          </span>
           <div className="h-[26px]"></div>
           <div className="flex gap-3 md:gap-4">
             <Knob
@@ -415,7 +575,11 @@ export function FXUnit({
               label="RATE"
               min={0}
               max={5}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
             <Knob
               value={phaserDepth || 0}
@@ -423,14 +587,20 @@ export function FXUnit({
               label="DEPTH"
               min={0}
               max={1}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
           </div>
         </div>
 
         {/* CHORUS */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">CHORUS</span>
+          <span className="text-xs text-gray-400 uppercase tracking-widest">
+            CHORUS
+          </span>
           <div className="h-[26px]"></div>
           <div className="flex gap-3 md:gap-4">
             <Knob
@@ -439,7 +609,11 @@ export function FXUnit({
               label="RATE"
               min={0}
               max={5}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
             <Knob
               value={chorusDepth || 0}
@@ -447,14 +621,20 @@ export function FXUnit({
               label="DEPTH"
               min={0}
               max={1}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
           </div>
         </div>
 
         {/* ECHO */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-gray-400 uppercase tracking-widest">ECHO</span>
+          <span className="text-xs text-gray-400 uppercase tracking-widest">
+            ECHO
+          </span>
           <div className="h-[26px]"></div>
           <div className="flex gap-3 md:gap-4">
             <Knob
@@ -463,7 +643,11 @@ export function FXUnit({
               label="TIME"
               min={0}
               max={2}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
             <Knob
               value={echoFeedback || 0}
@@ -471,7 +655,11 @@ export function FXUnit({
               label="FDBK"
               min={0}
               max={0.9}
-              size={typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 40}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 50
+                  : 40
+              }
             />
           </div>
         </div>

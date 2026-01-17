@@ -26,6 +26,7 @@ npm run download:fonts
 ```
 
 This script:
+
 - Fetches font CSS from Google Fonts API
 - Extracts WOFF2 URLs
 - Downloads all required font files to `public/fonts/`
@@ -59,9 +60,11 @@ You can manually download fonts from Google Fonts CDN:
 ## File Naming Convention
 
 Files must follow this pattern:
+
 - `{family-name-lowercase-dashed}-{weight}.woff2`
 
 Examples:
+
 - `permanent-marker-400.woff2`
 - `barlow-condensed-700.woff2`
 - `inter-600.woff2`

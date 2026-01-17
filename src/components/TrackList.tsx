@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TrackDrawer } from "@/components/TrackDrawer";
+import { useDeckMixerStore } from "@/store/useDeckMixerStore";
 
 const vibeColors = {
   chill: "bg-toxic-lime/20 text-toxic-lime border-toxic-lime border-black",
@@ -20,6 +21,7 @@ const vibeColors = {
 };
 
 type VibeFilter = "all" | "chill" | "hype" | "storytelling" | "classic";
+type DeckId = "deckA" | "deckB";
 
 interface TrackListProps {
   featuredOnly?: boolean;
@@ -96,9 +98,18 @@ interface TrackCardProps {
   index: number;
   isActive: boolean;
   onPlay: () => void;
+  onDragStart: (event: React.DragEvent, track: (typeof tracks)[0]) => void;
+  loadedDecks: DeckId[];
 }
 
-function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
+function TrackCard({
+  track,
+  index,
+  isActive,
+  onPlay,
+  onDragStart,
+  loadedDecks,
+}: TrackCardProps) {
   const { triggerHaptic } = useHaptic();
   const [isLoaded, setIsLoaded] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -154,6 +165,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
   return (
     <motion.button
+      draggable
       ref={cardRef}
       type="button"
       initial={{ opacity: 0, y: 10 }}
@@ -164,6 +176,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
         triggerHaptic();
         onPlay();
       }}
+      onDragStart={(event) => onDragStart(event, track)}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={[
@@ -340,6 +353,13 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           >
             {track.vibe}
           </span>
+          {loadedDecks.length > 0 && (
+            <span className="text-[10px] font-industrial uppercase tracking-[0.15em] bg-black text-safety-yellow px-2 py-0.5 border border-black">
+              {loadedDecks
+                .map((deck) => (deck === "deckA" ? "Deck A" : "Deck B"))
+                .join(" • ")}
+            </span>
+          )}
         </div>
       </div>
     </motion.button>
@@ -350,8 +370,32 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
   const { playTrack, currentTrack, isPlaying } = useAudio();
   const { triggerHaptic } = useHaptic();
   const [activeFilter, setActiveFilter] = useState<VibeFilter>("all");
+  const [search, setSearch] = useState("");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const deckAssignments = useDeckMixerStore((state) => ({
+    deckA: state.decks.deckA.track?.id,
+    deckB: state.decks.deckB.track?.id,
+  }));
+
+  const handleDragStart = (
+    event: React.DragEvent,
+    track: (typeof tracks)[0],
+  ) => {
+    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ trackId: track.id, src: track.src }),
+    );
+    event.dataTransfer.setData("text/plain", track.id);
+  };
+
+  const getLoadedDecks = (trackId: string): DeckId[] => {
+    const loaded: DeckId[] = [];
+    if (deckAssignments.deckA === trackId) loaded.push("deckA");
+    if (deckAssignments.deckB === trackId) loaded.push("deckB");
+    return loaded;
+  };
 
   const audioTracks = useMemo(
     () => tracks.filter((t) => t.type === "audio"),
@@ -364,34 +408,53 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
         ? audioTracks
         : audioTracks.filter((t) => t.vibe === activeFilter);
 
-    if (featuredOnly) return filtered.slice(0, 5);
-    return filtered;
-  }, [activeFilter, audioTracks, featuredOnly]);
+    const query = search.toLowerCase().trim();
+    const searched =
+      query.length === 0
+        ? filtered
+        : filtered.filter((t) =>
+            `${t.title} ${t.artist}`.toLowerCase().includes(query),
+          );
+
+    if (featuredOnly) return searched.slice(0, 5);
+    return searched;
+  }, [activeFilter, audioTracks, featuredOnly, search]);
 
   return (
     <div className="w-full">
       {!featuredOnly && (
         <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-          {filterOptions.map((opt) => {
-            const isActive = opt.id === activeFilter;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setActiveFilter(opt.id)}
-                className={[
-                  "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
-                  isActive
-                    ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
-                    : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
-                ].join(" ")}
-                aria-label={`Filter by ${opt.label}`}
-                aria-pressed={isActive}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {filterOptions.map((opt) => {
+              const isActive = opt.id === activeFilter;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setActiveFilter(opt.id)}
+                  className={[
+                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
+                    isActive
+                      ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
+                      : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",
+                  ].join(" ")}
+                  aria-label={`Filter by ${opt.label}`}
+                  aria-pressed={isActive}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex w-full justify-center">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search artist or title"
+              aria-label="Search tracks"
+              className="w-full max-w-xl rounded-full border-2 border-black bg-white/80 px-4 py-2 text-sm font-industrial tracking-wide text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-safety-yellow"
+            />
+          </div>
         </div>
       )}
 
@@ -423,6 +486,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
             <div className="divide-y divide-white/10 relative">
               {visibleTracks.map((track, idx) => {
                 const isActive = currentTrack?.id === track.id && isPlaying;
+                const loadedDecks = getLoadedDecks(track.id);
 
                 return (
                   <TrackDrawer key={track.id} track={track}>
@@ -449,11 +513,13 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                         }}
                       />
                       <motion.button
+                        draggable
                         type="button"
                         onClick={() => {
                           triggerHaptic();
                           playTrack(track);
                         }}
+                        onDragStart={(event) => handleDragStart(event, track)}
                         className={[
                           "w-full text-left relative",
                           "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
@@ -529,6 +595,22 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                             >
                               {track.title}
                             </div>
+                            {loadedDecks.length > 0 && (
+                              <div className="mt-1 flex gap-2 text-[10px] uppercase tracking-[0.12em] text-safety-yellow">
+                                {loadedDecks
+                                  .map((deck) =>
+                                    deck === "deckA" ? "Deck A" : "Deck B",
+                                  )
+                                  .map((label) => (
+                                    <span
+                                      key={label}
+                                      className="rounded-sm border border-safety-yellow/70 bg-black px-2 py-0.5"
+                                    >
+                                      {label}
+                                    </span>
+                                  ))}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -590,6 +672,8 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                   track={track}
                   index={idx}
                   isActive={currentTrack?.id === track.id && isPlaying}
+                  loadedDecks={getLoadedDecks(track.id)}
+                  onDragStart={handleDragStart}
                   onPlay={() => {
                     triggerHaptic();
                     playTrack(track);

@@ -17,7 +17,11 @@ export interface BeatGridData {
   confidence: number; // 0-1 confidence score
 }
 
-export type BeatGridServiceState = 'uninitialized' | 'ready' | 'analyzing' | 'error';
+export type BeatGridServiceState =
+  | "uninitialized"
+  | "ready"
+  | "analyzing"
+  | "error";
 
 /**
  * BeatGridService - Singleton service for beat grid analysis
@@ -25,7 +29,7 @@ export type BeatGridServiceState = 'uninitialized' | 'ready' | 'analyzing' | 'er
 class BeatGridService {
   private static instance: BeatGridService | null = null;
 
-  private serviceState: BeatGridServiceState = 'uninitialized';
+  private serviceState: BeatGridServiceState = "uninitialized";
   private worker: Worker | null = null;
 
   // Cache for beat grid data (keyed by track URL or hash)
@@ -48,22 +52,24 @@ class BeatGridService {
    * Initialize the beat grid service
    */
   async initialize(): Promise<void> {
-    if (this.serviceState === 'ready') {
-      console.warn('[BeatGridService] Already initialized');
+    if (this.serviceState === "ready") {
+      console.warn("[BeatGridService] Already initialized");
       return;
     }
 
-    if (typeof window === 'undefined') {
-      throw new Error('[BeatGridService] Cannot initialize on server');
+    if (typeof window === "undefined") {
+      throw new Error("[BeatGridService] Cannot initialize on server");
     }
 
     try {
-      this.serviceState = 'uninitialized';
-      console.log('[BeatGridService] Initializing...');
+      this.serviceState = "uninitialized";
+      console.log("[BeatGridService] Initializing...");
 
       // Create Web Worker
       // Note: Worker is served from public/workers/ (compiled from src/workers/)
-      this.worker = new Worker('/workers/beatgrid.worker.js', { type: 'classic' });
+      this.worker = new Worker("/workers/beatgrid.worker.js", {
+        type: "classic",
+      });
 
       // Wait for worker ready (worker auto-initializes)
       await new Promise<void>((resolve) => {
@@ -72,11 +78,11 @@ class BeatGridService {
         setTimeout(resolve, 100); // Small delay to ensure worker is ready
       });
 
-      this.serviceState = 'ready';
-      console.log('[BeatGridService] ✅ Initialization complete');
+      this.serviceState = "ready";
+      console.log("[BeatGridService] ✅ Initialization complete");
     } catch (error) {
-      this.serviceState = 'error';
-      console.error('[BeatGridService] ❌ Initialization failed:', error);
+      this.serviceState = "error";
+      console.error("[BeatGridService] ❌ Initialization failed:", error);
       throw error;
     }
   }
@@ -90,17 +96,17 @@ class BeatGridService {
    */
   async analyze(
     audioBuffer: AudioBuffer,
-    cacheKey?: string
+    cacheKey?: string,
   ): Promise<BeatGridData> {
     this.ensureReady();
 
     // Check cache
     if (cacheKey && this.beatGridCache.has(cacheKey)) {
-      console.log('[BeatGridService] Using cached beat grid');
+      console.log("[BeatGridService] Using cached beat grid");
       return this.beatGridCache.get(cacheKey)!;
     }
 
-    this.serviceState = 'analyzing';
+    this.serviceState = "analyzing";
 
     try {
       // Extract channel data
@@ -117,12 +123,12 @@ class BeatGridService {
       // Send analysis request to worker
       const result = await new Promise<BeatGridData>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('[BeatGridService] Analysis timeout'));
+          reject(new Error("[BeatGridService] Analysis timeout"));
         }, 60000); // 1 minute timeout
 
         const handleResult = (event: MessageEvent) => {
           clearTimeout(timeout);
-          this.worker?.removeEventListener('message', handleResult);
+          this.worker?.removeEventListener("message", handleResult);
 
           if (event.data.error) {
             reject(new Error(event.data.error));
@@ -144,7 +150,7 @@ class BeatGridService {
           resolve(beatGridData);
         };
 
-        this.worker?.addEventListener('message', handleResult);
+        this.worker?.addEventListener("message", handleResult);
 
         // Send analysis request
         this.worker?.postMessage({
@@ -153,11 +159,11 @@ class BeatGridService {
         });
       });
 
-      this.serviceState = 'ready';
+      this.serviceState = "ready";
       return result;
     } catch (error) {
-      this.serviceState = 'error';
-      console.error('[BeatGridService] ❌ Analysis failed:', error);
+      this.serviceState = "error";
+      console.error("[BeatGridService] ❌ Analysis failed:", error);
       throw error;
     }
   }
@@ -174,7 +180,7 @@ class BeatGridService {
    */
   clearCache(): void {
     this.beatGridCache.clear();
-    console.log('[BeatGridService] Cache cleared');
+    console.log("[BeatGridService] Cache cleared");
   }
 
   /**
@@ -188,7 +194,7 @@ class BeatGridService {
    * Check if service is analyzing
    */
   get isAnalyzing(): boolean {
-    return this.serviceState === 'analyzing';
+    return this.serviceState === "analyzing";
   }
 
   // ==========================================================================
@@ -196,9 +202,9 @@ class BeatGridService {
   // ==========================================================================
 
   private ensureReady(): void {
-    if (this.serviceState !== 'ready') {
+    if (this.serviceState !== "ready") {
       throw new Error(
-        `[BeatGridService] Service not ready. Current state: ${this.serviceState}`
+        `[BeatGridService] Service not ready. Current state: ${this.serviceState}`,
       );
     }
   }
@@ -213,9 +219,9 @@ class BeatGridService {
     }
 
     this.beatGridCache.clear();
-    this.serviceState = 'uninitialized';
+    this.serviceState = "uninitialized";
 
-    console.log('[BeatGridService] Disposed');
+    console.log("[BeatGridService] Disposed");
   }
 }
 

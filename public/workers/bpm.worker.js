@@ -38,7 +38,11 @@
     const mean = sum / data.length;
     const adaptiveThreshold = mean * (1 + threshold);
     for (let i = 1; i < data.length - 1; i++) {
-      if (data[i] > adaptiveThreshold && data[i] > data[i - 1] && data[i] > data[i + 1]) {
+      if (
+        data[i] > adaptiveThreshold &&
+        data[i] > data[i - 1] &&
+        data[i] > data[i + 1]
+      ) {
         peaks.push(i);
       }
     }
@@ -105,7 +109,11 @@
       return { bpm: 120, offset: 0, confidence: 0 };
     }
     const intervals = calculateIntervals(peaks);
-    const { bpm, confidence } = findTempo(intervals, sampleRate, downsampleFactor);
+    const { bpm, confidence } = findTempo(
+      intervals,
+      sampleRate,
+      downsampleFactor,
+    );
     const firstPeakSample = peaks[0] * downsampleFactor;
     const offset = firstPeakSample / sampleRate;
     return { bpm, offset, confidence };
@@ -117,7 +125,9 @@
       const startTime = performance.now();
       const result = detectBPM(channelData, sampleRate);
       const endTime = performance.now();
-      console.log(`\u2705 BPM Worker: Detected ${result.bpm} BPM (confidence: ${(result.confidence * 100).toFixed(1)}%) in ${(endTime - startTime).toFixed(0)}ms`);
+      console.log(
+        `\u2705 BPM Worker: Detected ${result.bpm} BPM (confidence: ${(result.confidence * 100).toFixed(1)}%) in ${(endTime - startTime).toFixed(0)}ms`,
+      );
       self.postMessage(result);
     } catch (error) {
       console.error("\u274C BPM Worker: Detection failed:", error);
@@ -125,7 +135,7 @@
         bpm: 120,
         offset: 0,
         confidence: 0,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   };

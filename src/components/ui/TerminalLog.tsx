@@ -22,7 +22,11 @@ interface TerminalLogProps {
  * - Auto-scrolls to latest log
  * - Limits displayed lines for performance
  */
-export function TerminalLog({ logs, maxLines = 10, className = "" }: TerminalLogProps) {
+export function TerminalLog({
+  logs,
+  maxLines = 10,
+  className = "",
+}: TerminalLogProps) {
   const [displayedLogs, setDisplayedLogs] = useState<string[]>([]);
   const [cursorVisible, setCursorVisible] = useState(true);
 
@@ -123,7 +127,9 @@ export function useTerminalLogs() {
 
   const addLog = (message: string) => {
     // Support both prefixed messages (e.g., "SYSTEM_CORE: ...") and plain messages
-    const logMessage = message.includes(":") ? `> ${message}` : `> SYSTEM: ${message}`;
+    const logMessage = message.includes(":")
+      ? `> ${message}`
+      : `> SYSTEM: ${message}`;
     setLogs((prev) => [...prev, logMessage]);
   };
 
@@ -137,4 +143,3 @@ export function useTerminalLogs() {
     clearLogs,
   };
 }
-

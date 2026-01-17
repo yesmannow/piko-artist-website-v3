@@ -59,7 +59,11 @@ export function NavBar() {
   const renderLink = (item: NavItem) => {
     const active = isActive(item.href);
     return (
-      <motion.li key={item.href} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+      <motion.li
+        key={item.href}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.97 }}
+      >
         <Link
           href={item.href}
           className={`relative inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors ${
@@ -69,7 +73,9 @@ export function NavBar() {
           {item.label}
           <span
             className={`absolute inset-x-3 -bottom-1 h-[2px] origin-left rounded-full transition-transform duration-300 ${
-              active ? "scale-x-100 bg-gradient-to-r from-[#c1ff00] via-[#7c3aed] to-transparent" : "scale-x-0 bg-white/40"
+              active
+                ? "scale-x-100 bg-gradient-to-r from-[#c1ff00] via-[#7c3aed] to-transparent"
+                : "scale-x-0 bg-white/40"
             }`}
           />
         </Link>
@@ -85,7 +91,9 @@ export function NavBar() {
             <Headphones className="h-5 w-5 text-[#c1ff00]" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/60">Piko Studio</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/60">
+              Piko Studio
+            </p>
             <p className="text-sm font-semibold text-white">Hip Hop / Remix</p>
           </div>
         </Link>
@@ -137,8 +145,7 @@ export function NavBar() {
                 </span>
               </label>
               <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-white/60">
-                <Radio className="h-4 w-4 text-[#c1ff00]" />
-                S to open Studio
+                <Radio className="h-4 w-4 text-[#c1ff00]" />S to open Studio
               </div>
             </div>
             <ul className="grid gap-2">

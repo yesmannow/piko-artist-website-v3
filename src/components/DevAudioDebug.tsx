@@ -16,7 +16,9 @@ export function DevAudioDebug({ intervalMs = 500 }: { intervalMs?: number }) {
 
     const start = async () => {
       const engine = await ensureAudioEngineReady();
-      const analyser = engine.debugDeckNode("deckA") ? engine.decks.get("deckA")?.analyser : null;
+      const analyser = engine.debugDeckNode("deckA")
+        ? engine.decks.get("deckA")?.analyser
+        : null;
       if (!analyser) return;
 
       bufferRef.current = new Uint8Array(analyser.fftSize);
@@ -44,4 +46,3 @@ export function DevAudioDebug({ intervalMs = 500 }: { intervalMs?: number }) {
 
   return null;
 }
-

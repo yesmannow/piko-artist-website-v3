@@ -11,8 +11,13 @@ export function createFlanger(
   rate: number = 0.5, // LFO rate in Hz
   depth: number = 0.5, // Modulation depth (0-1)
   delay: number = 0.003, // Base delay in seconds
-  feedback: number = 0.3 // Feedback amount (0-1)
-): { delayNode: DelayNode; gainNode: GainNode; oscillator: OscillatorNode; lfoGain: GainNode } {
+  feedback: number = 0.3, // Feedback amount (0-1)
+): {
+  delayNode: DelayNode;
+  gainNode: GainNode;
+  oscillator: OscillatorNode;
+  lfoGain: GainNode;
+} {
   // Create delay node
   const delayNode = audioContext.createDelay(0.02); // Max 20ms delay
   delayNode.delayTime.value = delay;
@@ -60,8 +65,12 @@ export function createPhaser(
   audioContext: AudioContext,
   rate: number = 0.5, // LFO rate in Hz
   depth: number = 0.5, // Modulation depth (0-1)
-  stages: number = 4 // Number of allpass filter stages
-): { filters: BiquadFilterNode[]; oscillator: OscillatorNode; lfoGain: GainNode } {
+  stages: number = 4, // Number of allpass filter stages
+): {
+  filters: BiquadFilterNode[];
+  oscillator: OscillatorNode;
+  lfoGain: GainNode;
+} {
   const filters: BiquadFilterNode[] = [];
   const baseFreq = 350; // Base frequency in Hz
 
@@ -69,7 +78,7 @@ export function createPhaser(
   for (let i = 0; i < stages; i++) {
     const filter = audioContext.createBiquadFilter();
     filter.type = "allpass";
-    filter.frequency.value = baseFreq + (i * 100);
+    filter.frequency.value = baseFreq + i * 100;
     filter.Q.value = 1;
     filters.push(filter);
   }
@@ -101,8 +110,14 @@ export function createChorus(
   rate: number = 1.5, // LFO rate in Hz
   depth: number = 0.5, // Modulation depth (0-1)
   delay: number = 0.02, // Base delay in seconds
-  feedback: number = 0.2 // Feedback amount (0-1)
-): { delayNode: DelayNode; gainNode: GainNode; oscillator: OscillatorNode; lfoGain: GainNode; feedbackGain: GainNode } {
+  feedback: number = 0.2, // Feedback amount (0-1)
+): {
+  delayNode: DelayNode;
+  gainNode: GainNode;
+  oscillator: OscillatorNode;
+  lfoGain: GainNode;
+  feedbackGain: GainNode;
+} {
   // Create delay node
   const delayNode = audioContext.createDelay(0.05); // Max 50ms delay
   delayNode.delayTime.value = delay;
@@ -150,7 +165,7 @@ export function createEcho(
   audioContext: AudioContext,
   delayTime: number = 0.25, // Delay time in seconds
   feedback: number = 0.3, // Feedback amount (0-1)
-  taps: number = 3 // Number of echo taps
+  taps: number = 3, // Number of echo taps
 ): { delayNodes: DelayNode[]; gainNodes: GainNode[]; feedbackGain: GainNode } {
   const delayNodes: DelayNode[] = [];
   const gainNodes: GainNode[] = [];
@@ -182,4 +197,3 @@ export function createEcho(
 
   return { delayNodes, gainNodes, feedbackGain };
 }
-

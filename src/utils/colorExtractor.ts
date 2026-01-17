@@ -56,10 +56,12 @@ function isColorDark(r: number, g: number, b: number): boolean {
 /**
  * Extract dominant colors from an image URL
  */
-export async function extractDominantColors(imageUrl: string): Promise<DominantColors> {
+export async function extractDominantColors(
+  imageUrl: string,
+): Promise<DominantColors> {
   return new Promise((resolve, reject) => {
     // Handle gradient fallbacks
-    if (!imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
+    if (!imageUrl.startsWith("/") && !imageUrl.startsWith("http")) {
       // It's a gradient string like "from-purple-500 to-pink-500"
       const gradientColors = parseGradientString(imageUrl);
       resolve(gradientColors);
@@ -67,15 +69,15 @@ export async function extractDominantColors(imageUrl: string): Promise<DominantC
     }
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
+    img.crossOrigin = "anonymous";
+
     img.onload = () => {
       try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
         if (!ctx) {
-          reject(new Error('Could not get canvas context'));
+          reject(new Error("Could not get canvas context"));
           return;
         }
 
@@ -83,14 +85,14 @@ export async function extractDominantColors(imageUrl: string): Promise<DominantC
         const size = 100;
         canvas.width = size;
         canvas.height = size;
-        
+
         ctx.drawImage(img, 0, 0, size, size);
         const imageData = ctx.getImageData(0, 0, size, size);
         const pixels = imageData.data;
 
         // Color quantization - find dominant colors
         const colorMap = new Map<string, number>();
-        
+
         for (let i = 0; i < pixels.length; i += 4) {
           const r = pixels[i];
           const g = pixels[i + 1];
@@ -112,14 +114,14 @@ export async function extractDominantColors(imageUrl: string): Promise<DominantC
         // Sort by frequency
         const sortedColors = Array.from(colorMap.entries())
           .sort((a, b) => b[1] - a[1])
-          .map(([color]) => color.split(',').map(Number));
+          .map(([color]) => color.split(",").map(Number));
 
         if (sortedColors.length === 0) {
           // Fallback to default colors
           resolve({
-            primary: 'rgb(0, 217, 255)',
-            secondary: 'rgb(0, 150, 200)',
-            accent: 'rgb(0, 255, 200)',
+            primary: "rgb(0, 217, 255)",
+            secondary: "rgb(0, 150, 200)",
+            accent: "rgb(0, 255, 200)",
             isDark: false,
           });
           return;
@@ -149,9 +151,9 @@ export async function extractDominantColors(imageUrl: string): Promise<DominantC
     img.onerror = () => {
       // Fallback to default colors on error
       resolve({
-        primary: 'rgb(0, 217, 255)',
-        secondary: 'rgb(0, 150, 200)',
-        accent: 'rgb(0, 255, 200)',
+        primary: "rgb(0, 217, 255)",
+        secondary: "rgb(0, 150, 200)",
+        accent: "rgb(0, 255, 200)",
         isDark: false,
       });
     };
@@ -166,25 +168,28 @@ export async function extractDominantColors(imageUrl: string): Promise<DominantC
 function parseGradientString(gradientStr: string): DominantColors {
   // Map of common Tailwind colors to RGB
   const colorMap: Record<string, [number, number, number]> = {
-    'purple-500': [168, 85, 247],
-    'pink-500': [236, 72, 153],
-    'blue-500': [59, 130, 246],
-    'cyan-500': [6, 182, 212],
-    'green-500': [34, 197, 94],
-    'yellow-500': [234, 179, 8],
-    'red-500': [239, 68, 68],
-    'orange-500': [249, 115, 22],
-    'indigo-500': [99, 102, 241],
-    'violet-500': [139, 92, 246],
+    "purple-500": [168, 85, 247],
+    "pink-500": [236, 72, 153],
+    "blue-500": [59, 130, 246],
+    "cyan-500": [6, 182, 212],
+    "green-500": [34, 197, 94],
+    "yellow-500": [234, 179, 8],
+    "red-500": [239, 68, 68],
+    "orange-500": [249, 115, 22],
+    "indigo-500": [99, 102, 241],
+    "violet-500": [139, 92, 246],
   };
 
   // Extract color names from gradient string
-  const matches = gradientStr.match(/(purple|pink|blue|cyan|green|yellow|red|orange|indigo|violet)-\d+/g);
-  
+  const matches = gradientStr.match(
+    /(purple|pink|blue|cyan|green|yellow|red|orange|indigo|violet)-\d+/g,
+  );
+
   if (matches && matches.length > 0) {
     const [r, g, b] = colorMap[matches[0]] || [0, 217, 255];
-    const [r2, g2, b2] = colorMap[matches[1]] || colorMap[matches[0]] || [0, 150, 200];
-    
+    const [r2, g2, b2] = colorMap[matches[1]] ||
+      colorMap[matches[0]] || [0, 150, 200];
+
     return {
       primary: `rgb(${r}, ${g}, ${b})`,
       secondary: `rgb(${r2}, ${g2}, ${b2})`,
@@ -195,9 +200,9 @@ function parseGradientString(gradientStr: string): DominantColors {
 
   // Default fallback
   return {
-    primary: 'rgb(0, 217, 255)',
-    secondary: 'rgb(0, 150, 200)',
-    accent: 'rgb(0, 255, 200)',
+    primary: "rgb(0, 217, 255)",
+    secondary: "rgb(0, 150, 200)",
+    accent: "rgb(0, 255, 200)",
     isDark: false,
   };
 }
@@ -210,7 +215,7 @@ export function adjustColorBrightness(rgb: string, percent: number): string {
   if (!match) return rgb;
 
   let [, r, g, b] = match.map(Number);
-  
+
   r = Math.min(255, Math.max(0, r + (r * percent) / 100));
   g = Math.min(255, Math.max(0, g + (g * percent) / 100));
   b = Math.min(255, Math.max(0, b + (b * percent) / 100));

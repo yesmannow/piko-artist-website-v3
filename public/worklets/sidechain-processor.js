@@ -5,23 +5,23 @@ class SidechainProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [
       {
-        name: 'threshold',
+        name: "threshold",
         defaultValue: 0.5,
         minValue: 0.0,
         maxValue: 1.0,
       },
       {
-        name: 'ratio',
+        name: "ratio",
         defaultValue: 4.0,
         minValue: 1.0,
         maxValue: 20.0,
       },
       {
-        name: 'release', // How fast volume recovers
+        name: "release", // How fast volume recovers
         defaultValue: 0.1, // Seconds
         minValue: 0.01,
         maxValue: 1.0,
-      }
+      },
     ];
   }
 
@@ -93,5 +93,4 @@ class SidechainProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor('sidechain-processor', SidechainProcessor);
-
+registerProcessor("sidechain-processor", SidechainProcessor);

@@ -7,30 +7,35 @@ The Session Recording Suite enables users to capture high-definition DJ mixes an
 ## Features
 
 ### 🎙️ **HD Session Recording**
+
 - **320kbps OGG/WebM Audio**: High-quality audio capture at 320kbps bitrate
 - **Real-time Recording**: Live capture of master output with low-latency processing
 - **Auto-stop Protection**: 30-second safety limit for social sharing optimization
 - **Format Optimization**: Automatic selection of best supported codec
 
 ### 🗂️ **Pocket Vault Storage**
+
 - **IndexedDB Storage**: Local browser storage for recordings and metadata
 - **Metadata Preservation**: Complete track information and session details
 - **Search & Organization**: Tag-based organization and full-text search
 - **Export Management**: Direct download to user's device
 
 ### 📝 **Automatic Metadata Generation**
+
 - **Track History Tracking**: Real-time monitoring of track changes during sessions
 - **Auto-generated Tracklists**: Timestamped track transitions with BPM/key info
 - **Session Metadata**: DJ name, mix title, description, and tags
 - **Social Ready**: Optimized metadata for YouTube, Mixcloud, and SoundCloud
 
 ### 🎬 **Video Rendering with Visualizer Overlay**
+
 - **3D GPU Visualizer**: StudioCanvas integration for dynamic visual overlays
 - **Multiple Resolutions**: SD (854x480), HD (1920x1080), 4K (3840x2160)
 - **GPU-accelerated Rendering**: Hardware-accelerated video encoding
 - **Real-time Progress**: Live rendering progress with cancellation support
 
 ### 🎨 **Professional Export UI**
+
 - **Export Mix Modal**: Comprehensive configuration interface
 - **DJ Profile Integration**: Custom DJ names and branding
 - **Tag Management**: Flexible tagging system for categorization
@@ -81,22 +86,18 @@ Recording Start → Track History Session → MediaRecorder Capture → Pocket V
 ### Basic Recording
 
 ```tsx
-import { getEnhancedMixRecorder } from '@/engine/EnhancedMixRecorder';
+import { getEnhancedMixRecorder } from "@/engine/EnhancedMixRecorder";
 
 const recorder = getEnhancedMixRecorder();
 await recorder.initialize();
 
 // Start HD recording
-const sessionId = await recorder.startRecording(
-  audioContext,
-  masterNode,
-  {
-    format: 'audio/webm',
-    bitRate: 320,
-    djName: 'Piko DJ',
-    title: 'Live Mix Session'
-  }
-);
+const sessionId = await recorder.startRecording(audioContext, masterNode, {
+  format: "audio/webm",
+  bitRate: 320,
+  djName: "Piko DJ",
+  title: "Live Mix Session",
+});
 
 // Stop recording
 await recorder.stopRecording();
@@ -105,7 +106,7 @@ await recorder.stopRecording();
 ### Pocket Vault Management
 
 ```tsx
-import { getPocketVault } from '@/engine/PocketVault';
+import { getPocketVault } from "@/engine/PocketVault";
 
 const vault = getPocketVault();
 await vault.initialize();
@@ -117,13 +118,13 @@ const recordingId = await vault.storeRecording(metadata, audioBlob);
 const { metadata, blob } = await vault.getRecording(recordingId);
 
 // Export to file
-await vault.exportRecording(recordingId, 'My_Mix_Session.webm');
+await vault.exportRecording(recordingId, "My_Mix_Session.webm");
 ```
 
 ### Video Rendering
 
 ```tsx
-import { getVideoRenderer } from '@/engine/VideoRenderer';
+import { getVideoRenderer } from "@/engine/VideoRenderer";
 
 const renderer = getVideoRenderer();
 
@@ -135,7 +136,7 @@ const videoBlob = await renderer.renderVideo({
   height: 1080,
   frameRate: 30,
   bitRate: 5, // 5 Mbps
-  format: 'webm',
+  format: "webm",
   onProgress: (progress) => console.log(`Rendering: ${progress * 100}%`),
 });
 ```
@@ -143,7 +144,7 @@ const videoBlob = await renderer.renderVideo({
 ### Track History Integration
 
 ```tsx
-import { getTrackHistory } from '@/engine/TrackHistory';
+import { getTrackHistory } from "@/engine/TrackHistory";
 
 const history = getTrackHistory();
 
@@ -161,29 +162,32 @@ const tracklist = history.generateTracklist(sessionId);
 ## Export Modal Usage
 
 ```tsx
-import { ExportMixModal } from '@/components/dj-ui/ExportMixModal';
+import { ExportMixModal } from "@/components/dj-ui/ExportMixModal";
 
 // In your component
 <ExportMixModal
   isOpen={showExportModal}
   onClose={() => setShowExportModal(false)}
   recordingId={currentRecordingId} // Optional: for editing existing
-/>
+/>;
 ```
 
 ## Recording Specifications
 
 ### Audio Formats
+
 - **Primary**: WebM with Opus codec (320kbps)
 - **Fallback**: OGG with Opus codec (320kbps)
 - **Legacy**: WebM with Vorbis (if Opus unavailable)
 
 ### Video Formats
+
 - **WebM VP9**: Best quality, wide compatibility
 - **WebM VP8**: Fallback for older browsers
 - **MP4**: Limited browser support (future enhancement)
 
 ### Quality Presets
+
 - **SD**: 854x480 @ 2.5 Mbps
 - **HD**: 1920x1080 @ 5 Mbps
 - **4K**: 3840x2160 @ 10 Mbps
@@ -191,6 +195,7 @@ import { ExportMixModal } from '@/components/dj-ui/ExportMixModal';
 ## Metadata Standards
 
 ### Recording Metadata
+
 ```typescript
 interface RecordingMetadata {
   id: string;
@@ -208,6 +213,7 @@ interface RecordingMetadata {
 ```
 
 ### Track Entry Format
+
 ```typescript
 interface TrackEntry {
   id: string;
@@ -223,16 +229,19 @@ interface TrackEntry {
 ## Browser Compatibility
 
 ### Required APIs
+
 - **MediaRecorder**: Core recording functionality
 - **IndexedDB**: Local storage for recordings
 - **Web Audio API**: Audio processing and routing
 - **Canvas.captureStream()**: Video capture from 3D scenes
 
 ### Supported Codecs
+
 - **Audio**: Opus, Vorbis, AAC (limited)
 - **Video**: VP9, VP8, H.264 (limited)
 
 ### Storage Limits
+
 - **IndexedDB**: Typically 50MB-1GB depending on browser
 - **Blob URLs**: Temporary URLs for downloads
 - **Memory**: GPU memory for video rendering
@@ -240,16 +249,19 @@ interface TrackEntry {
 ## Performance Considerations
 
 ### Recording
+
 - **Real-time Processing**: Optimized for minimal latency
 - **Memory Management**: Chunked recording to prevent memory issues
 - **Format Selection**: Automatic fallback to supported formats
 
 ### Storage
+
 - **Compression**: Efficient blob storage with metadata separation
 - **Indexing**: Fast search and retrieval with IndexedDB indices
 - **Cleanup**: Automatic cleanup of temporary resources
 
 ### Rendering
+
 - **GPU Acceleration**: Hardware-accelerated video encoding
 - **Frame Batching**: Progressive rendering to prevent UI blocking
 - **Cancellation Support**: Abort rendering operations cleanly
@@ -257,12 +269,14 @@ interface TrackEntry {
 ## Social Media Optimization
 
 ### YouTube Ready
+
 - **HD Video**: 1080p with visualizer overlays
 - **Metadata**: Complete tracklist in description
 - **Thumbnails**: Auto-generated from visualizer frames
 - **Tags**: Optimized tagging for discoverability
 
 ### Mixcloud/SoundCloud
+
 - **Audio Export**: High-quality 320kbps audio files
 - **Tracklist**: Formatted tracklist with timestamps
 - **Metadata**: Complete session information
@@ -271,17 +285,20 @@ interface TrackEntry {
 ## Future Enhancements
 
 ### Advanced Features
+
 - **Cloud Sync**: Optional cloud backup of recordings
 - **Social Sharing**: Direct upload to platforms
 - **Collaborative Mixing**: Multi-user session recording
 - **Live Streaming**: Real-time broadcasting with overlays
 
 ### Performance Upgrades
+
 - **WebCodecs API**: Hardware-accelerated encoding/decoding
 - **WebAssembly**: Enhanced audio processing
 - **Service Workers**: Background rendering and storage
 
 ### Integration Features
+
 - **Stem Separation**: AI-powered stem extraction for remixing
 - **AI Enhancement**: Automatic mix analysis and suggestions
 - **Plugin System**: Third-party export destinations

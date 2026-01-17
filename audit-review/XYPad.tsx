@@ -77,8 +77,8 @@ export function XYPad({
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      setTrail((prev) =>
-        prev.filter((point) => now - point.timestamp < 800) // 800ms trail lifetime
+      setTrail(
+        (prev) => prev.filter((point) => now - point.timestamp < 800), // 800ms trail lifetime
       );
     }, 50);
 
@@ -92,7 +92,10 @@ export function XYPad({
 
       const rect = padRef.current.getBoundingClientRect();
       const newX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      const newY = Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height)); // Invert Y
+      const newY = Math.max(
+        0,
+        Math.min(1, 1 - (clientY - rect.top) / rect.height),
+      ); // Invert Y
 
       setPosition({ x: newX, y: newY });
       onPositionChange?.(newX, newY);
@@ -108,7 +111,7 @@ export function XYPad({
         },
       ]);
     },
-    [isActive, onPositionChange]
+    [isActive, onPositionChange],
   );
 
   // Mouse handlers
@@ -119,7 +122,7 @@ export function XYPad({
       triggerHaptic(10);
       updatePosition(e.clientX, e.clientY);
     },
-    [isActive, triggerHaptic, updatePosition]
+    [isActive, triggerHaptic, updatePosition],
   );
 
   // Touch handlers
@@ -130,7 +133,7 @@ export function XYPad({
       triggerHaptic(10);
       updatePosition(e.touches[0].clientX, e.touches[0].clientY);
     },
-    [isActive, triggerHaptic, updatePosition]
+    [isActive, triggerHaptic, updatePosition],
   );
 
   // Global move/end handlers
@@ -216,13 +219,16 @@ export function XYPad({
                   : "border-zinc-600 text-zinc-500"
               }`}
               style={{ borderRadius: 0 }}
-              aria-label={latchMode ? "Disable latch mode" : "Enable latch mode"}
+              aria-label={
+                latchMode ? "Disable latch mode" : "Enable latch mode"
+              }
             >
               LATCH
             </button>
           )}
           <span className="text-[10px] font-mono text-[#E0E0E0]/50 uppercase">
-            X: {Math.round(position.x * 100)}% | Y: {Math.round(position.y * 100)}%
+            X: {Math.round(position.x * 100)}% | Y:{" "}
+            {Math.round(position.y * 100)}%
           </span>
         </div>
       </div>
@@ -353,7 +359,10 @@ export function XYPad({
         </div>
         <div
           className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-mono text-[#E0E0E0]/40 uppercase pointer-events-none"
-          style={{ writingMode: "vertical-rl", transform: "rotate(180deg) translateY(50%)" }}
+          style={{
+            writingMode: "vertical-rl",
+            transform: "rotate(180deg) translateY(50%)",
+          }}
         >
           {yLabel}
         </div>
@@ -369,4 +378,3 @@ export function XYPad({
     </div>
   );
 }
-

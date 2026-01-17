@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
-import { getStudioEngine } from '@/engine/rt/StudioEngine';
-import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
-import { ensureAudioEngineReady } from '@/engine/AudioEngine';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+import { getStudioEngine } from "@/engine/rt/StudioEngine";
+import { getRealtimeAudioSystem } from "@/engine/rt/RealtimeAudioSystem";
+import { ensureAudioEngineReady } from "@/engine/AudioEngine";
 
 interface PanicStopButtonProps {
   className?: string;
-  variant?: 'mobile' | 'desktop';
+  variant?: "mobile" | "desktop";
 }
 
 /**
@@ -18,7 +18,10 @@ interface PanicStopButtonProps {
  * Stops all audio playback, resets all decks, and clears audio state.
  * Useful for recovering from audio glitches or stuck playback.
  */
-export function PanicStopButton({ className = '', variant = 'desktop' }: PanicStopButtonProps) {
+export function PanicStopButton({
+  className = "",
+  variant = "desktop",
+}: PanicStopButtonProps) {
   const [isResetting, setIsResetting] = useState(false);
 
   const handlePanicStop = async () => {
@@ -28,46 +31,46 @@ export function PanicStopButton({ className = '', variant = 'desktop' }: PanicSt
       // Stop all StudioEngine decks
       try {
         const studio = getStudioEngine();
-        if (studio.state === 'ready') {
-          studio.stop('A');
-          studio.stop('B');
-          studio.pause('A');
-          studio.pause('B');
+        if (studio.state === "ready") {
+          studio.stop("A");
+          studio.stop("B");
+          studio.pause("A");
+          studio.pause("B");
         }
       } catch (error) {
-        console.warn('[PanicStop] StudioEngine not available:', error);
+        console.warn("[PanicStop] StudioEngine not available:", error);
       }
 
       // Stop all AudioEngine decks
       try {
         const audioEngine = await ensureAudioEngineReady();
-        audioEngine.pause('deckA');
-        audioEngine.pause('deckB');
+        audioEngine.pause("deckA");
+        audioEngine.pause("deckB");
       } catch (error) {
-        console.warn('[PanicStop] AudioEngine not available:', error);
+        console.warn("[PanicStop] AudioEngine not available:", error);
       }
 
       // Reset RealtimeAudioSystem if needed
       try {
         const rtAudio = getRealtimeAudioSystem();
         // Note: We don't dispose the context, just ensure it's in a clean state
-        if (rtAudio.context.state === 'running') {
+        if (rtAudio.context.state === "running") {
           // Context is fine, just stop any sources
         }
       } catch (error) {
-        console.warn('[PanicStop] RealtimeAudioSystem not available:', error);
+        console.warn("[PanicStop] RealtimeAudioSystem not available:", error);
       }
 
       // Force garbage collection hint (browser may or may not honor this)
-      if ('gc' in window && typeof (window as any).gc === 'function') {
+      if ("gc" in window && typeof (window as any).gc === "function") {
         try {
           (window as any).gc();
         } catch {}
       }
 
-      console.log('[PanicStop] ✅ Audio reset complete');
+      console.log("[PanicStop] ✅ Audio reset complete");
     } catch (error) {
-      console.error('[PanicStop] ❌ Reset failed:', error);
+      console.error("[PanicStop] ❌ Reset failed:", error);
     } finally {
       // Small delay to show reset animation
       setTimeout(() => {
@@ -76,21 +79,21 @@ export function PanicStopButton({ className = '', variant = 'desktop' }: PanicSt
     }
   };
 
-  const isMobile = variant === 'mobile';
+  const isMobile = variant === "mobile";
 
   return (
     <motion.button
       onClick={handlePanicStop}
       disabled={isResetting}
       className={`
-        ${isMobile ? 'px-4 py-2' : 'px-6 py-3'}
+        ${isMobile ? "px-4 py-2" : "px-6 py-3"}
         bg-red-900/80 backdrop-blur-sm
         border-2 border-red-500
         font-mono text-sm uppercase tracking-wider
         transition-all duration-200
         flex items-center justify-center gap-2
-        ${isMobile ? 'min-h-[40px]' : 'min-h-[48px]'}
-        ${isResetting ? 'opacity-50 cursor-wait' : 'hover:bg-red-900 hover:border-red-400'}
+        ${isMobile ? "min-h-[40px]" : "min-h-[48px]"}
+        ${isResetting ? "opacity-50 cursor-wait" : "hover:bg-red-900 hover:border-red-400"}
         ${className}
       `}
       whileHover={!isResetting ? { scale: 1.02 } : {}}
@@ -99,12 +102,14 @@ export function PanicStopButton({ className = '', variant = 'desktop' }: PanicSt
     >
       {isResetting ? (
         <>
-          <RotateCcw className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} animate-spin`} />
+          <RotateCcw
+            className={`${isMobile ? "w-3 h-3" : "w-4 h-4"} animate-spin`}
+          />
           <span>RESETTING...</span>
         </>
       ) : (
         <>
-          <AlertTriangle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+          <AlertTriangle className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
           <span>PANIC STOP / RESET</span>
         </>
       )}

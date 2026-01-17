@@ -14,7 +14,10 @@ interface ThermalMeterProps {
  * V3 Urban Syndicate: Pulses when high-intensity audio is being processed.
  * Displays signal intensity with color-coded thermal visualization.
  */
-export function ThermalMeter({ audioLevel, className = "" }: ThermalMeterProps) {
+export function ThermalMeter({
+  audioLevel,
+  className = "",
+}: ThermalMeterProps) {
   const [pulseIntensity, setPulseIntensity] = useState(0);
 
   // Calculate pulse intensity based on audio level
@@ -99,4 +102,3 @@ export function ThermalMeter({ audioLevel, className = "" }: ThermalMeterProps) 
     </div>
   );
 }
-

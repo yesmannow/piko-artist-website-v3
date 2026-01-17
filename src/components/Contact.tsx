@@ -13,13 +13,22 @@ export function Contact() {
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const type = searchParams.get("type");
-    const allowed = ["general", "booking", "collab", "feature", "production", "press"];
+    const allowed = [
+      "general",
+      "booking",
+      "collab",
+      "feature",
+      "production",
+      "press",
+    ];
     if (type && allowed.includes(type)) {
       setFormData((prev) => ({ ...prev, inquiryType: type }));
     }
@@ -43,9 +52,13 @@ export function Contact() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Failed to submit form" }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Failed to submit form" }));
         setSubmitStatus("error");
-        setErrorMessage(errorData.error || "Failed to submit form. Please try again.");
+        setErrorMessage(
+          errorData.error || "Failed to submit form. Please try again.",
+        );
         return;
       }
 
@@ -53,15 +66,24 @@ export function Contact() {
 
       if (result.success) {
         setSubmitStatus("success");
-        setFormData({ name: "", email: "", inquiryType: "general", message: "" });
+        setFormData({
+          name: "",
+          email: "",
+          inquiryType: "general",
+          message: "",
+        });
         setErrorMessage("");
       } else {
         setSubmitStatus("error");
-        setErrorMessage(result.error || "Failed to submit form. Please try again.");
+        setErrorMessage(
+          result.error || "Failed to submit form. Please try again.",
+        );
       }
     } catch (error) {
       setSubmitStatus("error");
-      setErrorMessage("Network error. Please check your connection and try again.");
+      setErrorMessage(
+        "Network error. Please check your connection and try again.",
+      );
       if (process.env.NODE_ENV === "development") {
         // eslint-disable-next-line no-console
         console.error("Error submitting form:", error);
@@ -71,7 +93,11 @@ export function Contact() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -79,7 +105,10 @@ export function Contact() {
   };
 
   return (
-    <section id="contact" className="relative min-h-[600px] flex items-center justify-center py-12 md:py-20 px-4 md:px-8 overflow-hidden">
+    <section
+      id="contact"
+      className="relative min-h-[600px] flex items-center justify-center py-12 md:py-20 px-4 md:px-8 overflow-hidden"
+    >
       {/* Graffiti Wall Background */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -108,7 +137,10 @@ export function Contact() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Input - Duct Tape Style */}
             <div>
-              <label htmlFor="name" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
+              <label
+                htmlFor="name"
+                className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg"
+              >
                 Name
               </label>
               <div className="relative">
@@ -126,8 +158,10 @@ export function Contact() {
                   aria-required="true"
                   className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600"
                   style={{
-                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
-                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
+                    boxShadow:
+                      "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
                   }}
                   placeholder="Your name"
                 />
@@ -136,7 +170,10 @@ export function Contact() {
 
             {/* Email Input - Duct Tape Style */}
             <div>
-              <label htmlFor="email" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
+              <label
+                htmlFor="email"
+                className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg"
+              >
                 Email
               </label>
               <div className="relative">
@@ -153,8 +190,10 @@ export function Contact() {
                   aria-required="true"
                   className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600"
                   style={{
-                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
-                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
+                    boxShadow:
+                      "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
                   }}
                   placeholder="your.email@example.com"
                 />
@@ -163,7 +202,10 @@ export function Contact() {
 
             {/* Inquiry Type Selector */}
             <div>
-              <label htmlFor="inquiryType" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
+              <label
+                htmlFor="inquiryType"
+                className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg"
+              >
                 What's This About?
               </label>
               <div className="relative">
@@ -177,8 +219,10 @@ export function Contact() {
                   aria-required="true"
                   className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all appearance-none cursor-pointer"
                   style={{
-                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
-                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
+                    boxShadow:
+                      "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
                   }}
                 >
                   <option value="general">General Inquiry</option>
@@ -190,32 +234,48 @@ export function Contact() {
                 </select>
                 {/* Custom dropdown arrow */}
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-black"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </div>
               {/* Helper text based on selection */}
               {formData.inquiryType === "collab" && (
                 <p className="mt-2 text-sm text-toxic-lime/80 font-industrial">
-                  🔥 Looking to work together? Drop details about your project, timeline, and vibe.
+                  🔥 Looking to work together? Drop details about your project,
+                  timeline, and vibe.
                 </p>
               )}
               {formData.inquiryType === "feature" && (
                 <p className="mt-2 text-sm text-toxic-lime/80 font-industrial">
-                  🎤 Need a verse? Include track details, deadline, and your vision.
+                  🎤 Need a verse? Include track details, deadline, and your
+                  vision.
                 </p>
               )}
               {formData.inquiryType === "production" && (
                 <p className="mt-2 text-sm text-toxic-lime/80 font-industrial">
-                  🎹 Need beats? Describe the sound you're after and project scope.
+                  🎹 Need beats? Describe the sound you're after and project
+                  scope.
                 </p>
               )}
             </div>
 
             {/* Message Input - Duct Tape Style */}
             <div>
-              <label htmlFor="message" className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg">
+              <label
+                htmlFor="message"
+                className="block mb-2 font-industrial font-bold uppercase tracking-wider text-toxic-lime text-lg"
+              >
                 Message
               </label>
               <div className="relative">
@@ -232,8 +292,10 @@ export function Contact() {
                   aria-required="true"
                   className="w-full px-4 py-3.5 bg-gray-300 text-black font-industrial font-bold uppercase tracking-wider text-base md:text-lg min-h-[120px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 transition-all placeholder:text-gray-600 resize-none"
                   style={{
-                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
-                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
+                    boxShadow:
+                      "inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5)",
                   }}
                   placeholder="Your message..."
                 />
@@ -244,12 +306,16 @@ export function Contact() {
             <motion.button
               type="submit"
               disabled={isSubmitting}
-              aria-label={isSubmitting ? "Submitting form" : "Submit contact form"}
+              aria-label={
+                isSubmitting ? "Submitting form" : "Submit contact form"
+              }
               aria-busy={isSubmitting}
               className="w-full px-8 py-4 bg-red-600 border-2 border-black font-header text-lg md:text-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden shadow-hard min-h-[56px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2"
               style={{
-                clipPath: "polygon(2% 0%, 98% 0%, 100% 3%, 100% 97%, 98% 100%, 2% 100%, 0% 97%, 0% 3%)",
-                boxShadow: "4px 4px 0px 0px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.1)",
+                clipPath:
+                  "polygon(2% 0%, 98% 0%, 100% 3%, 100% 97%, 98% 100%, 2% 100%, 0% 97%, 0% 3%)",
+                boxShadow:
+                  "4px 4px 0px 0px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.1)",
                 textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
               }}
               whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
@@ -305,4 +371,3 @@ export function Contact() {
     </section>
   );
 }
-

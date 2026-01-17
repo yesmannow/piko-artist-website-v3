@@ -74,7 +74,11 @@ function detectPeaks(data: Float32Array, threshold: number = 0.5): number[] {
 
   // Find peaks
   for (let i = 1; i < data.length - 1; i++) {
-    if (data[i] > adaptiveThreshold && data[i] > data[i - 1] && data[i] > data[i + 1]) {
+    if (
+      data[i] > adaptiveThreshold &&
+      data[i] > data[i - 1] &&
+      data[i] > data[i + 1]
+    ) {
       peaks.push(i);
     }
   }
@@ -101,7 +105,7 @@ function calculateIntervals(peaks: number[]): number[] {
 function findTempo(
   intervals: number[],
   sampleRate: number,
-  downsampleFactor: number
+  downsampleFactor: number,
 ): { bpm: number; confidence: number } {
   if (intervals.length === 0) {
     return { bpm: 120, confidence: 0 };
@@ -164,7 +168,7 @@ function detectDownbeat(
   peaks: number[],
   bpm: number,
   sampleRate: number,
-  downsampleFactor: number
+  downsampleFactor: number,
 ): number {
   if (peaks.length < 4) {
     return peaks[0] || 0;
@@ -191,7 +195,8 @@ function detectDownbeat(
       const expectedPeak = candidate + samplesPerBeat * beat;
       // Find closest peak to expected position
       const closest = peaks.find(
-        (p) => p > candidate && Math.abs(p - expectedPeak) < samplesPerBeat * 0.3
+        (p) =>
+          p > candidate && Math.abs(p - expectedPeak) < samplesPerBeat * 0.3,
       );
       if (closest) {
         score += 1 - Math.abs(closest - expectedPeak) / samplesPerBeat;
@@ -213,7 +218,7 @@ function detectDownbeat(
 function generateBeatGrid(
   bpm: number,
   downbeatTime: number,
-  duration: number
+  duration: number,
 ): number[] {
   const beatsPerSecond = bpm / 60;
   const beatInterval = 1 / beatsPerSecond;
@@ -242,7 +247,7 @@ function generateBeatGrid(
  */
 function analyzeBeatGrid(
   channelData: Float32Array[],
-  sampleRate: number
+  sampleRate: number,
 ): BeatGridWorkerOutput {
   // Mix down to mono if stereo
   let monoData: Float32Array;
@@ -283,7 +288,11 @@ function analyzeBeatGrid(
   const intervals = calculateIntervals(peaks);
 
   // Find tempo
-  const { bpm, confidence } = findTempo(intervals, sampleRate, downsampleFactor);
+  const { bpm, confidence } = findTempo(
+    intervals,
+    sampleRate,
+    downsampleFactor,
+  );
 
   // Detect downbeat
   const downbeatPeak = detectDownbeat(peaks, bpm, sampleRate, downsampleFactor);
@@ -305,7 +314,7 @@ self.onmessage = (event: MessageEvent<BeatGridWorkerInput>) => {
   const { channelData, sampleRate } = event.data;
 
   try {
-    console.log('[BeatGridWorker] Starting analysis...');
+    console.log("[BeatGridWorker] Starting analysis...");
     const startTime = performance.now();
 
     // Analyze beat grid
@@ -313,19 +322,19 @@ self.onmessage = (event: MessageEvent<BeatGridWorkerInput>) => {
 
     const endTime = performance.now();
     console.log(
-      `[BeatGridWorker] ✅ Detected ${result.bpm} BPM, ${result.beatTimestamps.length} beats (confidence: ${(result.confidence * 100).toFixed(1)}%) in ${(endTime - startTime).toFixed(0)}ms`
+      `[BeatGridWorker] ✅ Detected ${result.bpm} BPM, ${result.beatTimestamps.length} beats (confidence: ${(result.confidence * 100).toFixed(1)}%) in ${(endTime - startTime).toFixed(0)}ms`,
     );
 
     // Send result back to main thread
     self.postMessage(result);
   } catch (error) {
-    console.error('[BeatGridWorker] ❌ Analysis failed:', error);
+    console.error("[BeatGridWorker] ❌ Analysis failed:", error);
     self.postMessage({
       bpm: 120,
       downbeatTime: 0,
       beatTimestamps: [],
       confidence: 0,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

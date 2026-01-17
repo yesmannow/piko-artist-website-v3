@@ -53,7 +53,10 @@ export function SessionRecorder({
     // Find canvas element (works with React Three Fiber Canvas)
     const canvas = document.querySelector(canvasSelector) as HTMLCanvasElement;
     if (!canvas) {
-      console.error("[SessionRecorder] Canvas element not found:", canvasSelector);
+      console.error(
+        "[SessionRecorder] Canvas element not found:",
+        canvasSelector,
+      );
       return;
     }
 
@@ -65,17 +68,21 @@ export function SessionRecorder({
       // If audioDestination is provided, use it; otherwise create a MediaStreamDestination
       let audioStream: MediaStream;
       if (audioDestination) {
-        const audioDestinationNode = audioContext.createMediaStreamDestination();
+        const audioDestinationNode =
+          audioContext.createMediaStreamDestination();
         audioDestination.connect(audioDestinationNode);
         audioStreamRef.current = audioDestinationNode;
         audioStream = audioDestinationNode.stream;
       } else {
         // Fallback: try to get audio from the default audio context destination
         // This is a workaround if audioDestination is not provided
-        const audioDestinationNode = audioContext.createMediaStreamDestination();
+        const audioDestinationNode =
+          audioContext.createMediaStreamDestination();
         audioStreamRef.current = audioDestinationNode;
         audioStream = audioDestinationNode.stream;
-        console.warn("[SessionRecorder] audioDestination not provided, using fallback");
+        console.warn(
+          "[SessionRecorder] audioDestination not provided, using fallback",
+        );
       }
 
       // 3. Combine video + audio
@@ -111,7 +118,10 @@ export function SessionRecorder({
           const blob = new Blob(chunksRef.current, { type: mimeType });
 
           // Generate filename with timestamp
-          const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
+          const timestamp = new Date()
+            .toISOString()
+            .replace(/[:.]/g, "-")
+            .slice(0, -5);
           const filename = `Piko_Studio_Session_${timestamp}.webm`;
 
           // Download file
@@ -127,7 +137,10 @@ export function SessionRecorder({
           // Show success feedback
           triggerHaptic();
         } catch (error) {
-          console.error("[SessionRecorder] Failed to process recording:", error);
+          console.error(
+            "[SessionRecorder] Failed to process recording:",
+            error,
+          );
         } finally {
           setIsProcessing(false);
           chunksRef.current = [];
@@ -166,7 +179,9 @@ export function SessionRecorder({
 
       // Stop all tracks
       if (audioStreamRef.current) {
-        audioStreamRef.current.stream.getTracks().forEach((track) => track.stop());
+        audioStreamRef.current.stream
+          .getTracks()
+          .forEach((track) => track.stop());
         audioStreamRef.current.disconnect();
         audioStreamRef.current = null;
       }
@@ -202,10 +217,7 @@ export function SessionRecorder({
           animate={isRecording ? { scale: [1, 1.2, 1] } : {}}
           transition={{ duration: 1, repeat: isRecording ? Infinity : 0 }}
         >
-          <Circle
-            className={isRecording ? "fill-current" : ""}
-            size={16}
-          />
+          <Circle className={isRecording ? "fill-current" : ""} size={16} />
         </motion.div>
         <span>REC</span>
         {isRecording && (
@@ -233,4 +245,3 @@ export function SessionRecorder({
     </div>
   );
 }
-

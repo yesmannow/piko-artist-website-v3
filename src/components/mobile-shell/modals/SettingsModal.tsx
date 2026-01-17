@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { X, Trash2, Radio } from 'lucide-react';
-import { useMIDIStore } from '@/store/useMIDIStore';
-import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
+import { useState, useEffect } from "react";
+import { X, Trash2, Radio } from "lucide-react";
+import { useMIDIStore } from "@/store/useMIDIStore";
+import { triggerHaptic, HAPTIC_PATTERNS } from "@/utils/haptics";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TabType = 'AUDIO' | 'MIDI' | 'ABOUT';
+type TabType = "AUDIO" | "MIDI" | "ABOUT";
 
 /**
  * PHASE 9: Settings Modal
- * 
+ *
  * Provides user interface for:
  * - Audio output device selection
  * - Latency hint configuration
@@ -23,10 +23,12 @@ type TabType = 'AUDIO' | 'MIDI' | 'ABOUT';
  * - App information
  */
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
-  const [activeTab, setActiveTab] = useState<TabType>('AUDIO');
+  const [activeTab, setActiveTab] = useState<TabType>("AUDIO");
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('default');
-  const [latencyHint, setLatencyHint] = useState<'interactive' | 'balanced'>('interactive');
+  const [selectedDevice, setSelectedDevice] = useState<string>("default");
+  const [latencyHint, setLatencyHint] = useState<"interactive" | "balanced">(
+    "interactive",
+  );
 
   // MIDI store
   const midiConnected = useMIDIStore((state) => state.isConnected);
@@ -40,14 +42,20 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
   // Load audio devices
   useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices()
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.mediaDevices?.enumerateDevices
+    ) {
+      navigator.mediaDevices
+        .enumerateDevices()
         .then((devices) => {
-          const audioOutputs = devices.filter((device) => device.kind === 'audiooutput');
+          const audioOutputs = devices.filter(
+            (device) => device.kind === "audiooutput",
+          );
           setAudioDevices(audioOutputs);
         })
         .catch((err) => {
-          console.warn('Failed to enumerate audio devices:', err);
+          console.warn("Failed to enumerate audio devices:", err);
         });
     }
   }, [isOpen]);
@@ -74,7 +82,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
   const handleClearAllMappings = () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
-    if (confirm('Clear all MIDI mappings?')) {
+    if (confirm("Clear all MIDI mappings?")) {
       clearMappings();
     }
   };
@@ -85,7 +93,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
       stopLearn();
     } else {
       // Will be activated when user clicks a control
-      alert('Click any control (Play, Cue, Fader) to map it to a MIDI input');
+      alert("Click any control (Play, Cue, Fader) to map it to a MIDI input");
     }
   };
 
@@ -108,14 +116,14 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-800">
-          {(['AUDIO', 'MIDI', 'ABOUT'] as TabType[]).map((tab) => (
+          {(["AUDIO", "MIDI", "ABOUT"] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
               className={`flex-1 py-3 px-4 font-barlow uppercase text-sm font-bold transition-colors ${
                 activeTab === tab
-                  ? 'bg-gray-800 text-white border-b-2 border-blue-500'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? "bg-gray-800 text-white border-b-2 border-blue-500"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
             >
               {tab}
@@ -126,7 +134,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {/* AUDIO TAB */}
-          {activeTab === 'AUDIO' && (
+          {activeTab === "AUDIO" && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-barlow uppercase tracking-wider text-gray-400 mb-3">
@@ -141,7 +149,8 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     <option value="default">System Default</option>
                     {audioDevices.map((device) => (
                       <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Device ${device.deviceId.slice(0, 8)}`}
+                        {device.label ||
+                          `Device ${device.deviceId.slice(0, 8)}`}
                       </option>
                     ))}
                   </select>
@@ -162,8 +171,10 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                       type="radio"
                       name="latency"
                       value="interactive"
-                      checked={latencyHint === 'interactive'}
-                      onChange={(e) => setLatencyHint(e.target.value as 'interactive')}
+                      checked={latencyHint === "interactive"}
+                      onChange={(e) =>
+                        setLatencyHint(e.target.value as "interactive")
+                      }
                       className="w-4 h-4"
                     />
                     <div>
@@ -180,8 +191,10 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                       type="radio"
                       name="latency"
                       value="balanced"
-                      checked={latencyHint === 'balanced'}
-                      onChange={(e) => setLatencyHint(e.target.value as 'balanced')}
+                      checked={latencyHint === "balanced"}
+                      onChange={(e) =>
+                        setLatencyHint(e.target.value as "balanced")
+                      }
                       className="w-4 h-4"
                     />
                     <div>
@@ -202,7 +215,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           )}
 
           {/* MIDI TAB */}
-          {activeTab === 'MIDI' && (
+          {activeTab === "MIDI" && (
             <div className="space-y-6">
               {/* Connection Status */}
               <div>
@@ -210,13 +223,19 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   Connection Status
                 </h3>
                 <div className="flex items-center gap-3 p-3 bg-gray-800 rounded">
-                  <Radio className={`w-5 h-5 ${midiConnected ? 'text-green-500' : 'text-gray-600'}`} />
+                  <Radio
+                    className={`w-5 h-5 ${midiConnected ? "text-green-500" : "text-gray-600"}`}
+                  />
                   <div>
                     <div className="font-mono text-sm text-white">
-                      {midiConnected ? midiDeviceName || 'Connected' : 'No device connected'}
+                      {midiConnected
+                        ? midiDeviceName || "Connected"
+                        : "No device connected"}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {midiConnected ? 'MIDI device active' : 'Connect a MIDI controller to get started'}
+                      {midiConnected
+                        ? "MIDI device active"
+                        : "Connect a MIDI controller to get started"}
                     </div>
                   </div>
                 </div>
@@ -232,14 +251,15 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   disabled={!midiConnected}
                   className={`w-full py-3 px-4 rounded font-barlow uppercase font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
                     learnMode
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-750'
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-750"
                   }`}
                 >
-                  {learnMode ? 'Exit Learn Mode' : 'Enter Learn Mode'}
+                  {learnMode ? "Exit Learn Mode" : "Enter Learn Mode"}
                 </button>
                 <p className="text-xs text-gray-600 mt-2">
-                  In Learn Mode, click any control then press a MIDI button/knob to map it
+                  In Learn Mode, click any control then press a MIDI button/knob
+                  to map it
                 </p>
               </div>
 
@@ -274,7 +294,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                             {mapping.label}
                           </div>
                           <div className="text-xs text-gray-500">
-                            → {mapping.action.replace('_', ' ').toUpperCase()}
+                            → {mapping.action.replace("_", " ").toUpperCase()}
                           </div>
                         </div>
                         <button
@@ -292,7 +312,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           )}
 
           {/* ABOUT TAB */}
-          {activeTab === 'ABOUT' && (
+          {activeTab === "ABOUT" && (
             <div className="space-y-6">
               <div className="text-center">
                 <h3 className="text-2xl font-barlow uppercase tracking-wider text-white font-bold mb-2">

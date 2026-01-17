@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useAudioStore } from '@/store/useAudioStore';
-import { ensureAudioEngineReady } from '@/engine/AudioEngine';
+import { useEffect, useRef, useState } from "react";
+import { useAudioStore } from "@/store/useAudioStore";
+import { ensureAudioEngineReady } from "@/engine/AudioEngine";
 
 interface WaveformCanvasProps {
   deckId: string;
@@ -11,7 +11,7 @@ interface WaveformCanvasProps {
 
 /**
  * PHASE 5: High-Fidelity Waveform Canvas
- * 
+ *
  * Renders audio waveform using Web Worker for processing and RAF for rendering.
  * Features:
  * - Off-thread waveform analysis via Web Worker
@@ -26,8 +26,12 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
   const bpmWorkerRef = useRef<Worker | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastPlayheadRef = useRef<number>(0);
-  const enginePromiseRef = useRef<Promise<Awaited<ReturnType<typeof ensureAudioEngineReady>>> | null>(null);
-  const engineRef = useRef<Awaited<ReturnType<typeof ensureAudioEngineReady>> | null>(null);
+  const enginePromiseRef = useRef<Promise<
+    Awaited<ReturnType<typeof ensureAudioEngineReady>>
+  > | null>(null);
+  const engineRef = useRef<Awaited<
+    ReturnType<typeof ensureAudioEngineReady>
+  > | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +112,7 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         };
       `;
 
-      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const blob = new Blob([workerCode], { type: "application/javascript" });
       const workerUrl = URL.createObjectURL(blob);
       workerRef.current = new Worker(workerUrl);
 
@@ -233,21 +237,25 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         };
       `;
 
-      const bpmBlob = new Blob([bpmWorkerCode], { type: 'application/javascript' });
+      const bpmBlob = new Blob([bpmWorkerCode], {
+        type: "application/javascript",
+      });
       const bpmWorkerUrl = URL.createObjectURL(bpmBlob);
       bpmWorkerRef.current = new Worker(bpmWorkerUrl);
 
       bpmWorkerRef.current.onmessage = (event) => {
         const { bpm, offset, confidence } = event.data;
-        console.log(`🎵 BPM detected: ${bpm} (confidence: ${(confidence * 100).toFixed(1)}%)`);
-        
+        console.log(
+          `🎵 BPM detected: ${bpm} (confidence: ${(confidence * 100).toFixed(1)}%)`,
+        );
+
         // Update AudioEngine with detected BPM
         try {
           getEngine()
             .then((engine) => engine.setBPM(deckId, bpm, offset))
-            .catch((err) => console.warn('Failed to set BPM:', err));
+            .catch((err) => console.warn("Failed to set BPM:", err));
         } catch (error) {
-          console.warn('Failed to set BPM:', error);
+          console.warn("Failed to set BPM:", error);
         }
       };
 
@@ -262,8 +270,8 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         }
       };
     } catch (err) {
-      console.error('Failed to initialize workers:', err);
-      setError('Worker initialization failed');
+      console.error("Failed to initialize workers:", err);
+      setError("Worker initialization failed");
     }
   }, [deckId]);
 
@@ -278,16 +286,16 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
       try {
         const engine = await getEngine();
         const deck = engine?.decks.get(deckId);
-        
+
         if (!deck || !deck.buffer) {
-          setError('No audio buffer available');
+          setError("No audio buffer available");
           setIsProcessing(false);
           return;
         }
 
         const audioBuffer = deck.buffer;
         const canvasWidth = canvasRef.current?.width || 800;
-        
+
         // Calculate samples per pixel for optimal resolution
         const samplesPerPixel = Math.floor(audioBuffer.length / canvasWidth);
 
@@ -313,8 +321,8 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
           });
         }
       } catch (err) {
-        console.error('Waveform processing error:', err);
-        setError(err instanceof Error ? err.message : 'Processing failed');
+        console.error("Waveform processing error:", err);
+        setError(err instanceof Error ? err.message : "Processing failed");
         setIsProcessing(false);
       }
     };
@@ -327,7 +335,7 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const render = () => {
@@ -335,7 +343,7 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
       const height = canvas.height;
 
       // Clear canvas
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, width, height);
 
       // Draw waveform if peaks are available
@@ -354,7 +362,7 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
 
           // Top half (mirrored)
           ctx.fillRect(x, centerY - barHeight, barWidth - 1, barHeight);
-          
+
           // Bottom half (mirrored)
           ctx.fillRect(x, centerY, barWidth - 1, barHeight);
         }
@@ -364,13 +372,17 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
           const engine = engineRef.current;
           const bpm = engine?.getBPM(deckId) ?? 0;
           const gridOffset = engine?.getGridOffset(deckId) ?? 0;
-          
+
           if (bpm > 0 && deckState.duration > 0) {
             const beatLength = 60 / bpm; // Seconds per beat
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-            
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+
             // Draw beat markers
-            for (let time = gridOffset; time < deckState.duration; time += beatLength) {
+            for (
+              let time = gridOffset;
+              time < deckState.duration;
+              time += beatLength
+            ) {
               const x = (time / deckState.duration) * width;
               ctx.fillRect(x, 0, 1, height);
             }
@@ -382,12 +394,13 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         // Draw playhead indicator
         if (deckState.isPlaying && deckState.duration > 0) {
           try {
-          const engine = engineRef.current;
-          const deck = engine?.decks.get(deckId);
-          
-          if (deck && engine?.context) {
+            const engine = engineRef.current;
+            const deck = engine?.decks.get(deckId);
+
+            if (deck && engine?.context) {
               // Calculate current playback position
-              const currentTime = engine.context.currentTime - deck.startTime + deck.pauseTime;
+              const currentTime =
+                engine.context.currentTime - deck.startTime + deck.pauseTime;
               const progress = Math.min(currentTime / deckState.duration, 1);
               const playheadX = progress * width;
 
@@ -396,7 +409,7 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
                 lastPlayheadRef.current = playheadX;
 
                 // Draw playhead line
-                ctx.fillStyle = '#FFFFFF';
+                ctx.fillStyle = "#FFFFFF";
                 ctx.fillRect(playheadX - 1, 0, 2, height);
               }
             }
@@ -406,15 +419,15 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         }
       } else if (isProcessing) {
         // Show loading state
-        ctx.fillStyle = '#666666';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('Processing waveform...', width / 2, height / 2);
+        ctx.fillStyle = "#666666";
+        ctx.font = "12px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("Processing waveform...", width / 2, height / 2);
       } else if (error) {
         // Show error state
-        ctx.fillStyle = '#FF0000';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = "#FF0000";
+        ctx.font = "12px monospace";
+        ctx.textAlign = "center";
         ctx.fillText(`Error: ${error}`, width / 2, height / 2);
       }
 
@@ -428,7 +441,14 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [deckId, deckState.isPlaying, deckState.duration, color, isProcessing, error]);
+  }, [
+    deckId,
+    deckState.isPlaying,
+    deckState.duration,
+    color,
+    isProcessing,
+    error,
+  ]);
 
   // Handle canvas resize
   useEffect(() => {
@@ -439,23 +459,23 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * window.devicePixelRatio;
       canvas.height = rect.height * window.devicePixelRatio;
-      
-      const ctx = canvas.getContext('2d');
+
+      const ctx = canvas.getContext("2d");
       if (ctx) {
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
       }
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: "100%", height: "100%" }}
     />
   );
 };

@@ -9,12 +9,14 @@ Phase 9C implements musical key detection with Camelot notation and harmonic com
 ### Key Detection Worker (`src/workers/key.worker.ts`)
 
 **Essentia.js Integration:**
+
 - Attempts to load Essentia.js WASM in worker
 - Uses `KeyDetection` algorithm for accurate key detection
 - Falls back gracefully if Essentia.js unavailable
 - Returns structured error for UI handling
 
 **Message Protocol:**
+
 - `ANALYZE_KEY_START`: Request key analysis
 - `ANALYZE_KEY_DONE`: Returns `{ root, scale, camelot }`
 - `ANALYZE_KEY_ERROR`: Returns error message
@@ -22,6 +24,7 @@ Phase 9C implements musical key detection with Camelot notation and harmonic com
 ### KeyService (`src/engine/rt/analysis/KeyService.ts`)
 
 **Singleton Pattern:**
+
 - Manages Web Worker for key analysis
 - Caches results by track URL/hash
 - Provides `analyzeKey(audioBuffer, cacheKey)` method
@@ -30,11 +33,13 @@ Phase 9C implements musical key detection with Camelot notation and harmonic com
 ### Camelot Utilities (`src/utils/camelot.ts`)
 
 **Functions:**
+
 - `toCamelot(root, scale)`: Converts to Camelot notation
 - `compatibleKeys(camelot)`: Returns compatible keys array
 - `areKeysCompatible(key1, key2)`: Checks compatibility
 
 **Compatibility Rules:**
+
 1. Same number, opposite scale (8A ↔ 8B)
 2. Adjacent numbers, same scale (8A ↔ 7A, 8A ↔ 9A)
 3. Adjacent numbers, opposite scale (8A ↔ 7B, 8A ↔ 9B)
@@ -42,26 +47,31 @@ Phase 9C implements musical key detection with Camelot notation and harmonic com
 ### React Hooks
 
 **useKey** (`src/hooks/useKey.ts`):
+
 - `analyze(audioBuffer, cacheKey)`: Start key analysis
 - `keyData`: KeyAnalysisResult or null
 - `isAnalyzing`: Analysis in progress
 
 **useTrackKey** (`src/hooks/useTrackKey.ts`):
+
 - Provides key data for a specific track
 - Handles caching and retrieval
 
 **useKeyCompatibility** (`src/hooks/useTrackKey.ts`):
+
 - Checks if track key is compatible with reference key
 - Returns compatible keys list
 
 ### UI Components
 
 **KeyDisplay** (`src/components/studio/KeyDisplay.tsx`):
+
 - Displays Camelot notation
 - Optional compatibility highlighting
 - Shows "Key N/A" if unavailable
 
 **BeatGridDisplay** (Updated):
+
 - Shows key next to BPM
 - Auto-analyzes key when audio buffer available
 
@@ -70,7 +80,7 @@ Phase 9C implements musical key detection with Camelot notation and harmonic com
 ### Analyze Key for Track
 
 ```typescript
-import { useKey } from '@/hooks/useKey';
+import { useKey } from "@/hooks/useKey";
 
 const { analyze, keyData } = useKey();
 
@@ -109,11 +119,12 @@ import { KeyDisplay } from '@/components/studio/KeyDisplay';
 To add compatibility highlighting to track lists:
 
 1. **Get master deck key:**
+
    ```typescript
    const masterDeckKey = useMemo(() => {
      // Get key from currently playing deck
      const studio = getStudioEngine();
-     const masterDeck = 'A'; // or get from state
+     const masterDeck = "A"; // or get from state
      const cacheKey = getDeckCacheKey(masterDeck);
      const keyService = getKeyService();
      const keyData = keyService.getCached(cacheKey);
@@ -122,6 +133,7 @@ To add compatibility highlighting to track lists:
    ```
 
 2. **Add KeyDisplay to TrackCard:**
+
    ```typescript
    <KeyDisplay
      keyData={trackKeyData}
@@ -131,6 +143,7 @@ To add compatibility highlighting to track lists:
    ```
 
 3. **Highlight compatible tracks:**
+
    ```typescript
    const { isCompatible } = useKeyCompatibility(trackKey, masterDeckKey);
 
@@ -142,6 +155,7 @@ To add compatibility highlighting to track lists:
 ## Essentia.js Setup
 
 **Current Status:**
+
 - Worker attempts to load Essentia.js
 - Falls back gracefully if unavailable
 - Returns default key (C major / 8B) in fallback mode
@@ -149,6 +163,7 @@ To add compatibility highlighting to track lists:
 **To Enable Real Key Detection:**
 
 1. Install Essentia.js:
+
    ```bash
    npm install essentia.js
    ```
@@ -173,16 +188,19 @@ To add compatibility highlighting to track lists:
 ## Troubleshooting
 
 **Key always shows "Unavailable":**
+
 - Check Essentia.js is installed
 - Verify worker compiled correctly
 - Check browser console for errors
 
 **Compatibility not highlighting:**
+
 - Ensure both tracks have keys analyzed
 - Check reference key is set correctly
 - Verify `areKeysCompatible()` logic
 
 **Key analysis slow:**
+
 - Analysis runs in worker (non-blocking)
 - Large files may take time
 - Consider pre-analyzing library tracks

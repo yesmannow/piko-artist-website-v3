@@ -15,28 +15,42 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-  }) : x)(function(x) {
+  var __require = /* @__PURE__ */ ((x) =>
+    typeof require !== "undefined"
+      ? require
+      : typeof Proxy !== "undefined"
+        ? new Proxy(x, {
+            get: (a, b) => (typeof require !== "undefined" ? require : a)[b],
+          })
+        : x)(function (x) {
     if (typeof require !== "undefined") return require.apply(this, arguments);
     throw Error('Dynamic require of "' + x + '" is not supported');
   });
   var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
+    if ((from && typeof from === "object") || typeof from === "function") {
       for (let key of __getOwnPropNames(from))
         if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+          __defProp(to, key, {
+            get: () => from[key],
+            enumerable:
+              !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+          });
     }
     return to;
   };
-  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
-    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-    mod
-  ));
+  var __toESM = (mod, isNodeMode, target) => (
+    (target = mod != null ? __create(__getProtoOf(mod)) : {}),
+    __copyProps(
+      // If the importer is in node compatibility mode or this is not an ESM
+      // file that has been converted to a CommonJS file using a Babel-
+      // compatible transform (i.e. "__esModule" has not been set), then set
+      // "default" to the CommonJS "module.exports" for node compatibility.
+      isNodeMode || !mod || !mod.__esModule
+        ? __defProp(target, "default", { value: mod, enumerable: true })
+        : target,
+      mod,
+    )
+  );
 
   // src/workers/key.worker.ts
   var essentiaInstance = null;
@@ -59,7 +73,8 @@
       console.log("[KeyWorker] Essentia.js loaded successfully");
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       essentiaLoadError = `Essentia.js load failed: ${errorMessage}`;
       console.warn("[KeyWorker] Essentia.js not available:", errorMessage);
       return false;
@@ -69,7 +84,8 @@
     if (!essentiaInstance) {
       throw new Error("Essentia instance not initialized");
     }
-    const audioData = channelData.length > 0 ? channelData[0] : new Float32Array(0);
+    const audioData =
+      channelData.length > 0 ? channelData[0] : new Float32Array(0);
     if (audioData.length === 0) {
       throw new Error("No audio data provided");
     }
@@ -82,75 +98,80 @@
       return {
         root: normalizedRoot,
         scale: scale.toLowerCase(),
-        camelot: camelot || `${normalizedRoot}${scale.charAt(0).toUpperCase()}`
+        camelot: camelot || `${normalizedRoot}${scale.charAt(0).toUpperCase()}`,
       };
     } catch (error) {
-      throw new Error(`Key detection failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Key detection failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
   function analyzeKeyFallback(channelData, sampleRate) {
-    const audioData = channelData.length > 0 ? channelData[0] : new Float32Array(0);
+    const audioData =
+      channelData.length > 0 ? channelData[0] : new Float32Array(0);
     if (audioData.length === 0) {
       return {
         root: "C",
         scale: "major",
-        camelot: "8B"
+        camelot: "8B",
       };
     }
-    console.warn("[KeyWorker] Using fallback key detection (may be inaccurate)");
+    console.warn(
+      "[KeyWorker] Using fallback key detection (may be inaccurate)",
+    );
     return {
       root: "C",
       scale: "major",
-      camelot: "8B"
+      camelot: "8B",
     };
   }
   function normalizeRoot(root) {
     const normalized = root.trim();
     const enharmonicMap = {
-      "Db": "C#",
-      "Eb": "D#",
-      "Gb": "F#",
-      "Ab": "G#",
-      "Bb": "A#"
+      Db: "C#",
+      Eb: "D#",
+      Gb: "F#",
+      Ab: "G#",
+      Bb: "A#",
     };
     return enharmonicMap[normalized] || normalized;
   }
   function toCamelot(root, scale) {
     const camelotMap = {
       // Minor keys (A)
-      "Abm": "1A",
+      Abm: "1A",
       "G#m": "1A",
-      "Ebm": "2A",
+      Ebm: "2A",
       "D#m": "2A",
-      "Bbm": "3A",
+      Bbm: "3A",
       "A#m": "3A",
-      "Fm": "4A",
-      "Cm": "5A",
-      "Gm": "6A",
-      "Dm": "7A",
-      "Am": "8A",
-      "Em": "9A",
-      "Bm": "10A",
+      Fm: "4A",
+      Cm: "5A",
+      Gm: "6A",
+      Dm: "7A",
+      Am: "8A",
+      Em: "9A",
+      Bm: "10A",
       "F#m": "11A",
       "C#m": "12A",
       // Major keys (B)
-      "B": "1B",
+      B: "1B",
       "F#": "2B",
-      "Gb": "2B",
-      "Db": "3B",
+      Gb: "2B",
+      Db: "3B",
       "C#": "3B",
-      "Ab": "4B",
+      Ab: "4B",
       "G#": "4B",
-      "Eb": "5B",
+      Eb: "5B",
       "D#": "5B",
-      "Bb": "6B",
+      Bb: "6B",
       "A#": "6B",
-      "F": "7B",
-      "C": "8B",
-      "G": "9B",
-      "D": "10B",
-      "A": "11B",
-      "E": "12B"
+      F: "7B",
+      C: "8B",
+      G: "9B",
+      D: "10B",
+      A: "11B",
+      E: "12B",
     };
     const normalizedRoot = normalizeRoot(root);
     const key = scale === "minor" ? `${normalizedRoot}m` : normalizedRoot;
@@ -165,23 +186,28 @@
       const essentiaAvailable = await loadEssentia();
       let result;
       if (essentiaAvailable && essentiaInstance) {
-        result = await analyzeKeyWithEssentia(input.channelData, input.sampleRate);
+        result = await analyzeKeyWithEssentia(
+          input.channelData,
+          input.sampleRate,
+        );
       } else {
         result = analyzeKeyFallback(input.channelData, input.sampleRate);
         self.postMessage({
           type: "ANALYZE_KEY_ERROR",
-          error: essentiaLoadError || "Essentia.js not available, using fallback"
+          error:
+            essentiaLoadError || "Essentia.js not available, using fallback",
         });
       }
       self.postMessage({
         type: "ANALYZE_KEY_DONE",
-        data: result
+        data: result,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       self.postMessage({
         type: "ANALYZE_KEY_ERROR",
-        error: errorMessage
+        error: errorMessage,
       });
     }
   };

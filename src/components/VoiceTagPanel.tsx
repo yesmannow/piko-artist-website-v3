@@ -1,6 +1,14 @@
 "use client";
 
-import { Mic, Circle, Square, Play, Download, Trash2, Volume2 } from "lucide-react";
+import {
+  Mic,
+  Circle,
+  Square,
+  Play,
+  Download,
+  Trash2,
+  Volume2,
+} from "lucide-react";
 
 interface VoiceTagPanelProps {
   micEnabled: boolean;
@@ -206,4 +214,3 @@ export function VoiceTagPanel({
     </div>
   );
 }
-

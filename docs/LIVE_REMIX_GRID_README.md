@@ -7,6 +7,7 @@ The Live Remix Grid transforms the DJ mixer into a live performance instrument, 
 ## Features
 
 ### 🎛️ **4x4 Step Sequencer Grid**
+
 - **Visual Grid Interface**: 4x4 matrix of programmable pads
 - **Real-time Sequencing**: BPM-synchronized step progression
 - **Velocity Control**: Per-step volume adjustment
@@ -14,18 +15,21 @@ The Live Remix Grid transforms the DJ mixer into a live performance instrument, 
 - **Swing Control**: Adjustable swing timing for groove
 
 ### 🎵 **Sample Integration**
+
 - **One-Shot Library**: 28+ pre-existing sample packs
 - **Beat-Synchronized**: Triggers snap to beatgrid markers
 - **Multi-Category**: Drums, scratches, FX, vocals, stems
 - **Pack Organization**: Browse samples by category and pack
 
 ### 🎚️ **Stem Sequencer**
+
 - **Separated Audio**: Trigger vocals, drums, bass, and other stems
 - **Rhythmic Patterns**: Create complex layered performances
 - **Real-time Mixing**: Combine stems with live samples
 - **Phrase Sync**: Align with musical phrases and beats
 
 ### 🪟 **Multi-Window Module**
+
 - **Detachable Interface**: Pop out as separate window
 - **Window Management**: Minimize, maximize, resize, close
 - **Multi-Monitor**: Use across multiple displays
@@ -68,18 +72,22 @@ The Live Remix Grid transforms the DJ mixer into a live performance instrument, 
 ### Sample Packs
 
 #### Drum Samples
+
 - **Basic Drums**: Kick, snare, hi-hat, crash
 - **808 Collection**: Deep bass drums and percussion
 
 #### Scratch Samples
+
 - **Cuts & Scratches**: Transform scratches and flares
 - **Scratch FX**: Special effects and risers
 
 #### FX Samples
+
 - **Transitions**: Risers, falls, sweeps
 - **Impacts**: Booms, crashes, stabs
 
 #### Stem Samples
+
 - **Amor Stems**: Vocals, drums, bass, other
 - **Jardin Stems**: Multi-track separated audio
 
@@ -88,7 +96,7 @@ The Live Remix Grid transforms the DJ mixer into a live performance instrument, 
 ### Basic Operation
 
 ```tsx
-import { DetachableRemixGrid } from '@/components/dj-ui/DetachableRemixGrid';
+import { DetachableRemixGrid } from "@/components/dj-ui/DetachableRemixGrid";
 
 // In your DJ interface
 <DetachableRemixGrid
@@ -97,9 +105,9 @@ import { DetachableRemixGrid } from '@/components/dj-ui/DetachableRemixGrid';
   bpm={120}
   isPlaying={isDeckPlaying}
   onSampleTrigger={(sample, velocity) => {
-    console.log('Triggered:', sample.name, 'at', velocity);
+    console.log("Triggered:", sample.name, "at", velocity);
   }}
-/>
+/>;
 ```
 
 ### Sample Assignment
@@ -129,12 +137,14 @@ import { DetachableRemixGrid } from '@/components/dj-ui/DetachableRemixGrid';
 ## Window Management
 
 ### Detaching Windows
+
 - Click the **maximize icon** to detach
 - Drag windows by the **title bar**
 - Resize by dragging **window edges**
 - Minimize to **taskbar** at bottom
 
 ### Multi-Window Workflow
+
 - **Primary Grid**: Main step sequencer
 - **Sample Browser**: Dedicated sample selection
 - **Pattern Editor**: Advanced pattern creation
@@ -143,16 +153,19 @@ import { DetachableRemixGrid } from '@/components/dj-ui/DetachableRemixGrid';
 ## Performance Features
 
 ### Real-time Sync
+
 - **Beatgrid Integration**: Snaps to deck timing
 - **Phrase Boundaries**: Aligns with musical structure
 - **PLL Phase Lock**: Drift-free synchronization
 
 ### Audio Optimization
+
 - **Buffer Preloading**: Instant sample triggering
 - **Memory Management**: Efficient resource usage
 - **Low Latency**: Optimized for live performance
 
 ### Visual Feedback
+
 - **Step Indicators**: Current position highlighting
 - **Velocity Bars**: Visual volume representation
 - **Category Icons**: Quick sample identification
@@ -168,12 +181,14 @@ import { DetachableRemixGrid } from '@/components/dj-ui/DetachableRemixGrid';
 ## Integration Points
 
 ### Existing Systems
+
 - **AudioEngine**: Sample playback routing
 - **BeatGridService**: Timing synchronization
 - **StemService**: Stem separation integration
 - **DJInterface**: Mixer integration
 
 ### State Management
+
 - **Zustand Store**: Pattern persistence
 - **Local Storage**: User preferences
 - **Session Recovery**: Restore detached windows
@@ -188,17 +203,20 @@ import { DetachableRemixGrid } from '@/components/dj-ui/DetachableRemixGrid';
 ## Future Enhancements
 
 ### Advanced Features
+
 - **MIDI Integration**: Hardware controller support
 - **Pattern Chaining**: Complex sequence building
 - **Live Recording**: Capture performance patterns
 - **AI Assistance**: Intelligent pattern generation
 
 ### Performance Upgrades
+
 - **WebAssembly**: Enhanced audio processing
 - **Worker Threads**: Background pattern generation
 - **WebRTC**: Multi-device synchronization
 
 ### UI Improvements
+
 - **Touch Gestures**: Mobile performance interface
 - **Theme System**: Customizable visual styles
 - **Accessibility**: Screen reader support

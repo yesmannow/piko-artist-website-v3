@@ -23,7 +23,7 @@ async function initializeWASM() {
   return {
     separate: async (audioBuffer) => {
       // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Return mock separated stems
       return {
@@ -32,7 +32,7 @@ async function initializeWASM() {
         bass: audioBuffer,
         other: audioBuffer,
       };
-    }
+    },
   };
 }
 
@@ -43,7 +43,7 @@ async function initializeWASM() {
  */
 async function processAudioFile(audioData, sampleRate) {
   if (isProcessing) {
-    throw new Error('STUDIO_CORE: Signal cracker already processing');
+    throw new Error("STUDIO_CORE: Signal cracker already processing");
   }
 
   isProcessing = true;
@@ -54,20 +54,20 @@ async function processAudioFile(audioData, sampleRate) {
   try {
     // Send status update - Syndicate telemetry
     self.postMessage({
-      type: 'STATUS',
-      message: 'SIGNAL_ACQUIRED'
+      type: "STATUS",
+      message: "SIGNAL_ACQUIRED",
     });
 
     self.postMessage({
-      type: 'STATUS',
-      message: 'DECRYPTING_SIGNAL_CHAIN...'
+      type: "STATUS",
+      message: "DECRYPTING_SIGNAL_CHAIN...",
     });
 
     // Initialize WASM if not already loaded
     if (!wasmModule) {
       self.postMessage({
-        type: 'STATUS',
-        message: 'STUDIO_CORE: LOADING_WASM_MODULE...'
+        type: "STATUS",
+        message: "STUDIO_CORE: LOADING_WASM_MODULE...",
       });
       wasmModule = await initializeWASM();
     }
@@ -75,11 +75,11 @@ async function processAudioFile(audioData, sampleRate) {
     // Process with WASM (simulated progress) - Syndicate telemetry
     const progressSteps = [25, 50, 75, 100];
     for (const progress of progressSteps) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
       self.postMessage({
-        type: 'PROGRESS',
+        type: "PROGRESS",
         progress,
-        message: `CRACKING_SIGNAL_CHAIN: ${progress}%`
+        message: `CRACKING_SIGNAL_CHAIN: ${progress}%`,
       });
     }
 
@@ -88,15 +88,15 @@ async function processAudioFile(audioData, sampleRate) {
 
     // Send completion status - Syndicate telemetry
     self.postMessage({
-      type: 'STATUS',
-      message: 'VAULT_SIGNAL_LOCKED'
+      type: "STATUS",
+      message: "VAULT_SIGNAL_LOCKED",
     });
 
     // Send results
     self.postMessage({
-      type: 'COMPLETE',
+      type: "COMPLETE",
       stems: separatedStems,
-      message: 'STUDIO_CORE: Signal processing complete'
+      message: "STUDIO_CORE: Signal processing complete",
     });
 
     // CRITICAL: Memory cleanup - WASM memory is linear and does not GC automatically
@@ -104,15 +104,14 @@ async function processAudioFile(audioData, sampleRate) {
     // This is essential for repeated processing sessions
     inputBuffer = null;
     audioData = null;
-    if (wasmModule && typeof wasmModule.free === 'function') {
+    if (wasmModule && typeof wasmModule.free === "function") {
       // If WASM module has a free() method, call it to release memory
       wasmModule.free();
     }
-
   } catch (error) {
     self.postMessage({
-      type: 'ERROR',
-      message: `STUDIO_CORE: Signal processing failed - ${error.message}`
+      type: "ERROR",
+      message: `STUDIO_CORE: Signal processing failed - ${error.message}`,
     });
   } finally {
     isProcessing = false;
@@ -125,34 +124,33 @@ async function processAudioFile(audioData, sampleRate) {
 /**
  * Handle messages from main thread
  */
-self.addEventListener('message', async (event) => {
+self.addEventListener("message", async (event) => {
   const { type, data } = event.data;
 
   switch (type) {
-    case 'PROCESS_AUDIO':
+    case "PROCESS_AUDIO":
       // data: { audioBuffer, sampleRate }
       await processAudioFile(data.audioBuffer, data.sampleRate);
       break;
 
-    case 'CANCEL':
+    case "CANCEL":
       isProcessing = false;
       self.postMessage({
-        type: 'STATUS',
-        message: 'STUDIO_CORE: Signal processing cancelled'
+        type: "STATUS",
+        message: "STUDIO_CORE: Signal processing cancelled",
       });
       break;
 
     default:
       self.postMessage({
-        type: 'ERROR',
-        message: `STUDIO_CORE: Unknown command: ${type}`
+        type: "ERROR",
+        message: `STUDIO_CORE: Unknown command: ${type}`,
       });
   }
 });
 
 // Worker ready signal
 self.postMessage({
-  type: 'READY',
-  message: 'STUDIO_CORE: V3 Signal Cracker worker initialized'
+  type: "READY",
+  message: "STUDIO_CORE: V3 Signal Cracker worker initialized",
 });
-

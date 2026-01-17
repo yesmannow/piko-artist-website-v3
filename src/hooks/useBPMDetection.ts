@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { detectBPM, estimateBPMFromMetadata, type BPMResult } from "@/utils/bpmDetection";
+import {
+  detectBPM,
+  estimateBPMFromMetadata,
+  type BPMResult,
+} from "@/utils/bpmDetection";
 
 interface UseBPMDetectionOptions {
   audioBuffer?: AudioBuffer | null;
@@ -89,4 +93,3 @@ export function useBPMDetection({
     isDetecting,
   };
 }
-

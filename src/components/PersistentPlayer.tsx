@@ -1,7 +1,15 @@
 "use client";
 
 import { useAudio } from "@/context/AudioContext";
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X } from "lucide-react";
+import {
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHaptic } from "@/hooks/useHaptic";
 import Image from "next/image";
@@ -100,9 +108,8 @@ export function PersistentPlayer() {
     };
   }, [currentTrack, isPlaying, skipNext, skipPrevious, audioRef]);
 
-
   // Hide player on studio page or when no track is selected
-  if (!currentTrack || pathname === '/studio') return null;
+  if (!currentTrack || pathname === "/studio") return null;
 
   return (
     <div
@@ -277,4 +284,3 @@ export function PersistentPlayer() {
     </div>
   );
 }
-

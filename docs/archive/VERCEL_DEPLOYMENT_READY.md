@@ -13,6 +13,7 @@
 ## Pre-Deployment Checklist
 
 ### ✅ Code Quality
+
 - [x] Build passes: `npm run build`
 - [x] TypeScript check passes: `npx tsc --noEmit`
 - [x] Lint passes: `npm run lint`
@@ -21,6 +22,7 @@
 - [x] Runtime error guards in place
 
 ### ✅ Dependencies
+
 - [x] Next.js pinned to `15.5.9` (exact version)
 - [x] eslint-config-next pinned to `15.5.9`
 - [x] All build-time deps in `dependencies`:
@@ -29,6 +31,7 @@
 - [x] No missing peer dependencies
 
 ### ✅ Configuration
+
 - [x] `next.config.mjs` - ESM syntax correct
 - [x] `postcss.config.mjs` - ESM syntax correct
 - [x] `tailwind.config.ts` - ESM export correct
@@ -38,6 +41,7 @@
 ### ✅ Environment Variables
 
 **Required for Email API** (configure in Vercel Dashboard):
+
 - `EMAIL_USER` - Gmail account email
 - `EMAIL_PASS` - Gmail app-specific password
 - `RECIPIENT_EMAIL` - Optional (defaults to `Manospintadas420@gmail.com`)
@@ -45,6 +49,7 @@
 **Note**: Without these, contact/booking forms will return 500 errors, but the site will still deploy and function.
 
 ### ✅ Error Handling
+
 - [x] Global error boundary (`src/app/global-error.tsx`)
 - [x] App error boundary (`src/app/error.tsx`)
 - [x] Runtime error guards (`src/components/ProdRuntimeGuards.tsx`)
@@ -52,6 +57,7 @@
 - [x] All errors logged with diagnostic prefixes
 
 ### ✅ Dynamic Imports
+
 - [x] `react-globe.gl` uses `dynamic()` with `ssr: false` ✓
 - [x] No problematic `require()` calls in ESM modules
 - [x] All client-only components properly marked
@@ -59,6 +65,7 @@
 ## Vercel Project Settings
 
 ### Build Configuration
+
 - **Framework Preset**: Next.js
 - **Build Command**: `npm run build` (uses `scripts/build.js`)
 - **Output Directory**: `.next` (default)
@@ -66,6 +73,7 @@
 - **Node.js Version**: `20.x` (matches `package.json` engines: `>=20 <21`)
 
 ### Environment Variables (Vercel Dashboard)
+
 1. Go to: Project Settings → Environment Variables
 2. Add for **Production**, **Preview**, and **Development**:
    - `EMAIL_USER` (required)
@@ -75,6 +83,7 @@
 ## Deployment Steps
 
 1. **Push to Git Repository**
+
    ```bash
    git add .
    git commit -m "Ready for Vercel deployment"
@@ -104,6 +113,7 @@
 ## Build Script Details
 
 The build script (`scripts/build.js`) automatically:
+
 - Unsets `__NEXT_PRIVATE_STANDALONE_CONFIG` (prevents "generate is not a function" error)
 - Unsets `NEXT_DEPLOYMENT_ID` (prevents build conflicts)
 - Runs `next build`
@@ -113,29 +123,34 @@ This ensures consistent builds on Vercel's Linux environment.
 ## Known Non-Issues
 
 ### Console Logging
+
 - Console logs are intentional and used for:
   - Error diagnostics (prefixed with `[ERROR_TYPE]`)
   - Development debugging (wrapped in `NODE_ENV` checks)
   - Production error tracking
 
 ### Case Sensitivity
+
 - All imports use correct casing
 - The `check:case` script may show false positives on Windows, but actual imports are correct
 
 ## Troubleshooting
 
 ### Build Fails
+
 1. Check Vercel build logs
 2. Verify Node.js version is 20.x
 3. Ensure `package-lock.json` is committed
 4. Check for environment variable issues
 
 ### Email API Returns 500
+
 - Verify `EMAIL_USER` and `EMAIL_PASS` are set in Vercel
 - Check that `EMAIL_PASS` is a Gmail app-specific password (not regular password)
 - Verify variables are set for the correct environment (Production/Preview)
 
 ### Runtime Errors
+
 - Check browser console for error prefixes:
   - `[WINDOW_ERROR]` - Uncaught JavaScript errors
   - `[UNHANDLED_REJECTION]` - Promise rejections
@@ -154,4 +169,3 @@ The project is fully configured and tested. The build passes, all dependencies a
 ---
 
 **Next Steps**: Push to Git and deploy to Vercel! 🚀
-

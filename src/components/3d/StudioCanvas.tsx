@@ -95,14 +95,19 @@ function SceneContent({
       {/* Industrial Lighting Setup - Harsh Top-Down Lighting */}
       <ambientLight intensity={0.3} />
       {/* Harsh top-down light (emphasizes metallic edges) */}
-      <directionalLight position={[0, 10, 5]} intensity={1.5} color="#E0E0E0" castShadow />
+      <directionalLight
+        position={[0, 10, 5]}
+        intensity={1.5}
+        color="#E0E0E0"
+        castShadow
+      />
       {/* Fill light from sides - Gyro-controlled on mobile */}
       <pointLight
         ref={pointLight1Ref}
         position={[
           gyroOrientation ? gyroOrientation.x * 10 : 10,
           5,
-          gyroOrientation ? gyroOrientation.y * 10 + 10 : 10
+          gyroOrientation ? gyroOrientation.y * 10 + 10 : 10,
         ]}
         intensity={0.8}
         color="#E0E0E0"
@@ -112,7 +117,7 @@ function SceneContent({
         position={[
           gyroOrientation ? -gyroOrientation.x * 10 : -10,
           5,
-          gyroOrientation ? -gyroOrientation.y * 10 + 10 : 10
+          gyroOrientation ? -gyroOrientation.y * 10 + 10 : 10,
         ]}
         intensity={0.8}
         color="#E0E0E0"
@@ -210,7 +215,7 @@ export function StudioCanvas({
 
   // REMEDIATION: Mobile detection for WebGL optimizations
   const isMobile = useIsMobile();
-  
+
   // Battery saver: only render when needed
   const shouldRender = deckAIsPlaying || deckBIsPlaying || visualizerLevel > 0;
 
@@ -250,4 +255,3 @@ export function StudioCanvas({
     </div>
   );
 }
-

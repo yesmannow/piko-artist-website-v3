@@ -1,56 +1,234 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ensureAudioEngineReady } from "@/engine/AudioEngine";
-import { useAudioStore } from "@/store/useAudioStore";
+import { tracks, type MediaItem } from "@/lib/data";
+import { TrackList } from "./TrackList";
 import { WaveformPreview } from "./WaveformPreview";
 import { DevAudioDebug } from "./DevAudioDebug";
+import { useDeckMixerStore } from "@/store/useDeckMixerStore";
+import { useAudioStore } from "@/store/useAudioStore";
+import { Pause, Play } from "lucide-react";
 
 type DeckId = "deckA" | "deckB";
 
-type EQState = {
-  low: number;
-  mid: number;
-  high: number;
-};
+interface DeckPanelProps {
+  deckId: DeckId;
+  track: MediaItem | null;
+  duration: number;
+  isPlaying: boolean;
+  onDropTrack: (trackId: string) => void;
+  onPlay: () => void;
+  onPause: () => void;
+  onSeek: (progress: number) => void;
+}
 
-const initialTrack = {
-  deckA: "/audio/tracks/amor-sincero.mp3",
-  deckB: "/audio/tracks/entre-humos.mp3",
-};
+function DeckPanel({
+  deckId,
+  track,
+  duration,
+  isPlaying,
+  onDropTrack,
+  onPlay,
+  onPause,
+  onSeek,
+}: DeckPanelProps) {
+  const [dragging, setDragging] = useState(false);
+  const deckLabel = deckId === "deckA" ? "Deck A" : "Deck B";
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragging(false);
+    const payload = event.dataTransfer.getData("application/json");
+    const fromText = event.dataTransfer.getData("text/plain");
+    try {
+      if (payload) {
+        const parsed = JSON.parse(payload) as { trackId?: string };
+        if (parsed?.trackId) {
+          onDropTrack(parsed.trackId);
+          return;
+        }
+      }
+    } catch {
+      // ignore parse errors, fallback to text payload
+    }
+    if (fromText) {
+      onDropTrack(fromText);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => setDragging(false);
+
+  const isImagePath = (cover?: string) => !!cover && cover.startsWith("/");
+
+  return (
+    <div
+      className={[
+        "flex flex-col gap-4 rounded-xl border-2 p-4 lg:p-6 transition-all duration-200",
+        dragging
+          ? "border-safety-yellow bg-black/60 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+          : "border-white/10 bg-black/40",
+      ].join(" ")}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragLeave={handleDragLeave}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-[0.28em] text-white/70">
+            {deckLabel}
+          </span>
+          <span className="rounded-full border border-white/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/60">
+            Drag track here
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/70">
+          <span
+            className={`inline-flex h-2 w-2 rounded-full ${
+              isPlaying
+                ? "bg-safety-yellow shadow-[0_0_10px_rgba(255,215,0,0.8)]"
+                : "bg-white/40"
+            }`}
+          />
+          {isPlaying ? "Playing" : "Idle"}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-3">
+        <div className="relative h-16 w-16 overflow-hidden rounded-md border border-white/10 bg-black/60">
+          {track && isImagePath(track.coverArt) ? (
+            <Image
+              src={track.coverArt}
+              alt={track.title}
+              fill
+              className="object-cover"
+              sizes="64px"
+            />
+          ) : (
+            <div
+              className={[
+                "h-full w-full bg-gradient-to-br",
+                track?.coverArt ? track.coverArt : "from-zinc-700 to-zinc-900",
+              ].join(" ")}
+            />
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-1">
+          <p className="text-sm font-semibold text-white">
+            {track ? track.title : "Drop a track to load"}
+          </p>
+          <p className="text-xs uppercase tracking-[0.18em] text-white/60">
+            {track ? track.artist : "Piko Catalog"}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onPlay}
+              className="inline-flex items-center gap-1 rounded border border-safety-yellow bg-safety-yellow px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-black hover:brightness-110"
+            >
+              <Play className="h-3 w-3" />
+              Play
+            </button>
+            <button
+              type="button"
+              onClick={onPause}
+              className="inline-flex items-center gap-1 rounded border border-white/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white hover:border-white/40"
+            >
+              <Pause className="h-3 w-3" />
+              Pause
+            </button>
+          </div>
+        </div>
+        <div className="text-right text-xs text-white/60">
+          <div>Len: {duration ? `${duration.toFixed(0)}s` : "--"}</div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-white/10 bg-black/50 p-3">
+        <WaveformPreview
+          trackUrl={track?.src ?? null}
+          onSeek={(progress) => onSeek(progress)}
+          waveColor="#4B5563"
+          progressColor="#FFD700"
+          height={90}
+        />
+        <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/60">
+          Drag & drop tracks into this deck to update waveform and load audio
+        </p>
+      </div>
+    </div>
+  );
+}
 
 /**
- * Lightweight interface that routes all audio through AudioEngine.
- * WaveformPreview is visual-only; seeks call engine.seek().
- * All controls (play/pause/seek/load/volume/EQ/FX/crossfader) go through AudioEngine.
+ * Desktop studio surface with drag-and-drop track library + dual decks.
+ * Tracks are loaded through AudioEngine; state is mirrored in Zustand for UI cues.
  */
 export function RefactoredDJInterface() {
-  const [tracks, setTracks] = useState<Record<DeckId, string>>(initialTrack);
-  const [durations, setDurations] = useState<Record<DeckId, number>>({ deckA: 0, deckB: 0 });
-  const [crossfade, setCrossfade] = useState(0.5);
-  const [eqState, setEqState] = useState<Record<DeckId, EQState>>({
-    deckA: { low: 0, mid: 0, high: 0 },
-    deckB: { low: 0, mid: 0, high: 0 },
+  const audioTracks = useMemo(
+    () => tracks.filter((t) => t.type === "audio"),
+    [],
+  );
+  const initialDecks = useMemo(
+    () => ({
+      deckA: audioTracks[0] ?? null,
+      deckB: audioTracks[1] ?? audioTracks[0] ?? null,
+    }),
+    [audioTracks],
+  );
+  const [durations, setDurations] = useState<Record<DeckId, number>>({
+    deckA: 0,
+    deckB: 0,
   });
-  const [fxAmount, setFxAmount] = useState(0);
 
-  const deckInfo = useAudioStore(
-    useMemo(
-      () => (state) => ({
-        deckA: state.decks.deckA,
-        deckB: state.decks.deckB,
-      }),
-      [],
-    ),
+  const deckMeta = useDeckMixerStore((state) => state.decks);
+  const loadTrackToDeck = useDeckMixerStore((state) => state.loadTrackToDeck);
+  const playbackStore = useAudioStore((state) => ({
+    deckA: state.decks.deckA,
+    deckB: state.decks.deckB,
+  }));
+
+  const updateDuration = useCallback(async (deck: DeckId) => {
+    const engine = await ensureAudioEngineReady();
+    setDurations((prev) => ({ ...prev, [deck]: engine.getDuration(deck) }));
+  }, []);
+
+  const handleLoadTrack = useCallback(
+    async (deck: DeckId, track: MediaItem) => {
+      await loadTrackToDeck(deck, track);
+      await updateDuration(deck);
+    },
+    [loadTrackToDeck, updateDuration],
   );
 
-  const loadTrack = async (deck: DeckId, url: string) => {
-    if (!url) return;
-    const engine = await ensureAudioEngineReady();
-    await engine.loadTrack(deck, url);
-    const dur = engine.getDuration(deck);
-    setDurations((prev) => ({ ...prev, [deck]: dur }));
-  };
+  const handleDropToDeck = useCallback(
+    (deck: DeckId, trackId: string) => {
+      const match = audioTracks.find((t) => t.id === trackId);
+      if (match && match.type === "audio") {
+        void handleLoadTrack(deck, match);
+      }
+    },
+    [audioTracks, handleLoadTrack],
+  );
+
+  useEffect(() => {
+    const prime = async () => {
+      if (initialDecks.deckA) {
+        await handleLoadTrack("deckA", initialDecks.deckA);
+      }
+      if (initialDecks.deckB) {
+        await handleLoadTrack("deckB", initialDecks.deckB);
+      }
+    };
+    void prime();
+  }, [handleLoadTrack, initialDecks]);
 
   const handlePlay = async (deck: DeckId) => {
     const engine = await ensureAudioEngineReady();
@@ -62,174 +240,52 @@ export function RefactoredDJInterface() {
     await engine.pause(deck);
   };
 
-  const handleSeek = async (deck: DeckId, progress: number, duration: number) => {
+  const handleSeek = async (deck: DeckId, progress: number) => {
     const engine = await ensureAudioEngineReady();
-    await engine.seek(deck, progress * duration);
+    const target = progress * (durations[deck] || 0);
+    await engine.seek(deck, target);
   };
-
-  const handleCrossfade = async (val: number) => {
-    setCrossfade(val);
-    const engine = await ensureAudioEngineReady();
-    await engine.setCrossfader(val);
-  };
-
-  const handleVolume = async (deck: DeckId, value: number) => {
-    const engine = await ensureAudioEngineReady();
-    await engine.setVolume(deck, value);
-  };
-
-  const handleEQ = async (deck: DeckId, band: keyof EQState, value: number) => {
-    setEqState((prev) => ({
-      ...prev,
-      [deck]: { ...prev[deck], [band]: value },
-    }));
-    const engine = await ensureAudioEngineReady();
-    await engine.setEQ(deck, { [band]: value });
-  };
-
-  const handleFX = async (type: "delay" | "reverb" | "filter", value: number) => {
-    setFxAmount(value);
-    const engine = await ensureAudioEngineReady();
-    await engine.setFX("deckA", type, value);
-    await engine.setFX("deckB", type, value);
-  };
-
-  const deckControls = useMemo(
-    () => [
-      { id: "deckA" as DeckId, label: "Deck A" },
-      { id: "deckB" as DeckId, label: "Deck B" },
-    ],
-    [],
-  );
-
-  useEffect(() => {
-    // Only mount DevAudioDebug in dev
-  }, []);
 
   return (
     <>
-      {process.env.NODE_ENV !== "production" ? <DevAudioDebug intervalMs={800} /> : null}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {deckControls.map(({ id, label }) => (
-          <div key={id} className="space-y-4 rounded-lg border border-gray-800 bg-black/40 p-4">
+      {process.env.NODE_ENV !== "production" ? (
+        <DevAudioDebug intervalMs={800} />
+      ) : null}
+      <div className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr]">
+          <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase text-gray-200">{label}</h2>
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-gray-500">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                {deckInfo[id]?.isPlaying ? "Playing" : "Idle"}
-              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">
+                Piko Catalog
+              </p>
+              <span className="rounded border border-safety-yellow px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-safety-yellow">
+                Drag to load Decks
+              </span>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Track URL</label>
-              <input
-                className="w-full rounded border border-gray-700 bg-gray-900 p-2 text-sm text-white"
-                type="text"
-                value={tracks[id]}
-                onChange={(e) => setTracks((prev) => ({ ...prev, [id]: e.target.value }))}
-                placeholder="https://example.com/track.mp3"
-              />
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => loadTrack(id, tracks[id])}
-                  className="rounded bg-blue-600 px-3 py-2 text-[11px] font-semibold uppercase text-white hover:bg-blue-500"
-                >
-                  Load
-                </button>
-                <button
-                  onClick={() => handlePlay(id)}
-                  className="rounded bg-emerald-600 px-3 py-2 text-[11px] font-semibold uppercase text-white hover:bg-emerald-500"
-                >
-                  Play
-                </button>
-                <button
-                  onClick={() => handlePause(id)}
-                  className="rounded bg-red-600 px-3 py-2 text-[11px] font-semibold uppercase text-white hover:bg-red-500"
-                >
-                  Pause
-                </button>
-              </div>
-            </div>
-
-            <WaveformPreview
-              trackUrl={tracks[id] || null}
-              onSeek={(p) => handleSeek(id, p, durations[id] || 0)}
-            />
-
-            <div className="space-y-3 rounded-md border border-gray-800/80 bg-black/40 p-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">Volume & EQ</p>
-              <div className="flex items-center gap-3">
-                <label className="text-xs uppercase text-gray-400">Vol</label>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={deckInfo[id]?.volume ?? 1}
-                  onChange={(e) => handleVolume(id, parseFloat(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="w-10 text-right text-xs text-gray-300">
-                  {((deckInfo[id]?.volume ?? 1) * 100).toFixed(0)}%
-                </span>
-              </div>
-              {(["low", "mid", "high"] as (keyof EQState)[]).map((band) => (
-                <div key={band} className="flex items-center gap-3">
-                  <label className="w-10 text-xs uppercase text-gray-400">{band}</label>
-                  <input
-                    type="range"
-                    min={-12}
-                    max={12}
-                    step={0.5}
-                    value={eqState[id][band]}
-                    onChange={(e) => handleEQ(id, band, parseFloat(e.target.value))}
-                    className="flex-1"
-                  />
-                  <span className="w-12 text-right text-xs text-gray-300">{eqState[id][band].toFixed(1)} dB</span>
-                </div>
-              ))}
-            </div>
+            <TrackList />
           </div>
-        ))}
 
-        <div className="col-span-1 space-y-4 rounded-lg border border-gray-800 bg-black/40 p-4 lg:col-span-2">
-          <label className="text-xs uppercase text-gray-400">Crossfader</label>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={crossfade}
-            onChange={(e) => handleCrossfade(parseFloat(e.target.value))}
-            className="w-full"
-          />
-          <div className="text-xs text-gray-300">Position: {(crossfade * 100).toFixed(0)}%</div>
-
-          <div className="space-y-3 rounded-md border border-gray-800/80 bg-black/40 p-3">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">Global FX (visual)</p>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={fxAmount}
-              onChange={(e) => handleFX("filter", parseFloat(e.target.value))}
-              className="w-full"
+          <div className="grid gap-4 lg:grid-cols-2">
+            <DeckPanel
+              deckId="deckA"
+              track={deckMeta.deckA.track ?? initialDecks.deckA}
+              duration={durations.deckA}
+              isPlaying={playbackStore.deckA.isPlaying}
+              onDropTrack={(id) => handleDropToDeck("deckA", id)}
+              onPlay={() => handlePlay("deckA")}
+              onPause={() => handlePause("deckA")}
+              onSeek={(p) => handleSeek("deckA", p)}
             />
-            <div className="flex gap-2 text-[11px] text-gray-400">
-              <button
-                onClick={() => handleFX("delay", fxAmount)}
-                className="rounded bg-purple-700/80 px-3 py-2 text-white transition hover:bg-purple-600"
-              >
-                Send Delay
-              </button>
-              <button
-                onClick={() => handleFX("reverb", fxAmount)}
-                className="rounded bg-indigo-700/80 px-3 py-2 text-white transition hover:bg-indigo-600"
-              >
-                Send Reverb
-              </button>
-            </div>
+            <DeckPanel
+              deckId="deckB"
+              track={deckMeta.deckB.track ?? initialDecks.deckB}
+              duration={durations.deckB}
+              isPlaying={playbackStore.deckB.isPlaying}
+              onDropTrack={(id) => handleDropToDeck("deckB", id)}
+              onPlay={() => handlePlay("deckB")}
+              onPause={() => handlePause("deckB")}
+              onSeek={(p) => handleSeek("deckB", p)}
+            />
           </div>
         </div>
       </div>

@@ -19,12 +19,12 @@ interface KeyAnalysisInput {
 
 interface KeyAnalysisOutput {
   root: string; // e.g., 'C', 'C#', 'D'
-  scale: 'major' | 'minor';
+  scale: "major" | "minor";
   camelot: string; // e.g., '8A', '5B'
 }
 
 interface WorkerMessage {
-  type: 'ANALYZE_KEY_START' | 'ANALYZE_KEY_DONE' | 'ANALYZE_KEY_ERROR';
+  type: "ANALYZE_KEY_START" | "ANALYZE_KEY_DONE" | "ANALYZE_KEY_ERROR";
   data?: KeyAnalysisOutput;
   error?: string;
   input?: KeyAnalysisInput;
@@ -53,22 +53,23 @@ async function loadEssentia(): Promise<boolean> {
     // Note: This may need adjustment based on how Essentia.js is bundled
     // For now, we'll use a dynamic import that may fail gracefully
     // @ts-expect-error - essentia.js may not have type definitions
-    const EssentiaWASM = await import('essentia.js');
+    const EssentiaWASM = await import("essentia.js");
 
     if (!EssentiaWASM || !EssentiaWASM.EssentiaWASM) {
-      throw new Error('Essentia.js module not found');
+      throw new Error("Essentia.js module not found");
     }
 
     // Initialize Essentia WASM
     essentiaInstance = new EssentiaWASM.EssentiaWASM();
     essentiaLoaded = true;
 
-    console.log('[KeyWorker] Essentia.js loaded successfully');
+    console.log("[KeyWorker] Essentia.js loaded successfully");
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     essentiaLoadError = `Essentia.js load failed: ${errorMessage}`;
-    console.warn('[KeyWorker] Essentia.js not available:', errorMessage);
+    console.warn("[KeyWorker] Essentia.js not available:", errorMessage);
     return false;
   }
 }
@@ -78,17 +79,18 @@ async function loadEssentia(): Promise<boolean> {
  */
 async function analyzeKeyWithEssentia(
   channelData: Float32Array[],
-  sampleRate: number
+  sampleRate: number,
 ): Promise<KeyAnalysisOutput> {
   if (!essentiaInstance) {
-    throw new Error('Essentia instance not initialized');
+    throw new Error("Essentia instance not initialized");
   }
 
   // Use mono channel (first channel) or mix down to mono
-  const audioData = channelData.length > 0 ? channelData[0] : new Float32Array(0);
+  const audioData =
+    channelData.length > 0 ? channelData[0] : new Float32Array(0);
 
   if (audioData.length === 0) {
-    throw new Error('No audio data provided');
+    throw new Error("No audio data provided");
   }
 
   // Use Essentia's KeyDetection algorithm
@@ -97,22 +99,27 @@ async function analyzeKeyWithEssentia(
     const keyDetection = essentiaInstance.KeyDetection(audioData, sampleRate);
 
     // Essentia returns key in format like "C major" or "A minor"
-    const keyString = keyDetection.key || 'C major';
-    const [root, scale] = keyString.split(' ');
+    const keyString = keyDetection.key || "C major";
+    const [root, scale] = keyString.split(" ");
 
     // Normalize root (handle flats/sharps)
     const normalizedRoot = normalizeRoot(root);
 
     // Convert to Camelot notation
-    const camelot = toCamelot(normalizedRoot, scale.toLowerCase() as 'major' | 'minor');
+    const camelot = toCamelot(
+      normalizedRoot,
+      scale.toLowerCase() as "major" | "minor",
+    );
 
     return {
       root: normalizedRoot,
-      scale: scale.toLowerCase() as 'major' | 'minor',
+      scale: scale.toLowerCase() as "major" | "minor",
       camelot: camelot || `${normalizedRoot}${scale.charAt(0).toUpperCase()}`,
     };
   } catch (error) {
-    throw new Error(`Key detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Key detection failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -122,31 +129,32 @@ async function analyzeKeyWithEssentia(
  */
 function analyzeKeyFallback(
   channelData: Float32Array[],
-  sampleRate: number
+  sampleRate: number,
 ): KeyAnalysisOutput {
   // Simple fallback: analyze chromagram to find most prominent key
   // This is a simplified implementation
 
-  const audioData = channelData.length > 0 ? channelData[0] : new Float32Array(0);
+  const audioData =
+    channelData.length > 0 ? channelData[0] : new Float32Array(0);
 
   if (audioData.length === 0) {
     // Default to C major if no data
     return {
-      root: 'C',
-      scale: 'major',
-      camelot: '8B',
+      root: "C",
+      scale: "major",
+      camelot: "8B",
     };
   }
 
   // Very basic chromagram analysis
   // In a real implementation, this would use FFT and chromagram extraction
   // For now, return a default value
-  console.warn('[KeyWorker] Using fallback key detection (may be inaccurate)');
+  console.warn("[KeyWorker] Using fallback key detection (may be inaccurate)");
 
   return {
-    root: 'C',
-    scale: 'major',
-    camelot: '8B',
+    root: "C",
+    scale: "major",
+    camelot: "8B",
   };
 }
 
@@ -158,11 +166,11 @@ function normalizeRoot(root: string): string {
 
   // Handle common enharmonic equivalents
   const enharmonicMap: Record<string, string> = {
-    'Db': 'C#',
-    'Eb': 'D#',
-    'Gb': 'F#',
-    'Ab': 'G#',
-    'Bb': 'A#',
+    Db: "C#",
+    Eb: "D#",
+    Gb: "F#",
+    Ab: "G#",
+    Bb: "A#",
   };
 
   return enharmonicMap[normalized] || normalized;
@@ -176,38 +184,46 @@ function toCamelot(root: string, scale: string): string {
   // Full Camelot Wheel mapping
   const camelotMap: Record<string, string> = {
     // Minor keys (A)
-    'Abm': '1A', 'G#m': '1A',
-    'Ebm': '2A', 'D#m': '2A',
-    'Bbm': '3A', 'A#m': '3A',
-    'Fm': '4A',
-    'Cm': '5A',
-    'Gm': '6A',
-    'Dm': '7A',
-    'Am': '8A',
-    'Em': '9A',
-    'Bm': '10A',
-    'F#m': '11A',
-    'C#m': '12A',
+    Abm: "1A",
+    "G#m": "1A",
+    Ebm: "2A",
+    "D#m": "2A",
+    Bbm: "3A",
+    "A#m": "3A",
+    Fm: "4A",
+    Cm: "5A",
+    Gm: "6A",
+    Dm: "7A",
+    Am: "8A",
+    Em: "9A",
+    Bm: "10A",
+    "F#m": "11A",
+    "C#m": "12A",
     // Major keys (B)
-    'B': '1B',
-    'F#': '2B', 'Gb': '2B',
-    'Db': '3B', 'C#': '3B',
-    'Ab': '4B', 'G#': '4B',
-    'Eb': '5B', 'D#': '5B',
-    'Bb': '6B', 'A#': '6B',
-    'F': '7B',
-    'C': '8B',
-    'G': '9B',
-    'D': '10B',
-    'A': '11B',
-    'E': '12B',
+    B: "1B",
+    "F#": "2B",
+    Gb: "2B",
+    Db: "3B",
+    "C#": "3B",
+    Ab: "4B",
+    "G#": "4B",
+    Eb: "5B",
+    "D#": "5B",
+    Bb: "6B",
+    "A#": "6B",
+    F: "7B",
+    C: "8B",
+    G: "9B",
+    D: "10B",
+    A: "11B",
+    E: "12B",
   };
 
   // Normalize root (handle enharmonic equivalents)
   const normalizedRoot = normalizeRoot(root);
-  const key = scale === 'minor' ? `${normalizedRoot}m` : normalizedRoot;
+  const key = scale === "minor" ? `${normalizedRoot}m` : normalizedRoot;
 
-  return camelotMap[key] || camelotMap['C'] || '8B'; // Default to C major
+  return camelotMap[key] || camelotMap["C"] || "8B"; // Default to C major
 }
 
 /**
@@ -216,7 +232,7 @@ function toCamelot(root: string, scale: string): string {
 self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
   const { type, input } = event.data;
 
-  if (type !== 'ANALYZE_KEY_START' || !input) {
+  if (type !== "ANALYZE_KEY_START" || !input) {
     return;
   }
 
@@ -228,28 +244,32 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 
     if (essentiaAvailable && essentiaInstance) {
       // Use Essentia.js for accurate key detection
-      result = await analyzeKeyWithEssentia(input.channelData, input.sampleRate);
+      result = await analyzeKeyWithEssentia(
+        input.channelData,
+        input.sampleRate,
+      );
     } else {
       // Fallback to basic analysis
       result = analyzeKeyFallback(input.channelData, input.sampleRate);
 
       // Send error message but still return result
       self.postMessage({
-        type: 'ANALYZE_KEY_ERROR',
-        error: essentiaLoadError || 'Essentia.js not available, using fallback',
+        type: "ANALYZE_KEY_ERROR",
+        error: essentiaLoadError || "Essentia.js not available, using fallback",
       } as WorkerMessage);
     }
 
     // Send success message
     self.postMessage({
-      type: 'ANALYZE_KEY_DONE',
+      type: "ANALYZE_KEY_DONE",
       data: result,
     } as WorkerMessage);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
 
     self.postMessage({
-      type: 'ANALYZE_KEY_ERROR',
+      type: "ANALYZE_KEY_ERROR",
       error: errorMessage,
     } as WorkerMessage);
   }

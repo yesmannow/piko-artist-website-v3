@@ -71,27 +71,39 @@ export function HolographicDeck({
       materialRef.current.uAudio = THREE.MathUtils.lerp(
         materialRef.current.uAudio,
         audioLevel,
-        0.1
+        0.1,
       );
 
       // 3. Impact Flash (fade out smoothly)
       materialRef.current.uImpactFlash = THREE.MathUtils.lerp(
         materialRef.current.uImpactFlash,
         impactFlash,
-        0.15
+        0.15,
       );
     }
 
     // 3. Auto-spin if playing and not being touched
     if (isPlaying && !isDragging && meshRef.current) {
-        meshRef.current.rotation.y += delta * 0.5; // Slow spin
+      meshRef.current.rotation.y += delta * 0.5; // Slow spin
     }
 
     // 4. Apply impact pulse scale
     if (meshRef.current) {
-      meshRef.current.scale.x = THREE.MathUtils.lerp(meshRef.current.scale.x, scale, 0.2);
-      meshRef.current.scale.y = THREE.MathUtils.lerp(meshRef.current.scale.y, scale, 0.2);
-      meshRef.current.scale.z = THREE.MathUtils.lerp(meshRef.current.scale.z, scale, 0.2);
+      meshRef.current.scale.x = THREE.MathUtils.lerp(
+        meshRef.current.scale.x,
+        scale,
+        0.2,
+      );
+      meshRef.current.scale.y = THREE.MathUtils.lerp(
+        meshRef.current.scale.y,
+        scale,
+        0.2,
+      );
+      meshRef.current.scale.z = THREE.MathUtils.lerp(
+        meshRef.current.scale.z,
+        scale,
+        0.2,
+      );
     }
   });
 
@@ -122,4 +134,3 @@ export function HolographicDeck({
     </animated.mesh>
   );
 }
-

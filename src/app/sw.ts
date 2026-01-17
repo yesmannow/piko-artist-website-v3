@@ -1,6 +1,17 @@
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig, RuntimeCaching } from "serwist";
-import { Serwist, CacheFirst, NetworkOnly, StaleWhileRevalidate, ExpirationPlugin, RangeRequestsPlugin } from "serwist";
+import type {
+  PrecacheEntry,
+  SerwistGlobalConfig,
+  RuntimeCaching,
+} from "serwist";
+import {
+  Serwist,
+  CacheFirst,
+  NetworkOnly,
+  StaleWhileRevalidate,
+  ExpirationPlugin,
+  RangeRequestsPlugin,
+} from "serwist";
 
 // =============== Size Metadata Plugin (LRU by size) ===============
 const METADATA_CACHE = "cache-metadata";
@@ -8,7 +19,9 @@ type MetaRecord = { cacheName: string; url: string; size: number; ts: number };
 async function deleteMeta(cacheName: string, url: string) {
   try {
     const metaCache = await caches.open(METADATA_CACHE);
-    const key = new Request(`https://cache-meta.local/${encodeURIComponent(cacheName)}/${encodeURIComponent(url)}`);
+    const key = new Request(
+      `https://cache-meta.local/${encodeURIComponent(cacheName)}/${encodeURIComponent(url)}`,
+    );
     await metaCache.delete(key);
   } catch {}
 }
@@ -16,9 +29,16 @@ async function deleteMeta(cacheName: string, url: string) {
 async function putMeta(cacheName: string, url: string, size: number) {
   try {
     const metaCache = await caches.open(METADATA_CACHE);
-    const key = new Request(`https://cache-meta.local/${encodeURIComponent(cacheName)}/${encodeURIComponent(url)}`);
+    const key = new Request(
+      `https://cache-meta.local/${encodeURIComponent(cacheName)}/${encodeURIComponent(url)}`,
+    );
     const rec: MetaRecord = { cacheName, url, size, ts: Date.now() };
-    await metaCache.put(key, new Response(JSON.stringify(rec), { headers: { "content-type": "application/json" } }));
+    await metaCache.put(
+      key,
+      new Response(JSON.stringify(rec), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
   } catch {}
 }
 
@@ -32,7 +52,8 @@ async function getAllMeta(): Promise<MetaRecord[]> {
         const res = await metaCache.match(k);
         if (!res) continue;
         const rec = await res.json();
-        if (rec && typeof rec === "object" && rec.cacheName && rec.url) records.push(rec as MetaRecord);
+        if (rec && typeof rec === "object" && rec.cacheName && rec.url)
+          records.push(rec as MetaRecord);
       } catch {}
     }
     return records;
@@ -42,7 +63,15 @@ async function getAllMeta(): Promise<MetaRecord[]> {
 }
 
 const SizeMetadataPlugin = {
-  async cacheDidUpdate({ cacheName, request, response }: { cacheName: string; request: Request; response?: Response }) {
+  async cacheDidUpdate({
+    cacheName,
+    request,
+    response,
+  }: {
+    cacheName: string;
+    request: Request;
+    response?: Response;
+  }) {
     try {
       if (!response) return;
       // Estimate size from header if available, otherwise fallback to blob length (avoid on huge assets when possible)
@@ -64,12 +93,12 @@ const SizeMetadataPlugin = {
 
 // Soft byte caps per cache (adaptive cleanup target)
 const CACHE_BYTE_LIMITS: Record<string, number> = {
-  "images": 30 * 1024 * 1024, // 30MB
+  images: 30 * 1024 * 1024, // 30MB
   "next-static": 50 * 1024 * 1024, // 50MB
   "audio-samples": 25 * 1024 * 1024, // 25MB
   "3d-assets": 60 * 1024 * 1024, // 60MB
   "wasm-assets": 30 * 1024 * 1024, // 30MB
-  "fonts": 15 * 1024 * 1024, // 15MB
+  fonts: 15 * 1024 * 1024, // 15MB
 };
 
 // This declares the value of `injectionPoint` to TypeScript.
@@ -79,7 +108,11 @@ const CACHE_BYTE_LIMITS: Record<string, number> = {
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
-    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    addEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ): void;
   }
 
   interface ExtendableEvent extends Event {
@@ -263,15 +296,29 @@ async function cleanupOldCaches() {
             console.log(`[SW] Size-pruned ${deleted} entries from ${name}`);
           }
         } catch (error) {
-          const errorName = error && typeof error === "object" && "name" in error ? (error as any).name : "";
-          const errorMessage = error && typeof error === "object" && "message" in error ? String((error as any).message) : "";
-          if (errorName === "QuotaExceededError" || errorMessage.includes("quota")) {
-            console.warn(`[SW] Quota exceeded for ${name}, attempting to delete cache...`);
+          const errorName =
+            error && typeof error === "object" && "name" in error
+              ? (error as any).name
+              : "";
+          const errorMessage =
+            error && typeof error === "object" && "message" in error
+              ? String((error as any).message)
+              : "";
+          if (
+            errorName === "QuotaExceededError" ||
+            errorMessage.includes("quota")
+          ) {
+            console.warn(
+              `[SW] Quota exceeded for ${name}, attempting to delete cache...`,
+            );
             try {
               await caches.delete(name);
               console.log(`[SW] Deleted cache ${name} to free space`);
             } catch (deleteError) {
-              console.error(`[SW] Failed to delete cache ${name}:`, deleteError);
+              console.error(
+                `[SW] Failed to delete cache ${name}:`,
+                deleteError,
+              );
             }
           }
         }
@@ -289,7 +336,7 @@ async function cleanupOldCaches() {
           console.warn(`[SW] Could not open cache ${name}:`, error);
           return { name, count: 0 };
         }
-      })
+      }),
     );
     cacheStats.sort((a, b) => b.count - a.count);
     for (const { name, count } of cacheStats) {
@@ -300,13 +347,26 @@ async function cleanupOldCaches() {
         if (count > 20) {
           const toDelete = keys.slice(0, Math.floor(count * 0.25));
           await Promise.all(toDelete.map((key) => cache.delete(key)));
-          console.log(`[SW] Count-pruned ${toDelete.length} entries from ${name}`);
+          console.log(
+            `[SW] Count-pruned ${toDelete.length} entries from ${name}`,
+          );
         }
       } catch (error) {
-        const errorName = error && typeof error === "object" && "name" in error ? (error as any).name : "";
-        const errorMessage = error && typeof error === "object" && "message" in error ? String((error as any).message) : "";
-        if (errorName === "QuotaExceededError" || errorMessage.includes("quota")) {
-          console.warn(`[SW] Quota exceeded for ${name}, attempting to delete cache...`);
+        const errorName =
+          error && typeof error === "object" && "name" in error
+            ? (error as any).name
+            : "";
+        const errorMessage =
+          error && typeof error === "object" && "message" in error
+            ? String((error as any).message)
+            : "";
+        if (
+          errorName === "QuotaExceededError" ||
+          errorMessage.includes("quota")
+        ) {
+          console.warn(
+            `[SW] Quota exceeded for ${name}, attempting to delete cache...`,
+          );
           try {
             await caches.delete(name);
             console.log(`[SW] Deleted cache ${name} to free space`);
@@ -324,11 +384,12 @@ async function cleanupOldCaches() {
 // Filter precache manifest to exclude large audio stems
 // Stems are too large and will cause quota errors if pre-cached
 const manifest = self.__SW_MANIFEST;
-const filteredPrecacheEntries = manifest?.filter((entry) => {
-  const url = typeof entry === "string" ? entry : entry.url;
-  // Exclude audio stems from pre-caching
-  return !url.includes("/audio/stems/");
-}) || manifest;
+const filteredPrecacheEntries =
+  manifest?.filter((entry) => {
+    const url = typeof entry === "string" ? entry : entry.url;
+    // Exclude audio stems from pre-caching
+    return !url.includes("/audio/stems/");
+  }) || manifest;
 
 const serwist = new Serwist({
   precacheEntries: filteredPrecacheEntries,
@@ -351,10 +412,10 @@ serwist.setCatchHandler(async ({ request }) => {
   return Response.error();
 });
 
-self.addEventListener('message', (event: Event) => {
+self.addEventListener("message", (event: Event) => {
   const e = event as any;
   const data = e?.data;
-  if (data && data.type === 'CLEANUP_CACHES') {
+  if (data && data.type === "CLEANUP_CACHES") {
     const ev = event as unknown as ExtendableEvent;
     ev.waitUntil(cleanupOldCaches());
   }
@@ -367,7 +428,6 @@ self.addEventListener("activate", async (event: Event) => {
     (async () => {
       // Clean up old caches on activation
       await cleanupOldCaches();
-    })()
+    })(),
   );
 });
-

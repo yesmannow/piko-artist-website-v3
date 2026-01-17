@@ -9,6 +9,7 @@ Phase 9B implements PLL (Phase-Locked Loop) synchronization that matches both te
 ### SyncController (`src/engine/rt/sync/SyncController.ts`)
 
 **PLL Algorithm:**
+
 1. Calculate base rate: `baseRate = masterBPM / slaveBPM`
 2. Find nearest beats at current track positions
 3. Calculate phase error: `phaseError = (slaveOffset - masterOffset * baseRate) * slaveBeatInterval`
@@ -18,12 +19,14 @@ Phase 9B implements PLL (Phase-Locked Loop) synchronization that matches both te
 7. Apply to slave deck: `slaveGraph.setRate(smoothedRate)`
 
 **Key Features:**
+
 - Uses `AudioContext.currentTime` for timing (no setTimeout/setInterval)
 - Bounded corrections prevent warble
 - EMA smoothing for stable rate changes
 - Optional beat-boundary nudge for large phase errors
 
 **Parameters:**
+
 - `Kp`: Proportional gain (default: 0.1) - Controls correction strength
 - `maxRateDelta`: Maximum rate deviation (default: 0.08 = ±8%)
 - `smoothing`: EMA smoothing factor (default: 0.95 = 95% previous, 5% new)
@@ -32,23 +35,27 @@ Phase 9B implements PLL (Phase-Locked Loop) synchronization that matches both te
 ### StudioEngine Integration
 
 **New Methods:**
+
 - `setSyncEnabled(deckId, enabled, masterDeckId?)`: Enable/disable sync
 - `getSyncState()`: Get current sync state
 - `sync`: Direct access to SyncController (for tick())
 
 **Track Loading:**
+
 - Stores track URLs for cache key generation
 - Sets cache keys in SyncController for beat grid retrieval
 
 ### UI Components
 
 **SyncControl** (`src/components/studio/SyncControl.tsx`):
+
 - Toggle sync ON/OFF
 - Shows sync status
 - Handles missing beat grids gracefully
 - Integrated into desktop layout deck sections
 
 **rAF Loop:**
+
 - Added to both `DesktopStudioLayout` and `MobileStudioLayout`
 - Calls `studio.sync.tick(audioContext.currentTime)` every frame
 - Only runs when sync is enabled
@@ -69,10 +76,12 @@ const slaveOffset = slaveTrackTime - nearestSlaveBeat;
 
 // Phase error accounts for tempo difference
 const baseRate = masterBPM / slaveBPM;
-const phaseErrorSec = (slaveOffset - masterOffset * baseRate) * slaveBeatInterval;
+const phaseErrorSec =
+  (slaveOffset - masterOffset * baseRate) * slaveBeatInterval;
 ```
 
 **Why this works:**
+
 - `masterOffset * baseRate` converts master offset to slave tempo space
 - Difference gives phase error in slave track time
 - Normalized by beat interval to get error in seconds
@@ -85,16 +94,16 @@ const phaseErrorSec = (slaveOffset - masterOffset * baseRate) * slaveBeatInterva
 const studio = getStudioEngine();
 
 // Enable sync: Deck B syncs to Deck A
-studio.setSyncEnabled('B', true, 'A');
+studio.setSyncEnabled("B", true, "A");
 ```
 
 ### Tune Parameters
 
 ```typescript
 studio.sync.setParams({
-  Kp: 0.15,              // Stronger correction
-  maxRateDelta: 0.06,    // Tighter bounds
-  smoothing: 0.98,       // Smoother transitions
+  Kp: 0.15, // Stronger correction
+  maxRateDelta: 0.06, // Tighter bounds
+  smoothing: 0.98, // Smoother transitions
 });
 ```
 
@@ -102,25 +111,29 @@ studio.sync.setParams({
 
 ```typescript
 const syncState = studio.getSyncState();
-console.log('Sync enabled:', syncState.enabled);
-console.log('Base rate:', syncState.baseRate);
-console.log('Current rate:', syncState.currentRate);
+console.log("Sync enabled:", syncState.enabled);
+console.log("Base rate:", syncState.baseRate);
+console.log("Current rate:", syncState.currentRate);
 ```
 
 ## Acceptance Criteria
 
 ✅ **Load 2 tracks with BeatGrid computed**
+
 - Both decks must have beat grids analyzed before sync can be enabled
 
 ✅ **Enable Sync on Deck B with Deck A as master**
+
 - Deck B playbackRate converges near baseRate
 - Phase drift is reduced over time
 - Tracks stay aligned longer than tempo-only sync
 
 ✅ **npm run build passes**
+
 - All TypeScript compiles without errors
 
 ✅ **No runtime errors when BeatGrid is missing**
+
 - UI shows error message
 - Sync is refused until beat grids are available
 

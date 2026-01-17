@@ -1,22 +1,25 @@
 "use client";
 
-import { useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { HelpProvider } from '@/context/HelpContext';
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import { HelpProvider } from "@/context/HelpContext";
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
-import { DevAudioDebug } from '@/components/DevAudioDebug';
+import { DevAudioDebug } from "@/components/DevAudioDebug";
 
 // Dynamically import refactored DJInterface to avoid SSR issues
 const DJInterface = dynamic(
-  () => import('@/components/RefactoredDJInterface').then(mod => mod.RefactoredDJInterface),
+  () =>
+    import("@/components/RefactoredDJInterface").then(
+      (mod) => mod.RefactoredDJInterface,
+    ),
   {
     ssr: false,
     loading: () => (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="text-white text-lg">Loading DJ Mixer...</div>
       </div>
-    )
-  }
+    ),
+  },
 );
 
 /**
@@ -42,7 +45,7 @@ export default function StudioPage() {
   return (
     <HelpProvider>
       <DJInterface />
-      {process.env.NODE_ENV === 'development' && <DevAudioDebug />}
+      {process.env.NODE_ENV === "development" && <DevAudioDebug />}
     </HelpProvider>
   );
 }

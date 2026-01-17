@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Cable, Settings } from 'lucide-react';
-import { useMIDIStore } from '@/store/useMIDIStore';
-import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
+import { useEffect, useState } from "react";
+import { Cable, Settings } from "lucide-react";
+import { useMIDIStore } from "@/store/useMIDIStore";
+import { triggerHaptic, HAPTIC_PATTERNS } from "@/utils/haptics";
 
 interface AlwaysOnTopBarProps {
   onSettingsClick?: () => void;
@@ -31,9 +31,9 @@ export const AlwaysOnTopBar = ({ onSettingsClick }: AlwaysOnTopBarProps) => {
 
   // Determine MIDI indicator color
   const getMIDIColor = () => {
-    if (!isConnected) return 'text-gray-600'; // Gray: No connection
-    if (isBlinking) return 'text-yellow-400 animate-pulse'; // Blink: Activity
-    return 'text-green-500'; // Green: Connected
+    if (!isConnected) return "text-gray-600"; // Gray: No connection
+    if (isBlinking) return "text-yellow-400 animate-pulse"; // Blink: Activity
+    return "text-green-500"; // Green: Connected
   };
 
   return (
@@ -54,9 +54,7 @@ export const AlwaysOnTopBar = ({ onSettingsClick }: AlwaysOnTopBarProps) => {
 
       {/* Center: Device Name (if connected) */}
       {isConnected && deviceName && (
-        <span className="text-xs font-mono text-gray-500">
-          {deviceName}
-        </span>
+        <span className="text-xs font-mono text-gray-500">{deviceName}</span>
       )}
 
       {/* Right: MIDI Indicator */}

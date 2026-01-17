@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  ReactNode,
+  useEffect,
+  useCallback,
+} from "react";
 import { MediaItem, tracks } from "@/lib/data";
 
 interface AudioContextType {
@@ -86,7 +94,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       if (track.type === "audio") {
         audioRef.current.src = track.src;
         audioRef.current.load();
-        
+
         try {
           playPromiseRef.current = audioRef.current.play();
           await playPromiseRef.current;
@@ -120,7 +128,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (!currentTrack) return;
     const audioTracks = tracks.filter((t) => t.type === "audio");
     const currentIndex = audioTracks.findIndex((t) => t.id === currentTrack.id);
-    const prevIndex = currentIndex === 0 ? audioTracks.length - 1 : currentIndex - 1;
+    const prevIndex =
+      currentIndex === 0 ? audioTracks.length - 1 : currentIndex - 1;
     playTrack(audioTracks[prevIndex]);
   }, [currentTrack, playTrack]);
 
@@ -285,4 +294,3 @@ export function useAudio() {
   }
   return context;
 }
-

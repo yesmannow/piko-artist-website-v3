@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Users, UserPlus, Wifi, WifiOff, Radio, X, Share2 } from 'lucide-react';
-import { useCollaboration } from '@/hooks/useCollaboration';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Users, UserPlus, Wifi, WifiOff, Radio, X, Share2 } from "lucide-react";
+import { useCollaboration } from "@/hooks/useCollaboration";
 
 /**
  * CollaborationPanel - UI for real-time collaborative DJ sessions
- * 
+ *
  * Phase 4: Advanced Features - Collaboration (Optional)
- * 
+ *
  * Features:
  * - Room creation/joining
  * - Connected peer list
@@ -24,34 +24,34 @@ interface CollaborationPanelProps {
 
 export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
   const [isEnabled, setIsEnabled] = useState(false);
-  const [roomName, setRoomName] = useState('');
-  const [userName, setUserName] = useState('');
+  const [roomName, setRoomName] = useState("");
+  const [userName, setUserName] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
-  
+
   const collaboration = useCollaboration({
-    roomName: hasJoined ? roomName : '',
-    userName: userName || 'Anonymous DJ',
+    roomName: hasJoined ? roomName : "",
+    userName: userName || "Anonymous DJ",
     enabled: isEnabled && hasJoined,
     debug: true,
   });
-  
+
   const handleJoinRoom = () => {
     if (!roomName.trim()) {
-      alert('Please enter a room name');
+      alert("Please enter a room name");
       return;
     }
-    
+
     setIsEnabled(true);
     setHasJoined(true);
   };
-  
+
   const handleLeaveRoom = () => {
     setIsEnabled(false);
     setHasJoined(false);
   };
-  
+
   const peerInfo = collaboration.getPeerInfo();
-  
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
@@ -75,7 +75,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
               Collaboration
             </h2>
           </div>
-          
+
           {onClose && (
             <button
               onClick={onClose}
@@ -86,7 +86,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
             </button>
           )}
         </div>
-        
+
         {/* Connection Status */}
         {hasJoined && (
           <div className="p-4 bg-zinc-950/50 border-b border-white/10">
@@ -105,7 +105,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                         transition={{
                           duration: 2,
                           repeat: Infinity,
-                          ease: 'easeInOut',
+                          ease: "easeInOut",
                         }}
                       >
                         <Wifi className="w-5 h-5 text-green-500" />
@@ -115,17 +115,15 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                     <WifiOff className="w-5 h-5 text-red-500" />
                   )}
                 </div>
-                
+
                 <div className="text-sm">
                   <div className="text-white font-bold">
-                    {collaboration.isConnected ? 'Connected' : 'Connecting...'}
+                    {collaboration.isConnected ? "Connected" : "Connecting..."}
                   </div>
-                  <div className="text-white/60 text-xs">
-                    Room: {roomName}
-                  </div>
+                  <div className="text-white/60 text-xs">Room: {roomName}</div>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleLeaveRoom}
                 className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded hover:bg-red-600 transition-colors"
@@ -135,7 +133,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
             </div>
           </div>
         )}
-        
+
         {/* Content */}
         <div className="p-6 space-y-6">
           {!hasJoined ? (
@@ -157,7 +155,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                   className="w-full px-4 py-3 bg-black/40 border border-white/20 text-white placeholder-white/40 focus:border-purple-500/50 focus:outline-none transition-colors"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-white/60 text-xs uppercase tracking-wider mb-2">
                   Room Name
@@ -169,11 +167,11 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                   placeholder="Enter room name"
                   className="w-full px-4 py-3 bg-black/40 border border-white/20 text-white placeholder-white/40 focus:border-purple-500/50 focus:outline-none transition-colors"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') handleJoinRoom();
+                    if (e.key === "Enter") handleJoinRoom();
                   }}
                 />
               </div>
-              
+
               <button
                 onClick={handleJoinRoom}
                 className="w-full px-6 py-3 bg-purple-500 text-white font-bold uppercase tracking-wider hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
@@ -181,7 +179,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                 <UserPlus className="w-5 h-5" />
                 Join Room
               </button>
-              
+
               <div className="text-white/40 text-xs text-center space-y-1">
                 <p>🎵 Collaborate in real-time with other DJs</p>
                 <p>🔒 Peer-to-peer connection (no server)</p>
@@ -201,7 +199,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                   <h3 className="text-white font-bold uppercase tracking-wider text-sm">
                     Connected DJs ({collaboration.peerCount})
                   </h3>
-                  
+
                   {collaboration.peerCount > 0 && (
                     <div className="flex items-center gap-1 text-green-400 text-xs">
                       <Radio className="w-3 h-3 animate-pulse" />
@@ -209,13 +207,18 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   {collaboration.peerCount === 0 ? (
                     <div className="text-center py-8 text-white/40 text-sm">
                       <Share2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       <p>Waiting for others to join...</p>
-                      <p className="text-xs mt-1">Share the room name: <span className="text-purple-400 font-bold">{roomName}</span></p>
+                      <p className="text-xs mt-1">
+                        Share the room name:{" "}
+                        <span className="text-purple-400 font-bold">
+                          {roomName}
+                        </span>
+                      </p>
                     </div>
                   ) : (
                     peerInfo.map((peer) => (
@@ -239,41 +242,49 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                   )}
                 </div>
               </div>
-              
+
               {/* Sync Status */}
-              {collaboration.state && Object.keys(collaboration.state).length > 0 && (
-                <div>
-                  <h3 className="text-white font-bold uppercase tracking-wider text-sm mb-3">
-                    Synced State
-                  </h3>
-                  
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 bg-black/40 border border-white/10">
-                        <div className="text-white/40">Crossfader</div>
-                        <div className="text-white font-bold">
-                          {((collaboration.state.crossfader as number) * 100).toFixed(0)}%
+              {collaboration.state &&
+                Object.keys(collaboration.state).length > 0 && (
+                  <div>
+                    <h3 className="text-white font-bold uppercase tracking-wider text-sm mb-3">
+                      Synced State
+                    </h3>
+
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 bg-black/40 border border-white/10">
+                          <div className="text-white/40">Crossfader</div>
+                          <div className="text-white font-bold">
+                            {(
+                              (collaboration.state.crossfader as number) * 100
+                            ).toFixed(0)}
+                            %
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="p-2 bg-black/40 border border-white/10">
-                        <div className="text-white/40">Master Volume</div>
-                        <div className="text-white font-bold">
-                          {((collaboration.state.masterVolume as number) * 100).toFixed(0)}%
+
+                        <div className="p-2 bg-black/40 border border-white/10">
+                          <div className="text-white/40">Master Volume</div>
+                          <div className="text-white font-bold">
+                            {(
+                              (collaboration.state.masterVolume as number) * 100
+                            ).toFixed(0)}
+                            %
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </motion.div>
           )}
         </div>
-        
+
         {/* Footer */}
         <div className="p-4 bg-zinc-950/50 border-t border-white/10 text-xs text-white/40">
           <p>
-            💡 Tip: All mixer changes are synchronized in real-time across all connected DJs.
+            💡 Tip: All mixer changes are synchronized in real-time across all
+            connected DJs.
           </p>
         </div>
       </motion.div>

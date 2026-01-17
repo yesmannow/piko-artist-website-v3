@@ -1,8 +1,8 @@
 /**
  * messages.ts - AudioWorklet Message Types
- * 
+ *
  * Phase 4: Discriminated union types for AudioWorklet communication
- * 
+ *
  * All messages use discriminated unions with a 'kind' field for type safety.
  * This enables exhaustive pattern matching and prevents type errors.
  */
@@ -12,7 +12,7 @@
  * Sent once from main thread to AudioWorklet to provide SharedArrayBuffer
  */
 export interface WorkletInitMessage {
-  kind: 'INIT';
+  kind: "INIT";
   sab: SharedArrayBuffer;
 }
 
@@ -21,7 +21,7 @@ export interface WorkletInitMessage {
  * Sent from AudioWorklet to main thread after successful initialization
  */
 export interface WorkletReadyMessage {
-  kind: 'READY';
+  kind: "READY";
   success: boolean;
   error?: string;
 }
@@ -31,7 +31,7 @@ export interface WorkletReadyMessage {
  * Sent from AudioWorklet to main thread when an error occurs
  */
 export interface WorkletErrorMessage {
-  kind: 'ERROR';
+  kind: "ERROR";
   error: string;
   timestamp: number;
 }
@@ -51,11 +51,11 @@ export type FromWorkletMessage = WorkletReadyMessage | WorkletErrorMessage;
  */
 export function isWorkletInitMessage(msg: unknown): msg is WorkletInitMessage {
   return (
-    typeof msg === 'object' &&
+    typeof msg === "object" &&
     msg !== null &&
-    'kind' in msg &&
-    msg.kind === 'INIT' &&
-    'sab' in msg &&
+    "kind" in msg &&
+    msg.kind === "INIT" &&
+    "sab" in msg &&
     msg.sab instanceof SharedArrayBuffer
   );
 }
@@ -63,27 +63,31 @@ export function isWorkletInitMessage(msg: unknown): msg is WorkletInitMessage {
 /**
  * Type guard for WorkletReadyMessage
  */
-export function isWorkletReadyMessage(msg: unknown): msg is WorkletReadyMessage {
+export function isWorkletReadyMessage(
+  msg: unknown,
+): msg is WorkletReadyMessage {
   return (
-    typeof msg === 'object' &&
+    typeof msg === "object" &&
     msg !== null &&
-    'kind' in msg &&
-    msg.kind === 'READY' &&
-    'success' in msg &&
-    typeof msg.success === 'boolean'
+    "kind" in msg &&
+    msg.kind === "READY" &&
+    "success" in msg &&
+    typeof msg.success === "boolean"
   );
 }
 
 /**
  * Type guard for WorkletErrorMessage
  */
-export function isWorkletErrorMessage(msg: unknown): msg is WorkletErrorMessage {
+export function isWorkletErrorMessage(
+  msg: unknown,
+): msg is WorkletErrorMessage {
   return (
-    typeof msg === 'object' &&
+    typeof msg === "object" &&
     msg !== null &&
-    'kind' in msg &&
-    msg.kind === 'ERROR' &&
-    'error' in msg &&
-    typeof msg.error === 'string'
+    "kind" in msg &&
+    msg.kind === "ERROR" &&
+    "error" in msg &&
+    typeof msg.error === "string"
   );
 }

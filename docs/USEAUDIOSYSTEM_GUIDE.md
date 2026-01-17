@@ -53,10 +53,10 @@ function DJMixer() {
     // Create a simple tone
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     // Schedule to start 100ms from now (sample-accurate)
     const startTime = scheduleAt(0.1);
     oscillator.start(startTime);
@@ -66,7 +66,7 @@ function DJMixer() {
   return (
     <div>
       <h1>DJ Mixer</h1>
-      
+
       <div>
         <p>Audio System Status:</p>
         <ul>
@@ -79,11 +79,11 @@ function DJMixer() {
           {platform.isSafari && <li>Safari Browser: ✅</li>}
         </ul>
       </div>
-      
+
       <button onClick={handleStart} disabled={isReady}>
         {isReady ? 'Audio System Ready' : 'Initialize Audio'}
       </button>
-      
+
       <button onClick={playSound} disabled={!isReady}>
         Play Test Sound
       </button>
@@ -101,20 +101,20 @@ interface AudioSystemConfig {
    * Recommended: Let browser choose for best latency
    */
   sampleRate?: number;
-  
+
   /**
    * Latency hint for AudioContext (default: 'interactive')
    * - 'interactive': Ultra-low latency for real-time apps
    * - 'balanced': Balanced latency and power consumption
    * - 'playback': Higher latency but better stability
    */
-  latencyHint?: 'interactive' | 'balanced' | 'playback';
-  
+  latencyHint?: "interactive" | "balanced" | "playback";
+
   /**
    * Enable debug logging (default: false)
    */
   debug?: boolean;
-  
+
   /**
    * AudioWorklet modules to load (paths relative to public/)
    */
@@ -128,19 +128,19 @@ interface AudioSystemConfig {
 interface AudioSystemState {
   // Core audio context (singleton)
   audioContext: AudioContext | null;
-  
+
   // System ready state
   isReady: boolean;
-  
+
   // AudioWorklets loaded successfully
   workletsLoaded: boolean;
-  
+
   // iOS audio unlocked (mobile only)
   isUnlocked: boolean;
-  
+
   // Total audio latency in seconds
   totalLatency: number;
-  
+
   // Platform detection
   platform: {
     isIOS: boolean;
@@ -154,13 +154,13 @@ interface AudioSystemState {
 interface AudioSystemControls {
   // Initialize audio system (call from user gesture)
   initializeAudio: () => Promise<void>;
-  
+
   // Resume suspended audio context
   resumeAudio: () => Promise<void>;
-  
+
   // Get current audio time (for scheduling)
   getCurrentTime: () => number;
-  
+
   // Schedule at specific offset (returns absolute time)
   scheduleAt: (offset: number) => number;
 }
@@ -196,15 +196,18 @@ No manual intervention required!
 ## Platform-Specific Optimizations
 
 ### iOS/Safari
+
 - Silent buffer loop keeps audio session active
 - Small buffer sizes (<20ms achievable)
 - Automatic unlock on first user gesture
 
 ### Android
+
 - Uses `latencyHint: 'interactive'`
 - Optimal buffer sizes per device
 
 ### Desktop
+
 - Maximum performance
 - Lowest possible latency
 
@@ -233,6 +236,7 @@ const { audioContext, isReady } = useAudioStore();
 ## Technical Details
 
 ### Singleton Pattern
+
 The AudioContext is created once and reused across all hook instances:
 
 ```typescript
@@ -244,13 +248,14 @@ function getOrCreateAudioContext(config) {
     return globalAudioContext; // Reuse existing
   }
   globalAudioContext = new AudioContext({
-    latencyHint: 'interactive',
+    latencyHint: "interactive",
   });
   return globalAudioContext;
 }
 ```
 
 ### Silent Buffer (iOS Hack)
+
 Keeps Safari audio session active:
 
 ```typescript
@@ -259,10 +264,10 @@ function playSilentBuffer(audioContext) {
   const source = audioContext.createBufferSource();
   source.buffer = buffer;
   source.loop = true; // Loop forever
-  
+
   const gainNode = audioContext.createGain();
   gainNode.gain.value = 0.00001; // Essentially inaudible
-  
+
   source.connect(gainNode);
   gainNode.connect(audioContext.destination);
   source.start(0);
@@ -270,6 +275,7 @@ function playSilentBuffer(audioContext) {
 ```
 
 ### Latency Measurement
+
 Total latency = base latency + output latency:
 
 ```typescript
@@ -290,21 +296,25 @@ console.log(`Total latency: ${(totalLatency * 1000).toFixed(2)}ms`);
 ## Troubleshooting
 
 ### Audio not starting
+
 - Ensure `initializeAudio()` is called from user gesture (click, touch)
 - Check `isReady` state before playing audio
 
 ### High latency on mobile
+
 - Verify `latencyHint: 'interactive'` is set
 - Check `totalLatency` value in console
 - iOS Safari: typically 10-20ms
 - Android: varies by device (20-50ms)
 
 ### AudioWorklet not loading
+
 - Verify worklet files exist in `/public/worklets/`
 - Check browser console for errors
 - Ensure COOP/COEP headers set (see middleware.ts)
 
 ### iOS audio cuts out
+
 - Silent buffer should keep session active
 - Check `isUnlocked` state
 - Verify first user gesture occurred

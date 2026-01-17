@@ -57,6 +57,7 @@ npm run check:workers
 ```
 
 Expected output:
+
 ```
 [check-workers] ✅ All 5 worker(s) are compiled
 ```
@@ -94,30 +95,36 @@ Expected output:
 ### Workers Not Compiling
 
 **Error: "Cannot use external without bundle"**
+
 - Fixed in latest build script
 - Run `npm run build:workers` again
 
 **Error: "esbuild not found"**
+
 - Install: `npm install --save-dev esbuild`
 
 ### ONNX Runtime Issues
 
 **Error: "ONNX Runtime failed to load"**
+
 - Check `onnxruntime-web` is installed: `npm list onnxruntime-web`
 - Verify WASM files exist in `public/ort/`
 - Check browser console for detailed error
 
 **Error: "Model file missing"**
+
 - Ensure model exists at `public/models/demucs_v4_quantized.onnx`
 - Or update `MODEL_URL` in `stemSeparator.worker.ts`
 
 ### Sync Not Working
 
 **Error: "Both decks must have tracks loaded"**
+
 - Load tracks into both decks first
 - Analyze beat grids for both tracks
 
 **Beats not aligning:**
+
 - Check beat grid confidence (should be > 0.5)
 - Verify both tracks have similar BPMs
 - Increase `beatNudgeThreshold` if nudges too frequent
@@ -125,6 +132,7 @@ Expected output:
 ### Key Detection Issues
 
 **Key always "Unavailable":**
+
 - Check Essentia.js is installed (optional, has fallback)
 - Verify worker compiled correctly
 - Check browser console for errors

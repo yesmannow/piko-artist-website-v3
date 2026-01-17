@@ -16,12 +16,14 @@
 ### Track Card Features Implemented
 
 #### ✅ Cover Art Display
+
 - Album cover thumbnail shown at top of card
 - Supports both image paths (`/images/...`) and gradient strings (`from-...-to-...`)
 - Uses Next.js `Image` component for optimized loading
 - Aspect ratio maintained (square)
 
 #### ✅ Hover Reveal Panel
+
 - Reveals on hover (desktop) and focus-visible (keyboard)
 - Shows:
   - **Artist name** (if not already visible in main card)
@@ -31,18 +33,21 @@
 - Smooth opacity transition (200ms)
 
 #### ✅ Micro-Interactions
+
 - **Hover lift/scale**: `scale: 1.02, y: -2` using Framer Motion
 - **Glow effect**: `hover:shadow-[0_0_12px_rgba(0,255,0,0.15)]`
 - **Smooth transitions**: 200ms easeOut animation
 - **Focus states**: Same animations apply on keyboard focus
 
 #### ✅ Accessibility
+
 - Keyboard focus support: `tabIndex={0}` and `focus-within:` styles
 - Hover reveal accessible via keyboard focus
 - External link has proper `aria-label`: `"Open external link for {track title}"`
 - Focus ring styling with toxic lime color
 
 #### ✅ Preserved Functionality
+
 - **A/B Load Buttons**: Still functional, positioned below cover art
 - **Drag-and-Drop**: HTML5 drag events still work (with type assertion for motion.div compatibility)
 - **Visual feedback**: Dragging state still shows opacity/scale changes
@@ -50,6 +55,7 @@
 ### Track Data Fields Used
 
 **Required Fields:**
+
 - `id` - Unique identifier
 - `title` - Track title (displayed)
 - `artist` - Artist name (shown in hover panel)
@@ -58,6 +64,7 @@
 - `vibe` - Genre/vibe (not displayed in card, but used for filtering)
 
 **Optional Fields (Not in Data Structure):**
+
 - `duration` - ❌ Not available, shows "—" placeholder
 - `externalLink` - ❌ Not in data, but Spotify link is constructed from title
 
@@ -91,4 +98,3 @@
 - Click on track card (not A/B buttons) opens drawer
 - Desktop: Sheet/modal
 - Mobile: Bottom drawer (similar to existing TrackDrawer)
-

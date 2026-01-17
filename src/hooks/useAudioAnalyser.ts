@@ -2,18 +2,24 @@ import { useEffect, useRef, useState } from "react";
 
 // Shared Web Audio singletons to prevent InvalidStateError
 let __sharedAudioContext: AudioContext | null = null;
-const __mediaSourceMap = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+const __mediaSourceMap = new WeakMap<
+  HTMLMediaElement,
+  MediaElementAudioSourceNode
+>();
 
 export function getSharedAudioContext(): AudioContext {
   if (!__sharedAudioContext) {
     const AC = (window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext) as unknown as typeof AudioContext;
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext) as unknown as typeof AudioContext;
     __sharedAudioContext = new AC();
   }
   return __sharedAudioContext;
 }
 
-export function getOrCreateMediaSourceFor(el: HTMLMediaElement): MediaElementAudioSourceNode {
+export function getOrCreateMediaSourceFor(
+  el: HTMLMediaElement,
+): MediaElementAudioSourceNode {
   const existing = __mediaSourceMap.get(el);
   if (existing) return existing;
   const ac = getSharedAudioContext();
@@ -36,7 +42,7 @@ interface AudioAnalyserResult {
  */
 export function useAudioAnalyser(
   videoElement: HTMLVideoElement | HTMLIFrameElement | null,
-  enabled: boolean = true
+  enabled: boolean = true,
 ): AudioAnalyserResult {
   const [levels, setLevels] = useState<AudioAnalyserResult>({
     bass: 0,
@@ -85,7 +91,9 @@ export function useAudioAnalyser(
     // For now, we'll return zero levels for iframes
 
     const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(new ArrayBuffer(bufferLength)) as Uint8Array<ArrayBuffer>;
+    const dataArray = new Uint8Array(
+      new ArrayBuffer(bufferLength),
+    ) as Uint8Array<ArrayBuffer>;
     dataArrayRef.current = dataArray;
 
     const updateLevels = () => {
@@ -149,4 +157,3 @@ export function useAudioAnalyser(
 
   return levels;
 }
-

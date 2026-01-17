@@ -3,6 +3,7 @@
 ## Overview
 
 Phase 9A implements enhanced BPM and beat grid analysis with:
+
 - **BPM Detection**: Accurate tempo detection
 - **Downbeat Detection**: First beat of first bar
 - **Beat Timestamps**: Complete beat grid array
@@ -13,6 +14,7 @@ Phase 9A implements enhanced BPM and beat grid analysis with:
 ### Beat Grid Worker (`src/workers/beatgrid.worker.ts`)
 
 **Analysis Process:**
+
 1. Mix audio to mono
 2. Downsample for performance (~10 samples/second)
 3. Apply low-pass filter to isolate bass frequencies
@@ -23,6 +25,7 @@ Phase 9A implements enhanced BPM and beat grid analysis with:
 8. Generate complete beat grid
 
 **Output:**
+
 ```typescript
 {
   bpm: number;              // Beats per minute
@@ -35,35 +38,40 @@ Phase 9A implements enhanced BPM and beat grid analysis with:
 ### BeatGridService (`src/engine/BeatGridService.ts`)
 
 **Features:**
+
 - Singleton pattern
 - Web Worker management
 - Result caching by track key
 - State management (uninitialized, ready, analyzing, error)
 
 **API:**
+
 ```typescript
 const service = getBeatGridService();
 await service.initialize();
-const beatGrid = await service.analyze(audioBuffer, 'cache-key');
+const beatGrid = await service.analyze(audioBuffer, "cache-key");
 ```
 
 ### React Hook (`src/hooks/useBeatGrid.ts`)
 
 **Features:**
+
 - Automatic service initialization
 - Beat grid analysis
 - Caching support
 - Error handling
 
 **Usage:**
+
 ```typescript
 const { beatGridData, isAnalyzing, analyze } = useBeatGrid();
-await analyze(audioBuffer, 'track-123');
+await analyze(audioBuffer, "track-123");
 ```
 
 ### UI Component (`src/components/studio/BeatGridDisplay.tsx`)
 
 **Features:**
+
 - BPM display with confidence indicator
 - Beat grid info (beat count, downbeat time)
 - "Sync (tempo only)" button
@@ -71,6 +79,7 @@ await analyze(audioBuffer, 'track-123');
 - Error handling and display
 
 **Props:**
+
 - `audioBuffer`: Audio buffer to analyze
 - `cacheKey`: Optional cache key
 - `onSync`: Callback when sync button is clicked
@@ -101,14 +110,14 @@ await analyze(audioBuffer, 'track-123');
 ## Usage Example
 
 ```tsx
-import { BeatGridDisplay } from '@/components/studio/BeatGridDisplay';
+import { BeatGridDisplay } from "@/components/studio/BeatGridDisplay";
 
 function MyComponent() {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
 
   const handleSync = (beatGrid: BeatGridData) => {
-    console.log('BPM:', beatGrid.bpm);
-    console.log('Beats:', beatGrid.beatTimestamps);
+    console.log("BPM:", beatGrid.bpm);
+    console.log("Beats:", beatGrid.beatTimestamps);
     // Implement tempo sync logic here
   };
 

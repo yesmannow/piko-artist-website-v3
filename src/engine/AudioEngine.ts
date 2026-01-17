@@ -1,4 +1,4 @@
-import { useAudioStore } from '../store/useAudioStore';
+import { useAudioStore } from "../store/useAudioStore";
 
 interface DeckNode {
   source: AudioBufferSourceNode | null;
@@ -37,7 +37,7 @@ interface DeckNode {
   playbackRate: number; // Current playback speed (1.0 = normal)
 }
 
-const DEBUG_AUDIO = process.env.NODE_ENV !== 'production';
+const DEBUG_AUDIO = process.env.NODE_ENV !== "production";
 const DEBUG_BYPASS_FX = false; // flip to true to bypass filters when debugging silence
 
 class AudioEngine {
@@ -45,9 +45,12 @@ class AudioEngine {
   masterGain: GainNode | null = null;
   decks: Map<string, DeckNode> = new Map();
   // Reusable buffer for analyser data (avoid GC)
-  private analyserDataBuffer: Uint8Array<ArrayBuffer> = new Uint8Array(new ArrayBuffer(32));
+  private analyserDataBuffer: Uint8Array<ArrayBuffer> = new Uint8Array(
+    new ArrayBuffer(32),
+  );
   private initialized: boolean = false;
-  state: 'Uninitialized' | 'Initializing' | 'Running' | 'Error' = 'Uninitialized';
+  state: "Uninitialized" | "Initializing" | "Running" | "Error" =
+    "Uninitialized";
 
   private async ensureReady(): Promise<boolean> {
     if (!this.initialized) {
@@ -55,7 +58,7 @@ class AudioEngine {
       if (!ok) return false;
     }
 
-    if (this.context && this.context.state === 'suspended') {
+    if (this.context && this.context.state === "suspended") {
       await this.context.resume();
     }
 
@@ -74,21 +77,22 @@ class AudioEngine {
    */
   async initialize(): Promise<boolean> {
     if (this.initialized) {
-      console.warn('AudioEngine already initialized');
+      console.warn("AudioEngine already initialized");
       return true;
     }
 
     try {
-      this.state = 'Initializing';
+      this.state = "Initializing";
 
       // Initialize with low latency for fast touch response
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
       this.context = new AudioContextClass({
-        latencyHint: 'interactive'
+        latencyHint: "interactive",
       });
 
       // CRITICAL: Safari Autoplay Fix - Resume if suspended
-      if (this.context.state === 'suspended') {
+      if (this.context.state === "suspended") {
         await this.context.resume();
       }
 
@@ -96,39 +100,39 @@ class AudioEngine {
       this.masterGain.connect(this.context.destination);
 
       // Initialize Decks A and B
-      this.initDeck('deckA');
-      this.initDeck('deckB');
+      this.initDeck("deckA");
+      this.initDeck("deckB");
 
       this.initialized = true;
-      this.state = 'Running';
-      console.log('AudioEngine initialized successfully');
+      this.state = "Running";
+      console.log("AudioEngine initialized successfully");
       return true;
     } catch (error) {
-      console.error('❌ AudioEngine initialization failed:', error);
-      this.state = 'Error';
+      console.error("❌ AudioEngine initialization failed:", error);
+      this.state = "Error";
       return false;
     }
   }
 
   private initDeck(id: string) {
     if (!this.context || !this.masterGain) {
-      throw new Error('AudioEngine not initialized. Call initialize() first.');
+      throw new Error("AudioEngine not initialized. Call initialize() first.");
     }
 
     // EQ chain
     const eqLow = this.context.createBiquadFilter();
-    eqLow.type = 'lowshelf';
+    eqLow.type = "lowshelf";
     eqLow.frequency.value = 200;
     eqLow.gain.value = 0;
 
     const eqMid = this.context.createBiquadFilter();
-    eqMid.type = 'peaking';
+    eqMid.type = "peaking";
     eqMid.frequency.value = 1000;
     eqMid.Q.value = 1;
     eqMid.gain.value = 0;
 
     const eqHigh = this.context.createBiquadFilter();
-    eqHigh.type = 'highshelf';
+    eqHigh.type = "highshelf";
     eqHigh.frequency.value = 5000;
     eqHigh.gain.value = 0;
 
@@ -138,7 +142,7 @@ class AudioEngine {
 
     // FX nodes
     const fxFilter = this.context.createBiquadFilter();
-    fxFilter.type = 'lowpass';
+    fxFilter.type = "lowpass";
     fxFilter.frequency.value = 20000;
     fxFilter.Q.value = 0;
 
@@ -202,7 +206,7 @@ class AudioEngine {
       hotCues: new Map(),
       bpm: 120,
       gridOffset: 0,
-      playbackRate: 1.0
+      playbackRate: 1.0,
     });
   }
 
@@ -226,7 +230,7 @@ class AudioEngine {
       useAudioStore.getState().setDeckState(deckId, {
         url,
         duration: audioBuffer.duration,
-        isPlaying: false
+        isPlaying: false,
       });
     } catch (error) {
       console.error(`Failed to load track on ${deckId}:`, error);
@@ -237,22 +241,27 @@ class AudioEngine {
     if (!(await this.ensureReady()) || !this.context) return;
 
     const deck = this.decks.get(deckId);
-    if (!deck || !deck.buffer || useAudioStore.getState().decks[deckId].isPlaying) return;
+    if (
+      !deck ||
+      !deck.buffer ||
+      useAudioStore.getState().decks[deckId].isPlaying
+    )
+      return;
 
     // Create new source node (they are one-time use)
     deck.source = this.context.createBufferSource();
     deck.source.buffer = deck.buffer;
-    
+
     // PHASE 6: Apply loop settings if active
     if (deck.loopActive && deck.loopEnd > deck.loopStart) {
       deck.source.loop = true;
       deck.source.loopStart = deck.loopStart;
       deck.source.loopEnd = deck.loopEnd;
     }
-    
+
     // PHASE 8: Apply playback rate (for sync)
     deck.source.playbackRate.value = deck.playbackRate;
-    
+
     // Route: source -> filter -> gain
     if (DEBUG_BYPASS_FX) {
       deck.source.connect(deck.deckGain);
@@ -267,7 +276,9 @@ class AudioEngine {
     useAudioStore.getState().setDeckState(deckId, { isPlaying: true });
 
     if (DEBUG_AUDIO) {
-      console.log(`[AudioEngine] play(${deckId}) gain=${deck.deckGain.gain.value.toFixed(2)}`);
+      console.log(
+        `[AudioEngine] play(${deckId}) gain=${deck.deckGain.gain.value.toFixed(2)}`,
+      );
       setTimeout(() => {
         try {
           const rms = this.getRMS(deckId);
@@ -333,7 +344,8 @@ class AudioEngine {
   }
 
   async setMasterVolume(value: number) {
-    if (!(await this.ensureReady()) || !this.context || !this.masterGain) return;
+    if (!(await this.ensureReady()) || !this.context || !this.masterGain)
+      return;
     const vol = Math.max(0, Math.min(1, value));
     this.masterGain.gain.setTargetAtTime(vol, this.context.currentTime, 0.01);
     if (DEBUG_AUDIO) {
@@ -355,7 +367,7 @@ class AudioEngine {
     const minFreq = 20;
     const maxFreq = 20000;
     const frequency = minFreq * Math.pow(maxFreq / minFreq, x);
-    
+
     // Y controls Resonance/Q (linear mapping: 0 to 20)
     const q = y * 20;
 
@@ -364,7 +376,10 @@ class AudioEngine {
     deck.fx.filter.Q.setTargetAtTime(q, currentTime, rampTime);
   }
 
-  async setEQ(deckId: 'deckA' | 'deckB', eq: { low?: number; mid?: number; high?: number }) {
+  async setEQ(
+    deckId: "deckA" | "deckB",
+    eq: { low?: number; mid?: number; high?: number },
+  ) {
     if (!(await this.ensureReady()) || !this.context) return;
     const deck = this.decks.get(deckId);
     if (!deck) return;
@@ -375,33 +390,43 @@ class AudioEngine {
     if (eq.high !== undefined) deck.eq.high.gain.value = clamp(eq.high);
 
     if (DEBUG_AUDIO) {
-      console.log(`[AudioEngine] EQ ${deckId} low=${deck.eq.low.gain.value.toFixed(1)} mid=${deck.eq.mid.gain.value.toFixed(1)} high=${deck.eq.high.gain.value.toFixed(1)}`);
+      console.log(
+        `[AudioEngine] EQ ${deckId} low=${deck.eq.low.gain.value.toFixed(1)} mid=${deck.eq.mid.gain.value.toFixed(1)} high=${deck.eq.high.gain.value.toFixed(1)}`,
+      );
     }
   }
 
-  async setFX(deckId: 'deckA' | 'deckB', type: 'delay' | 'reverb' | 'filter', amount: number) {
+  async setFX(
+    deckId: "deckA" | "deckB",
+    type: "delay" | "reverb" | "filter",
+    amount: number,
+  ) {
     if (!(await this.ensureReady()) || !this.context) return;
     const deck = this.decks.get(deckId);
     if (!deck) return;
 
     const clamped = Math.max(0, Math.min(1, amount));
     switch (type) {
-      case 'delay': {
+      case "delay": {
         const min = 0;
         const max = 0.5; // 500ms
         deck.fx.delay.delayTime.value = min + (max - min) * clamped;
         deck.fx.delayGain.gain.value = clamped;
         break;
       }
-      case 'reverb': {
+      case "reverb": {
         deck.fx.reverb.gain.value = clamped;
         break;
       }
-      case 'filter': {
+      case "filter": {
         const minFreq = 200;
         const maxFreq = 20000;
         const freq = minFreq * Math.pow(maxFreq / minFreq, clamped);
-        deck.fx.filter.frequency.setTargetAtTime(freq, this.context.currentTime, 0.02);
+        deck.fx.filter.frequency.setTargetAtTime(
+          freq,
+          this.context.currentTime,
+          0.02,
+        );
         break;
       }
     }
@@ -415,8 +440,8 @@ class AudioEngine {
     if (!(await this.ensureReady()) || !this.context) return;
 
     const pos = Math.max(0, Math.min(1, position));
-    const deckA = this.decks.get('deckA');
-    const deckB = this.decks.get('deckB');
+    const deckA = this.decks.get("deckA");
+    const deckB = this.decks.get("deckB");
     if (!deckA || !deckB) return;
 
     // Equal-power curve
@@ -427,11 +452,21 @@ class AudioEngine {
     const volA = store.decks?.deckA?.volume ?? deckA.deckGain.gain.value;
     const volB = store.decks?.deckB?.volume ?? deckB.deckGain.gain.value;
 
-    deckA.deckGain.gain.setTargetAtTime(volA * gainA, this.context.currentTime, 0.01);
-    deckB.deckGain.gain.setTargetAtTime(volB * gainB, this.context.currentTime, 0.01);
+    deckA.deckGain.gain.setTargetAtTime(
+      volA * gainA,
+      this.context.currentTime,
+      0.01,
+    );
+    deckB.deckGain.gain.setTargetAtTime(
+      volB * gainB,
+      this.context.currentTime,
+      0.01,
+    );
 
     if (DEBUG_AUDIO) {
-      console.log(`[AudioEngine] Crossfader pos=${pos.toFixed(2)} gainA=${gainA.toFixed(2)} gainB=${gainB.toFixed(2)}`);
+      console.log(
+        `[AudioEngine] Crossfader pos=${pos.toFixed(2)} gainA=${gainA.toFixed(2)} gainB=${gainB.toFixed(2)}`,
+      );
     }
   }
 
@@ -450,7 +485,7 @@ class AudioEngine {
       sum += normalized * normalized;
     }
     const rms = Math.sqrt(sum / this.analyserDataBuffer.length);
-    
+
     // Return normalized 0-1 value
     return Math.min(1, rms * 2); // Multiply by 2 for better visual range
   }
@@ -465,7 +500,7 @@ class AudioEngine {
    */
   setLoop(deckId: string, start: number, end?: number) {
     if (!this.context) {
-      console.error('AudioEngine not initialized');
+      console.error("AudioEngine not initialized");
       return;
     }
 
@@ -484,7 +519,9 @@ class AudioEngine {
     deck.loopStart = Math.max(0, start);
     deck.loopEnd = Math.min(end, deck.buffer.duration);
 
-    console.log(`Loop set: ${deck.loopStart.toFixed(2)}s - ${deck.loopEnd.toFixed(2)}s`);
+    console.log(
+      `Loop set: ${deck.loopStart.toFixed(2)}s - ${deck.loopEnd.toFixed(2)}s`,
+    );
   }
 
   /**
@@ -542,7 +579,7 @@ class AudioEngine {
    */
   setHotCue(deckId: string, index: number) {
     if (!this.context) {
-      console.error('AudioEngine not initialized');
+      console.error("AudioEngine not initialized");
       return;
     }
 
@@ -550,8 +587,12 @@ class AudioEngine {
     if (!deck || !deck.buffer) return;
 
     // Calculate current playback position
-    const currentTime = this.context.currentTime - deck.startTime + deck.pauseTime;
-    const clampedTime = Math.max(0, Math.min(currentTime, deck.buffer.duration));
+    const currentTime =
+      this.context.currentTime - deck.startTime + deck.pauseTime;
+    const clampedTime = Math.max(
+      0,
+      Math.min(currentTime, deck.buffer.duration),
+    );
 
     deck.hotCues.set(index, clampedTime);
     console.log(`Hot cue ${index} set at ${clampedTime.toFixed(2)}s`);
@@ -564,7 +605,7 @@ class AudioEngine {
    */
   triggerHotCue(deckId: string, index: number) {
     if (!this.context) {
-      console.error('AudioEngine not initialized');
+      console.error("AudioEngine not initialized");
       return;
     }
 
@@ -619,7 +660,9 @@ class AudioEngine {
 
     deck.bpm = bpm;
     deck.gridOffset = gridOffset;
-    console.log(`🎵 ${deckId} BPM set: ${bpm} (offset: ${gridOffset.toFixed(3)}s)`);
+    console.log(
+      `🎵 ${deckId} BPM set: ${bpm} (offset: ${gridOffset.toFixed(3)}s)`,
+    );
   }
 
   /**
@@ -681,7 +724,7 @@ class AudioEngine {
    */
   sync(sourceDeckId: string, targetDeckId: string) {
     if (!this.context) {
-      console.error('AudioEngine not initialized');
+      console.error("AudioEngine not initialized");
       return;
     }
 
@@ -689,12 +732,12 @@ class AudioEngine {
     const targetDeck = this.decks.get(targetDeckId);
 
     if (!sourceDeck || !targetDeck) {
-      console.error('Invalid deck IDs for sync');
+      console.error("Invalid deck IDs for sync");
       return;
     }
 
     if (targetDeck.bpm === 0 || sourceDeck.bpm === 0) {
-      console.warn('Cannot sync: BPM not detected for one or both decks');
+      console.warn("Cannot sync: BPM not detected for one or both decks");
       return;
     }
 
@@ -707,11 +750,13 @@ class AudioEngine {
       sourceDeck.source.playbackRate.setTargetAtTime(
         playbackRate,
         this.context.currentTime,
-        0.05 // 50ms smooth transition
+        0.05, // 50ms smooth transition
       );
     }
 
-    console.log(`🔄 Sync: ${sourceDeckId} (${sourceDeck.bpm} BPM) -> ${targetDeckId} (${targetDeck.bpm} BPM)`);
+    console.log(
+      `🔄 Sync: ${sourceDeckId} (${sourceDeck.bpm} BPM) -> ${targetDeckId} (${targetDeck.bpm} BPM)`,
+    );
     console.log(`   Playback rate: ${playbackRate.toFixed(3)}x`);
 
     // BONUS: Phase alignment (align beats)
@@ -729,11 +774,14 @@ class AudioEngine {
     const sourceDeck = this.decks.get(sourceDeckId);
     const targetDeck = this.decks.get(targetDeckId);
 
-    if (!sourceDeck || !targetDeck || !sourceDeck.buffer || !targetDeck.buffer) return;
+    if (!sourceDeck || !targetDeck || !sourceDeck.buffer || !targetDeck.buffer)
+      return;
 
     // Calculate current playback positions
-    const sourceTime = this.context.currentTime - sourceDeck.startTime + sourceDeck.pauseTime;
-    const targetTime = this.context.currentTime - targetDeck.startTime + targetDeck.pauseTime;
+    const sourceTime =
+      this.context.currentTime - sourceDeck.startTime + sourceDeck.pauseTime;
+    const targetTime =
+      this.context.currentTime - targetDeck.startTime + targetDeck.pauseTime;
 
     // Calculate beat positions relative to grid
     const sourceBeatLength = 60 / sourceDeck.bpm;
@@ -746,7 +794,8 @@ class AudioEngine {
     const phaseDiff = targetPhase - sourcePhase;
 
     // If phase difference is significant, nudge the source deck
-    if (Math.abs(phaseDiff) > 0.05) { // 50ms threshold
+    if (Math.abs(phaseDiff) > 0.05) {
+      // 50ms threshold
       const nudgeAmount = phaseDiff / sourceDeck.playbackRate;
       const newPauseTime = sourceDeck.pauseTime + nudgeAmount;
 
@@ -755,7 +804,9 @@ class AudioEngine {
         this.pause(sourceDeckId);
         sourceDeck.pauseTime = newPauseTime;
         this.play(sourceDeckId);
-        console.log(`   Phase aligned: nudged ${(nudgeAmount * 1000).toFixed(0)}ms`);
+        console.log(
+          `   Phase aligned: nudged ${(nudgeAmount * 1000).toFixed(0)}ms`,
+        );
       }
     }
   }
@@ -766,7 +817,7 @@ class AudioEngine {
    */
   unsync(deckId: string) {
     if (!this.context) {
-      console.error('AudioEngine not initialized');
+      console.error("AudioEngine not initialized");
       return;
     }
 
@@ -780,7 +831,7 @@ class AudioEngine {
       deck.source.playbackRate.setTargetAtTime(
         1.0,
         this.context.currentTime,
-        0.05
+        0.05,
       );
     }
 
@@ -794,8 +845,8 @@ class AudioEngineSingleton {
 
   public static getInstance(): AudioEngine {
     if (!AudioEngineSingleton.instance) {
-      if (typeof window === 'undefined') {
-        throw new Error('AudioEngine cannot be instantiated on the server');
+      if (typeof window === "undefined") {
+        throw new Error("AudioEngine cannot be instantiated on the server");
       }
       AudioEngineSingleton.instance = new AudioEngine();
     }
@@ -811,15 +862,15 @@ let initializationPromise: Promise<boolean> | null = null;
 export async function ensureAudioEngineReady(): Promise<AudioEngine> {
   const engine = getAudioEngine();
 
-  if (engine.state === 'Uninitialized') {
+  if (engine.state === "Uninitialized") {
     initializationPromise = initializationPromise ?? engine.initialize();
     await initializationPromise;
-    console.log('[AudioEngine] Initialized');
-  } else if (engine.state === 'Initializing' && initializationPromise) {
+    console.log("[AudioEngine] Initialized");
+  } else if (engine.state === "Initializing" && initializationPromise) {
     await initializationPromise;
   }
 
-  if (engine.context && engine.context.state === 'suspended') {
+  if (engine.context && engine.context.state === "suspended") {
     await engine.context.resume();
   }
 

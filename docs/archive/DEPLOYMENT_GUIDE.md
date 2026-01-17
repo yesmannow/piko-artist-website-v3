@@ -5,15 +5,19 @@
 ### Pre-Deployment Checklist
 
 #### ✅ Task 1: Dependencies Installed
+
 ```bash
 npm install idb-keyval
 ```
+
 **Status:** Complete - Package installed successfully
 
 #### ✅ Task 2: TypeScript Build Error Fixed
+
 **Issue:** `Type 'Uint8Array<ArrayBuffer> | null' must have a '[Symbol.iterator]()' method`
 
 **Fix Applied:** `src/engine/MIDIManager.ts`
+
 ```typescript
 // Before (destructuring failed)
 const [status, data1, data2] = event.data;
@@ -26,26 +30,32 @@ const data2 = event.data[2];
 ```
 
 #### ✅ Task 3: PWA Icons
+
 **Status:** Icon exists at `public/icon.png`
 **Manifest:** Correctly configured for 192x192 and 512x512 sizes
 
 #### ✅ Task 4: Vercel Configuration
+
 **File Created:** `vercel.json`
 
 **Security Headers:**
+
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`
 
 **Service Worker Headers:**
+
 - `Cache-Control: public, max-age=0, must-revalidate`
 - `Service-Worker-Allowed: /`
 
 **WASM/Worker Headers:**
+
 - `Cross-Origin-Embedder-Policy: require-corp`
 - `Cross-Origin-Opener-Policy: same-origin`
 
 **URL Rewrites:**
+
 - `/studio` → `/studio-v2` (convenience redirect)
 
 ---
@@ -55,16 +65,19 @@ const data2 = event.data[2];
 ### Option 1: Vercel CLI (Recommended)
 
 1. **Install Vercel CLI**
+
    ```bash
    npm install -g vercel
    ```
 
 2. **Login to Vercel**
+
    ```bash
    vercel login
    ```
 
 3. **Deploy to Production**
+
    ```bash
    vercel --prod
    ```
@@ -80,6 +93,7 @@ const data2 = event.data[2];
 ### Option 2: Vercel Dashboard
 
 1. **Push to GitHub**
+
    ```bash
    git add .
    git commit -m "Production ready - Phase 11 complete"
@@ -115,6 +129,7 @@ npm run build
 ```
 
 **Expected Output:**
+
 ```
 ✓ Compiled successfully
 ✓ Linting and checking validity of types
@@ -124,6 +139,7 @@ npm run build
 ```
 
 **Build Artifacts:**
+
 - `.next/` directory created
 - Static pages generated
 - Service worker compiled
@@ -214,6 +230,7 @@ Then visit: http://localhost:3000/studio-v2
    - Follow DNS configuration instructions
 
 2. **DNS Records**
+
    ```
    Type: A
    Name: @
@@ -279,11 +296,13 @@ NEXT_PUBLIC_ENABLE_RECORDING=false
 **Sentry Integration:**
 
 1. **Install Sentry**
+
    ```bash
    npm install @sentry/nextjs
    ```
 
 2. **Configure**
+
    ```bash
    npx @sentry/wizard@latest -i nextjs
    ```
@@ -291,7 +310,7 @@ NEXT_PUBLIC_ENABLE_RECORDING=false
 3. **Update Error Boundary**
    ```typescript
    // In StudioErrorBoundary.tsx
-   if (process.env.NODE_ENV === 'production') {
+   if (process.env.NODE_ENV === "production") {
      Sentry.captureException(error, { contexts: { react: errorInfo } });
    }
    ```
@@ -325,6 +344,7 @@ NEXT_PUBLIC_ENABLE_RECORDING=false
 ### Regular Updates
 
 1. **Dependencies**
+
    ```bash
    npm outdated
    npm update
@@ -332,6 +352,7 @@ NEXT_PUBLIC_ENABLE_RECORDING=false
    ```
 
 2. **Next.js Updates**
+
    ```bash
    npm install next@latest react@latest react-dom@latest
    ```
@@ -359,7 +380,9 @@ NEXT_PUBLIC_ENABLE_RECORDING=false
 ### Common Issues
 
 #### 1. Build Fails with TypeScript Errors
+
 **Solution:**
+
 ```bash
 npm run build
 # Fix errors shown in output
@@ -367,20 +390,25 @@ npm run build
 ```
 
 #### 2. Service Worker Not Updating
+
 **Solution:**
+
 - Clear browser cache
 - Unregister old service worker
 - Hard refresh (Ctrl+Shift+R)
 
 #### 3. MIDI Not Working
+
 **Cause:** WebMIDI only works over HTTPS
 **Solution:** Ensure site is deployed with SSL
 
 #### 4. Audio Not Playing on iOS
+
 **Cause:** Autoplay policy
 **Solution:** Verify "START SESSION" button is clicked
 
 #### 5. PWA Not Installing
+
 **Cause:** Missing manifest or icons
 **Solution:** Verify manifest.json and icon.png exist
 
@@ -406,15 +434,18 @@ npm run build
 ## Support & Resources
 
 ### Documentation
+
 - Next.js: https://nextjs.org/docs
 - Vercel: https://vercel.com/docs
 - Web Audio API: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
 
 ### Community
+
 - Next.js Discord: https://nextjs.org/discord
 - Vercel Community: https://github.com/vercel/vercel/discussions
 
 ### Contact
+
 - GitHub Issues: [Your repo]/issues
 - Email: [Your email]
 

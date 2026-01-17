@@ -27,6 +27,7 @@ Phase 3 implements mobile-first UI patterns and PWA capabilities for the Piko Ar
 - ✅ Utility classes added: `.safe-top`, `.safe-bottom`, `.safe-left`, `.safe-right`, `.safe-area`
 
 **Files Modified**:
+
 - `src/app/layout.tsx` (viewport configuration already present)
 - `public/manifest.json` (already configured)
 - `src/app/globals.css` (added safe-area utilities)
@@ -49,11 +50,13 @@ Phase 3 implements mobile-first UI patterns and PWA capabilities for the Piko Ar
 - ✅ One-page layout with no navigation
 
 **Files Modified**:
+
 - `src/app/globals.css` (mobile-studio class and safe-area utilities)
 - `src/app/mobile/page.tsx` (auto-applies mobile-studio class)
 - `src/components/mobile-shell/MobileStudioLayout.tsx` (safe-area class on container)
 
 **CSS Implementation**:
+
 ```css
 body.mobile-studio {
   overscroll-behavior: none;
@@ -62,10 +65,8 @@ body.mobile-studio {
   position: fixed;
   width: 100%;
   height: 100dvh;
-  padding: env(safe-area-inset-top, 0) 
-          env(safe-area-inset-right, 0) 
-          env(safe-area-inset-bottom, 0) 
-          env(safe-area-inset-left, 0);
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+    env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
 }
 ```
 
@@ -76,28 +77,34 @@ body.mobile-studio {
 **Status**: Complete
 
 **New Hook**: `useInertia`
+
 - Implements exponential decay (friction-based physics)
 - Configurable friction coefficient (default: 0.95)
 - Minimum velocity threshold
 - Callbacks for update and stop events
 
 **Variant Hook**: `useTapeStopEffect`
+
 - Specialized for dramatic tape-stop effect
 - Lower friction (0.92) for more aggressive decay
 
 **Integration**:
+
 - ✅ ScrubLayer: Jog wheel inertia with momentum scrolling
   - Friction: 0.93 (moderate feel)
   - Velocity-based haptic ticks during inertia
   - Auto-stops when dragging resumes
 
 **Files Created**:
+
 - `src/hooks/useInertia.ts` (185 lines)
 
 **Files Modified**:
+
 - `src/components/mobile-shell/views/ScrubLayer.tsx`
 
 **Example Usage**:
+
 ```tsx
 const { applyVelocity, stopInertia } = useInertia({
   friction: 0.93,
@@ -106,7 +113,7 @@ const { applyVelocity, stopInertia } = useInertia({
   },
   onStop: () => {
     triggerHaptic(HAPTIC_PATTERNS.BUMP);
-  }
+  },
 });
 ```
 
@@ -119,43 +126,51 @@ const { applyVelocity, stopInertia } = useInertia({
 **Enhanced Patterns** (24 total):
 
 **Basic Interactions**:
+
 - `CLICK: 5ms` - Button presses
 - `BUMP: 10ms` - Center detents
 - `SUCCESS: [10, 30, 10]` - Success states
 
 **Fader Interactions**:
+
 - `FADER_MIDPOINT: 15ms` - Fader hits center (with 2% threshold)
 - `FADER_SLIDE: 3ms` - Subtle tick while sliding
 - `CROSSFADER_CENTER: 20ms` - Crossfader center detent
 
 **Pad/Cue Interactions**:
+
 - `PAD_TRIGGER: 8ms` - Pad press
 - `PAD_ON_BEAT: [10, 20, 10]` - Pad triggered on beat
 - `CUE_TOGGLE: 12ms` - Setting/clearing cue
 - `CUE_JUMP: [8, 20, 8]` - Jumping to cue
 
 **Deck Interactions**:
+
 - `PLAY_TOGGLE: 10ms` - Play/pause
 - `SYNC_ENABLE: [5, 50, 5]` - Sync enabled
 - `LOOP_SET: [8, 30, 8, 30, 8]` - Loop set (triple buzz)
 
 **Jog Wheel**:
+
 - `JOG_TICK: 3ms` - Rotation tick
 - `JOG_SCRUB: 5ms` - Scrubbing
 - `PLATTER_STOP: [20, 50, 10]` - Platter stop
 
 **Effects**:
+
 - `FX_ON: [5, 20, 5]` - Effect enabled
 - `FX_OFF: 8ms` - Effect disabled
 - `BEAT_SYNC: 5ms` - Beat marker
 
 **Component Integration**:
+
 - ✅ **PerformancePads**: Different haptics for cue jump vs set, loop set
 - ✅ **MixerView**: Fader midpoint detection with 2% threshold
 - ✅ **ScrubLayer**: Jog wheel ticks, inertia stop bump
 - ✅ **AlwaysOnBottomBar**: Play/pause, sync, crossfader center
 
 **Files Modified**:
+
 - `src/utils/haptics.ts` (enhanced patterns)
 - `src/components/mobile-shell/controls/PerformancePads.tsx`
 - `src/components/mobile-shell/views/MixerView.tsx`
@@ -163,15 +178,16 @@ const { applyVelocity, stopInertia } = useInertia({
 - `src/components/mobile-shell/AlwaysOnBottomBar.tsx`
 
 **Example Integration**:
+
 ```tsx
 // Fader midpoint detection
 const checkMidpointCrossing = (prevValue: number, newValue: number) => {
   const midpoint = 0.5;
   const threshold = 0.02;
-  const wasBeforeMidpoint = prevValue < (midpoint - threshold);
-  const wasAfterMidpoint = prevValue > (midpoint + threshold);
+  const wasBeforeMidpoint = prevValue < midpoint - threshold;
+  const wasAfterMidpoint = prevValue > midpoint + threshold;
   const isAtMidpoint = Math.abs(newValue - midpoint) <= threshold;
-  
+
   if ((wasBeforeMidpoint || wasAfterMidpoint) && isAtMidpoint) {
     triggerHaptic(HAPTIC_PATTERNS.FADER_MIDPOINT);
   }
@@ -185,6 +201,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 **Status**: Complete (Infrastructure in place)
 
 **Service Worker**: Serwist/Next.js PWA
+
 - ✅ App shell caching enabled
 - ✅ Static assets cached (Next.js, images, fonts)
 - ✅ RangeRequestsPlugin for audio samples (streaming decoding)
@@ -192,6 +209,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - ✅ Precache manifest filtering (excludes large stems)
 
 **Audio Strategy**:
+
 - **Audio Samples**: CacheFirst with RangeRequestsPlugin
   - Max 16 entries, 7-day TTL
   - Enables streaming without loading entire file
@@ -201,6 +219,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
   - Uses range requests for streaming
 
 **Cache Limits**:
+
 - Images: 60 entries, 30MB
 - Next.js static: 80 entries, 50MB
 - Audio samples: 16 entries, 25MB
@@ -208,6 +227,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - Fonts: 20 entries, 15MB
 
 **iOS Keep-Alive** ✅:
+
 - Created `useSilentAudioLoop` hook
 - Implements silent oscillator at 20Hz (below human hearing)
 - Volume: 0.001 (-60dB, effectively silent)
@@ -216,9 +236,11 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - Integrated into MobileStudioLayout
 
 **Files Created**:
+
 - `src/hooks/useSilentAudioLoop.ts` (147 lines)
 
 **Files Modified**:
+
 - `src/app/sw.ts` (documentation updates)
 - `src/components/mobile-shell/MobileStudioLayout.tsx` (silent loop integration)
 
@@ -229,6 +251,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 ### Device Testing (Manual)
 
 **iOS Testing**:
+
 - [ ] Install PWA from Safari (Add to Home Screen)
 - [ ] Verify standalone mode (no browser chrome)
 - [ ] Test safe-area-inset on iPhone with notch
@@ -240,6 +263,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - [ ] Test fader midpoint haptic
 
 **Android Testing**:
+
 - [ ] Install PWA from Chrome
 - [ ] Verify standalone mode
 - [ ] Test safe-area-inset on edge-to-edge devices
@@ -249,6 +273,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - [ ] Verify pull-to-refresh is disabled
 
 **Offline Testing**:
+
 - [ ] Load app online
 - [ ] Disconnect from network
 - [ ] Verify app shell loads from cache
@@ -256,6 +281,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - [ ] Verify UI remains functional
 
 **Performance Testing**:
+
 - [ ] Measure time to interactive (TTI)
 - [ ] Check audio latency (<20ms target)
 - [ ] Test battery impact of silent loop
@@ -267,18 +293,21 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 ## Key Features Implemented
 
 ### 1. Fixed-Canvas Mobile Interface
+
 - No scrollbars, no pull-to-refresh
 - Full viewport height with dynamic viewport (dvh)
 - Touch-action: none prevents OS gestures
 - Overscroll-behavior: none locks scrolling
 
 ### 2. Physical Gesture Feel
+
 - Inertia on jog wheel (friction-based decay)
 - Velocity carries over after touch release
 - Exponential ramp-down (tape-stop effect)
 - Haptic ticks during momentum
 
 ### 3. Haptic Feedback System
+
 - 24 unique haptic patterns
 - Context-aware (cue jump vs set, sync on vs off)
 - Midpoint detection on faders (2% threshold)
@@ -286,6 +315,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - Velocity-based jog wheel haptics
 
 ### 4. iOS Audio Keep-Alive
+
 - Silent 20Hz oscillator loop
 - -60dB volume (effectively silent)
 - Auto-starts on audio unlock
@@ -293,6 +323,7 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 - Auto-cleanup on unmount
 
 ### 5. PWA Capabilities
+
 - Installable on iOS/Android
 - Standalone display mode
 - Offline-capable (app shell)
@@ -304,12 +335,14 @@ const checkMidpointCrossing = (prevValue: number, newValue: number) => {
 ## Architecture Notes
 
 ### Touch Target Sizes
+
 - All interactive elements >= 48px (exceeds 44px minimum)
 - Play/pause buttons: 48px × 48px
 - Performance pads: aspect-square (responsive, always >= 48px)
 - Faders: 3rem width (48px)
 
 ### CSS Variables
+
 ```css
 env(safe-area-inset-top)
 env(safe-area-inset-right)
@@ -318,6 +351,7 @@ env(safe-area-inset-left)
 ```
 
 ### Service Worker Strategy
+
 - **Precache**: App shell, critical assets
 - **CacheFirst**: Images, fonts, small audio
 - **NetworkOnly**: Large audio files, worklets, studio routes
@@ -328,12 +362,14 @@ env(safe-area-inset-left)
 ## Performance Metrics
 
 **Target**:
+
 - Time to Interactive: <3s
 - Audio Latency: <20ms
 - Gesture Response: <16ms (60fps)
 - Memory: <100MB sustained
 
 **Optimizations**:
+
 - Dynamic imports for heavy components
 - Service worker caching
 - Range requests for audio
@@ -345,12 +381,14 @@ env(safe-area-inset-left)
 ## Browser Compatibility
 
 **Supported**:
+
 - ✅ iOS Safari 14+ (PWA, haptics, inertia)
 - ✅ Chrome Android 90+ (PWA, haptics, inertia)
 - ✅ Chrome Desktop 90+ (dev/test)
 - ✅ Edge 90+ (dev/test)
 
 **Partial Support**:
+
 - ⚠️ Firefox (no haptics, PWA limited)
 - ⚠️ Safari Desktop (no haptics)
 
@@ -392,6 +430,7 @@ env(safe-area-inset-left)
 8. `src/components/mobile-shell/AlwaysOnBottomBar.tsx` (haptic enhancement)
 
 ## Total Changes
+
 - **Lines Added**: ~600
 - **Components Enhanced**: 5
 - **New Hooks**: 2
@@ -402,11 +441,13 @@ env(safe-area-inset-left)
 ## Deployment Notes
 
 **Vercel Edge Network**:
+
 - Service worker served via CDN
 - Static assets automatically edge-cached
 - PWA manifest served with correct headers
 
 **Build Requirements**:
+
 - Node 20.x
 - Service worker compilation via Serwist
 - No additional build steps required

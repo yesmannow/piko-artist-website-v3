@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { getBeatGridService, type BeatGridData } from '@/engine/BeatGridService';
+import { useState, useEffect, useCallback } from "react";
+import {
+  getBeatGridService,
+  type BeatGridData,
+} from "@/engine/BeatGridService";
 
 /**
  * useBeatGrid - React hook for beat grid analysis
@@ -21,20 +24,20 @@ export function useBeatGrid() {
 
   // Initialize service on mount
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
     const initService = async () => {
       try {
         const service = getBeatGridService();
-        if (service.state === 'uninitialized') {
+        if (service.state === "uninitialized") {
           await service.initialize();
         }
         setIsInitialized(true);
       } catch (err) {
-        console.error('[useBeatGrid] Failed to initialize:', err);
-        setError(err instanceof Error ? err.message : 'Initialization failed');
+        console.error("[useBeatGrid] Failed to initialize:", err);
+        setError(err instanceof Error ? err.message : "Initialization failed");
       }
     };
 
@@ -47,7 +50,7 @@ export function useBeatGrid() {
   const analyze = useCallback(
     async (audioBuffer: AudioBuffer, cacheKey?: string) => {
       if (!isInitialized) {
-        throw new Error('BeatGridService not initialized');
+        throw new Error("BeatGridService not initialized");
       }
 
       setIsAnalyzing(true);
@@ -62,12 +65,13 @@ export function useBeatGrid() {
         return result;
       } catch (err) {
         setIsAnalyzing(false);
-        const errorMessage = err instanceof Error ? err.message : 'Analysis failed';
+        const errorMessage =
+          err instanceof Error ? err.message : "Analysis failed";
         setError(errorMessage);
         throw err;
       }
     },
-    [isInitialized]
+    [isInitialized],
   );
 
   /**

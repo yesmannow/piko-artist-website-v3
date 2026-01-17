@@ -17,7 +17,7 @@ function VideoThumbnailWithFallback({
   videoId,
   title,
   className,
-  onLoadingComplete
+  onLoadingComplete,
 }: {
   videoId: string;
   title: string;
@@ -49,10 +49,14 @@ function VideoThumbnailWithFallback({
   ];
 
   // Use videoId to deterministically select a fallback image
-  const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
+  const fallbackIndex =
+    videoId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+    trackImages.length;
   const fallbackImage = trackImages[fallbackIndex];
 
-  const [imgSrc, setImgSrc] = useState(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+  const [imgSrc, setImgSrc] = useState(
+    `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+  );
   const [errorCount, setErrorCount] = useState(0);
 
   const handleError = () => {
@@ -76,7 +80,9 @@ function VideoThumbnailWithFallback({
       onError={handleError}
       onLoadingComplete={onLoadingComplete}
       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      unoptimized={imgSrc.includes('i.ytimg.com') || imgSrc.includes('img.youtube.com')}
+      unoptimized={
+        imgSrc.includes("i.ytimg.com") || imgSrc.includes("img.youtube.com")
+      }
     />
   );
 }
@@ -88,7 +94,11 @@ interface FeaturedVideoThumbnailProps {
   onPlay: () => void;
 }
 
-function FeaturedVideoThumbnail({ video, index, onPlay }: FeaturedVideoThumbnailProps) {
+function FeaturedVideoThumbnail({
+  video,
+  index,
+  onPlay,
+}: FeaturedVideoThumbnailProps) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
@@ -101,7 +111,7 @@ function FeaturedVideoThumbnail({ video, index, onPlay }: FeaturedVideoThumbnail
       className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer"
       onClick={onPlay}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onPlay();
         }
@@ -122,9 +132,7 @@ function FeaturedVideoThumbnail({ video, index, onPlay }: FeaturedVideoThumbnail
               className="object-cover transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 grayscale contrast-125"
               onLoadingComplete={() => setIsLoaded(true)}
             />
-            {!isLoaded && (
-              <Skeleton className="absolute inset-0" />
-            )}
+            {!isLoaded && <Skeleton className="absolute inset-0" />}
             {/* Grain overlay - disappears on hover */}
             <div
               className="absolute inset-0 opacity-100 group-hover:opacity-0 transition-opacity duration-500 pointer-events-none"
@@ -210,7 +218,16 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
 
   // Generate fake duration for YouTube-style timestamp
   const getFakeDuration = (index: number) => {
-    const durations = ["3:45", "4:12", "2:58", "5:23", "3:19", "4:56", "2:34", "3:47"];
+    const durations = [
+      "3:45",
+      "4:12",
+      "2:58",
+      "5:23",
+      "3:19",
+      "4:56",
+      "2:34",
+      "3:47",
+    ];
     return durations[index % durations.length];
   };
 
@@ -223,7 +240,7 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
       className="group cursor-pointer relative overflow-visible"
       onClick={onPlay}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onPlay();
         }
@@ -269,9 +286,7 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
                 className="object-cover transition-transform duration-300"
                 onLoadingComplete={() => setIsLoaded(true)}
               />
-              {!isLoaded && (
-                <Skeleton className="absolute inset-0" />
-              )}
+              {!isLoaded && <Skeleton className="absolute inset-0" />}
             </>
           )}
 
@@ -280,14 +295,15 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
             <div className="relative w-full h-full">
               <iframe
                 title={`${video.title} - CCTV Preview`}
-                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&start=10&controls=0&modestbranding=1&rel=0&loop=1&playlist=${video.id}&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&start=10&controls=0&modestbranding=1&rel=0&loop=1&playlist=${video.id}&enablejsapi=1&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
                 className="absolute inset-0 w-full h-full"
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
                 loading="lazy"
                 style={{
-                  filter: "grayscale(100%) sepia(100%) hue-rotate(80deg) contrast(150%)",
+                  filter:
+                    "grayscale(100%) sepia(100%) hue-rotate(80deg) contrast(150%)",
                   border: "none",
                 }}
               />
@@ -399,4 +415,3 @@ export function VideoGallery({ featuredOnly = false }: VideoGalleryProps) {
     </>
   );
 }
-

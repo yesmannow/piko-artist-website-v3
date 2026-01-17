@@ -71,7 +71,10 @@ export function InstallPrompt() {
     }
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
@@ -131,7 +134,8 @@ export function InstallPrompt() {
           <div className="bg-black/95 backdrop-blur-sm border-2 border-toxic-lime/50 p-4 font-mono text-xs shadow-2xl">
             {/* Terminal Header */}
             <div className="text-toxic-lime mb-2">
-              <span className="text-red-600">&gt;</span> SYSTEM: OPTIMIZED_VERSION_AVAILABLE. INSTALL? [Y/N]
+              <span className="text-red-600">&gt;</span> SYSTEM:
+              OPTIMIZED_VERSION_AVAILABLE. INSTALL? [Y/N]
             </div>
 
             {/* Buttons */}
@@ -155,4 +159,3 @@ export function InstallPrompt() {
     </AnimatePresence>
   );
 }
-

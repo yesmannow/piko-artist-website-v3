@@ -58,7 +58,9 @@
       const response = { peaks };
       self.postMessage(response);
     } catch (error) {
-      self.postMessage({ error: error instanceof Error ? error.message : "Unknown error" });
+      self.postMessage({
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   };
 })();

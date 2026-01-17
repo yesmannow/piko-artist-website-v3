@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useRef,
+} from "react";
 import { usePathname } from "next/navigation";
 import { useAudio } from "./AudioContext";
 
@@ -85,4 +92,3 @@ export function useVideo() {
   }
   return context;
 }
-

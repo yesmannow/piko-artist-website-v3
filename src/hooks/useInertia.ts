@@ -1,11 +1,11 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect } from "react";
 
 /**
  * PHASE 3: Inertia Hook for Physical Gesture Feel
- * 
+ *
  * Implements exponential ramp-down (tape-stop effect) for gestures.
  * Used for virtual jog wheels, faders, and other touch controls.
- * 
+ *
  * @example
  * ```tsx
  * const { velocity, applyVelocity, stopInertia } = useInertia({
@@ -13,7 +13,7 @@ import { useRef, useCallback, useEffect } from 'react';
  *   minVelocity: 0.01,
  *   onUpdate: (vel) => setRotation(prev => prev + vel)
  * });
- * 
+ *
  * useDrag({
  *   onDrag: ({ movement: [mx, my], velocity: [vx] }) => {
  *     applyVelocity(vx);
@@ -28,18 +28,18 @@ interface UseInertiaOptions {
    * Default: 0.95 (5% velocity loss per frame)
    */
   friction?: number;
-  
+
   /**
    * Minimum velocity threshold. Below this, inertia stops.
    * Default: 0.01
    */
   minVelocity?: number;
-  
+
   /**
    * Callback fired on each animation frame with current velocity.
    */
   onUpdate?: (velocity: number) => void;
-  
+
   /**
    * Optional callback when inertia stops.
    */
@@ -54,17 +54,17 @@ interface UseInertiaReturn {
    * Current velocity value
    */
   velocity: number;
-  
+
   /**
    * Set/apply velocity (starts inertia animation)
    */
   applyVelocity: (vel: number) => void;
-  
+
   /**
    * Stop inertia immediately
    */
   stopInertia: () => void;
-  
+
   /**
    * Check if inertia is currently active
    */
@@ -72,12 +72,7 @@ interface UseInertiaReturn {
 }
 
 export function useInertia(options: UseInertiaOptions = {}): UseInertiaReturn {
-  const {
-    friction = 0.95,
-    minVelocity = 0.01,
-    onUpdate,
-    onStop,
-  } = options;
+  const { friction = 0.95, minVelocity = 0.01, onUpdate, onStop } = options;
 
   const velocityRef = useRef(0);
   const rafRef = useRef<number | null>(null);
@@ -91,11 +86,11 @@ export function useInertia(options: UseInertiaOptions = {}): UseInertiaReturn {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-    
+
     const wasActive = isActiveRef.current;
     isActiveRef.current = false;
     velocityRef.current = 0;
-    
+
     if (wasActive && onStop) {
       onStop();
     }
@@ -106,21 +101,21 @@ export function useInertia(options: UseInertiaOptions = {}): UseInertiaReturn {
    */
   const animate = useCallback(() => {
     const currentVel = velocityRef.current;
-    
+
     // Check if velocity is below threshold
     if (Math.abs(currentVel) < minVelocity) {
       stopInertia();
       return;
     }
-    
+
     // Apply friction (exponential decay)
     velocityRef.current = currentVel * friction;
-    
+
     // Call update callback
     if (onUpdate) {
       onUpdate(velocityRef.current);
     }
-    
+
     // Schedule next frame
     rafRef.current = requestAnimationFrame(animate);
   }, [friction, minVelocity, onUpdate, stopInertia]);
@@ -128,23 +123,26 @@ export function useInertia(options: UseInertiaOptions = {}): UseInertiaReturn {
   /**
    * Apply/set velocity and start inertia animation
    */
-  const applyVelocity = useCallback((vel: number) => {
-    // Cancel any existing animation
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-    }
-    
-    // Set new velocity
-    velocityRef.current = vel;
-    isActiveRef.current = true;
-    
-    // Start animation loop if velocity is significant
-    if (Math.abs(vel) >= minVelocity) {
-      rafRef.current = requestAnimationFrame(animate);
-    } else {
-      isActiveRef.current = false;
-    }
-  }, [animate, minVelocity]);
+  const applyVelocity = useCallback(
+    (vel: number) => {
+      // Cancel any existing animation
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+
+      // Set new velocity
+      velocityRef.current = vel;
+      isActiveRef.current = true;
+
+      // Start animation loop if velocity is significant
+      if (Math.abs(vel) >= minVelocity) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        isActiveRef.current = false;
+      }
+    },
+    [animate, minVelocity],
+  );
 
   /**
    * Cleanup on unmount
@@ -167,10 +165,10 @@ export function useInertia(options: UseInertiaOptions = {}): UseInertiaReturn {
 
 /**
  * PHASE 3: Tape Stop Effect Hook
- * 
+ *
  * Specialized version of useInertia with slower, more dramatic decay.
  * Simulates the sound of a tape deck slowing to a stop.
- * 
+ *
  * @example
  * ```tsx
  * const { applyTapeStop } = useTapeStopEffect({

@@ -13,6 +13,7 @@ This project is configured exclusively for **Vercel deployment**. All Cloudflare
 ### Build Scripts
 
 The project uses only the standard Next.js scripts:
+
 - `dev` - Development server with Turbopack
 - `build` - Production build
 - `start` - Production server
@@ -43,4 +44,3 @@ The `next.config.mjs` includes `outputFileTracingRoot` to ensure Next.js uses th
 
 - All TypeScript errors are resolved
 - AudioReactiveVisualizer uses proper `GradientOptions` typing from `audiomotion-analyzer`
-

@@ -11,10 +11,15 @@ interface ParallaxOptions {
  */
 export function useMouseParallax<T extends HTMLElement = HTMLDivElement>(
   ref: RefObject<T | null>,
-  options: ParallaxOptions = {}
+  options: ParallaxOptions = {},
 ): { x: number; y: number; rotateX: number; rotateY: number } {
   const { intensity = 0.05, tiltIntensity = 5 } = options;
-  const [transform, setTransform] = useState({ x: 0, y: 0, rotateX: 0, rotateY: 0 });
+  const [transform, setTransform] = useState({
+    x: 0,
+    y: 0,
+    rotateX: 0,
+    rotateY: 0,
+  });
 
   useEffect(() => {
     const element = ref.current;
@@ -56,4 +61,3 @@ export function useMouseParallax<T extends HTMLElement = HTMLDivElement>(
 
   return transform;
 }
-

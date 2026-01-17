@@ -23,6 +23,7 @@ audioContext.destination
 ```
 
 **Master Node**: `masterGainRef.current` (GainNode)
+
 - **Location**: `src/components/DJInterface.tsx:182`
 - **Type**: `GainNode`
 - **Purpose**: Master output gain control
@@ -59,6 +60,7 @@ limiter → analyser → destination
 ```
 
 **Key Points**:
+
 - Mic input is NOT connected to masterGain by default (to avoid feedback)
 - Tag playback connects tagGain to masterGain dynamically
 - Tag gain has volume control (default 70%)
@@ -74,10 +76,12 @@ limiter → analyser → destination
 **Purpose**: Encapsulates all voice tag recording and playback logic.
 
 **Inputs**:
+
 - `audioContext: AudioContext | null | undefined`
 - `masterNode: GainNode | null | undefined` (the master gain node)
 
 **State**:
+
 - `micEnabled: boolean` - Whether microphone is active
 - `isRecording: boolean` - Whether currently recording
 - `tagUrl: string | null` - Object URL for the recorded tag blob
@@ -87,6 +91,7 @@ limiter → analyser → destination
 - `error: string | null` - Error message if something goes wrong
 
 **Actions**:
+
 - `enableMic(): Promise<void>` - Requests mic permission and sets up audio nodes
 - `disableMic(): void` - Stops mic, disconnects nodes, cleans up
 - `startTagRecording(): Promise<void>` - Starts recording from mic
@@ -155,6 +160,7 @@ limiter → analyser → destination
 ### Format Support
 
 The hook tries formats in this order:
+
 1. `audio/webm;codecs=opus` (preferred)
 2. `audio/webm`
 3. `audio/mp4`
@@ -173,6 +179,7 @@ Download filename format: `piko-voice-tag-YYYY-MM-DD-HHMM.{webm|mp4}`
 **Location**: `src/components/VoiceTagPanel.tsx`
 
 **Features**:
+
 - Enable/Disable microphone button
 - Record/Stop recording button
 - Play/Drop tag button (disabled if no tag)
@@ -184,6 +191,7 @@ Download filename format: `piko-voice-tag-YYYY-MM-DD-HHMM.{webm|mp4}`
 - Error messages
 
 **Mobile-Friendly**:
+
 - All buttons have `min-h-[44px] min-w-[44px]` for touch targets
 - `touch-manipulation` CSS for better mobile interaction
 - Responsive layout that stacks on small screens
@@ -306,4 +314,3 @@ The hook's cleanup effect handles:
 - Tag preview before dropping
 - Keyboard shortcuts
 - Tag templates/presets
-

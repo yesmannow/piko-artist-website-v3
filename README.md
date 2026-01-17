@@ -61,19 +61,23 @@ npm run check:workers
 The app requires an ONNX model for stem separation. Choose one:
 
 **Option 1: Download for local development**
+
 ```bash
 npm run download:model
 ```
 
 **Option 2: Use external URL (recommended for production)**
+
 - Set `NEXT_PUBLIC_MODEL_URL` in Vercel dashboard
 - App automatically routes through `/api/model` proxy (COEP compatible)
 
 **Option 3: Ship with app (Git LFS)**
+
 - Run `npm run download:model`
 - Use Git LFS if model is >90MB
 
 **Verification:**
+
 ```bash
 # Check assets (non-blocking, for development)
 npm run check:model

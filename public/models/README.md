@@ -39,6 +39,7 @@ npm run check:stem-assets
 ```
 
 This should show:
+
 ```
 ✅ Model found: public/models/demucs_v4_quantized.onnx
 ```

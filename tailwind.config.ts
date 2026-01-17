@@ -1,13 +1,13 @@
-import type { Config } from 'tailwindcss';
-import tailwindcssAnimate from 'tailwindcss-animate';
+import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 const config: Config = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   theme: {
     container: {
@@ -63,16 +63,16 @@ const config: Config = {
         },
         // Urban Syndicate Palette - Street-Elite Professional
         "midnight-black": "#050505",
-        "midnight": "#050505",
+        midnight: "#050505",
         "industrial-chrome": "#E0E0E0",
-        "chrome": "#E0E0E0",
+        chrome: "#E0E0E0",
         "safety-yellow": "#FFD700",
         // Legacy colors (backward compatibility - all map to Safety Yellow)
         "toxic-lime": "#ccff00", // Brand color: Toxic Lime
         "brushed-gold": "#FFD700", // Map to Safety Yellow
         "deep-onyx": "#050505",
         "charcoal-slate": "#1a1a1a",
-        "concrete": "#2a2a2a",
+        concrete: "#2a2a2a",
         "tape-gray": "#888888",
         "spray-magenta": "hsl(var(--spray-magenta))",
         "safety-orange": "hsl(var(--safety-orange))",
@@ -90,7 +90,7 @@ const config: Config = {
         none: "0px",
       },
       skew: {
-        'urban': '-12deg', // Urban Syndicate skew angle
+        urban: "-12deg", // Urban Syndicate skew angle
       },
       boxShadow: {
         hard: "4px 4px 0px 0px rgba(0,0,0,1)",
@@ -116,11 +116,11 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "marquee": {
+        marquee: {
           "0%": { transform: "translateX(0%)" },
           "100%": { transform: "translateX(-100%)" },
         },
-        "glitch": {
+        glitch: {
           "0%, 100%": { transform: "translate(0)" },
           "20%": { transform: "translate(-2px, 2px)" },
           "40%": { transform: "translate(-2px, -2px)" },
@@ -131,8 +131,8 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "marquee": "marquee 20s linear infinite",
-        "glitch": "glitch 0.3s ease-in-out",
+        marquee: "marquee 20s linear infinite",
+        glitch: "glitch 0.3s ease-in-out",
       },
     },
   },

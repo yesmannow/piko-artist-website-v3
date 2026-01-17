@@ -73,10 +73,10 @@ git status
 ```json
 {
   "engines": {
-    "node": ">=20 <21"  // Pin to specific major version
+    "node": ">=20 <21" // Pin to specific major version
   },
   "dependencies": {
-    "next": "15.5.9"  // Exact version, no ^
+    "next": "15.5.9" // Exact version, no ^
   }
 }
 ```
@@ -160,8 +160,8 @@ git diff package-lock.json  # Should show no changes
 **Required ESM Pattern:**
 
 ```javascript
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -183,8 +183,8 @@ export default {
 **Required Pattern:**
 
 ```typescript
-import type { Config } from 'tailwindcss';
-import tailwindcssAnimate from 'tailwindcss-animate';
+import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 const config: Config = {
   // config
@@ -263,6 +263,7 @@ npx tsc --noEmit 2>&1 | grep -i "cannot find module\|@/"
 **Required Configuration:**
 
 1. **tsconfig.json:**
+
 ```json
 {
   "compilerOptions": {
@@ -275,14 +276,15 @@ npx tsc --noEmit 2>&1 | grep -i "cannot find module\|@/"
 ```
 
 2. **next.config.mjs:**
+
 ```javascript
 webpack: (config) => {
   config.resolve.alias = {
     ...config.resolve.alias,
-    '@': path.resolve(__dirname, 'src'),
+    "@": path.resolve(__dirname, "src"),
   };
   return config;
-}
+};
 ```
 
 ### 2.3 Next.js Configuration
@@ -293,15 +295,15 @@ webpack: (config) => {
 
 ```javascript
 export default {
-  reactStrictMode: true,  // Enable React strict mode
-  swcMinify: true,        // Use SWC minification (default in Next.js 15)
+  reactStrictMode: true, // Enable React strict mode
+  swcMinify: true, // Use SWC minification (default in Next.js 15)
 
   images: {
-    formats: ['image/avif', 'image/webp'],  // Modern formats
+    formats: ["image/avif", "image/webp"], // Modern formats
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',  // Configure specific domains in production
+        protocol: "https",
+        hostname: "**", // Configure specific domains in production
       },
     ],
   },
@@ -448,7 +450,7 @@ npm run lint
 ```json
 {
   "scripts": {
-    "build": "next build"  // Or custom script
+    "build": "next build" // Or custom script
   }
 }
 ```
@@ -582,17 +584,12 @@ ANALYZE=true npm run build
 
 ```typescript
 // scripts/validate-env.ts
-const requiredEnvVars = [
-  'DATABASE_URL',
-  'API_KEY',
-];
+const requiredEnvVars = ["DATABASE_URL", "API_KEY"];
 
-const missing = requiredEnvVars.filter(
-  (key) => !process.env[key]
-);
+const missing = requiredEnvVars.filter((key) => !process.env[key]);
 
 if (missing.length > 0) {
-  console.error('Missing required environment variables:', missing);
+  console.error("Missing required environment variables:", missing);
   process.exit(1);
 }
 ```
@@ -602,7 +599,7 @@ if (missing.length > 0) {
 ```typescript
 // In API routes or server components
 if (!process.env.REQUIRED_VAR) {
-  throw new Error('REQUIRED_VAR is not set');
+  throw new Error("REQUIRED_VAR is not set");
 }
 ```
 
@@ -645,23 +642,23 @@ export default {
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: "/:path*",
         headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
           },
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
           },
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            key: "Referrer-Policy",
+            value: "origin-when-cross-origin",
           },
         ],
       },
@@ -890,6 +887,7 @@ npm start
 **Steps:**
 
 1. **Push to Git:**
+
    ```bash
    git add .
    git commit -m "Ready for production deployment"
@@ -952,6 +950,7 @@ npm start
 **Cause:** PostCSS/Tailwind processing issue with environment variables
 
 **Solution:**
+
 ```javascript
 // scripts/build.js
 delete process.env.__NEXT_PRIVATE_STANDALONE_CONFIG;
@@ -963,6 +962,7 @@ delete process.env.NEXT_DEPLOYMENT_ID;
 **Cause:** Path alias not resolving
 
 **Solution:**
+
 1. Check `tsconfig.json` paths
 2. Check `next.config.mjs` webpack alias
 3. Verify file exists with exact casing
@@ -972,6 +972,7 @@ delete process.env.NEXT_DEPLOYMENT_ID;
 **Cause:** Node.js module imported in client component
 
 **Solution:**
+
 - Move to server component/API route
 - Use browser alternative
 - Use dynamic import with `ssr: false`
@@ -981,6 +982,7 @@ delete process.env.NEXT_DEPLOYMENT_ID;
 **Cause:** Import path doesn't match file casing
 
 **Solution:**
+
 ```bash
 npm run check:case
 # Fix any mismatches
@@ -989,11 +991,13 @@ npm run check:case
 ### Build Timeout
 
 **Causes:**
+
 - Large bundle size
 - Slow build process
 - Too many pages to generate
 
 **Solutions:**
+
 - Optimize bundle size
 - Use ISR instead of SSG for large sites
 - Increase Vercel build timeout (Pro plan)
@@ -1001,10 +1005,12 @@ npm run check:case
 ### Environment Variable Issues
 
 **Symptoms:**
+
 - `undefined` values
 - Build succeeds but runtime fails
 
 **Solutions:**
+
 1. Verify variables set in Vercel dashboard
 2. Check variable names (case-sensitive)
 3. Ensure `NEXT_PUBLIC_` prefix for client vars
@@ -1123,4 +1129,3 @@ This comprehensive audit covers all aspects of preparing a Next.js application f
 **Maintained By**: Development Team
 **Next.js Version**: 15.5.9
 **Vercel Platform**: Linux
-

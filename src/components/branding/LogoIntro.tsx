@@ -62,8 +62,12 @@ export function LogoIntro() {
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
         const isMobile = viewportWidth < 768;
-        const targetX = isMobile ? -viewportWidth / 2 + 32 : -viewportWidth / 2 + 48;
-        const targetY = isMobile ? -viewportHeight / 2 + 32 : -viewportHeight / 2 + 48;
+        const targetX = isMobile
+          ? -viewportWidth / 2 + 32
+          : -viewportWidth / 2 + 48;
+        const targetY = isMobile
+          ? -viewportHeight / 2 + 32
+          : -viewportHeight / 2 + 48;
         setTargetPosition({
           x: targetX,
           y: targetY,
@@ -192,4 +196,3 @@ export function LogoIntro() {
     </AnimatePresence>
   );
 }
-

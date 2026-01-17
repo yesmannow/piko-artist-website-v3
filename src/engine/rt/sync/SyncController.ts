@@ -19,9 +19,12 @@
  * 7. Apply to DeckGraph.setRate()
  */
 
-import type { DeckId } from '../control/ControlLayout';
-import { getBeatGridService, type BeatGridData } from '@/engine/BeatGridService';
-import type { DeckGraph } from '../DeckGraph';
+import type { DeckId } from "../control/ControlLayout";
+import {
+  getBeatGridService,
+  type BeatGridData,
+} from "@/engine/BeatGridService";
+import type { DeckGraph } from "../DeckGraph";
 
 export interface SyncParams {
   Kp: number; // Proportional gain (phase correction strength)
@@ -98,7 +101,7 @@ export class SyncController {
    */
   enable(deckSlave: DeckId, deckMaster: DeckId): void {
     if (this.enabled) {
-      console.warn('[SyncController] Sync already enabled, disabling first');
+      console.warn("[SyncController] Sync already enabled, disabling first");
       this.disable();
     }
 
@@ -109,7 +112,7 @@ export class SyncController {
 
     if (!slaveCacheKey || !masterCacheKey) {
       throw new Error(
-        '[SyncController] Cache keys not set for decks. Ensure tracks are loaded with cache keys.'
+        "[SyncController] Cache keys not set for decks. Ensure tracks are loaded with cache keys.",
       );
     }
 
@@ -118,13 +121,16 @@ export class SyncController {
 
     if (!slaveBeatGrid || !masterBeatGrid) {
       throw new Error(
-        '[SyncController] Beat grids not available. Analyze beat grids before enabling sync.'
+        "[SyncController] Beat grids not available. Analyze beat grids before enabling sync.",
       );
     }
 
     // Validate beat grids have data
-    if (slaveBeatGrid.beatTimestamps.length === 0 || masterBeatGrid.beatTimestamps.length === 0) {
-      throw new Error('[SyncController] Beat grids are empty. Cannot sync.');
+    if (
+      slaveBeatGrid.beatTimestamps.length === 0 ||
+      masterBeatGrid.beatTimestamps.length === 0
+    ) {
+      throw new Error("[SyncController] Beat grids are empty. Cannot sync.");
     }
 
     this.slaveDeck = deckSlave;
@@ -145,7 +151,7 @@ export class SyncController {
     this.enabled = true;
 
     console.log(
-      `[SyncController] ✅ Sync enabled: ${deckSlave} -> ${deckMaster} (baseRate: ${baseRate.toFixed(3)})`
+      `[SyncController] ✅ Sync enabled: ${deckSlave} -> ${deckMaster} (baseRate: ${baseRate.toFixed(3)})`,
     );
   }
 
@@ -174,7 +180,7 @@ export class SyncController {
     this.integral = 0;
     this.lastTickTime = 0;
 
-    console.log('[SyncController] Sync disabled');
+    console.log("[SyncController] Sync disabled");
   }
 
   /**
@@ -199,12 +205,13 @@ export class SyncController {
     }
 
     // Both decks must be playing
-    if (slaveGraph.state !== 'playing' || masterGraph.state !== 'playing') {
+    if (slaveGraph.state !== "playing" || masterGraph.state !== "playing") {
       return;
     }
 
     // Calculate dt (time since last tick) for integral term
-    const dt = this.lastTickTime > 0 ? nowAudioTimeSec - this.lastTickTime : 0.016; // Default to ~60fps
+    const dt =
+      this.lastTickTime > 0 ? nowAudioTimeSec - this.lastTickTime : 0.016; // Default to ~60fps
     this.lastTickTime = nowAudioTimeSec;
 
     // Get current track positions
@@ -214,11 +221,11 @@ export class SyncController {
     // Find nearest beats at current positions
     const nearestMasterBeat = this.findNearestBeat(
       masterTrackTime,
-      this.masterBeatGrid.beatTimestamps
+      this.masterBeatGrid.beatTimestamps,
     );
     const nearestSlaveBeat = this.findNearestBeat(
       slaveTrackTime,
-      this.slaveBeatGrid.beatTimestamps
+      this.slaveBeatGrid.beatTimestamps,
     );
 
     // Calculate base rate (tempo ratio)
@@ -257,7 +264,8 @@ export class SyncController {
     // - Convert master offset to slave tempo: masterOffset * (slaveBPM / masterBPM) = masterOffset / baseRate
     // - Error = slaveOffset - (masterOffset / baseRate)
     // - Normalize by slave beat interval to get error in seconds
-    const phaseErrorSec = (slaveOffset - masterOffset / baseRate) * slaveBeatInterval;
+    const phaseErrorSec =
+      (slaveOffset - masterOffset / baseRate) * slaveBeatInterval;
 
     // PI Controller: P term + I term
     // P term: proportional to current error
@@ -265,7 +273,8 @@ export class SyncController {
 
     // I term: integral of error over time (accumulated error)
     // Apply decay to prevent integral windup
-    this.integral = this.integral * this.params.integralDecay + phaseErrorSec * dt;
+    this.integral =
+      this.integral * this.params.integralDecay + phaseErrorSec * dt;
     const iTerm = this.params.Ki * this.integral;
 
     // Total correction
@@ -275,19 +284,25 @@ export class SyncController {
     // Clamp to prevent excessive rate changes (bounded correction)
     const clampedRate = Math.max(
       baseRate - this.params.maxRateDelta,
-      Math.min(baseRate + this.params.maxRateDelta, correctedRate)
+      Math.min(baseRate + this.params.maxRateDelta, correctedRate),
     );
 
     // Apply EMA smoothing to prevent warble (smooth rate transitions)
     this.smoothedRate =
-      this.params.smoothing * this.smoothedRate + (1 - this.params.smoothing) * clampedRate;
+      this.params.smoothing * this.smoothedRate +
+      (1 - this.params.smoothing) * clampedRate;
 
     // Apply to slave deck
     slaveGraph.setRate(this.smoothedRate);
 
     // Beat-boundary nudge if phase error exceeds threshold
     if (Math.abs(phaseErrorSec) > this.params.beatNudgeThreshold) {
-      this.performBeatNudge(slaveGraph, masterGraph, phaseErrorSec, slaveBeatInterval);
+      this.performBeatNudge(
+        slaveGraph,
+        masterGraph,
+        phaseErrorSec,
+        slaveBeatInterval,
+      );
     }
   }
 
@@ -296,7 +311,7 @@ export class SyncController {
    */
   setParams(params: Partial<SyncParams>): void {
     this.params = { ...this.params, ...params };
-    console.log('[SyncController] Parameters updated:', this.params);
+    console.log("[SyncController] Parameters updated:", this.params);
   }
 
   /**
@@ -334,7 +349,7 @@ export class SyncController {
     slaveGraph: DeckGraph,
     masterGraph: DeckGraph,
     phaseErrorSec: number,
-    slaveBeatInterval: number
+    slaveBeatInterval: number,
   ): void {
     // Find the target slave beat that should align with current master beat
     const masterTrackTime = masterGraph.currentTime;
@@ -350,7 +365,7 @@ export class SyncController {
     // Find target slave beat
     const currentSlaveBeat = this.findNearestBeat(
       slaveTrackTime,
-      this.slaveBeatGrid!.beatTimestamps
+      this.slaveBeatGrid!.beatTimestamps,
     );
 
     const targetSlaveBeat = currentSlaveBeat + beatsToNudge * slaveBeatInterval;
@@ -363,21 +378,23 @@ export class SyncController {
 
     const clampedBeat = Math.max(
       beatTimestamps[0],
-      Math.min(beatTimestamps[beatTimestamps.length - 1], targetSlaveBeat)
+      Math.min(beatTimestamps[beatTimestamps.length - 1], targetSlaveBeat),
     );
 
     // Perform actual beat-boundary nudge
     console.log(
-      `[SyncController] Beat nudge: ${beatsToNudge > 0 ? '+' : ''}${beatsToNudge} beats ` +
-      `(${phaseErrorSec.toFixed(3)}s error)`
+      `[SyncController] Beat nudge: ${beatsToNudge > 0 ? "+" : ""}${beatsToNudge} beats ` +
+        `(${phaseErrorSec.toFixed(3)}s error)`,
     );
 
     // Use DeckGraph.seek() to nudge to target beat
     try {
       slaveGraph.seek(clampedBeat);
-      console.log(`[SyncController] ✅ Nudged to beat ${clampedBeat.toFixed(3)}s`);
+      console.log(
+        `[SyncController] ✅ Nudged to beat ${clampedBeat.toFixed(3)}s`,
+      );
     } catch (error) {
-      console.warn('[SyncController] Nudge failed:', error);
+      console.warn("[SyncController] Nudge failed:", error);
     }
 
     // Reset integral to prevent windup after nudge
@@ -414,5 +431,4 @@ export class SyncController {
 
     return nearest;
   }
-
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Lock, Link2 } from 'lucide-react';
-import { getStudioEngine } from '@/engine/rt/StudioEngine';
-import type { DeckId } from '@/engine/rt/control/ControlLayout';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Lock, Link2 } from "lucide-react";
+import { getStudioEngine } from "@/engine/rt/StudioEngine";
+import type { DeckId } from "@/engine/rt/control/ControlLayout";
 
-export type SyncMode = 'tempo-only' | 'tempo+phase';
+export type SyncMode = "tempo-only" | "tempo+phase";
 
 interface SyncControlProps {
   deckId: DeckId;
@@ -24,9 +24,13 @@ interface SyncControlProps {
  * - Shows sync status
  * - Handles missing beat grids gracefully
  */
-export function SyncControl({ deckId, masterDeckId, className = '' }: SyncControlProps) {
+export function SyncControl({
+  deckId,
+  masterDeckId,
+  className = "",
+}: SyncControlProps) {
   const [isSynced, setIsSynced] = useState(false);
-  const [syncMode, setSyncMode] = useState<SyncMode>('tempo-only');
+  const [syncMode, setSyncMode] = useState<SyncMode>("tempo-only");
   const [syncError, setSyncError] = useState<string | null>(null);
 
   // Check sync state on mount and when it changes
@@ -52,23 +56,24 @@ export function SyncControl({ deckId, masterDeckId, className = '' }: SyncContro
     try {
       const studio = getStudioEngine();
 
-      if (studio.state !== 'ready') {
-        setSyncError('Studio engine not ready');
+      if (studio.state !== "ready") {
+        setSyncError("Studio engine not ready");
         return;
       }
 
       // Determine master deck
-      const master = masterDeckId || (deckId === 'A' ? 'B' : 'A');
+      const master = masterDeckId || (deckId === "A" ? "B" : "A");
 
       // Check if both decks are loaded
       if (!studio.isLoaded(deckId) || !studio.isLoaded(master)) {
-        setSyncError('Both decks must have tracks loaded');
+        setSyncError("Both decks must have tracks loaded");
         return;
       }
 
       // Toggle sync
       const currentState = studio.getSyncState();
-      const shouldEnable = !currentState.enabled || currentState.slaveDeck !== deckId;
+      const shouldEnable =
+        !currentState.enabled || currentState.slaveDeck !== deckId;
 
       // Enable/disable sync with current mode
       studio.setSyncEnabled(deckId, shouldEnable, master, syncMode);
@@ -76,10 +81,11 @@ export function SyncControl({ deckId, masterDeckId, className = '' }: SyncContro
       setIsSynced(shouldEnable);
       setSyncError(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Sync failed';
+      const errorMessage =
+        error instanceof Error ? error.message : "Sync failed";
       setSyncError(errorMessage);
       setIsSynced(false);
-      console.error('[SyncControl] Sync toggle failed:', error);
+      console.error("[SyncControl] Sync toggle failed:", error);
     }
   };
 
@@ -89,28 +95,28 @@ export function SyncControl({ deckId, masterDeckId, className = '' }: SyncContro
       {!isSynced && (
         <div className="flex gap-2">
           <button
-            onClick={() => setSyncMode('tempo-only')}
+            onClick={() => setSyncMode("tempo-only")}
             className={`
               flex-1 px-3 py-2 text-xs font-mono uppercase
               border-2 transition-all
               ${
-                syncMode === 'tempo-only'
-                  ? 'border-[#FFD700] text-[#FFD700] bg-black/50'
-                  : 'border-zinc-700 text-zinc-500 hover:border-zinc-600'
+                syncMode === "tempo-only"
+                  ? "border-[#FFD700] text-[#FFD700] bg-black/50"
+                  : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
               }
             `}
           >
             TEMPO
           </button>
           <button
-            onClick={() => setSyncMode('tempo+phase')}
+            onClick={() => setSyncMode("tempo+phase")}
             className={`
               flex-1 px-3 py-2 text-xs font-mono uppercase
               border-2 transition-all
               ${
-                syncMode === 'tempo+phase'
-                  ? 'border-[#FFD700] text-[#FFD700] bg-black/50'
-                  : 'border-zinc-700 text-zinc-500 hover:border-zinc-600'
+                syncMode === "tempo+phase"
+                  ? "border-[#FFD700] text-[#FFD700] bg-black/50"
+                  : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
               }
             `}
           >
@@ -131,8 +137,8 @@ export function SyncControl({ deckId, masterDeckId, className = '' }: SyncContro
           min-h-[48px]
           ${
             isSynced
-              ? 'border-green-500 text-green-400 hover:border-green-400'
-              : 'border-[#FFD700] text-[#FFD700] hover:border-[#FFD700]/80 hover:bg-black/90'
+              ? "border-green-500 text-green-400 hover:border-green-400"
+              : "border-[#FFD700] text-[#FFD700] hover:border-[#FFD700]/80 hover:bg-black/90"
           }
         `}
         whileHover={{ scale: 1.02 }}
@@ -141,12 +147,17 @@ export function SyncControl({ deckId, masterDeckId, className = '' }: SyncContro
         {isSynced ? (
           <>
             <Lock className="w-4 h-4" />
-            <span>SYNC ON ({syncMode === 'tempo-only' ? 'TEMPO' : 'TEMPO+PHASE'})</span>
+            <span>
+              SYNC ON ({syncMode === "tempo-only" ? "TEMPO" : "TEMPO+PHASE"})
+            </span>
           </>
         ) : (
           <>
             <Link2 className="w-4 h-4" />
-            <span>SYNC ({syncMode === 'tempo-only' ? 'TEMPO ONLY' : 'TEMPO + PHASE'})</span>
+            <span>
+              SYNC ({syncMode === "tempo-only" ? "TEMPO ONLY" : "TEMPO + PHASE"}
+              )
+            </span>
           </>
         )}
       </motion.button>
@@ -165,7 +176,7 @@ export function SyncControl({ deckId, masterDeckId, className = '' }: SyncContro
       {/* Sync Status */}
       {isSynced && (
         <div className="px-4 py-2 bg-green-900/20 border border-green-500/50 text-green-400 text-xs font-mono">
-          Phase-locked to {masterDeckId || (deckId === 'A' ? 'B' : 'A')}
+          Phase-locked to {masterDeckId || (deckId === "A" ? "B" : "A")}
         </div>
       )}
     </div>

@@ -1,15 +1,19 @@
 "use client";
 
-import { useRef, useState } from 'react';
-import { useDrag } from '@use-gesture/react';
-import { useSpring, animated } from '@react-spring/web';
-import { ensureAudioEngineReady } from '@/engine/AudioEngine';
+import { useRef, useState } from "react";
+import { useDrag } from "@use-gesture/react";
+import { useSpring, animated } from "@react-spring/web";
+import { ensureAudioEngineReady } from "@/engine/AudioEngine";
 
 export const XYPad = () => {
   // REMEDIATION: Use ref for high-frequency position tracking (no re-renders during drag)
   const positionRef = useRef({ x: 0.5, y: 0.5 });
-  const enginePromiseRef = useRef<Promise<Awaited<ReturnType<typeof ensureAudioEngineReady>>> | null>(null);
-  const engineRef = useRef<Awaited<ReturnType<typeof ensureAudioEngineReady>> | null>(null);
+  const enginePromiseRef = useRef<Promise<
+    Awaited<ReturnType<typeof ensureAudioEngineReady>>
+  > | null>(null);
+  const engineRef = useRef<Awaited<
+    ReturnType<typeof ensureAudioEngineReady>
+  > | null>(null);
 
   const getEngine = () => {
     if (engineRef.current) return Promise.resolve(engineRef.current);
@@ -21,7 +25,7 @@ export const XYPad = () => {
     }
     return enginePromiseRef.current;
   };
-  
+
   // Only use state for display values (updated on drag end for efficiency)
   const [displayPosition, setDisplayPosition] = useState({ x: 0.5, y: 0.5 });
 
@@ -29,50 +33,53 @@ export const XYPad = () => {
   const [springProps, api] = useSpring(() => ({
     x: 50, // Start at center (50%)
     y: 50,
-    config: { tension: 300, friction: 30 }
+    config: { tension: 300, friction: 30 },
   }));
 
   // Drag gesture handler
-  const bind = useDrag(({ offset: [x, y], memo, first, last }) => {
-    // Get container dimensions (assume square 300x300 for now, adjust as needed)
-    const size = 300;
-    
-    // Clamp values to container bounds
-    const clampedX = Math.max(0, Math.min(size, x));
-    const clampedY = Math.max(0, Math.min(size, y));
-    
-    // Normalize to 0-1 range
-    const normalizedX = clampedX / size;
-    const normalizedY = 1 - (clampedY / size); // Invert Y (top = 1, bottom = 0)
-    
-    // REMEDIATION: Update ref (no re-render, main thread stays free)
-    positionRef.current = { x: normalizedX, y: normalizedY };
-    
-    // Update spring animation (convert back to percentage for CSS)
-    api.start({
-      x: normalizedX * 100,
-      y: (1 - normalizedY) * 100 // Invert back for visual positioning
-    });
-    
-    // Apply filter to audio engine (direct access, no state)
-    getEngine()
-      .then((engine) => {
-        engine.setFilter('deckA', normalizedX, normalizedY);
-      })
-      .catch(() => {
-        // Engine might not be initialized yet
+  const bind = useDrag(
+    ({ offset: [x, y], memo, first, last }) => {
+      // Get container dimensions (assume square 300x300 for now, adjust as needed)
+      const size = 300;
+
+      // Clamp values to container bounds
+      const clampedX = Math.max(0, Math.min(size, x));
+      const clampedY = Math.max(0, Math.min(size, y));
+
+      // Normalize to 0-1 range
+      const normalizedX = clampedX / size;
+      const normalizedY = 1 - clampedY / size; // Invert Y (top = 1, bottom = 0)
+
+      // REMEDIATION: Update ref (no re-render, main thread stays free)
+      positionRef.current = { x: normalizedX, y: normalizedY };
+
+      // Update spring animation (convert back to percentage for CSS)
+      api.start({
+        x: normalizedX * 100,
+        y: (1 - normalizedY) * 100, // Invert back for visual positioning
       });
-    
-    // REMEDIATION: Only update display state on drag end (reduces re-renders)
-    if (last) {
-      setDisplayPosition({ x: normalizedX, y: normalizedY });
-    }
-    
-    return memo;
-  }, {
-    from: () => [springProps.x.get() * 3, springProps.y.get() * 3], // Convert from % to px
-    bounds: { left: 0, right: 300, top: 0, bottom: 300 }
-  });
+
+      // Apply filter to audio engine (direct access, no state)
+      getEngine()
+        .then((engine) => {
+          engine.setFilter("deckA", normalizedX, normalizedY);
+        })
+        .catch(() => {
+          // Engine might not be initialized yet
+        });
+
+      // REMEDIATION: Only update display state on drag end (reduces re-renders)
+      if (last) {
+        setDisplayPosition({ x: normalizedX, y: normalizedY });
+      }
+
+      return memo;
+    },
+    {
+      from: () => [springProps.x.get() * 3, springProps.y.get() * 3], // Convert from % to px
+      bounds: { left: 0, right: 300, top: 0, bottom: 300 },
+    },
+  );
 
   return (
     <div className="h-full w-full flex flex-col items-center justify-center bg-black p-8">
@@ -81,9 +88,7 @@ export const XYPad = () => {
         <h2 className="text-2xl font-barlow uppercase tracking-wider text-white font-bold mb-2">
           XY Filter Pad
         </h2>
-        <p className="text-sm text-gray-500">
-          X: Frequency • Y: Resonance
-        </p>
+        <p className="text-sm text-gray-500">X: Frequency • Y: Resonance</p>
       </div>
 
       {/* XY Pad Container */}
@@ -102,7 +107,7 @@ export const XYPad = () => {
           style={{
             left: springProps.x.to((x: number) => `${x}%`),
             top: springProps.y.to((y: number) => `${y}%`),
-            transform: 'translate(-50%, -50%)'
+            transform: "translate(-50%, -50%)",
           }}
           className="absolute w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg cursor-grab active:cursor-grabbing border-4 border-white/30 flex items-center justify-center"
         >

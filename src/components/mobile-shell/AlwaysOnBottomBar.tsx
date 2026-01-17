@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef } from 'react';
-import { ensureAudioEngineReady, getAudioEngine } from '@/engine/AudioEngine';
-import { useAudioStore } from '@/store/useAudioStore';
-import { Play, Pause } from 'lucide-react';
-import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
+import { useRef } from "react";
+import { ensureAudioEngineReady, getAudioEngine } from "@/engine/AudioEngine";
+import { useAudioStore } from "@/store/useAudioStore";
+import { Play, Pause } from "lucide-react";
+import { triggerHaptic, HAPTIC_PATTERNS } from "@/utils/haptics";
 
 export const AlwaysOnBottomBar = () => {
   // Get deck states
@@ -20,9 +20,9 @@ export const AlwaysOnBottomBar = () => {
     triggerHaptic(HAPTIC_PATTERNS.PLAY_TOGGLE);
     const engine = await ensureAudioEngineReady();
     if (deckAState.isPlaying) {
-      engine.pause('deckA');
+      engine.pause("deckA");
     } else {
-      engine.play('deckA');
+      engine.play("deckA");
     }
   };
 
@@ -31,24 +31,24 @@ export const AlwaysOnBottomBar = () => {
     triggerHaptic(HAPTIC_PATTERNS.PLAY_TOGGLE);
     const engine = await ensureAudioEngineReady();
     if (deckBState.isPlaying) {
-      engine.pause('deckB');
+      engine.pause("deckB");
     } else {
-      engine.play('deckB');
+      engine.play("deckB");
     }
   };
 
   const handleLoadDeckA = async () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
-    const testTrack = 'https://archive.org/download/mythium/JLS_ATI.mp3';
+    const testTrack = "https://archive.org/download/mythium/JLS_ATI.mp3";
     const engine = await ensureAudioEngineReady();
-    engine.loadTrack('deckA', testTrack);
+    engine.loadTrack("deckA", testTrack);
   };
 
   const handleLoadDeckB = async () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
-    const testTrack = 'https://archive.org/download/mythium/JLS_ATI.mp3';
+    const testTrack = "https://archive.org/download/mythium/JLS_ATI.mp3";
     const engine = await ensureAudioEngineReady();
-    engine.loadTrack('deckB', testTrack);
+    engine.loadTrack("deckB", testTrack);
   };
 
   const handleCrossfaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,10 +57,10 @@ export const AlwaysOnBottomBar = () => {
 
     // PHASE 3: Detect crossing the center point with stronger haptic
     const centerThreshold = 0.02; // 2% threshold
-    const wasBeforeCenter = prev < (0.5 - centerThreshold);
-    const wasAfterCenter = prev > (0.5 + centerThreshold);
+    const wasBeforeCenter = prev < 0.5 - centerThreshold;
+    const wasAfterCenter = prev > 0.5 + centerThreshold;
     const isAtCenter = Math.abs(value - 0.5) <= centerThreshold;
-    
+
     if ((wasBeforeCenter || wasAfterCenter) && isAtCenter) {
       triggerHaptic(HAPTIC_PATTERNS.CROSSFADER_CENTER);
     }
@@ -74,39 +74,39 @@ export const AlwaysOnBottomBar = () => {
   // PHASE 8: Sync handlers
   const handleSyncA = async () => {
     const engine = await ensureAudioEngineReady();
-    const playbackRate = engine.getPlaybackRate('deckA');
+    const playbackRate = engine.getPlaybackRate("deckA");
 
     if (playbackRate !== 1.0) {
       // Already synced, unsync
       triggerHaptic(HAPTIC_PATTERNS.CLICK);
-      engine.unsync('deckA');
+      engine.unsync("deckA");
     } else {
       // PHASE 3: Sync enabled pattern
       triggerHaptic(HAPTIC_PATTERNS.SYNC_ENABLE);
       // Sync to Deck B
-      engine.sync('deckA', 'deckB');
+      engine.sync("deckA", "deckB");
     }
   };
 
   const handleSyncB = async () => {
     const engine = await ensureAudioEngineReady();
-    const playbackRate = engine.getPlaybackRate('deckB');
+    const playbackRate = engine.getPlaybackRate("deckB");
 
     if (playbackRate !== 1.0) {
       // Already synced, unsync
       triggerHaptic(HAPTIC_PATTERNS.CLICK);
-      engine.unsync('deckB');
+      engine.unsync("deckB");
     } else {
       // PHASE 3: Sync enabled pattern
       triggerHaptic(HAPTIC_PATTERNS.SYNC_ENABLE);
       // Sync to Deck A
-      engine.sync('deckB', 'deckA');
+      engine.sync("deckB", "deckA");
     }
   };
 
   // Get playback rates for sync button states
-  const deckAPlaybackRate = getAudioEngine().getPlaybackRate('deckA');
-  const deckBPlaybackRate = getAudioEngine().getPlaybackRate('deckB');
+  const deckAPlaybackRate = getAudioEngine().getPlaybackRate("deckA");
+  const deckBPlaybackRate = getAudioEngine().getPlaybackRate("deckB");
 
   return (
     <div className="h-20 bg-gray-900 border-t border-gray-800 flex items-center justify-between px-4 gap-4">
@@ -123,8 +123,8 @@ export const AlwaysOnBottomBar = () => {
           disabled={!deckAState.url || !deckBState.url}
           className="px-3 py-2 rounded text-xs font-barlow uppercase font-bold transition-all active:scale-95 disabled:opacity-30"
           style={{
-            backgroundColor: deckAPlaybackRate !== 1.0 ? '#3b82f6' : '#374151',
-            color: deckAPlaybackRate !== 1.0 ? '#ffffff' : '#9ca3af'
+            backgroundColor: deckAPlaybackRate !== 1.0 ? "#3b82f6" : "#374151",
+            color: deckAPlaybackRate !== 1.0 ? "#ffffff" : "#9ca3af",
           }}
         >
           SYNC
@@ -134,8 +134,8 @@ export const AlwaysOnBottomBar = () => {
           disabled={!deckAState.url}
           className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-30"
           style={{
-            backgroundColor: deckAState.isPlaying ? '#ef4444' : '#00d9ff',
-            opacity: !deckAState.url ? 0.3 : 1
+            backgroundColor: deckAState.isPlaying ? "#ef4444" : "#00d9ff",
+            opacity: !deckAState.url ? 0.3 : 1,
           }}
         >
           {deckAState.isPlaying ? (
@@ -160,7 +160,7 @@ export const AlwaysOnBottomBar = () => {
           onChange={handleCrossfaderChange}
           className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           style={{
-            accentColor: '#ffffff'
+            accentColor: "#ffffff",
           }}
         />
       </div>
@@ -172,8 +172,8 @@ export const AlwaysOnBottomBar = () => {
           disabled={!deckBState.url}
           className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-30"
           style={{
-            backgroundColor: deckBState.isPlaying ? '#ef4444' : '#ff00d9',
-            opacity: !deckBState.url ? 0.3 : 1
+            backgroundColor: deckBState.isPlaying ? "#ef4444" : "#ff00d9",
+            opacity: !deckBState.url ? 0.3 : 1,
           }}
         >
           {deckBState.isPlaying ? (
@@ -187,8 +187,8 @@ export const AlwaysOnBottomBar = () => {
           disabled={!deckAState.url || !deckBState.url}
           className="px-3 py-2 rounded text-xs font-barlow uppercase font-bold transition-all active:scale-95 disabled:opacity-30"
           style={{
-            backgroundColor: deckBPlaybackRate !== 1.0 ? '#3b82f6' : '#374151',
-            color: deckBPlaybackRate !== 1.0 ? '#ffffff' : '#9ca3af'
+            backgroundColor: deckBPlaybackRate !== 1.0 ? "#3b82f6" : "#374151",
+            color: deckBPlaybackRate !== 1.0 ? "#ffffff" : "#9ca3af",
           }}
         >
           SYNC

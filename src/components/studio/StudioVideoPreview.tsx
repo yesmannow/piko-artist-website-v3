@@ -101,7 +101,8 @@ export function StudioVideoPreview({ isHovered }: { isHovered: boolean }) {
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 215, 0, 0.03) 2px, rgba(255, 215, 0, 0.03) 4px)",
+              background:
+                "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 215, 0, 0.03) 2px, rgba(255, 215, 0, 0.03) 4px)",
             }}
             animate={{
               opacity: [0.3, 0.5, 0.3],
@@ -175,7 +176,11 @@ export function StudioVideoPreview({ isHovered }: { isHovered: boolean }) {
                 boxShadow: "0 0 20px rgba(255, 215, 0, 0.3)",
               }}
             >
-              {isMuted ? <VolumeX className="w-7 h-7" /> : <Volume2 className="w-7 h-7" />}
+              {isMuted ? (
+                <VolumeX className="w-7 h-7" />
+              ) : (
+                <Volume2 className="w-7 h-7" />
+              )}
             </motion.button>
           </motion.div>
 
@@ -205,7 +210,9 @@ export function StudioVideoPreview({ isHovered }: { isHovered: boolean }) {
               boxShadow: "4px 4px 0px #000",
             }}
           >
-            <span style={{ transform: "skewX(12deg)", display: "inline-block" }}>
+            <span
+              style={{ transform: "skewX(12deg)", display: "inline-block" }}
+            >
               ENTER BOOTH →
             </span>
           </motion.div>

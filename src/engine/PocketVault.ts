@@ -17,7 +17,7 @@ export interface RecordingMetadata {
   description?: string;
   duration: number; // seconds
   createdAt: Date;
-  format: 'audio/webm' | 'audio/ogg' | 'video/webm';
+  format: "audio/webm" | "audio/ogg" | "video/webm";
   bitRate: number; // kbps
   fileSize: number; // bytes
   tracklist: TrackEntry[];
@@ -47,7 +47,7 @@ export interface VaultStats {
 class PocketVault {
   private static instance: PocketVault | null = null;
   private db: IDBDatabase | null = null;
-  private readonly DB_NAME = 'PikoPocketVault';
+  private readonly DB_NAME = "PikoPocketVault";
   private readonly DB_VERSION = 1;
 
   // Private constructor enforces singleton
@@ -69,19 +69,19 @@ class PocketVault {
   async initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!window.indexedDB) {
-        reject(new Error('IndexedDB not supported'));
+        reject(new Error("IndexedDB not supported"));
         return;
       }
 
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
       request.onerror = () => {
-        reject(new Error('Failed to open Pocket Vault database'));
+        reject(new Error("Failed to open Pocket Vault database"));
       };
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('[PocketVault] Database initialized');
+        console.log("[PocketVault] Database initialized");
         resolve();
       };
 
@@ -89,19 +89,26 @@ class PocketVault {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Recordings store (metadata + blob reference)
-        if (!db.objectStoreNames.contains('recordings')) {
-          const recordingsStore = db.createObjectStore('recordings', { keyPath: 'id' });
-          recordingsStore.createIndex('createdAt', 'createdAt', { unique: false });
-          recordingsStore.createIndex('djName', 'djName', { unique: false });
-          recordingsStore.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+        if (!db.objectStoreNames.contains("recordings")) {
+          const recordingsStore = db.createObjectStore("recordings", {
+            keyPath: "id",
+          });
+          recordingsStore.createIndex("createdAt", "createdAt", {
+            unique: false,
+          });
+          recordingsStore.createIndex("djName", "djName", { unique: false });
+          recordingsStore.createIndex("tags", "tags", {
+            unique: false,
+            multiEntry: true,
+          });
         }
 
         // Blobs store (actual audio/video data)
-        if (!db.objectStoreNames.contains('blobs')) {
-          db.createObjectStore('blobs', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains("blobs")) {
+          db.createObjectStore("blobs", { keyPath: "id" });
         }
 
-        console.log('[PocketVault] Database schema created');
+        console.log("[PocketVault] Database schema created");
       };
     });
   }
@@ -110,11 +117,11 @@ class PocketVault {
    * Store a recording with metadata
    */
   async storeRecording(
-    metadata: Omit<RecordingMetadata, 'id'>,
-    blob: Blob
+    metadata: Omit<RecordingMetadata, "id">,
+    blob: Blob,
   ): Promise<string> {
     if (!this.db) {
-      throw new Error('Pocket Vault not initialized');
+      throw new Error("Pocket Vault not initialized");
     }
 
     const recordingId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -142,12 +149,12 @@ class PocketVault {
   private async storeBlob(blobId: string, blob: Blob): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction(['blobs'], 'readwrite');
-      const store = transaction.objectStore('blobs');
+      const transaction = this.db.transaction(["blobs"], "readwrite");
+      const store = transaction.objectStore("blobs");
 
       const request = store.put({
         id: blobId,
@@ -157,7 +164,7 @@ class PocketVault {
       });
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error('Failed to store blob'));
+      request.onerror = () => reject(new Error("Failed to store blob"));
     });
   }
 
@@ -167,26 +174,28 @@ class PocketVault {
   private async storeMetadata(metadata: RecordingMetadata): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction(['recordings'], 'readwrite');
-      const store = transaction.objectStore('recordings');
+      const transaction = this.db.transaction(["recordings"], "readwrite");
+      const store = transaction.objectStore("recordings");
 
       const request = store.put(metadata);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error('Failed to store metadata'));
+      request.onerror = () => reject(new Error("Failed to store metadata"));
     });
   }
 
   /**
    * Retrieve a recording
    */
-  async getRecording(recordingId: string): Promise<{ metadata: RecordingMetadata; blob: Blob } | null> {
+  async getRecording(
+    recordingId: string,
+  ): Promise<{ metadata: RecordingMetadata; blob: Blob } | null> {
     if (!this.db) {
-      throw new Error('Pocket Vault not initialized');
+      throw new Error("Pocket Vault not initialized");
     }
 
     const metadata = await this.getMetadata(recordingId);
@@ -209,8 +218,8 @@ class PocketVault {
         return;
       }
 
-      const transaction = this.db.transaction(['recordings'], 'readonly');
-      const store = transaction.objectStore('recordings');
+      const transaction = this.db.transaction(["recordings"], "readonly");
+      const store = transaction.objectStore("recordings");
       const request = store.get(recordingId);
 
       request.onsuccess = () => {
@@ -233,8 +242,8 @@ class PocketVault {
         return;
       }
 
-      const transaction = this.db.transaction(['blobs'], 'readonly');
-      const store = transaction.objectStore('blobs');
+      const transaction = this.db.transaction(["blobs"], "readonly");
+      const store = transaction.objectStore("blobs");
       const request = store.get(blobId);
 
       request.onsuccess = () => {
@@ -258,11 +267,11 @@ class PocketVault {
         return;
       }
 
-      const transaction = this.db.transaction(['recordings'], 'readonly');
-      const store = transaction.objectStore('recordings');
-      const index = store.index('createdAt');
+      const transaction = this.db.transaction(["recordings"], "readonly");
+      const store = transaction.objectStore("recordings");
+      const index = store.index("createdAt");
 
-      const request = index.openCursor(null, 'prev'); // Most recent first
+      const request = index.openCursor(null, "prev"); // Most recent first
       const results: RecordingMetadata[] = [];
 
       request.onsuccess = () => {
@@ -288,11 +297,12 @@ class PocketVault {
     const allRecordings = await this.getAllRecordings();
     const lowerQuery = query.toLowerCase();
 
-    return allRecordings.filter(recording =>
-      recording.title.toLowerCase().includes(lowerQuery) ||
-      recording.djName.toLowerCase().includes(lowerQuery) ||
-      recording.description?.toLowerCase().includes(lowerQuery) ||
-      recording.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
+    return allRecordings.filter(
+      (recording) =>
+        recording.title.toLowerCase().includes(lowerQuery) ||
+        recording.djName.toLowerCase().includes(lowerQuery) ||
+        recording.description?.toLowerCase().includes(lowerQuery) ||
+        recording.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery)),
     );
   }
 
@@ -305,29 +315,32 @@ class PocketVault {
     try {
       // Delete metadata
       await new Promise<void>((resolve, reject) => {
-        const transaction = this.db!.transaction(['recordings'], 'readwrite');
-        const store = transaction.objectStore('recordings');
+        const transaction = this.db!.transaction(["recordings"], "readwrite");
+        const store = transaction.objectStore("recordings");
         const request = store.delete(recordingId);
 
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(new Error('Failed to delete metadata'));
+        request.onerror = () => reject(new Error("Failed to delete metadata"));
       });
 
       // Delete blob
       const blobId = `blob_${recordingId}`;
       await new Promise<void>((resolve, reject) => {
-        const transaction = this.db!.transaction(['blobs'], 'readwrite');
-        const store = transaction.objectStore('blobs');
+        const transaction = this.db!.transaction(["blobs"], "readwrite");
+        const store = transaction.objectStore("blobs");
         const request = store.delete(blobId);
 
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(new Error('Failed to delete blob'));
+        request.onerror = () => reject(new Error("Failed to delete blob"));
       });
 
       console.log(`[PocketVault] Deleted recording: ${recordingId}`);
       return true;
     } catch (error) {
-      console.error(`[PocketVault] Failed to delete recording ${recordingId}:`, error);
+      console.error(
+        `[PocketVault] Failed to delete recording ${recordingId}:`,
+        error,
+      );
       return false;
     }
   }
@@ -347,14 +360,17 @@ class PocketVault {
       };
     }
 
-    const totalSize = recordings.reduce((sum, recording) => sum + recording.fileSize, 0);
-    const dates = recordings.map(r => r.createdAt);
+    const totalSize = recordings.reduce(
+      (sum, recording) => sum + recording.fileSize,
+      0,
+    );
+    const dates = recordings.map((r) => r.createdAt);
 
     return {
       totalRecordings: recordings.length,
       totalSize,
-      oldestRecording: new Date(Math.min(...dates.map(d => d.getTime()))),
-      newestRecording: new Date(Math.max(...dates.map(d => d.getTime()))),
+      oldestRecording: new Date(Math.min(...dates.map((d) => d.getTime()))),
+      newestRecording: new Date(Math.max(...dates.map((d) => d.getTime()))),
     };
   }
 
@@ -364,14 +380,15 @@ class PocketVault {
   async exportRecording(recordingId: string, filename?: string): Promise<void> {
     const recording = await this.getRecording(recordingId);
     if (!recording) {
-      throw new Error('Recording not found');
+      throw new Error("Recording not found");
     }
 
     const { metadata, blob } = recording;
-    const finalFilename = filename || `${metadata.djName}_${metadata.title}.webm`;
+    const finalFilename =
+      filename || `${metadata.djName}_${metadata.title}.webm`;
 
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = finalFilename;
     document.body.appendChild(a);
@@ -386,15 +403,18 @@ class PocketVault {
   async clearVault(): Promise<void> {
     if (!this.db) return;
 
-    const transaction = this.db.transaction(['recordings', 'blobs'], 'readwrite');
-    const recordingsStore = transaction.objectStore('recordings');
-    const blobsStore = transaction.objectStore('blobs');
+    const transaction = this.db.transaction(
+      ["recordings", "blobs"],
+      "readwrite",
+    );
+    const recordingsStore = transaction.objectStore("recordings");
+    const blobsStore = transaction.objectStore("blobs");
 
     // Clear both stores
     recordingsStore.clear();
     blobsStore.clear();
 
-    console.log('[PocketVault] Vault cleared');
+    console.log("[PocketVault] Vault cleared");
   }
 
   /**
@@ -413,7 +433,7 @@ class PocketVault {
 
   dispose(): void {
     this.close();
-    console.log('[PocketVault] Disposed');
+    console.log("[PocketVault] Disposed");
   }
 }
 

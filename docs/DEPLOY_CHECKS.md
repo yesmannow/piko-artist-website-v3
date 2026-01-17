@@ -9,6 +9,7 @@ npm run verify:vercel
 ```
 
 This command will:
+
 - Verify that the build runs under Node 20.x
 - Run ESLint to check for code quality issues
 - Run the Next.js production build to catch any build errors
@@ -40,6 +41,7 @@ This will remove `node_modules`, reinstall all dependencies, and then run the ve
 ## CI/CD Integration
 
 This verification is designed to be run locally before pushing code, but can also be integrated into:
+
 - Pre-commit hooks
 - Pre-push hooks
 - CI/CD pipelines

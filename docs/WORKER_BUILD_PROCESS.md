@@ -3,6 +3,7 @@
 ## Overview
 
 This project uses **TypeScript workers** that must be compiled to JavaScript before deployment. Workers are located in:
+
 - **Source**: `src/workers/*.worker.ts`
 - **Compiled**: `public/workers/*.worker.js`
 
@@ -48,6 +49,7 @@ npm run check:workers
 ## Build Tool
 
 Workers are compiled using **esbuild** for:
+
 - Fast compilation
 - TypeScript support
 - Standalone output (no bundling)
@@ -83,14 +85,17 @@ If using CI/CD, ensure workers are compiled:
 ### Troubleshooting
 
 **Error: "Worker not found"**
+
 - Run `npm run build:workers` to compile workers
 - Check that `public/workers/` directory exists
 
 **Error: "Worker compilation failed"**
+
 - Check TypeScript errors in `src/workers/*.worker.ts`
 - Ensure `esbuild` is installed: `npm install --save-dev esbuild`
 
 **Workers not updating**
+
 - Clear browser cache
 - Hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
 - Verify compiled files in `public/workers/` match source
@@ -98,6 +103,7 @@ If using CI/CD, ensure workers are compiled:
 ## Future Improvements
 
 Consider migrating to Next.js native worker imports (using `?worker` suffix) for automatic bundling, but this requires:
+
 - Webpack configuration changes
 - Worker import syntax changes
 - Testing across all workers

@@ -3,6 +3,7 @@
 ## Overview
 
 This document summarizes the production-ready implementation of:
+
 - **Phase 8B**: Production-hardened stem separation with local ONNX assets
 - **Phase 9B**: Complete PLL phase sync with PI controller and beat nudging
 - **Phase 9C**: Key detection with Camelot notation and compatibility system
@@ -137,11 +138,13 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 ### Essentia.js Integration
 
 **Current Status:**
+
 - Worker attempts to load Essentia.js
 - Falls back gracefully if unavailable
 - Returns default key (C major / 8B) in fallback
 
 **To Enable:**
+
 1. Install: `npm install essentia.js`
 2. Verify worker can import (check console)
 3. Test with real audio files
@@ -170,12 +173,14 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 ## Acceptance Criteria ✅
 
 ### Phase 8B
+
 - ✅ ONNX Runtime WASM paths configured (`/ort/`)
 - ✅ Model missing fast-fail (clean UI error)
 - ✅ Worker bundling supports `onnxruntime-web`
 - ✅ No silent stub fallback in production
 
 ### Phase 9B
+
 - ✅ PI controller (Kp + Ki terms)
 - ✅ Beat-boundary nudge (>80ms threshold)
 - ✅ Sync modes (tempo-only vs tempo+phase)
@@ -183,6 +188,7 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 - ✅ `DeckGraph.seek()` for nudging
 
 ### Phase 9C
+
 - ✅ Key detection worker (Essentia.js with fallback)
 - ✅ KeyService + hooks (matches BeatGridService pattern)
 - ✅ Camelot mapper + compatibility
@@ -190,6 +196,7 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 - ✅ Compatibility hooks ready for track list integration
 
 ### Build & Quality
+
 - ✅ `npm run verify:vercel` passes (Node 20)
 - ✅ `npm run build` compiles all workers and app
 - ✅ No caching breaks `/worklets/*` or `/studio*` headers
@@ -199,12 +206,14 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 ## Testing Checklist
 
 ### Phase 8B
+
 - [ ] Place ONNX model in `public/models/`
 - [ ] Copy WASM files to `public/ort/`
 - [ ] Test stem separation (should work or show clear error)
 - [ ] Remove model file (should show "Model file missing" error)
 
 ### Phase 9B
+
 - [ ] Load 2 tracks, analyze beat grids
 - [ ] Enable sync (tempo+phase mode)
 - [ ] Verify slave rate converges
@@ -213,6 +222,7 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 - [ ] Toggle sync off (rate should reset)
 
 ### Phase 9C
+
 - [ ] Load track, verify key analysis runs
 - [ ] Check Camelot notation displays
 - [ ] Load second track, check compatibility
@@ -243,6 +253,7 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 ## Files Summary
 
 **New Files:**
+
 - `src/engine/rt/sync/SyncController.ts` (enhanced)
 - `src/engine/rt/analysis/KeyService.ts`
 - `src/hooks/useKey.ts`
@@ -254,6 +265,7 @@ cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 - Documentation files
 
 **Modified Files:**
+
 - `src/workers/stemSeparator.worker.ts` - WASM paths, fast-fail
 - `src/engine/rt/DeckGraph.ts` - Added `seek()` method
 - `src/engine/rt/StudioEngine.ts` - Added sync mode parameter

@@ -11,6 +11,7 @@ Implemented a deterministic asset pipeline for Phase 8B stem separation with aut
 **Purpose:** Copy ONNX Runtime Web WASM files from `node_modules/onnxruntime-web/dist/` to `public/ort/`
 
 **Features:**
+
 - Idempotent (safe to run multiple times)
 - Prints copied file names
 - Fails with clear error if source files missing
@@ -18,6 +19,7 @@ Implemented a deterministic asset pipeline for Phase 8B stem separation with aut
 - Copies optional files if available (jsep, asyncify variants)
 
 **Usage:**
+
 ```bash
 node scripts/copy-ort-assets.mjs
 # or
@@ -29,11 +31,13 @@ npm run build:assets
 **Purpose:** Verify all required Phase 8B assets exist
 
 **Checks:**
+
 - `public/ort/` exists and contains `ort-wasm-simd-threaded.wasm`
 - `public/models/demucs_v4_quantized.onnx` exists OR `MODEL_URL` env var is set
 - Prints PASS/FAIL and exits non-zero on failure
 
 **Usage:**
+
 ```bash
 node scripts/check-stem-assets.mjs
 # or
@@ -43,10 +47,12 @@ npm run check:stem-assets
 ## Package.json Integration
 
 **New Scripts:**
+
 - `build:assets`: Runs `copy-ort-assets.mjs` + `check-stem-assets.mjs`
 - `check:stem-assets`: Runs `check-stem-assets.mjs` only
 
 **Updated Scripts:**
+
 - `build`: Now runs `build:workers` → `build:assets` → `build.js`
 - `verify:vercel`: Now checks workers AND stem assets before build
 
@@ -75,11 +81,13 @@ npm run verify:vercel
 ## Model Options
 
 **Option 1: Local File (Development)**
+
 ```bash
 cp /path/to/model.onnx public/models/demucs_v4_quantized.onnx
 ```
 
 **Option 2: Environment Variable (Production)**
+
 ```bash
 export MODEL_URL=https://your-cdn.com/models/demucs_v4_quantized.onnx
 # or in .env.local:
@@ -103,24 +111,28 @@ Update `MODEL_URL` in `src/workers/stemSeparator.worker.ts`
 ## Testing
 
 **Test Asset Copying:**
+
 ```bash
 npm run build:assets
 # Should copy ORT files and check for model
 ```
 
 **Test Verification:**
+
 ```bash
 npm run check:stem-assets
 # Should PASS if model exists or MODEL_URL is set
 ```
 
 **Test Full Build:**
+
 ```bash
 npm run build
 # Should fail if assets missing (strict verification)
 ```
 
 **Test Vercel Verification:**
+
 ```bash
 npm run verify:vercel
 # Should fail if assets missing (strict verification)
@@ -129,12 +141,14 @@ npm run verify:vercel
 ## Expected Output
 
 **With Model File:**
+
 ```
 [copy-ort-assets] ✅ All required assets copied successfully
 [check-stem-assets] ✅ PASS: All required assets found
 ```
 
 **Without Model (but MODEL_URL set):**
+
 ```
 [copy-ort-assets] ✅ All required assets copied successfully
 [check-stem-assets] ⚠️  Model file not found locally, but MODEL_URL is set
@@ -142,6 +156,7 @@ npm run verify:vercel
 ```
 
 **Without Model (and no MODEL_URL):**
+
 ```
 [copy-ort-assets] ✅ All required assets copied successfully
 [check-stem-assets] ❌ Model file not found

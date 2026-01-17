@@ -10,7 +10,7 @@
  * - Session-based organization
  */
 
-import { type MediaItem } from '@/lib/data';
+import { type MediaItem } from "@/lib/data";
 
 export interface TrackHistoryEntry {
   trackId: string;
@@ -99,7 +99,9 @@ class TrackHistory {
     const session = { ...this.currentSession };
     this.currentSession = null;
 
-    console.log(`[TrackHistory] Ended session: ${session.id} (${session.tracks.length} tracks)`);
+    console.log(
+      `[TrackHistory] Ended session: ${session.id} (${session.tracks.length} tracks)`,
+    );
     return session;
   }
 
@@ -139,7 +141,7 @@ class TrackHistory {
     this.currentSession.tracks.push({ ...this.currentTrack });
     this.currentTrack = null;
 
-    console.log('[TrackHistory] Track stopped');
+    console.log("[TrackHistory] Track stopped");
   }
 
   /**
@@ -170,7 +172,7 @@ class TrackHistory {
    */
   getAllSessions(): SessionHistory[] {
     return Array.from(this.sessions.values()).sort(
-      (a, b) => b.startedAt.getTime() - a.startedAt.getTime()
+      (a, b) => b.startedAt.getTime() - a.startedAt.getTime(),
     );
   }
 
@@ -192,12 +194,14 @@ class TrackHistory {
     bpm?: number;
     camelot?: string;
   }> {
-    const session = sessionId ? this.getSession(sessionId) : this.currentSession;
+    const session = sessionId
+      ? this.getSession(sessionId)
+      : this.currentSession;
     if (!session) return [];
 
     const sessionStartTime = session.startedAt.getTime();
 
-    return session.tracks.map(track => ({
+    return session.tracks.map((track) => ({
       title: track.title,
       artist: track.artist,
       startTime: Math.round((track.startedAt - sessionStartTime) / 1000),
@@ -212,18 +216,20 @@ class TrackHistory {
    */
   exportTracklistAsText(sessionId?: string): string {
     const tracklist = this.generateTracklist(sessionId);
-    if (tracklist.length === 0) return 'No tracks recorded';
+    if (tracklist.length === 0) return "No tracks recorded";
 
     const lines = tracklist.map((track, index) => {
       const timeStr = formatTime(track.startTime);
-      const durationStr = track.duration ? ` (${formatTime(track.duration)})` : '';
-      const bpmStr = track.bpm ? ` @ ${track.bpm} BPM` : '';
-      const keyStr = track.camelot ? ` in ${track.camelot}` : '';
+      const durationStr = track.duration
+        ? ` (${formatTime(track.duration)})`
+        : "";
+      const bpmStr = track.bpm ? ` @ ${track.bpm} BPM` : "";
+      const keyStr = track.camelot ? ` in ${track.camelot}` : "";
 
       return `${index + 1}. ${timeStr} - ${track.artist} - ${track.title}${durationStr}${bpmStr}${keyStr}`;
     });
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -234,7 +240,7 @@ class TrackHistory {
     if (this.currentSession) {
       this.currentSession.tracks = [];
     }
-    console.log('[TrackHistory] History cleared');
+    console.log("[TrackHistory] History cleared");
   }
 
   /**
@@ -272,7 +278,7 @@ class TrackHistory {
       this.endSession();
     }
     this.sessions.clear();
-    console.log('[TrackHistory] Disposed');
+    console.log("[TrackHistory] Disposed");
   }
 }
 
@@ -280,7 +286,7 @@ class TrackHistory {
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
 // Export singleton instance getter

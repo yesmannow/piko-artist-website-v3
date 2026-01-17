@@ -50,13 +50,17 @@ export function useGyroLighting(intensity: number = 1.0): GyroData {
       // Optional: Update state for UI debugging (remove for pure performance)
       // setValues({ x: normX, y: normY });
     },
-    [intensity]
+    [intensity],
   );
 
   const requestAccess = async () => {
-    if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
+    if (
+      typeof (DeviceOrientationEvent as any).requestPermission === "function"
+    ) {
       try {
-        const permission = await (DeviceOrientationEvent as any).requestPermission();
+        const permission = await (
+          DeviceOrientationEvent as any
+        ).requestPermission();
         if (permission === "granted") {
           setPermissionGranted(true);
           return true;
@@ -112,4 +116,3 @@ export function useGyroLighting(intensity: number = 1.0): GyroData {
     requestAccess,
   };
 }
-

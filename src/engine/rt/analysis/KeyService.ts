@@ -10,14 +10,19 @@
  * - Provides key data for harmonic mixing
  */
 
-import { toCamelot, type KeyResult, type KeyRoot, type KeyScale } from '@/utils/camelot';
+import {
+  toCamelot,
+  type KeyResult,
+  type KeyRoot,
+  type KeyScale,
+} from "@/utils/camelot";
 
 export interface KeyAnalysisResult extends KeyResult {
   available: boolean; // True if key was successfully detected, false if unavailable
   error?: string; // Error message if detection failed
 }
 
-export type KeyServiceState = 'uninitialized' | 'ready' | 'analyzing' | 'error';
+export type KeyServiceState = "uninitialized" | "ready" | "analyzing" | "error";
 
 /**
  * KeyService - Singleton service for key detection
@@ -25,7 +30,7 @@ export type KeyServiceState = 'uninitialized' | 'ready' | 'analyzing' | 'error';
 class KeyService {
   private static instance: KeyService | null = null;
 
-  private serviceState: KeyServiceState = 'uninitialized';
+  private serviceState: KeyServiceState = "uninitialized";
   private worker: Worker | null = null;
 
   // Cache for key data (keyed by track URL or hash)
@@ -48,33 +53,33 @@ class KeyService {
    * Initialize the key service
    */
   async initialize(): Promise<void> {
-    if (this.serviceState === 'ready') {
-      console.warn('[KeyService] Already initialized');
+    if (this.serviceState === "ready") {
+      console.warn("[KeyService] Already initialized");
       return;
     }
 
-    if (typeof window === 'undefined') {
-      throw new Error('[KeyService] Cannot initialize on server');
+    if (typeof window === "undefined") {
+      throw new Error("[KeyService] Cannot initialize on server");
     }
 
     try {
-      this.serviceState = 'uninitialized';
-      console.log('[KeyService] Initializing...');
+      this.serviceState = "uninitialized";
+      console.log("[KeyService] Initializing...");
 
       // Create Web Worker
       // Note: Worker is served from public/workers/ (compiled from src/workers/)
-      this.worker = new Worker('/workers/key.worker.js', { type: 'classic' });
+      this.worker = new Worker("/workers/key.worker.js", { type: "classic" });
 
       // Wait for worker ready (small delay to ensure worker is ready)
       await new Promise<void>((resolve) => {
         setTimeout(resolve, 100);
       });
 
-      this.serviceState = 'ready';
-      console.log('[KeyService] ✅ Initialization complete');
+      this.serviceState = "ready";
+      console.log("[KeyService] ✅ Initialization complete");
     } catch (error) {
-      this.serviceState = 'error';
-      console.error('[KeyService] ❌ Initialization failed:', error);
+      this.serviceState = "error";
+      console.error("[KeyService] ❌ Initialization failed:", error);
       throw error;
     }
   }
@@ -88,17 +93,17 @@ class KeyService {
    */
   async analyzeKey(
     audioBuffer: AudioBuffer,
-    cacheKey?: string
+    cacheKey?: string,
   ): Promise<KeyAnalysisResult> {
     this.ensureReady();
 
     // Check cache
     if (cacheKey && this.keyCache.has(cacheKey)) {
-      console.log('[KeyService] Using cached key');
+      console.log("[KeyService] Using cached key");
       return this.keyCache.get(cacheKey)!;
     }
 
-    this.serviceState = 'analyzing';
+    this.serviceState = "analyzing";
 
     try {
       // Extract channel data
@@ -115,26 +120,26 @@ class KeyService {
       // Send analysis request to worker
       const result = await new Promise<KeyAnalysisResult>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('[KeyService] Analysis timeout'));
+          reject(new Error("[KeyService] Analysis timeout"));
         }, 60000); // 1 minute timeout
 
         let hasError = false;
         let errorMessage: string | undefined;
 
         const handleResult = (event: MessageEvent) => {
-          if (event.data.type === 'ANALYZE_KEY_ERROR') {
+          if (event.data.type === "ANALYZE_KEY_ERROR") {
             // Error received, but may still get a result
             hasError = true;
             errorMessage = event.data.error;
-            console.warn('[KeyService] Key analysis error:', event.data.error);
+            console.warn("[KeyService] Key analysis error:", event.data.error);
             // Don't reject yet - wait for DONE message
-          } else if (event.data.type === 'ANALYZE_KEY_DONE') {
+          } else if (event.data.type === "ANALYZE_KEY_DONE") {
             clearTimeout(timeout);
-            this.worker?.removeEventListener('message', handleResult);
+            this.worker?.removeEventListener("message", handleResult);
 
             const keyData = event.data.data;
             if (!keyData) {
-              reject(new Error('No key data received'));
+              reject(new Error("No key data received"));
               return;
             }
 
@@ -150,7 +155,7 @@ class KeyService {
             // Ensure camelot is set (recalculate if needed)
             if (!keyResult.camelot) {
               const camelot = toCamelot(keyResult.root, keyResult.scale);
-              keyResult.camelot = camelot || '8B'; // Default to C major
+              keyResult.camelot = camelot || "8B"; // Default to C major
             }
 
             // Cache result
@@ -162,11 +167,11 @@ class KeyService {
           }
         };
 
-        this.worker?.addEventListener('message', handleResult);
+        this.worker?.addEventListener("message", handleResult);
 
         // Send analysis request
         this.worker?.postMessage({
-          type: 'ANALYZE_KEY_START',
+          type: "ANALYZE_KEY_START",
           input: {
             channelData,
             sampleRate,
@@ -174,19 +179,19 @@ class KeyService {
         });
       });
 
-      this.serviceState = 'ready';
+      this.serviceState = "ready";
       return result;
     } catch (error) {
-      this.serviceState = 'error';
-      console.error('[KeyService] ❌ Analysis failed:', error);
+      this.serviceState = "error";
+      console.error("[KeyService] ❌ Analysis failed:", error);
 
       // Return unavailable result instead of throwing
       const unavailableResult: KeyAnalysisResult = {
-        root: 'C',
-        scale: 'major',
-        camelot: '8B',
+        root: "C",
+        scale: "major",
+        camelot: "8B",
         available: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
 
       // Cache unavailable result to avoid repeated attempts
@@ -210,7 +215,7 @@ class KeyService {
    */
   clearCache(): void {
     this.keyCache.clear();
-    console.log('[KeyService] Cache cleared');
+    console.log("[KeyService] Cache cleared");
   }
 
   /**
@@ -224,7 +229,7 @@ class KeyService {
    * Check if service is analyzing
    */
   get isAnalyzing(): boolean {
-    return this.serviceState === 'analyzing';
+    return this.serviceState === "analyzing";
   }
 
   // ==========================================================================
@@ -232,9 +237,9 @@ class KeyService {
   // ==========================================================================
 
   private ensureReady(): void {
-    if (this.serviceState !== 'ready') {
+    if (this.serviceState !== "ready") {
       throw new Error(
-        `[KeyService] Service not ready. Current state: ${this.serviceState}`
+        `[KeyService] Service not ready. Current state: ${this.serviceState}`,
       );
     }
   }
@@ -249,9 +254,9 @@ class KeyService {
     }
 
     this.keyCache.clear();
-    this.serviceState = 'uninitialized';
+    this.serviceState = "uninitialized";
 
-    console.log('[KeyService] Disposed');
+    console.log("[KeyService] Disposed");
   }
 }
 

@@ -10,7 +10,11 @@
  * - Pattern save/load functionality
  */
 
-import { getSamplePlayer, type SampleInfo, type PlaybackOptions } from './SamplePlayer';
+import {
+  getSamplePlayer,
+  type SampleInfo,
+  type PlaybackOptions,
+} from "./SamplePlayer";
 
 export interface GridStep {
   sampleId: string | null;
@@ -28,7 +32,7 @@ export interface SequencerPattern {
   createdAt: Date;
 }
 
-export type SequencerState = 'stopped' | 'playing' | 'paused';
+export type SequencerState = "stopped" | "playing" | "paused";
 
 /**
  * StepSequencer - Service for managing 4x4 step sequencer patterns
@@ -41,7 +45,7 @@ class StepSequencer {
   private currentPatternId: string | null = null;
 
   // Sequencer state
-  private state: SequencerState = 'stopped';
+  private state: SequencerState = "stopped";
   private tempo: number = 120;
   private swing: number = 0; // 0 = no swing, 1 = maximum swing
   private currentStep = { row: 0, col: 0 };
@@ -58,14 +62,18 @@ class StepSequencer {
   // Private constructor enforces singleton
   private constructor() {
     // Initialize empty 4x4 grid
-    this.grid = Array(4).fill(null).map(() =>
-      Array(4).fill(null).map(() => ({
-        sampleId: null,
-        active: false,
-        velocity: 0.8,
-        probability: 1.0
-      }))
-    );
+    this.grid = Array(4)
+      .fill(null)
+      .map(() =>
+        Array(4)
+          .fill(null)
+          .map(() => ({
+            sampleId: null,
+            active: false,
+            velocity: 0.8,
+            probability: 1.0,
+          })),
+      );
   }
 
   /**
@@ -83,29 +91,29 @@ class StepSequencer {
    */
   async initialize(): Promise<void> {
     await this.samplePlayer.initialize();
-    console.log('[StepSequencer] Initialized');
+    console.log("[StepSequencer] Initialized");
   }
 
   /**
    * Start the sequencer
    */
   start(): void {
-    if (this.state === 'playing') return;
+    if (this.state === "playing") return;
 
-    this.state = 'playing';
+    this.state = "playing";
     this.lastStepTime = Date.now();
 
     this.scheduleNextStep();
-    console.log('[StepSequencer] Started');
+    console.log("[StepSequencer] Started");
   }
 
   /**
    * Stop the sequencer
    */
   stop(): void {
-    if (this.state === 'stopped') return;
+    if (this.state === "stopped") return;
 
-    this.state = 'stopped';
+    this.state = "stopped";
     this.currentStep = { row: 0, col: 0 };
 
     if (this.intervalId) {
@@ -114,23 +122,23 @@ class StepSequencer {
     }
 
     this.onStepChange?.({ row: -1, col: -1 }); // Signal stopped
-    console.log('[StepSequencer] Stopped');
+    console.log("[StepSequencer] Stopped");
   }
 
   /**
    * Pause the sequencer
    */
   pause(): void {
-    if (this.state !== 'playing') return;
+    if (this.state !== "playing") return;
 
-    this.state = 'paused';
+    this.state = "paused";
 
     if (this.intervalId) {
       clearTimeout(this.intervalId);
       this.intervalId = null;
     }
 
-    console.log('[StepSequencer] Paused');
+    console.log("[StepSequencer] Paused");
   }
 
   /**
@@ -146,7 +154,9 @@ class StepSequencer {
    */
   setSwing(amount: number): void {
     this.swing = Math.max(0, Math.min(1, amount));
-    console.log(`[StepSequencer] Swing set to ${(this.swing * 100).toFixed(1)}%`);
+    console.log(
+      `[StepSequencer] Swing set to ${(this.swing * 100).toFixed(1)}%`,
+    );
   }
 
   /**
@@ -157,7 +167,7 @@ class StepSequencer {
 
     this.grid[row][col] = {
       ...this.grid[row][col],
-      ...step
+      ...step,
     };
   }
 
@@ -166,7 +176,7 @@ class StepSequencer {
    */
   getStep(row: number, col: number): GridStep {
     if (row < 0 || row >= 4 || col < 0 || col >= 4) {
-      throw new Error('Invalid grid position');
+      throw new Error("Invalid grid position");
     }
     return { ...this.grid[row][col] };
   }
@@ -175,22 +185,26 @@ class StepSequencer {
    * Get entire grid
    */
   getGrid(): GridStep[][] {
-    return this.grid.map(row => row.map(step => ({ ...step })));
+    return this.grid.map((row) => row.map((step) => ({ ...step })));
   }
 
   /**
    * Clear grid
    */
   clearGrid(): void {
-    this.grid = Array(4).fill(null).map(() =>
-      Array(4).fill(null).map(() => ({
-        sampleId: null,
-        active: false,
-        velocity: 0.8,
-        probability: 1.0
-      }))
-    );
-    console.log('[StepSequencer] Grid cleared');
+    this.grid = Array(4)
+      .fill(null)
+      .map(() =>
+        Array(4)
+          .fill(null)
+          .map(() => ({
+            sampleId: null,
+            active: false,
+            velocity: 0.8,
+            probability: 1.0,
+          })),
+      );
+    console.log("[StepSequencer] Grid cleared");
   }
 
   /**
@@ -206,7 +220,7 @@ class StepSequencer {
     const pattern = this.patterns.get(patternId);
     if (pattern) {
       this.currentPatternId = patternId;
-      this.grid = pattern.grid.map(row => row.map(step => ({ ...step })));
+      this.grid = pattern.grid.map((row) => row.map((step) => ({ ...step })));
       this.tempo = pattern.tempo;
       this.swing = pattern.swing || 0;
       this.onPatternChange?.(pattern);
@@ -225,7 +239,7 @@ class StepSequencer {
       grid: this.getGrid(),
       tempo: this.tempo,
       swing: this.swing,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     this.patterns.set(patternId, pattern);
@@ -257,14 +271,18 @@ class StepSequencer {
   /**
    * Set callback for step changes
    */
-  setOnStepChange(callback: (step: { row: number; col: number }) => void): void {
+  setOnStepChange(
+    callback: (step: { row: number; col: number }) => void,
+  ): void {
     this.onStepChange = callback;
   }
 
   /**
    * Set callback for pattern changes
    */
-  setOnPatternChange(callback: (pattern: SequencerPattern | null) => void): void {
+  setOnPatternChange(
+    callback: (pattern: SequencerPattern | null) => void,
+  ): void {
     this.onPatternChange = callback;
   }
 
@@ -301,7 +319,7 @@ class StepSequencer {
   // ==========================================================================
 
   private scheduleNextStep(): void {
-    if (this.state !== 'playing') return;
+    if (this.state !== "playing") return;
 
     // Calculate step duration with swing
     const baseDuration = (60 / this.tempo) * 1000; // milliseconds per step
@@ -360,18 +378,21 @@ class StepSequencer {
         id: step.sampleId,
         name: step.sampleId,
         url: `/audio/samples/${step.sampleId}.mp3`, // Placeholder URL
-        category: 'drum' // This should be determined from the actual sample
+        category: "drum", // This should be determined from the actual sample
       };
 
       const options: PlaybackOptions = {
         velocity: step.velocity,
         syncToBeat: true,
-        deckId: 'deckA' // Could be configurable
+        deckId: "deckA", // Could be configurable
       };
 
       await this.samplePlayer.playSample(sample, options);
     } catch (error) {
-      console.error(`[StepSequencer] Failed to trigger sample ${step.sampleId}:`, error);
+      console.error(
+        `[StepSequencer] Failed to trigger sample ${step.sampleId}:`,
+        error,
+      );
     }
   }
 
@@ -383,7 +404,7 @@ class StepSequencer {
     this.stop();
     this.patterns.clear();
     this.samplePlayer.dispose();
-    console.log('[StepSequencer] Disposed');
+    console.log("[StepSequencer] Disposed");
   }
 }
 

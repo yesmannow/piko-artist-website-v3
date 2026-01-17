@@ -94,8 +94,10 @@ export function SessionSummary({
             <div
               className="relative w-full max-w-2xl bg-black/90 backdrop-blur-xl border-2 border-brushed-gold/30 p-8 md:p-12"
               style={{
-                boxShadow: "inset 0 0 60px rgba(212, 175, 55, 0.15), 0 8px 40px rgba(0, 0, 0, 0.5)",
-                background: "linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%)",
+                boxShadow:
+                  "inset 0 0 60px rgba(212, 175, 55, 0.15), 0 8px 40px rgba(0, 0, 0, 0.5)",
+                background:
+                  "linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%)",
               }}
             >
               {/* Close Button */}
@@ -163,7 +165,9 @@ export function SessionSummary({
                 {/* Duration */}
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-foreground/80 font-sans text-sm">Duration</span>
+                    <span className="text-foreground/80 font-sans text-sm">
+                      Duration
+                    </span>
                     <span className="text-brushed-gold font-sans font-semibold">
                       {formatDuration(sessionDuration)}
                     </span>
@@ -173,7 +177,9 @@ export function SessionSummary({
                 {/* Remix Intensity Bar */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-foreground/80 font-sans text-sm">Remix Intensity</span>
+                    <span className="text-foreground/80 font-sans text-sm">
+                      Remix Intensity
+                    </span>
                     <span className="text-brushed-gold font-sans font-semibold">
                       {Math.round(remixIntensity * 100)}%
                     </span>
@@ -227,4 +233,3 @@ export function SessionSummary({
     </AnimatePresence>
   );
 }
-

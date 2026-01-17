@@ -10,20 +10,20 @@
  */
 
 export type KeyRoot =
-  | 'C'
-  | 'C#'
-  | 'D'
-  | 'D#'
-  | 'E'
-  | 'F'
-  | 'F#'
-  | 'G'
-  | 'G#'
-  | 'A'
-  | 'A#'
-  | 'B';
+  | "C"
+  | "C#"
+  | "D"
+  | "D#"
+  | "E"
+  | "F"
+  | "F#"
+  | "G"
+  | "G#"
+  | "A"
+  | "A#"
+  | "B";
 
-export type KeyScale = 'major' | 'minor';
+export type KeyScale = "major" | "minor";
 
 export interface KeyResult {
   root: KeyRoot;
@@ -51,31 +51,31 @@ export interface KeyResult {
  */
 const CAMELOT_MAP: Record<string, string> = {
   // Minor keys (A)
-  'Abm': '1A',
-  'Ebm': '2A',
-  'Bbm': '3A',
-  'Fm': '4A',
-  'Cm': '5A',
-  'Gm': '6A',
-  'Dm': '7A',
-  'Am': '8A',
-  'Em': '9A',
-  'Bm': '10A',
-  'F#m': '11A',
-  'C#m': '12A',
+  Abm: "1A",
+  Ebm: "2A",
+  Bbm: "3A",
+  Fm: "4A",
+  Cm: "5A",
+  Gm: "6A",
+  Dm: "7A",
+  Am: "8A",
+  Em: "9A",
+  Bm: "10A",
+  "F#m": "11A",
+  "C#m": "12A",
   // Major keys (B)
-  'B': '1B',
-  'F#': '2B',
-  'Db': '3B',
-  'Ab': '4B',
-  'Eb': '5B',
-  'Bb': '6B',
-  'F': '7B',
-  'C': '8B',
-  'G': '9B',
-  'D': '10B',
-  'A': '11B',
-  'E': '12B',
+  B: "1B",
+  "F#": "2B",
+  Db: "3B",
+  Ab: "4B",
+  Eb: "5B",
+  Bb: "6B",
+  F: "7B",
+  C: "8B",
+  G: "9B",
+  D: "10B",
+  A: "11B",
+  E: "12B",
 };
 
 /**
@@ -89,9 +89,9 @@ export function toCamelot(root: KeyRoot, scale: KeyScale): string | null {
   // Normalize root for lookup
   let keyString: string;
 
-  if (scale === 'minor') {
+  if (scale === "minor") {
     // Minor keys use lowercase 'm' suffix
-    keyString = root === 'C#' ? 'C#m' : root === 'F#' ? 'F#m' : `${root}m`;
+    keyString = root === "C#" ? "C#m" : root === "F#" ? "F#m" : `${root}m`;
   } else {
     // Major keys use root as-is (but handle special cases)
     keyString = root;
@@ -117,16 +117,16 @@ export function compatibleKeys(camelot: string): string[] {
   }
 
   const number = parseInt(camelot.slice(0, -1), 10);
-  const scale = camelot.slice(-1) as 'A' | 'B';
+  const scale = camelot.slice(-1) as "A" | "B";
 
-  if (isNaN(number) || (scale !== 'A' && scale !== 'B')) {
+  if (isNaN(number) || (scale !== "A" && scale !== "B")) {
     return [];
   }
 
   const compatibles: string[] = [];
 
   // 1. Same number, opposite scale (A ↔ B)
-  const oppositeScale = scale === 'A' ? 'B' : 'A';
+  const oppositeScale = scale === "A" ? "B" : "A";
   compatibles.push(`${number}${oppositeScale}`);
 
   // 2. Adjacent numbers, same scale
@@ -149,7 +149,10 @@ export function compatibleKeys(camelot: string): string[] {
  * @param key2 - Second Camelot key
  * @returns True if keys are compatible for harmonic mixing
  */
-export function areKeysCompatible(key1: string | null, key2: string | null): boolean {
+export function areKeysCompatible(
+  key1: string | null,
+  key2: string | null,
+): boolean {
   if (!key1 || !key2) {
     return false;
   }
@@ -168,15 +171,22 @@ export function areKeysCompatible(key1: string | null, key2: string | null): boo
  * @param camelot - Camelot notation (e.g., "8A", "5B")
  * @returns Object with number and scale, or null if invalid
  */
-export function parseCamelot(camelot: string): { number: number; scale: 'A' | 'B' } | null {
+export function parseCamelot(
+  camelot: string,
+): { number: number; scale: "A" | "B" } | null {
   if (!camelot || camelot.length < 2) {
     return null;
   }
 
   const number = parseInt(camelot.slice(0, -1), 10);
-  const scale = camelot.slice(-1) as 'A' | 'B';
+  const scale = camelot.slice(-1) as "A" | "B";
 
-  if (isNaN(number) || number < 1 || number > 12 || (scale !== 'A' && scale !== 'B')) {
+  if (
+    isNaN(number) ||
+    number < 1 ||
+    number > 12 ||
+    (scale !== "A" && scale !== "B")
+  ) {
     return null;
   }
 

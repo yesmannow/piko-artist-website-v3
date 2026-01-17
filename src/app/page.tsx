@@ -52,7 +52,10 @@ function useRmsMeter() {
         const engine = getAudioEngine();
         const ctxState = engine?.context?.state;
         if (engine?.state === "Running" && ctxState === "running") {
-          const level = Math.max(engine.getRMS("deckA"), engine.getRMS("deckB"));
+          const level = Math.max(
+            engine.getRMS("deckA"),
+            engine.getRMS("deckB"),
+          );
           setRms(level);
         } else {
           setRms(0);
@@ -93,7 +96,10 @@ function CtaButton({
   };
 
   return (
-    <motion.div whileHover={{ rotate: variant === "primary" ? 0.5 : 0, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+    <motion.div
+      whileHover={{ rotate: variant === "primary" ? 0.5 : 0, scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+    >
       <Link href={href} className={`${base} ${variants[variant]}`}>
         {Icon ? <Icon className="h-4 w-4" /> : null}
         <span>{label}</span>
@@ -122,8 +128,18 @@ export default function HomePage() {
 
   const primaryCtas = useMemo(
     () => [
-      { label: "Listen Now", href: "/music", icon: Headphones, variant: "primary" as const },
-      { label: "Launch DJ Studio", href: "/studio", icon: Waves, variant: "secondary" as const },
+      {
+        label: "Listen Now",
+        href: "/music",
+        icon: Headphones,
+        variant: "primary" as const,
+      },
+      {
+        label: "Launch DJ Studio",
+        href: "/studio",
+        icon: Waves,
+        variant: "secondary" as const,
+      },
     ],
     [],
   );
@@ -138,13 +154,21 @@ export default function HomePage() {
             <Sparkles className="h-5 w-5 text-[#c1ff00]" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/60">Piko Studio</p>
-            <p className="text-sm font-semibold text-white/90">Hip Hop / Visuals / Remix</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+              Piko Studio
+            </p>
+            <p className="text-sm font-semibold text-white/90">
+              Hip Hop / Visuals / Remix
+            </p>
           </div>
         </div>
         <nav className="hidden md:flex items-center gap-6 text-sm uppercase tracking-[0.16em]">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-white/70 hover:text-[#c1ff00] transition-colors">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-white/70 hover:text-[#c1ff00] transition-colors"
+            >
               {link.label}
             </Link>
           ))}
@@ -167,7 +191,9 @@ export default function HomePage() {
                 Piko Studio
               </h1>
               <p className="text-lg text-white/70 sm:text-xl">
-                Showcasing original hip hop, visuals, and remix-ready audio tools. Mix and explore the artist&apos;s world — tracks, videos, and collaborations.
+                Showcasing original hip hop, visuals, and remix-ready audio
+                tools. Mix and explore the artist&apos;s world — tracks, videos,
+                and collaborations.
               </p>
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -183,11 +209,20 @@ export default function HomePage() {
                       <Play className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/60">Resume Last Session</p>
-                      <p className="text-sm font-semibold text-white/90">{lastTrack}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/60">
+                        Resume Last Session
+                      </p>
+                      <p className="text-sm font-semibold text-white/90">
+                        {lastTrack}
+                      </p>
                     </div>
                   </div>
-                  <CtaButton href="/studio" label="Resume DJ Session" icon={Waves} variant="secondary" />
+                  <CtaButton
+                    href="/studio"
+                    label="Resume DJ Session"
+                    icon={Waves}
+                    variant="secondary"
+                  />
                 </div>
               ) : null}
 
@@ -205,14 +240,20 @@ export default function HomePage() {
                     onChange={(e) => setShowLabs(e.target.checked)}
                   />
                   <span className="flex items-center gap-2 text-sm">
-                    Show Labs <span className="rounded-full bg-[#7c3aed]/20 px-2 py-0.5 text-xs text-[#c1ff00]">🧪 Labs</span>
+                    Show Labs{" "}
+                    <span className="rounded-full bg-[#7c3aed]/20 px-2 py-0.5 text-xs text-[#c1ff00]">
+                      🧪 Labs
+                    </span>
                   </span>
                 </label>
 
                 {showLabs ? (
                   <div className="inline-flex items-center gap-2 text-sm">
                     <ArrowRight className="h-4 w-4 text-[#c1ff00]" />
-                    <Link href="/studio-v2" className="underline decoration-[#c1ff00]/60 underline-offset-4 hover:text-[#c1ff00]">
+                    <Link
+                      href="/studio-v2"
+                      className="underline decoration-[#c1ff00]/60 underline-offset-4 hover:text-[#c1ff00]"
+                    >
                       Jump into Studio V2 Labs
                     </Link>
                   </div>
@@ -225,7 +266,9 @@ export default function HomePage() {
               <div className="relative rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-white/60">Live Visual Meter</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+                      Live Visual Meter
+                    </p>
                     <p className="text-xl font-semibold">Artist Signal</p>
                   </div>
                   <Sparkles className="h-5 w-5 text-[#c1ff00]" />
@@ -234,19 +277,28 @@ export default function HomePage() {
                   <div className="flex h-full items-end gap-2">
                     {Array.from({ length: 12 }).map((_, i) => {
                       const phase = Math.sin((i / 12) * Math.PI * 2);
-                      const height = Math.max(8, Math.min(100, (rms * 120 + phase * 20)));
+                      const height = Math.max(
+                        8,
+                        Math.min(100, rms * 120 + phase * 20),
+                      );
                       return (
                         <motion.div
                           key={i}
                           animate={{ height }}
-                          transition={{ type: "spring", stiffness: 140, damping: 18 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 140,
+                            damping: 18,
+                          }}
                           className="w-3 rounded-full bg-gradient-to-t from-[#7c3aed] via-[#c1ff00] to-white shadow-[0_0_20px_rgba(193,255,0,0.35)]"
                           aria-hidden
                         />
                       );
                     })}
                   </div>
-                  <p className="mt-3 text-xs text-white/60">Live RMS (visual only) — active when audio is running</p>
+                  <p className="mt-3 text-xs text-white/60">
+                    Live RMS (visual only) — active when audio is running
+                  </p>
                 </div>
 
                 <div className="mt-6 grid gap-3 text-sm text-white/75">
@@ -256,7 +308,8 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="inline-flex h-2 w-2 rounded-full bg-[#7c3aed]" />
-                    Visual storytelling: videos, collaborations, behind the scenes
+                    Visual storytelling: videos, collaborations, behind the
+                    scenes
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="inline-flex h-2 w-2 rounded-full bg-white/70" />

@@ -179,7 +179,7 @@ export function SpinningVinyl({
             inset 0 0 20px rgba(0, 0, 0, 0.8),
             0 4px 20px rgba(0, 0, 0, 0.5),
             0 0 0 2px ${deckColor}40,
-            ${isFxActive ? `0 0 25px ${deckColor}60, 0 0 50px ${deckColor}30` : ''}
+            ${isFxActive ? `0 0 25px ${deckColor}60, 0 0 50px ${deckColor}30` : ""}
           `,
           rotate: `${rotation}deg`,
         }}
@@ -226,7 +226,7 @@ export function SpinningVinyl({
               borderColor: deckColor,
               boxShadow: `
                 0 0 10px ${deckColor}80,
-                ${isFxActive ? `0 0 20px ${deckColor}60` : ''}
+                ${isFxActive ? `0 0 20px ${deckColor}60` : ""}
               `,
             }}
           >

@@ -32,7 +32,7 @@ export function PageTransition({ children }: PageTransitionProps) {
     if (prevPathnameRef.current && prevPathnameRef.current !== pathname) {
       // Cleanup any lingering transition overlays
       const transitionOverlays = document.querySelectorAll(
-        ".page-transition-layer, .transition-overlay, [data-transition-overlay]"
+        ".page-transition-layer, .transition-overlay, [data-transition-overlay]",
       );
       transitionOverlays.forEach((el) => {
         if (el instanceof HTMLElement) {
@@ -49,13 +49,16 @@ export function PageTransition({ children }: PageTransitionProps) {
 
       // Reset body scroll only if no modals are open
       const body = document.body;
-      if (body.style.overflow === "hidden" && !document.querySelector('[data-modal-open="true"]')) {
+      if (
+        body.style.overflow === "hidden" &&
+        !document.querySelector('[data-modal-open="true"]')
+      ) {
         body.style.overflow = "";
       }
 
       // Ensure pointer events are enabled on all interactive elements
       const interactiveElements = document.querySelectorAll(
-        "nav, button, a, input, select, textarea, [role='button'], [tabindex]"
+        "nav, button, a, input, select, textarea, [role='button'], [tabindex]",
       );
       interactiveElements.forEach((el) => {
         if (el instanceof HTMLElement) {
@@ -75,7 +78,10 @@ export function PageTransition({ children }: PageTransitionProps) {
     return () => {
       // Final cleanup on component unmount
       const body = document.body;
-      if (body.style.overflow === "hidden" && !document.querySelector('[data-modal-open="true"]')) {
+      if (
+        body.style.overflow === "hidden" &&
+        !document.querySelector('[data-modal-open="true"]')
+      ) {
         body.style.overflow = "";
       }
     };
@@ -144,4 +150,3 @@ export function PageTransition({ children }: PageTransitionProps) {
     </div>
   );
 }
-

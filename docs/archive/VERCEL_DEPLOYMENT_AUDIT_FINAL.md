@@ -10,64 +10,80 @@ All critical deployment blockers have been resolved. The project builds successf
 ## Critical Fixes Applied
 
 ### 1. **@serwist/next Configuration Error** ✅
+
 **Issue:** Invalid configuration keys (`cacheOnFrontEndNav`, `disableDevLogs`, `runtimeCaching`) in `withSerwistInit()`
 **Fix:** Removed invalid keys from `next.config.mjs`. Runtime caching is configured in `src/app/sw.ts` using `defaultCache` from `@serwist/next/worker`.
 
 **Files Changed:**
+
 - `next.config.mjs` - Simplified Serwist configuration
 
 ### 2. **TypeScript Errors** ✅
 
 #### ServiceWorkerGlobalScope Type Error
+
 **Issue:** `ServiceWorkerGlobalScope` not recognized
 **Fix:** Changed to `WorkerGlobalScope` which extends `SerwistGlobalConfig`
 
 **Files Changed:**
+
 - `src/app/sw.ts`
 
 #### holographicMaterial Type Declaration
+
 **Issue:** TypeScript couldn't recognize custom shader material JSX element
 **Fix:** Added `@ts-expect-error` comment with explanation. The material works at runtime via `extend()` from React Three Fiber.
 
 **Files Changed:**
+
 - `src/components/3d/HolographicDeck.tsx`
 - `src/types/holographic-material.d.ts` (created for future type improvements)
 
 #### Conditional Hook Call
+
 **Issue:** `useTrackDuration` called conditionally in `TrackHero` component
 **Fix:** Always call hook unconditionally with a fallback track object
 
 **Files Changed:**
+
 - `src/app/music/page.tsx`
 
 #### Missing Link Import
+
 **Issue:** `Link` component used but not imported
 **Fix:** Added `import Link from "next/link"`
 
 **Files Changed:**
+
 - `src/components/FieldOperations.tsx`
 
 #### StudioCanvas Conditional Rendering
+
 **Issue:** Type error with conditional `null` return
 **Fix:** Changed to use empty fragment `<>` instead of `null`
 
 **Files Changed:**
+
 - `src/components/3d/StudioCanvas.tsx`
 
 ### 3. **ESLint Errors** ✅
 
 #### JSX Comment Syntax
+
 **Issue:** Comment inside JSX children without braces
 **Fix:** Wrapped comment in `{/* */}` syntax
 
 **Files Changed:**
+
 - `src/components/VaultVisuals.tsx`
 
 #### Namespace Declaration
+
 **Issue:** ESLint error for JSX namespace declaration
 **Fix:** Added `eslint-disable-next-line` comment (namespace is required for JSX augmentation)
 
 **Files Changed:**
+
 - `src/components/3d/materials/HolographicMaterial.tsx`
 
 ## Build Status
@@ -77,6 +93,7 @@ All critical deployment blockers have been resolved. The project builds successf
 ✅ **ESLint:** No errors (warnings only)
 
 ### Build Output
+
 ```
 Route (app)                              Size     First Load JS
 ○ ○ /                                   12.9 kB         446 kB
@@ -93,17 +110,20 @@ Route (app)                              Size     First Load JS
 ## Configuration Summary
 
 ### Dependencies
+
 - **Next.js:** `15.5.9` (pinned)
 - **React:** `19.0.0`
 - **TypeScript:** `5.9.3`
 - **Node:** `>=20 <21`
 
 ### Build Configuration
+
 - **Build Script:** `node scripts/build.js` (handles environment variable cleanup)
 - **Output Tracing:** `outputFileTracingRoot` set in `next.config.mjs`
 - **Path Aliases:** `@/*` → `./src/*` (configured in `tsconfig.json` and `next.config.mjs`)
 
 ### Service Worker (PWA)
+
 - **Framework:** Serwist v9.4.2
 - **Configuration:** Minimal config in `next.config.mjs`, runtime caching in `sw.ts`
 - **Output:** `public/sw.js`

@@ -15,14 +15,18 @@
  * - Strict TypeScript
  */
 
-import { getRealtimeAudioSystem } from './RealtimeAudioSystem';
-import { DeckGraph, type DeckState } from './DeckGraph';
-import type { ControlBus } from './control/ControlBus';
-import type { DeckId, EQBand } from './control/ControlLayout';
-import { TransportCommand } from './control/ControlLayout';
-import { SyncController } from './sync/SyncController';
+import { getRealtimeAudioSystem } from "./RealtimeAudioSystem";
+import { DeckGraph, type DeckState } from "./DeckGraph";
+import type { ControlBus } from "./control/ControlBus";
+import type { DeckId, EQBand } from "./control/ControlLayout";
+import { TransportCommand } from "./control/ControlLayout";
+import { SyncController } from "./sync/SyncController";
 
-export type StudioEngineState = 'uninitialized' | 'initializing' | 'ready' | 'error';
+export type StudioEngineState =
+  | "uninitialized"
+  | "initializing"
+  | "ready"
+  | "error";
 
 /**
  * StudioEngine - High-level audio engine API
@@ -36,7 +40,7 @@ export type StudioEngineState = 'uninitialized' | 'initializing' | 'ready' | 'er
 class StudioEngine {
   private static instance: StudioEngine | null = null;
 
-  private engineState: StudioEngineState = 'uninitialized';
+  private engineState: StudioEngineState = "uninitialized";
   private deckA: DeckGraph | null = null;
   private deckB: DeckGraph | null = null;
   private controlBusInstance: ControlBus | null = null;
@@ -67,26 +71,26 @@ class StudioEngine {
    * @returns Promise that resolves when initialization is complete
    */
   async initialize(): Promise<void> {
-    if (this.engineState === 'ready') {
-      console.warn('[StudioEngine] Already initialized');
+    if (this.engineState === "ready") {
+      console.warn("[StudioEngine] Already initialized");
       return;
     }
 
-    if (this.engineState === 'initializing') {
-      console.warn('[StudioEngine] Initialization already in progress');
+    if (this.engineState === "initializing") {
+      console.warn("[StudioEngine] Initialization already in progress");
       return;
     }
 
     try {
-      this.engineState = 'initializing';
-      console.log('[StudioEngine] Initializing...');
+      this.engineState = "initializing";
+      console.log("[StudioEngine] Initializing...");
 
       // Initialize real-time audio system
       const rtAudio = getRealtimeAudioSystem();
       await rtAudio.initialize({
-        latencyHint: 'interactive',
+        latencyHint: "interactive",
         sampleRate: 44100,
-        workletModules: ['/worklets/mixer-processor.js'],
+        workletModules: ["/worklets/mixer-processor.js"],
       });
 
       // Get control bus
@@ -95,7 +99,7 @@ class StudioEngine {
       // Get mixer node (should be created by RealtimeAudioSystem)
       const mixerNode = rtAudio.mixerNode;
       if (!mixerNode) {
-        throw new Error('Mixer worklet node not created');
+        throw new Error("Mixer worklet node not created");
       }
 
       // Create deck graphs
@@ -105,15 +109,14 @@ class StudioEngine {
       this.deckB = new DeckGraph(rtAudio.context, mixerNode, 1);
 
       // Register deck graphs with sync controller
-      this.syncController.setDeckGraph('A', this.deckA);
-      this.syncController.setDeckGraph('B', this.deckB);
+      this.syncController.setDeckGraph("A", this.deckA);
+      this.syncController.setDeckGraph("B", this.deckB);
 
-      this.engineState = 'ready';
-      console.log('[StudioEngine] ✅ Initialization complete');
-
+      this.engineState = "ready";
+      console.log("[StudioEngine] ✅ Initialization complete");
     } catch (error) {
-      this.engineState = 'error';
-      console.error('[StudioEngine] ❌ Initialization failed:', error);
+      this.engineState = "error";
+      console.error("[StudioEngine] ❌ Initialization failed:", error);
       throw error;
     }
   }
@@ -374,7 +377,7 @@ class StudioEngine {
     deckId: DeckId,
     enabled: boolean,
     masterDeckId?: DeckId,
-    mode: 'tempo-only' | 'tempo+phase' = 'tempo+phase'
+    mode: "tempo-only" | "tempo+phase" = "tempo+phase",
   ): void {
     this.ensureReady();
 
@@ -384,18 +387,20 @@ class StudioEngine {
     }
 
     // Determine master deck
-    const master = masterDeckId || (deckId === 'A' ? 'B' : 'A');
+    const master = masterDeckId || (deckId === "A" ? "B" : "A");
 
     // Ensure both decks have tracks loaded
     if (!this.isLoaded(deckId) || !this.isLoaded(master)) {
-      throw new Error('[StudioEngine] Both decks must have tracks loaded to enable sync');
+      throw new Error(
+        "[StudioEngine] Both decks must have tracks loaded to enable sync",
+      );
     }
 
     try {
       this.syncController.enable(deckId, master);
 
       // Configure sync mode
-      if (mode === 'tempo-only') {
+      if (mode === "tempo-only") {
         // Disable phase correction (set Ki to 0, increase smoothing)
         this.syncController.setParams({
           Ki: 0, // No integral term
@@ -411,7 +416,7 @@ class StudioEngine {
         });
       }
     } catch (error) {
-      console.error('[StudioEngine] Failed to enable sync:', error);
+      console.error("[StudioEngine] Failed to enable sync:", error);
       throw error;
     }
   }
@@ -435,7 +440,7 @@ class StudioEngine {
   // ==========================================================================
 
   private getDeck(deck: DeckId): DeckGraph {
-    const deckGraph = deck === 'A' ? this.deckA : this.deckB;
+    const deckGraph = deck === "A" ? this.deckA : this.deckB;
     if (!deckGraph) {
       throw new Error(`[StudioEngine] Deck ${deck} not initialized`);
     }
@@ -443,8 +448,10 @@ class StudioEngine {
   }
 
   private ensureReady(): void {
-    if (this.engineState !== 'ready') {
-      throw new Error(`[StudioEngine] Engine not ready. Current state: ${this.engineState}`);
+    if (this.engineState !== "ready") {
+      throw new Error(
+        `[StudioEngine] Engine not ready. Current state: ${this.engineState}`,
+      );
     }
   }
 
@@ -463,9 +470,9 @@ class StudioEngine {
     }
 
     this.controlBusInstance = null;
-    this.engineState = 'uninitialized';
+    this.engineState = "uninitialized";
 
-    console.log('[StudioEngine] Disposed');
+    console.log("[StudioEngine] Disposed");
   }
 }
 

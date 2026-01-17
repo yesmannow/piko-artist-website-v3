@@ -1,6 +1,13 @@
 "use client";
 
-import { Youtube, Facebook, Instagram, Music, ExternalLink, Mail } from "lucide-react";
+import {
+  Youtube,
+  Facebook,
+  Instagram,
+  Music,
+  ExternalLink,
+  Mail,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -108,7 +115,8 @@ export function Footer() {
               viewport={{ once: true }}
               className="text-[#E0E0E0]/70 text-sm leading-relaxed max-w-xs"
             >
-              Urban beats, raw talent, and authentic hip-hop culture. Experience the sound of the streets.
+              Urban beats, raw talent, and authentic hip-hop culture. Experience
+              the sound of the streets.
             </motion.p>
           </div>
 
@@ -120,7 +128,9 @@ export function Footer() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
               className="text-[#FFD700] font-black italic uppercase text-lg mb-6 tracking-wider"
-              style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
+              style={{
+                fontFamily: "var(--font-lexend), system-ui, sans-serif",
+              }}
             >
               Navigate
             </motion.h3>
@@ -153,7 +163,9 @@ export function Footer() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
               className="text-[#FFD700] font-black italic uppercase text-lg mb-6 tracking-wider"
-              style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
+              style={{
+                fontFamily: "var(--font-lexend), system-ui, sans-serif",
+              }}
             >
               Connect
             </motion.h3>
@@ -191,7 +203,9 @@ export function Footer() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
               className="text-[#FFD700] font-black italic uppercase text-lg mb-6 tracking-wider"
-              style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
+              style={{
+                fontFamily: "var(--font-lexend), system-ui, sans-serif",
+              }}
             >
               Contact / Collab
             </motion.h3>
@@ -219,7 +233,9 @@ export function Footer() {
                 boxShadow: "4px 4px 0px #000",
               }}
             >
-              <span style={{ transform: "skewX(12deg)", display: "inline-block" }}>
+              <span
+                style={{ transform: "skewX(12deg)", display: "inline-block" }}
+              >
                 <Mail className="w-4 h-4 inline mr-1" />
                 Contact / Collab
               </span>
@@ -253,7 +269,9 @@ export function Footer() {
             viewport={{ once: true }}
             className="flex items-center gap-2"
           >
-            <span className="text-[#E0E0E0]/60 text-sm font-mono">Site Built by</span>
+            <span className="text-[#E0E0E0]/60 text-sm font-mono">
+              Site Built by
+            </span>
             <a
               href="https://www.bearcavemarketing.com/"
               target="_blank"

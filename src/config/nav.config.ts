@@ -1,5 +1,13 @@
 import type { LucideIcon } from "lucide-react";
-import { Disc3, Download, Headphones, Lock, PanelsTopLeft, Sparkles, Waves } from "lucide-react";
+import {
+  Disc3,
+  Download,
+  Headphones,
+  Lock,
+  PanelsTopLeft,
+  Sparkles,
+  Waves,
+} from "lucide-react";
 
 export type NavBadge = {
   text: string;
@@ -70,6 +78,8 @@ const baseNavItems: NavItem[] = [
   },
 ];
 
-export const primaryNavItems = baseNavItems.filter((item) => item.enabled !== false);
+export const primaryNavItems = baseNavItems.filter(
+  (item) => item.enabled !== false,
+);
 
 export const quickNavItems = primaryNavItems.slice(0, 3);

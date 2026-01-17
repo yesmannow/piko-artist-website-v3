@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAudio } from "@/context/AudioContext";
-import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
+import {
+  getSharedAudioContext,
+  getOrCreateMediaSourceFor,
+} from "@/hooks/useAudioAnalyser";
 
 interface EnhancedAudioVisualizerProps {
   height?: number;
@@ -12,7 +15,9 @@ interface EnhancedAudioVisualizerProps {
  * EnhancedAudioVisualizer - Real-time frequency bars that dance to the beat
  * Uses Web Audio API AnalyserNode for frequency data
  */
-export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizerProps) {
+export function EnhancedAudioVisualizer({
+  height = 40,
+}: EnhancedAudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
@@ -26,12 +31,13 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
   useEffect(() => {
     if (currentTrack) {
       // Color palette based on vibe
-      const vibeColors: Record<string, { primary: string; secondary: string }> = {
-        hype: { primary: "#FFD700", secondary: "#FF6600" },
-        chill: { primary: "#00d9ff", secondary: "#00ff99" },
-        storytelling: { primary: "#ff0099", secondary: "#ff6600" },
-        classic: { primary: "#E0E0E0", secondary: "#FFD700" },
-      };
+      const vibeColors: Record<string, { primary: string; secondary: string }> =
+        {
+          hype: { primary: "#FFD700", secondary: "#FF6600" },
+          chill: { primary: "#00d9ff", secondary: "#00ff99" },
+          storytelling: { primary: "#ff0099", secondary: "#ff6600" },
+          classic: { primary: "#E0E0E0", secondary: "#FFD700" },
+        };
       setColors(vibeColors[currentTrack.vibe] || vibeColors.hype);
     }
   }, [currentTrack]);
@@ -75,28 +81,37 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
       }
 
       const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(new ArrayBuffer(bufferLength)) as Uint8Array<ArrayBuffer>;
+      const dataArray = new Uint8Array(
+        new ArrayBuffer(bufferLength),
+      ) as Uint8Array<ArrayBuffer>;
       analyserRef.current.getByteFrequencyData(dataArray);
 
       // Clear canvas
       ctx.fillStyle = "rgba(10, 10, 10, 0.1)";
-      ctx.fillRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+      ctx.fillRect(
+        0,
+        0,
+        canvas.width / window.devicePixelRatio,
+        canvas.height / window.devicePixelRatio,
+      );
 
       // Draw frequency bars
       const barCount = 32; // Show 32 bars
-      const barWidth = (canvas.width / window.devicePixelRatio) / barCount;
+      const barWidth = canvas.width / window.devicePixelRatio / barCount;
       const barGap = barWidth * 0.1;
 
       for (let i = 0; i < barCount; i++) {
         const dataIndex = Math.floor((i / barCount) * bufferLength);
-        const barHeight = (dataArray[dataIndex] / 255) * (canvas.height / window.devicePixelRatio);
+        const barHeight =
+          (dataArray[dataIndex] / 255) *
+          (canvas.height / window.devicePixelRatio);
 
         // Gradient based on frequency range
         const gradient = ctx.createLinearGradient(
           i * barWidth,
           0,
           i * barWidth,
-          canvas.height / window.devicePixelRatio
+          canvas.height / window.devicePixelRatio,
         );
 
         // Low frequencies (left) = primary color, High frequencies (right) = secondary color
@@ -118,9 +133,9 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
         ctx.fillStyle = gradient;
         ctx.fillRect(
           i * barWidth + barGap,
-          (canvas.height / window.devicePixelRatio) - barHeight,
+          canvas.height / window.devicePixelRatio - barHeight,
           barWidth - barGap * 2,
-          barHeight
+          barHeight,
         );
 
         // Add glow effect for high bars
@@ -129,9 +144,9 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
           ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
           ctx.fillRect(
             i * barWidth + barGap,
-            (canvas.height / window.devicePixelRatio) - barHeight,
+            canvas.height / window.devicePixelRatio - barHeight,
             barWidth - barGap * 2,
-            barHeight
+            barHeight,
           );
           ctx.shadowBlur = 0;
         }
@@ -147,7 +162,9 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      try { analyser.disconnect(); } catch {}
+      try {
+        analyser.disconnect();
+      } catch {}
       // Do not disconnect shared media source or close shared context
     };
   }, [audioRef, isPlaying, colors, height]);
@@ -164,4 +181,3 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
     />
   );
 }
-

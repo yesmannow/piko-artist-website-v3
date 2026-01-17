@@ -113,10 +113,16 @@ export function MicInput({ audioContext, masterGainNode }: MicInputProps) {
     } catch (err) {
       cleanup();
       if (err instanceof Error) {
-        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        if (
+          err.name === "NotAllowedError" ||
+          err.name === "PermissionDeniedError"
+        ) {
           setMicState("permission-denied");
           setError("Microphone permission denied");
-        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        } else if (
+          err.name === "NotFoundError" ||
+          err.name === "DevicesNotFoundError"
+        ) {
           setMicState("error");
           setError("No microphone found");
         } else {
@@ -211,12 +217,14 @@ export function MicInput({ audioContext, masterGainNode }: MicInputProps) {
                     isPeaking
                       ? "bg-red-500"
                       : levelPercentage > 70
-                      ? "bg-yellow-500"
-                      : "bg-green-500"
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
                   }`}
                   style={{
                     width: `${levelPercentage}%`,
-                    boxShadow: isPeaking ? "0 0 10px rgba(239, 68, 68, 0.8)" : "none",
+                    boxShadow: isPeaking
+                      ? "0 0 10px rgba(239, 68, 68, 0.8)"
+                      : "none",
                   }}
                 />
                 {/* Peak indicator */}
@@ -241,4 +249,3 @@ export function MicInput({ audioContext, masterGainNode }: MicInputProps) {
     </div>
   );
 }
-

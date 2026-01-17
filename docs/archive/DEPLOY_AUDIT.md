@@ -20,11 +20,13 @@
 **Root Cause**: Environment variables `__NEXT_PRIVATE_STANDALONE_CONFIG` and `NEXT_DEPLOYMENT_ID` were interfering with Next.js font generation and PostCSS processing.
 
 **Solution**:
+
 - Created `scripts/build.js` that unsets problematic environment variables before running the build
 - Updated `package.json` build script to use the wrapper script
 - Added `postcss.config.mjs` with proper ESM syntax
 
 **Files Changed**:
+
 - `package.json` - Updated build script
 - `scripts/build.js` - New file to handle env var cleanup
 - `postcss.config.mjs` - Created with proper ESM export
@@ -36,6 +38,7 @@
 **Solution**: Added `"baseUrl": "."` to `tsconfig.json` compilerOptions.
 
 **Files Changed**:
+
 - `tsconfig.json` - Added baseUrl
 
 ### 3. TypeScript Type Error
@@ -45,40 +48,48 @@
 **Solution**: Updated hook signature to accept nullable refs: `RefObject<HTMLElement | null>`.
 
 **Files Changed**:
+
 - `src/hooks/useFocusTrap.ts` - Updated type signature
 
 ## Vercel-Safe Checklist
 
 ✅ **Next.js & ESLint Pinning**
+
 - `next`: `15.5.9` (exact, no caret)
 - `eslint-config-next`: `15.5.9` (exact, no caret)
 
 ✅ **Build-Time Dependencies**
+
 - `tailwindcss`: In `dependencies` (not devDependencies)
 - `postcss`: In `dependencies` (not devDependencies)
 - `autoprefixer`: In `dependencies` (not devDependencies)
 - `tailwindcss-animate`: In `dependencies` (not devDependencies)
 
 ✅ **Lockfile**
+
 - `package-lock.json` present in repo root
 - Only one lockfile (no yarn.lock or pnpm-lock.yaml)
 - Lockfile is authoritative for npm installs
 
 ✅ **Next.js Configuration**
+
 - `next.config.mjs` uses ESM syntax
 - `outputFileTracingRoot` set to project root using `__dirname`
 - Webpack alias `@` matches TypeScript path alias
 
 ✅ **TypeScript Configuration**
+
 - `baseUrl`: `"."` (project root)
 - `paths`: `{ "@/*": ["./src/*"] }`
 - Matches webpack alias in `next.config.mjs`
 
 ✅ **PostCSS Configuration**
+
 - `postcss.config.mjs` uses ESM syntax
 - Plugins properly exported
 
 ✅ **Build Verification**
+
 - `npm run build` - ✅ PASSES
 - `npm run lint` - ✅ PASSES (warnings only, no errors)
 - `npx tsc --noEmit` - ✅ PASSES
@@ -97,6 +108,7 @@ This ensures a clean build environment on both local and Vercel deployments.
 ## ESLint Warnings (Non-Blocking)
 
 The following warnings exist but do not block deployment:
+
 - `react-hooks/exhaustive-deps` warnings in:
   - `src/app/videos/page.tsx`
   - `src/components/DJInterface.tsx`
@@ -121,4 +133,3 @@ npx tsc --noEmit
 - `tailwind.config.ts` uses ESM export syntax
 - All path aliases are consistent between TypeScript and Webpack
 - Build script works on both Windows (local) and Linux (Vercel)
-

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -15,7 +15,7 @@ interface State {
 
 /**
  * PHASE 10: Studio Error Boundary
- * 
+ *
  * Catches errors in the Studio V2 application and displays a friendly error screen.
  * Handles crashes from:
  * - AudioEngine failures
@@ -44,8 +44,8 @@ export class StudioErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error details for debugging
-    console.error('🚨 Studio Error Boundary caught an error:', error);
-    console.error('Error Info:', errorInfo);
+    console.error("🚨 Studio Error Boundary caught an error:", error);
+    console.error("Error Info:", errorInfo);
 
     // Update state with error details
     this.setState({
@@ -54,7 +54,7 @@ export class StudioErrorBoundary extends Component<Props, State> {
     });
 
     // Send to error tracking service (e.g., Sentry) in production
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
       // TODO: Send to error tracking service
       // Example: Sentry.captureException(error, { contexts: { react: errorInfo } });
     }
@@ -95,12 +95,13 @@ export class StudioErrorBoundary extends Component<Props, State> {
                   What Happened
                 </h2>
                 <p className="text-white text-sm">
-                  The audio engine or graphics system encountered an unexpected error and needs to be restarted.
+                  The audio engine or graphics system encountered an unexpected
+                  error and needs to be restarted.
                 </p>
               </div>
 
               {/* Error Details (Development Only) */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {process.env.NODE_ENV === "development" && this.state.error && (
                 <div>
                   <h2 className="text-sm font-barlow uppercase tracking-wider text-gray-400 mb-2">
                     Error Details (Dev Mode)
@@ -110,7 +111,7 @@ export class StudioErrorBoundary extends Component<Props, State> {
                       {this.state.error.toString()}
                       {this.state.errorInfo && (
                         <>
-                          {'\n\n'}
+                          {"\n\n"}
                           {this.state.errorInfo.componentStack}
                         </>
                       )}
@@ -153,7 +154,8 @@ export class StudioErrorBoundary extends Component<Props, State> {
               {/* Support Info */}
               <div className="pt-4 border-t border-gray-800">
                 <p className="text-xs text-gray-600 text-center">
-                  If this error persists, try clearing your browser cache or using a different browser.
+                  If this error persists, try clearing your browser cache or
+                  using a different browser.
                   <br />
                   Recommended: Chrome/Edge 90+ or Safari 14+
                 </p>

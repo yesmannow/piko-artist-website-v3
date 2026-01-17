@@ -18,7 +18,13 @@ useGLTF.preload("/3d/turntable-2610.glb");
  * Loads the turntable GLB model and applies HolographicMaterial
  * to the platter for visual consistency with Studio page.
  */
-function TurntableModel({ mousePosition, audioLevel = 0 }: { mousePosition: { x: number; y: number }; audioLevel?: number }) {
+function TurntableModel({
+  mousePosition,
+  audioLevel = 0,
+}: {
+  mousePosition: { x: number; y: number };
+  audioLevel?: number;
+}) {
   const { scene } = useGLTF("/3d/turntable-2610.glb");
   const groupRef = useRef<THREE.Group>(null);
   const platterRef = useRef<THREE.Mesh | null>(null);
@@ -45,7 +51,8 @@ function TurntableModel({ mousePosition, audioLevel = 0 }: { mousePosition: { x:
           child.name.toLowerCase().includes("platter") ||
           child.name.toLowerCase().includes("disc") ||
           child.name.toLowerCase().includes("vinyl") ||
-          (child.position.y > 0.5 && child.geometry.type === "CylinderGeometry");
+          (child.position.y > 0.5 &&
+            child.geometry.type === "CylinderGeometry");
 
         if (isPlatter) {
           platterRef.current = child;
@@ -128,16 +135,36 @@ function TurntableModel({ mousePosition, audioLevel = 0 }: { mousePosition: { x:
       // Mouse parallax tilt (subtle)
       const tiltX = mousePosition.y * 0.1; // Tilt based on vertical mouse position
       const tiltZ = mousePosition.x * 0.1; // Tilt based on horizontal mouse position
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, tiltX, 0.05);
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, tiltZ, 0.05);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        tiltX,
+        0.05,
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(
+        groupRef.current.rotation.z,
+        tiltZ,
+        0.05,
+      );
 
       // Audio bounce: Scale from 1.0 to 1.05 based on audioLevel
       const baseScale = 2.0;
-      const bounceScale = 1.0 + (audioLevel * 0.05); // 0-5% scale increase
+      const bounceScale = 1.0 + audioLevel * 0.05; // 0-5% scale increase
       const targetScale = baseScale * bounceScale;
-      groupRef.current.scale.x = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.1);
-      groupRef.current.scale.y = THREE.MathUtils.lerp(groupRef.current.scale.y, targetScale, 0.1);
-      groupRef.current.scale.z = THREE.MathUtils.lerp(groupRef.current.scale.z, targetScale, 0.1);
+      groupRef.current.scale.x = THREE.MathUtils.lerp(
+        groupRef.current.scale.x,
+        targetScale,
+        0.1,
+      );
+      groupRef.current.scale.y = THREE.MathUtils.lerp(
+        groupRef.current.scale.y,
+        targetScale,
+        0.1,
+      );
+      groupRef.current.scale.z = THREE.MathUtils.lerp(
+        groupRef.current.scale.z,
+        targetScale,
+        0.1,
+      );
     }
 
     // Update holographic material time and audio reactivity
@@ -146,7 +173,7 @@ function TurntableModel({ mousePosition, audioLevel = 0 }: { mousePosition: { x:
       materialRef.current.uAudio = THREE.MathUtils.lerp(
         materialRef.current.uAudio,
         audioLevel,
-        0.1
+        0.1,
       ); // Smooth audio reactivity
     }
   });
@@ -170,7 +197,9 @@ function StudioSkeleton() {
       <div className="relative">
         <div className="w-32 h-32 border-4 border-brushed-gold/30 border-t-brushed-gold rounded-full animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-brushed-gold/60 font-sans text-xs">LOADING...</span>
+          <span className="text-brushed-gold/60 font-sans text-xs">
+            LOADING...
+          </span>
         </div>
       </div>
     </div>
@@ -207,7 +236,10 @@ export function StudioMixerPreview() {
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || window.matchMedia("(orientation: portrait)").matches);
+      setIsMobile(
+        window.innerWidth < 768 ||
+          window.matchMedia("(orientation: portrait)").matches,
+      );
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -266,7 +298,9 @@ export function StudioMixerPreview() {
               viewport={{ once: true }}
               className="text-base md:text-lg text-foreground/80 leading-relaxed max-w-lg"
             >
-              The industry&apos;s most powerful remix suite. Isolate stems, command the mix, and reinvent every beat with professional-grade AI deconstruction.
+              The industry&apos;s most powerful remix suite. Isolate stems,
+              command the mix, and reinvent every beat with professional-grade
+              AI deconstruction.
             </motion.p>
 
             {/* CTA Button */}
@@ -280,9 +314,11 @@ export function StudioMixerPreview() {
                 <motion.button
                   className="relative px-8 py-4 md:px-12 md:py-6 text-black font-sans font-bold text-lg md:text-xl uppercase tracking-wider transform -rotate-1 hover:rotate-0 transition-transform shadow-hard border-2 border-black min-h-[60px] w-full md:w-auto overflow-hidden"
                   style={{
-                    background: "linear-gradient(135deg, #D4AF37 0%, #F4D03F 50%, #D4AF37 100%)",
+                    background:
+                      "linear-gradient(135deg, #D4AF37 0%, #F4D03F 50%, #D4AF37 100%)",
                     backgroundSize: "200% 100%",
-                    boxShadow: "0 0 30px rgba(212, 175, 55, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
+                    boxShadow:
+                      "0 0 30px rgba(212, 175, 55, 0.5), 6px 6px 0px 0px rgba(0,0,0,1)",
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
@@ -326,23 +362,33 @@ export function StudioMixerPreview() {
                 camera={{ position: [0, 2, 8], fov: 50 }}
                 className="w-full h-full"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  pointerEvents: 'auto' // Only canvas has pointer events
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  pointerEvents: "auto", // Only canvas has pointer events
                 }}
               >
                 {/* Lighting */}
                 <ambientLight intensity={0.6} />
                 <pointLight position={[10, 10, 10]} intensity={1.2} />
-                <pointLight position={[-10, -10, -10]} intensity={0.6} color="#00ffff" />
+                <pointLight
+                  position={[-10, -10, -10]}
+                  intensity={0.6}
+                  color="#00ffff"
+                />
 
                 {/* Simplified scene on mobile */}
                 {!isMobile ? (
-                  <TurntableModel mousePosition={mousePosition} audioLevel={audioLevel} />
+                  <TurntableModel
+                    mousePosition={mousePosition}
+                    audioLevel={audioLevel}
+                  />
                 ) : (
                   // Mobile: Simplified version (no parallax, just rotation)
-                  <TurntableModel mousePosition={{ x: 0, y: 0 }} audioLevel={audioLevel} />
+                  <TurntableModel
+                    mousePosition={{ x: 0, y: 0 }}
+                    audioLevel={audioLevel}
+                  />
                 )}
               </Canvas>
             </Suspense>
@@ -352,4 +398,3 @@ export function StudioMixerPreview() {
     </section>
   );
 }
-

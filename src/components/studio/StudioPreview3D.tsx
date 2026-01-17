@@ -2,7 +2,12 @@
 
 import { Suspense, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useGLTF, Environment, PerspectiveCamera } from "@react-three/drei";
+import {
+  OrbitControls,
+  useGLTF,
+  Environment,
+  PerspectiveCamera,
+} from "@react-three/drei";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import * as THREE from "three";
@@ -10,13 +15,14 @@ import * as THREE from "three";
 function TurntableModel({ isHovered }: { isHovered: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF("/3d/turntable-2610.glb");
-  
+
   // Auto-rotate the turntable
   useFrame((state) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += isHovered ? 0.01 : 0.005;
       // Subtle floating animation
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+      groupRef.current.position.y =
+        Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
     }
   });
 
@@ -47,14 +53,14 @@ export function StudioPreview3D({ isHovered }: { isHovered: boolean }) {
           shadows
           dpr={[1, 2]}
           onCreated={() => setIs3DReady(true)}
-          gl={{ 
+          gl={{
             antialias: true,
             alpha: true,
-            powerPreference: "high-performance"
+            powerPreference: "high-performance",
           }}
         >
           <PerspectiveCamera makeDefault position={[0, 1.5, 8]} fov={50} />
-          
+
           {/* Lighting */}
           <ambientLight intensity={0.4} />
           <spotLight

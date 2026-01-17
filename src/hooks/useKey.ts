@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useCallback } from 'react';
-import { getKeyService, type KeyAnalysisResult } from '@/engine/rt/analysis/KeyService';
+import { useState, useCallback } from "react";
+import {
+  getKeyService,
+  type KeyAnalysisResult,
+} from "@/engine/rt/analysis/KeyService";
 
 /**
  * useKey - React hook for key detection
@@ -14,7 +17,10 @@ export function useKey() {
   const [error, setError] = useState<string | null>(null);
 
   const analyze = useCallback(
-    async (audioBuffer: AudioBuffer, cacheKey?: string): Promise<KeyAnalysisResult> => {
+    async (
+      audioBuffer: AudioBuffer,
+      cacheKey?: string,
+    ): Promise<KeyAnalysisResult> => {
       setIsAnalyzing(true);
       setError(null);
 
@@ -22,7 +28,7 @@ export function useKey() {
         const keyService = getKeyService();
 
         // Ensure service is initialized
-        if (keyService.state === 'uninitialized') {
+        if (keyService.state === "uninitialized") {
           await keyService.initialize();
         }
 
@@ -35,20 +41,24 @@ export function useKey() {
 
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Key analysis failed';
+        const errorMessage =
+          err instanceof Error ? err.message : "Key analysis failed";
         setError(errorMessage);
         throw err;
       } finally {
         setIsAnalyzing(false);
       }
     },
-    []
+    [],
   );
 
-  const getCached = useCallback((cacheKey: string): KeyAnalysisResult | null => {
-    const keyService = getKeyService();
-    return keyService.getCached(cacheKey);
-  }, []);
+  const getCached = useCallback(
+    (cacheKey: string): KeyAnalysisResult | null => {
+      const keyService = getKeyService();
+      return keyService.getCached(cacheKey);
+    },
+    [],
+  );
 
   return {
     isAnalyzing,

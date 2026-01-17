@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useKey } from './useKey';
-import { getKeyService } from '@/engine/rt/analysis/KeyService';
-import { areKeysCompatible, compatibleKeys } from '@/utils/camelot';
-import type { KeyAnalysisResult } from '@/engine/rt/analysis/KeyService';
+import { useState, useEffect, useMemo } from "react";
+import { useKey } from "./useKey";
+import { getKeyService } from "@/engine/rt/analysis/KeyService";
+import { areKeysCompatible, compatibleKeys } from "@/utils/camelot";
+import type { KeyAnalysisResult } from "@/engine/rt/analysis/KeyService";
 
 /**
  * useTrackKey - Hook for track key data and compatibility
@@ -13,7 +13,9 @@ import type { KeyAnalysisResult } from '@/engine/rt/analysis/KeyService';
  */
 export function useTrackKey(trackUrl: string | null, cacheKey?: string) {
   const { keyData, analyze, isAnalyzing } = useKey();
-  const [localKeyData, setLocalKeyData] = useState<KeyAnalysisResult | null>(null);
+  const [localKeyData, setLocalKeyData] = useState<KeyAnalysisResult | null>(
+    null,
+  );
 
   // Get cached key if available
   useEffect(() => {
@@ -43,7 +45,7 @@ export function useTrackKey(trackUrl: string | null, cacheKey?: string) {
  */
 export function useKeyCompatibility(
   trackKey: string | null,
-  referenceKey: string | null
+  referenceKey: string | null,
 ) {
   const isCompatible = useMemo(() => {
     if (!trackKey || !referenceKey) {

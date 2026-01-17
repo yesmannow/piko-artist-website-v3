@@ -17,9 +17,9 @@
  * - Strict TypeScript
  */
 
-import type { EQBand } from './control/ControlLayout';
+import type { EQBand } from "./control/ControlLayout";
 
-export type DeckState = 'stopped' | 'playing' | 'paused';
+export type DeckState = "stopped" | "playing" | "paused";
 
 /**
  * DeckGraph - Encapsulates audio node chain for a single deck
@@ -40,14 +40,18 @@ export class DeckGraph {
 
   // Track state
   private audioBuffer: AudioBuffer | null = null;
-  private currentState: DeckState = 'stopped';
+  private currentState: DeckState = "stopped";
   private playbackRate: number = 1.0;
 
   // Timing state (for pause/resume)
   private startTime: number = 0; // When playback started (context time)
   private pauseTime: number = 0; // Where in the track we paused (track time)
 
-  constructor(context: AudioContext, mixerNode: AudioNode, mixerInputIndex: number) {
+  constructor(
+    context: AudioContext,
+    mixerNode: AudioNode,
+    mixerInputIndex: number,
+  ) {
     this.context = context;
     this.mixerNode = mixerNode;
     this.mixerInputIndex = mixerInputIndex;
@@ -71,7 +75,9 @@ export class DeckGraph {
     // so we connect to the node itself (inputs are handled internally)
     this.gainNode.connect(this.mixerNode);
 
-    console.log(`[DeckGraph] Created deck graph for mixer input ${mixerInputIndex}`);
+    console.log(
+      `[DeckGraph] Created deck graph for mixer input ${mixerInputIndex}`,
+    );
   }
 
   /**
@@ -79,7 +85,7 @@ export class DeckGraph {
    */
   private createLowShelf(): BiquadFilterNode {
     const filter = this.context.createBiquadFilter();
-    filter.type = 'lowshelf';
+    filter.type = "lowshelf";
     filter.frequency.value = 200; // Hz
     filter.gain.value = 0; // 0dB (unity)
     return filter;
@@ -90,7 +96,7 @@ export class DeckGraph {
    */
   private createMidPeak(): BiquadFilterNode {
     const filter = this.context.createBiquadFilter();
-    filter.type = 'peaking';
+    filter.type = "peaking";
     filter.frequency.value = 1000; // Hz
     filter.Q.value = 1.0;
     filter.gain.value = 0; // 0dB (unity)
@@ -102,7 +108,7 @@ export class DeckGraph {
    */
   private createHighShelf(): BiquadFilterNode {
     const filter = this.context.createBiquadFilter();
-    filter.type = 'highshelf';
+    filter.type = "highshelf";
     filter.frequency.value = 2500; // Hz
     filter.gain.value = 0; // 0dB (unity)
     return filter;
@@ -130,10 +136,11 @@ export class DeckGraph {
       // Decode audio data
       this.audioBuffer = await this.context.decodeAudioData(arrayBuffer);
 
-      console.log(`[DeckGraph] ✓ Track loaded: ${this.audioBuffer.duration.toFixed(2)}s, ${this.audioBuffer.sampleRate}Hz`);
-
+      console.log(
+        `[DeckGraph] ✓ Track loaded: ${this.audioBuffer.duration.toFixed(2)}s, ${this.audioBuffer.sampleRate}Hz`,
+      );
     } catch (error) {
-      console.error('[DeckGraph] Failed to load track:', error);
+      console.error("[DeckGraph] Failed to load track:", error);
       throw error;
     }
   }
@@ -145,12 +152,12 @@ export class DeckGraph {
    */
   play(atContextTime?: number): void {
     if (!this.audioBuffer) {
-      console.warn('[DeckGraph] Cannot play: No track loaded');
+      console.warn("[DeckGraph] Cannot play: No track loaded");
       return;
     }
 
-    if (this.currentState === 'playing') {
-      console.warn('[DeckGraph] Already playing');
+    if (this.currentState === "playing") {
+      console.warn("[DeckGraph] Already playing");
       return;
     }
 
@@ -172,7 +179,7 @@ export class DeckGraph {
     // Calculate start time and offset
     const now = this.context.currentTime;
     const startTime = atContextTime !== undefined ? atContextTime : now;
-    const offset = this.currentState === 'paused' ? this.pauseTime : 0;
+    const offset = this.currentState === "paused" ? this.pauseTime : 0;
 
     // Start playback (sample-accurate)
     this.sourceNode.start(startTime, offset);
@@ -180,16 +187,18 @@ export class DeckGraph {
     // Update state
     this.startTime = startTime;
     this.pauseTime = offset;
-    this.currentState = 'playing';
+    this.currentState = "playing";
 
-    console.log(`[DeckGraph] Playing from ${offset.toFixed(2)}s at context time ${startTime.toFixed(3)}`);
+    console.log(
+      `[DeckGraph] Playing from ${offset.toFixed(2)}s at context time ${startTime.toFixed(3)}`,
+    );
   }
 
   /**
    * Stop playback
    */
   stop(): void {
-    if (this.currentState === 'stopped') {
+    if (this.currentState === "stopped") {
       return;
     }
 
@@ -203,23 +212,24 @@ export class DeckGraph {
       this.sourceNode = null;
     }
 
-    this.currentState = 'stopped';
+    this.currentState = "stopped";
     this.pauseTime = 0;
     this.startTime = 0;
 
-    console.log('[DeckGraph] Stopped');
+    console.log("[DeckGraph] Stopped");
   }
 
   /**
    * Pause playback
    */
   pause(): void {
-    if (this.currentState !== 'playing') {
+    if (this.currentState !== "playing") {
       return;
     }
 
     // Calculate current playback position
-    const elapsed = (this.context.currentTime - this.startTime) * this.playbackRate;
+    const elapsed =
+      (this.context.currentTime - this.startTime) * this.playbackRate;
     this.pauseTime = this.pauseTime + elapsed;
 
     // Clamp to track duration
@@ -238,7 +248,7 @@ export class DeckGraph {
       this.sourceNode = null;
     }
 
-    this.currentState = 'paused';
+    this.currentState = "paused";
 
     console.log(`[DeckGraph] Paused at ${this.pauseTime.toFixed(2)}s`);
   }
@@ -253,7 +263,7 @@ export class DeckGraph {
     this.playbackRate = clampedRate;
 
     // Update active source node if playing
-    if (this.sourceNode && this.currentState === 'playing') {
+    if (this.sourceNode && this.currentState === "playing") {
       this.sourceNode.playbackRate.value = clampedRate;
     }
   }
@@ -270,9 +280,12 @@ export class DeckGraph {
       return;
     }
 
-    const clampedTime = Math.max(0, Math.min(this.audioBuffer.duration, trackTime));
+    const clampedTime = Math.max(
+      0,
+      Math.min(this.audioBuffer.duration, trackTime),
+    );
 
-    if (this.currentState === 'playing') {
+    if (this.currentState === "playing") {
       // Stop current playback
       if (this.sourceNode) {
         try {
@@ -290,7 +303,7 @@ export class DeckGraph {
       // Restart playback from new position
       const now = this.context.currentTime;
       this.play(now + 0.01); // Small delay to ensure clean restart
-    } else if (this.currentState === 'paused') {
+    } else if (this.currentState === "paused") {
       // Just update pause position
       this.pauseTime = clampedTime;
     } else {
@@ -316,13 +329,13 @@ export class DeckGraph {
     const clampedGain = Math.max(-12, Math.min(12, gainDb));
 
     switch (band) {
-      case 'low':
+      case "low":
         this.eqLow.gain.value = clampedGain;
         break;
-      case 'mid':
+      case "mid":
         this.eqMid.gain.value = clampedGain;
         break;
-      case 'high':
+      case "high":
         this.eqHigh.gain.value = clampedGain;
         break;
     }
@@ -349,16 +362,17 @@ export class DeckGraph {
    * Get current playback position in seconds
    */
   get currentTime(): number {
-    if (this.currentState === 'stopped') {
+    if (this.currentState === "stopped") {
       return 0;
     }
 
-    if (this.currentState === 'paused') {
+    if (this.currentState === "paused") {
       return this.pauseTime;
     }
 
     // Playing: calculate position
-    const elapsed = (this.context.currentTime - this.startTime) * this.playbackRate;
+    const elapsed =
+      (this.context.currentTime - this.startTime) * this.playbackRate;
     return this.pauseTime + elapsed;
   }
 
@@ -388,6 +402,6 @@ export class DeckGraph {
     this.eqMid.disconnect();
     this.eqLow.disconnect();
 
-    console.log('[DeckGraph] Disposed');
+    console.log("[DeckGraph] Disposed");
   }
 }

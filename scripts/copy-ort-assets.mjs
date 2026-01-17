@@ -9,36 +9,41 @@
  * Idempotent: safe to run multiple times
  */
 
-import { readdir, copyFile, mkdir, access } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdir, copyFile, mkdir, access } from "fs/promises";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT_DIR = join(__dirname, '..');
+const ROOT_DIR = join(__dirname, "..");
 
-const ORT_SOURCE_DIR = join(ROOT_DIR, 'node_modules', 'onnxruntime-web', 'dist');
-const ORT_TARGET_DIR = join(ROOT_DIR, 'public', 'ort');
+const ORT_SOURCE_DIR = join(
+  ROOT_DIR,
+  "node_modules",
+  "onnxruntime-web",
+  "dist",
+);
+const ORT_TARGET_DIR = join(ROOT_DIR, "public", "ort");
 
 // Required ORT WASM files (must exist in source)
 // ONNX Runtime Web loads these dynamically based on capabilities
 // Note: Newer versions may only include threaded variants
 const REQUIRED_FILES = [
-  'ort-wasm-simd-threaded.wasm',  // Multi-threaded SIMD (preferred, always present)
+  "ort-wasm-simd-threaded.wasm", // Multi-threaded SIMD (preferred, always present)
 ];
 
 // Fallback files (may not exist in newer versions)
 const FALLBACK_FILES = [
-  'ort-wasm-simd.wasm',            // SIMD fallback (if available)
-  'ort-wasm.wasm',                 // Basic fallback (if available)
+  "ort-wasm-simd.wasm", // SIMD fallback (if available)
+  "ort-wasm.wasm", // Basic fallback (if available)
 ];
 
 // Optional files (nice to have but not required)
 const OPTIONAL_FILES = [
-  'ort-wasm-simd-threaded.jsep.wasm',
-  'ort-wasm-simd-threaded.asyncify.wasm',
-  'ort-wasm-simd.jsep.wasm',
-  'ort-wasm.jsep.wasm',
+  "ort-wasm-simd-threaded.jsep.wasm",
+  "ort-wasm-simd-threaded.asyncify.wasm",
+  "ort-wasm-simd.jsep.wasm",
+  "ort-wasm.jsep.wasm",
 ];
 
 /**
@@ -61,7 +66,10 @@ async function copyAsset(sourceFile, targetFile) {
     await copyFile(sourceFile, targetFile);
     return true;
   } catch (error) {
-    console.error(`[copy-ort-assets] ❌ Failed to copy ${sourceFile}:`, error.message);
+    console.error(
+      `[copy-ort-assets] ❌ Failed to copy ${sourceFile}:`,
+      error.message,
+    );
     return false;
   }
 }
@@ -70,13 +78,13 @@ async function copyAsset(sourceFile, targetFile) {
  * Main function
  */
 async function copyOrtAssets() {
-  console.log('[copy-ort-assets] Copying ONNX Runtime Web assets...\n');
+  console.log("[copy-ort-assets] Copying ONNX Runtime Web assets...\n");
 
   // Check if source directory exists
   if (!(await fileExists(ORT_SOURCE_DIR))) {
     console.error(
       `[copy-ort-assets] ❌ Source directory not found: ${ORT_SOURCE_DIR}\n` +
-      `  Please run: npm install onnxruntime-web`
+        `  Please run: npm install onnxruntime-web`,
     );
     process.exit(1);
   }
@@ -84,10 +92,15 @@ async function copyOrtAssets() {
   // Create target directory if it doesn't exist
   try {
     await mkdir(ORT_TARGET_DIR, { recursive: true });
-    console.log(`[copy-ort-assets] Created target directory: ${ORT_TARGET_DIR}`);
+    console.log(
+      `[copy-ort-assets] Created target directory: ${ORT_TARGET_DIR}`,
+    );
   } catch (error) {
-    if (error.code !== 'EEXIST') {
-      console.error(`[copy-ort-assets] ❌ Failed to create target directory:`, error.message);
+    if (error.code !== "EEXIST") {
+      console.error(
+        `[copy-ort-assets] ❌ Failed to create target directory:`,
+        error.message,
+      );
       process.exit(1);
     }
   }
@@ -145,14 +158,16 @@ async function copyOrtAssets() {
 
   // Summary
   console.log(`\n[copy-ort-assets] Summary:`);
-  console.log(`  Required files: ${requiredCopied}/${REQUIRED_FILES.length} copied`);
+  console.log(
+    `  Required files: ${requiredCopied}/${REQUIRED_FILES.length} copied`,
+  );
 
   if (requiredMissing.length > 0) {
     console.error(`\n[copy-ort-assets] ❌ Missing required files:`);
     requiredMissing.forEach((file) => console.error(`  - ${file}`));
     console.error(
       `\n[copy-ort-assets] Please ensure onnxruntime-web is installed and up to date:\n` +
-      `  npm install onnxruntime-web@latest`
+        `  npm install onnxruntime-web@latest`,
     );
     process.exit(1);
   }
@@ -170,15 +185,18 @@ async function copyOrtAssets() {
 }
 
 // Run if called directly
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('copy-ort-assets.mjs')) {
+if (
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith("copy-ort-assets.mjs")
+) {
   copyOrtAssets().catch((error) => {
-    console.error('[copy-ort-assets] ❌ Fatal error:', error);
+    console.error("[copy-ort-assets] ❌ Fatal error:", error);
     process.exit(1);
   });
 } else {
   // Always run if this is the main module
   copyOrtAssets().catch((error) => {
-    console.error('[copy-ort-assets] ❌ Fatal error:', error);
+    console.error("[copy-ort-assets] ❌ Fatal error:", error);
     process.exit(1);
   });
 }

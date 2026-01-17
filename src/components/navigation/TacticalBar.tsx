@@ -69,9 +69,7 @@ export function TacticalBar() {
                 {/* Label */}
                 <span
                   className={`text-[8px] font-mono uppercase tracking-wider transition-colors ${
-                    isActive
-                      ? "text-[#FFD700] font-bold"
-                      : "text-[#E0E0E0]/50"
+                    isActive ? "text-[#FFD700] font-bold" : "text-[#E0E0E0]/50"
                   }`}
                 >
                   {item.label}
@@ -96,4 +94,3 @@ export function TacticalBar() {
     </nav>
   );
 }
-

@@ -1,14 +1,14 @@
 "use client";
 
-import { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { useRef, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
 /**
  * AudioReactiveParticles - WebGL particle system driven by audio analysis
- * 
+ *
  * Phase 4: Advanced Features - 3D Visualizer (WebGL)
- * 
+ *
  * Creates a GPU-accelerated particle system that responds to music:
  * - Bass frequencies displace particles vertically
  * - Mid frequencies affect particle size
@@ -27,8 +27,10 @@ export function AudioReactiveParticles({
 }: AudioReactiveParticlesProps) {
   const meshRef = useRef<THREE.Points>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const frequencyDataRef = useRef<Uint8Array & { buffer: ArrayBuffer } | null>(null);
-  
+  const frequencyDataRef = useRef<
+    (Uint8Array & { buffer: ArrayBuffer }) | null
+  >(null);
+
   // Initialize frequency data buffer
   useEffect(() => {
     if (analyser) {
@@ -37,69 +39,76 @@ export function AudioReactiveParticles({
       frequencyDataRef.current = buffer as Uint8Array & { buffer: ArrayBuffer };
     }
   }, [analyser]);
-  
+
   // Create particle geometry
   useEffect(() => {
     if (!meshRef.current) return;
-    
+
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
-    
+
     // Initialize particle positions in a sphere
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
       const radius = 5 + Math.random() * 5;
-      
+
       positions[i * 3 + 0] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = radius * Math.cos(phi);
-      
+
       // Random colors
       colors[i * 3 + 0] = Math.random();
       colors[i * 3 + 1] = Math.random();
       colors[i * 3 + 2] = Math.random();
-      
+
       // Random sizes
       sizes[i] = Math.random() * 2 + 1;
     }
-    
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    
+
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
     meshRef.current.geometry = geometry;
   }, [count]);
-  
+
   // Update shader uniforms based on audio data
   useFrame((state) => {
     if (!materialRef.current || !analyser || !frequencyDataRef.current) return;
-    
+
     // Get frequency data
     // @ts-expect-error - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
     analyser.getByteFrequencyData(frequencyDataRef.current);
-    
+
     const data = frequencyDataRef.current;
     const binCount = data.length;
-    
+
     // Calculate frequency bands (normalized 0-1)
     const bassEnd = Math.floor(binCount * 0.1); // 0-10% = bass
-    const midEnd = Math.floor(binCount * 0.3);  // 10-30% = mid
+    const midEnd = Math.floor(binCount * 0.3); // 10-30% = mid
     const highEnd = Math.floor(binCount * 0.6); // 30-60% = high
-    
-    const bass = data.slice(0, bassEnd).reduce((a, b) => a + b, 0) / bassEnd / 255;
-    const mid = data.slice(bassEnd, midEnd).reduce((a, b) => a + b, 0) / (midEnd - bassEnd) / 255;
-    const high = data.slice(midEnd, highEnd).reduce((a, b) => a + b, 0) / (highEnd - midEnd) / 255;
-    
+
+    const bass =
+      data.slice(0, bassEnd).reduce((a, b) => a + b, 0) / bassEnd / 255;
+    const mid =
+      data.slice(bassEnd, midEnd).reduce((a, b) => a + b, 0) /
+      (midEnd - bassEnd) /
+      255;
+    const high =
+      data.slice(midEnd, highEnd).reduce((a, b) => a + b, 0) /
+      (highEnd - midEnd) /
+      255;
+
     // Update shader uniforms
     materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
     materialRef.current.uniforms.uBass.value = bass;
     materialRef.current.uniforms.uMid.value = mid;
     materialRef.current.uniforms.uHigh.value = high;
   });
-  
+
   return (
     <points ref={meshRef}>
       <shaderMaterial
@@ -220,7 +229,7 @@ const fragmentShader = `
 
 /**
  * AudioReactivePlane - Plane mesh with displaced vertices
- * 
+ *
  * Alternative visualizer style using a deforming plane
  */
 
@@ -235,8 +244,10 @@ export function AudioReactivePlane({
 }: AudioReactivePlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const frequencyDataRef = useRef<Uint8Array & { buffer: ArrayBuffer } | null>(null);
-  
+  const frequencyDataRef = useRef<
+    (Uint8Array & { buffer: ArrayBuffer }) | null
+  >(null);
+
   useEffect(() => {
     if (analyser) {
       const buffer = new Uint8Array(analyser.frequencyBinCount);
@@ -244,29 +255,36 @@ export function AudioReactivePlane({
       frequencyDataRef.current = buffer as Uint8Array & { buffer: ArrayBuffer };
     }
   }, [analyser]);
-  
+
   useFrame((state) => {
     if (!materialRef.current || !analyser || !frequencyDataRef.current) return;
-    
+
     // @ts-expect-error - Runtime guarantees new Uint8Array(length) creates ArrayBuffer, not ArrayBufferLike
     analyser.getByteFrequencyData(frequencyDataRef.current);
     const data = frequencyDataRef.current;
     const binCount = data.length;
-    
+
     const bassEnd = Math.floor(binCount * 0.1);
     const midEnd = Math.floor(binCount * 0.3);
     const highEnd = Math.floor(binCount * 0.6);
-    
-    const bass = data.slice(0, bassEnd).reduce((a, b) => a + b, 0) / bassEnd / 255;
-    const mid = data.slice(bassEnd, midEnd).reduce((a, b) => a + b, 0) / (midEnd - bassEnd) / 255;
-    const high = data.slice(midEnd, highEnd).reduce((a, b) => a + b, 0) / (highEnd - midEnd) / 255;
-    
+
+    const bass =
+      data.slice(0, bassEnd).reduce((a, b) => a + b, 0) / bassEnd / 255;
+    const mid =
+      data.slice(bassEnd, midEnd).reduce((a, b) => a + b, 0) /
+      (midEnd - bassEnd) /
+      255;
+    const high =
+      data.slice(midEnd, highEnd).reduce((a, b) => a + b, 0) /
+      (highEnd - midEnd) /
+      255;
+
     materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
     materialRef.current.uniforms.uBass.value = bass;
     materialRef.current.uniforms.uMid.value = mid;
     materialRef.current.uniforms.uHigh.value = high;
   });
-  
+
   return (
     <mesh ref={meshRef} rotation={[-Math.PI / 4, 0, 0]}>
       <planeGeometry args={[20, 20, segments, segments]} />

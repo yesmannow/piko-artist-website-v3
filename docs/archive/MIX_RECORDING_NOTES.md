@@ -23,6 +23,7 @@ audioContext.destination
 ```
 
 **Master Node**: `masterLimiterRef.current` (DynamicsCompressorNode)
+
 - **Location**: `src/components/DJInterface.tsx:142`
 - **Type**: `DynamicsCompressorNode`
 - **Purpose**: Master limiter to prevent clipping
@@ -53,20 +54,24 @@ masterLimiterRef.current = limiter;
 **Purpose**: Encapsulates all recording logic in a reusable hook.
 
 **Inputs**:
+
 - `audioContext: AudioContext | null | undefined`
 - `masterNode: AudioNode | null | undefined` (the limiter node)
 
 **Internal Implementation**:
 
 1. **MediaStreamDestination Creation**:
+
    ```typescript
    mediaDestRef.current = audioContext.createMediaStreamDestination();
    ```
 
 2. **Connection Graph**:
+
    ```
    masterNode (limiter) → mediaDest → MediaRecorder
    ```
+
    - The master node is connected to `mediaDest` for recording
    - The master node remains connected to the destination (no interruption to playback)
 
@@ -86,11 +91,13 @@ masterLimiterRef.current = limiter;
    - `error`: string | null
 
 **Methods**:
+
 - `start()`: Starts recording, clears previous recording
 - `stop()`: Stops recording, creates blob and object URL
 - `clear()`: Revokes object URL, resets state
 
 **Cleanup**:
+
 - Stops recording if active on unmount
 - Revokes object URLs
 - Disconnects `mediaDest` from master node
@@ -108,10 +115,11 @@ masterLimiterRef.current = limiter;
    - Limiter ref stored in `masterLimiterRef`
 
 2. **Hook Initialization** (DJInterface.tsx:146-149):
+
    ```typescript
    const mixRecorder = useMixRecorder(
      audioContextRef.current,
-     masterLimiterRef.current
+     masterLimiterRef.current,
    );
    ```
 
@@ -145,19 +153,20 @@ masterLimiterRef.current = limiter;
 
 ### Browser Support
 
-| Format | Chrome | Firefox | Safari | Edge |
-|--------|--------|---------|--------|------|
-| `audio/webm;codecs=opus` | ✅ | ✅ | ❌ | ✅ |
-| `audio/webm` | ✅ | ✅ | ❌ | ✅ |
-| `audio/ogg;codecs=opus` | ✅ | ✅ | ❌ | ✅ |
-| `audio/ogg` | ✅ | ✅ | ❌ | ✅ |
-| MediaRecorder default | ✅ | ✅ | ⚠️* | ✅ |
+| Format                   | Chrome | Firefox | Safari | Edge |
+| ------------------------ | ------ | ------- | ------ | ---- |
+| `audio/webm;codecs=opus` | ✅     | ✅      | ❌     | ✅   |
+| `audio/webm`             | ✅     | ✅      | ❌     | ✅   |
+| `audio/ogg;codecs=opus`  | ✅     | ✅      | ❌     | ✅   |
+| `audio/ogg`              | ✅     | ✅      | ❌     | ✅   |
+| MediaRecorder default    | ✅     | ✅      | ⚠️\*   | ✅   |
 
-*Safari may use different default format (e.g., `audio/mp4`)
+\*Safari may use different default format (e.g., `audio/mp4`)
 
 ### Format Selection Logic
 
 The hook tries formats in order of preference:
+
 1. `audio/webm;codecs=opus` - Best quality, widely supported
 2. `audio/webm` - Good fallback
 3. `audio/ogg;codecs=opus` - Alternative codec
@@ -173,6 +182,7 @@ The hook tries formats in order of preference:
 ### Location
 
 Recording controls are in the mixer section:
+
 - **Component**: `src/components/DJMixer.tsx`
 - **Position**: Below crossfader, in center column
 
@@ -343,6 +353,7 @@ Recording controls are in the mixer section:
 ### Why Record from Limiter?
 
 The limiter is the final processing stage before the destination. Recording from the limiter output ensures:
+
 - All FX processing is included
 - Master limiter effects are captured
 - Exactly matches what the listener hears
@@ -351,6 +362,7 @@ The limiter is the final processing stage before the destination. Recording from
 ### Connection Management
 
 The hook tracks the connection between the master node and `mediaDest` using `connectionRef`. This allows:
+
 - Clean disconnection on cleanup
 - Prevention of multiple connections
 - Proper resource management
@@ -390,4 +402,3 @@ The duration is calculated client-side using `setInterval`. This provides real-t
 
 **Implementation Date**: After feature upgrade  
 **Status**: ✅ Complete and verified
-

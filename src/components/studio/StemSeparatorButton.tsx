@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Loader2 } from 'lucide-react';
-import { useStemService } from '@/hooks/useStemService';
-import type { SeparatedStems } from '@/engine/StemService';
+import { useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, X, Loader2 } from "lucide-react";
+import { useStemService } from "@/hooks/useStemService";
+import type { SeparatedStems } from "@/engine/StemService";
 
 interface StemSeparatorButtonProps {
   audioBuffer: AudioBuffer | null;
@@ -31,16 +31,10 @@ export function StemSeparatorButton({
   audioBuffer,
   onStemsReady,
   cacheKey,
-  className = '',
+  className = "",
 }: StemSeparatorButtonProps) {
-  const {
-    isInitialized,
-    isProcessing,
-    progress,
-    error,
-    separate,
-    cancel,
-  } = useStemService();
+  const { isInitialized, isProcessing, progress, error, separate, cancel } =
+    useStemService();
 
   // Handle separation
   const handleSeparate = useCallback(async () => {
@@ -56,7 +50,7 @@ export function StemSeparatorButton({
       }
     } catch (err) {
       // Error is handled by useStemService hook
-      console.error('[StemSeparatorButton] Separation error:', err);
+      console.error("[StemSeparatorButton] Separation error:", err);
     }
   }, [audioBuffer, isInitialized, cacheKey, onStemsReady, separate]);
 
@@ -77,10 +71,10 @@ export function StemSeparatorButton({
           min-h-[48px]
           ${
             isProcessing
-              ? 'border-red-500 text-red-400 hover:border-red-400'
+              ? "border-red-500 text-red-400 hover:border-red-400"
               : canSeparate
-              ? 'border-[#FFD700] text-[#FFD700] hover:border-[#FFD700]/80 hover:bg-black/90'
-              : 'border-zinc-700 text-zinc-500 cursor-not-allowed'
+                ? "border-[#FFD700] text-[#FFD700] hover:border-[#FFD700]/80 hover:bg-black/90"
+                : "border-zinc-700 text-zinc-500 cursor-not-allowed"
           }
         `}
         whileHover={canSeparate || isProcessing ? { scale: 1.02 } : {}}
@@ -104,7 +98,7 @@ export function StemSeparatorButton({
         {isProcessing && progress && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="space-y-2"
           >
@@ -114,14 +108,16 @@ export function StemSeparatorButton({
                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#FFD700] to-[#FFA500]"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress.progress}%` }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               />
             </div>
 
             {/* Progress Text */}
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-zinc-400">{progress.stage}</span>
-              <span className="text-[#FFD700]">{Math.round(progress.progress)}%</span>
+              <span className="text-[#FFD700]">
+                {Math.round(progress.progress)}%
+              </span>
             </div>
           </motion.div>
         )}

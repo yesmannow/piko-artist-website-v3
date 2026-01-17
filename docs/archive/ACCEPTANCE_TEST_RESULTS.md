@@ -5,10 +5,12 @@
 **Command:** `npm run build`
 
 **Expected:**
+
 - ✅ Build succeeds
 - ⚠️ Warns if model missing (non-blocking)
 
 **Result:**
+
 ```
 ✓ Compiled successfully in 12.8s
 ✓ Linting and checking validity of types
@@ -34,10 +36,12 @@ Route (app)                                 Size  First Load JS
 **Command:** `npm run verify:vercel`
 
 **Expected:**
+
 - ❌ Fails if model missing AND no NEXT_PUBLIC_MODEL_URL
 - ✅ Passes if ORT assets exist AND (model exists OR URL configured)
 
 **Result (without model):**
+
 ```
 [verify-stem-assets-strict] 🔍 Strict verification for deployment...
 [verify-stem-assets-strict] Checking ONNX Runtime WASM assets...
@@ -66,6 +70,7 @@ FAIL: Node 20 build verification failed
 **Command:** `npm run download:model`
 
 **Expected:**
+
 - ✅ Downloads model to `public/models/demucs_v4_quantized.onnx`
 - ✅ Shows download progress
 - ✅ Prints file size
@@ -76,11 +81,13 @@ FAIL: Node 20 build verification failed
 **Status:** ⏳ **PENDING** - Requires manual test with internet connection
 
 **To test manually:**
+
 ```bash
 npm run download:model
 ```
 
 **Expected output:**
+
 ```
 [download-model] Starting model download...
 [download-model] Source URL: https://huggingface.co/...
@@ -100,6 +107,7 @@ npm run download:model
 **After `npm run download:model`:**
 
 **Expected:**
+
 - ✅ Passes because model file exists
 
 **After setting `NEXT_PUBLIC_MODEL_URL`:**
@@ -107,6 +115,7 @@ npm run download:model
 **Command:** `$env:NEXT_PUBLIC_MODEL_URL="https://test-url.com/model.onnx"; npm run verify:stem-strict`
 
 **Expected:**
+
 - ✅ Passes because URL is configured
 
 **Status:** ⏳ **PENDING** - Requires model download or env var
@@ -115,12 +124,12 @@ npm run download:model
 
 ## Summary
 
-| Test | Status | Notes |
-|------|--------|-------|
-| `npm run build` | ✅ PASS | Builds successfully, warns if model missing |
-| `npm run verify:vercel` (no model) | ✅ PASS | Correctly fails when model missing |
-| `npm run download:model` | ⏳ PENDING | Requires internet, manual test needed |
-| `npm run verify:vercel` (with model) | ⏳ PENDING | Requires model or env var |
+| Test                                 | Status     | Notes                                       |
+| ------------------------------------ | ---------- | ------------------------------------------- |
+| `npm run build`                      | ✅ PASS    | Builds successfully, warns if model missing |
+| `npm run verify:vercel` (no model)   | ✅ PASS    | Correctly fails when model missing          |
+| `npm run download:model`             | ⏳ PENDING | Requires internet, manual test needed       |
+| `npm run verify:vercel` (with model) | ⏳ PENDING | Requires model or env var                   |
 
 ---
 

@@ -83,7 +83,11 @@ export function StudioEngineSection() {
                       "4px 4px 0px rgba(0,0,0,0.5)",
                     ]
                   : "4px 4px 0px rgba(0,0,0,0.5)",
-                transition: { duration: 2, repeat: Infinity, repeatType: "reverse" },
+                transition: {
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                },
               }}
             >
               COMMAND THE
@@ -99,7 +103,10 @@ export function StudioEngineSection() {
               viewport={{ once: true }}
               className="text-lg md:text-xl text-[#E0E0E0] leading-relaxed max-w-xl"
             >
-              Step into Piko&apos;s virtual booth. Scratch, mix, and remix with professional DJ tools. Isolate stems, drop hot cues, and create your own versions of the hottest tracks. This ain&apos;t just a player—it&apos;s a full studio experience.
+              Step into Piko&apos;s virtual booth. Scratch, mix, and remix with
+              professional DJ tools. Isolate stems, drop hot cues, and create
+              your own versions of the hottest tracks. This ain&apos;t just a
+              player—it&apos;s a full studio experience.
             </motion.p>
 
             {/* Feature Pills */}
@@ -154,13 +161,26 @@ export function StudioEngineSection() {
                   }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <span style={{ transform: "skewX(12deg)", display: "inline-block" }}>
+                  <span
+                    style={{
+                      transform: "skewX(12deg)",
+                      display: "inline-block",
+                    }}
+                  >
                     HIT THE BOOTH
                   </span>
                   <motion.span
-                    style={{ transform: "skewX(12deg)", display: "inline-block", marginLeft: "8px" }}
+                    style={{
+                      transform: "skewX(12deg)",
+                      display: "inline-block",
+                      marginLeft: "8px",
+                    }}
                     animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   >
                     →
                   </motion.span>
@@ -208,4 +228,3 @@ export function StudioEngineSection() {
     </section>
   );
 }
-

@@ -37,4 +37,3 @@ const manifest: MetadataRoute.Manifest = {
 export default function manifestFn(): MetadataRoute.Manifest {
   return manifest;
 }
-

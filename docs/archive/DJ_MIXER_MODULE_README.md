@@ -21,6 +21,7 @@ AudioBufferSourceNode → EQ Chain → GainNode → MixerWorklet → Output
 ```
 
 **Key Features:**
+
 - **AudioBufferSourceNode**: Enables instant cueing and pitch control
 - **3-Band EQ**: Low-Shelf, Peaking (Mid), High-Shelf
 - **Kill Switches**: Each EQ band can drop to -∞ dB (effectively -100 dB)
@@ -37,7 +38,7 @@ AudioBufferSourceNode → EQ Chain → GainNode → MixerWorklet → Output
 
 ```typescript
 // Adjust tempo by changing playback rate
-engine.setPlaybackRate('A', 1.1); // +10% faster
+engine.setPlaybackRate("A", 1.1); // +10% faster
 
 // Future: Pitch lock will use time-stretching
 // const stretched = await pitchLock.applyTimeStretch(audioBuffer, 1.1);
@@ -54,19 +55,21 @@ The crossfader implements multiple curve types to prevent volume dips:
 
 ```typescript
 // Constant-power formula ensures total power remains constant
-const gainA = Math.cos(position * Math.PI / 2);
-const gainB = Math.sin(position * Math.PI / 2);
+const gainA = Math.cos((position * Math.PI) / 2);
+const gainB = Math.sin((position * Math.PI) / 2);
 // At position 0.5: both = 0.707 (equal power, no dip)
 ```
 
 #### 3. Beat Detection & Sync Engine
 
 **BPM Detection:**
+
 - Spectral flux analysis for tempo detection
 - Metadata extraction fallback
 - Confidence scoring
 
 **Beat Sync:**
+
 - PLL (Phase-Locked Loop) for tempo and phase matching
 - PI controller with configurable parameters
 - Beat-boundary nudging for large phase errors
@@ -74,7 +77,7 @@ const gainB = Math.sin(position * Math.PI / 2);
 
 ```typescript
 // Enable sync: Deck B follows Deck A
-engine.setSyncEnabled('B', true, 'A', 'tempo+phase');
+engine.setSyncEnabled("B", true, "A", "tempo+phase");
 
 // PLL continuously adjusts Deck B's rate to match A's tempo and phase
 ```
@@ -82,11 +85,13 @@ engine.setSyncEnabled('B', true, 'A', 'tempo+phase');
 #### 4. Dynamic Harmonic Mixing
 
 **Key Detection:**
+
 - Musical key analysis using Essentia.js (via KeyService)
 - Camelot notation display (e.g., "8A", "5B")
 - Compatible key highlighting
 
 **Camelot Wheel Rules:**
+
 1. Same number (8A ↔ 8B)
 2. Adjacent numbers (8A ↔ 7A, 8A ↔ 9A)
 3. Cross-compatibility (8A ↔ 7B, 8A ↔ 9B)
@@ -121,7 +126,7 @@ interface DJMixerModuleProps {
   onDeckBPlaybackRateChange?: (rate: number) => void;
 
   // Sync callbacks
-  onSyncEnable?: (slaveDeck: 'A' | 'B', masterDeck: 'A' | 'B') => void;
+  onSyncEnable?: (slaveDeck: "A" | "B", masterDeck: "A" | "B") => void;
   onSyncDisable?: () => void;
 
   // Cue callbacks
@@ -146,13 +151,13 @@ interface DeckTrack {
 ### Usage Example
 
 ```tsx
-import { DJMixerModule } from '@/components/DJMixerModule';
+import { DJMixerModule } from "@/components/DJMixerModule";
 
 function MyDJApp() {
   const [deckATrack, setDeckATrack] = useState<DeckTrack>({
-    url: '/audio/track1.mp3',
-    title: 'Track 1',
-    artist: 'Artist 1',
+    url: "/audio/track1.mp3",
+    title: "Track 1",
+    artist: "Artist 1",
     audioBuffer: null, // Load separately
   });
 
@@ -160,8 +165,10 @@ function MyDJApp() {
     <DJMixerModule
       deckATrack={deckATrack}
       deckBTrack={deckBTrack}
-      onDeckAPlay={() => console.log('Deck A playing')}
-      onSyncEnable={(slave, master) => console.log(`Syncing ${slave} to ${master}`)}
+      onDeckAPlay={() => console.log("Deck A playing")}
+      onSyncEnable={(slave, master) =>
+        console.log(`Syncing ${slave} to ${master}`)
+      }
       showKeyDisplay={true}
       showBeatGrid={true}
     />
@@ -176,11 +183,12 @@ The component applies:
 ```css
 .dj-mixer-module {
   overscroll-behavior: none; /* Prevent page scroll on gesture overshoot */
-  touch-action: none;        /* Disable browser touch gestures */
+  touch-action: none; /* Disable browser touch gestures */
 }
 ```
 
 This ensures that:
+
 - Fader gestures don't trigger page scroll
 - Touch interactions are smooth and predictable
 - Mobile devices handle multi-touch properly
@@ -216,13 +224,13 @@ const engine = getStudioEngine();
 await engine.initialize();
 
 // Load tracks
-await engine.loadTrack('A', trackUrl);
+await engine.loadTrack("A", trackUrl);
 
 // Control playback
-engine.play('A');
-engine.setPlaybackRate('A', 1.05);
-engine.setEQ('A', 'high', -6); // -6 dB high cut
-engine.setGain('A', 0.8); // 80% volume
+engine.play("A");
+engine.setPlaybackRate("A", 1.05);
+engine.setEQ("A", "high", -6); // -6 dB high cut
+engine.setGain("A", 0.8); // 80% volume
 ```
 
 ### Beat Grid Analysis
@@ -246,7 +254,7 @@ The sync controller uses a PI (Proportional-Integral) algorithm:
 
 ```typescript
 // PLL parameters
-Kp = 0.1;  // Proportional gain
+Kp = 0.1; // Proportional gain
 Ki = 0.01; // Integral gain
 maxRateDelta = 0.08; // ±8% max deviation
 smoothing = 0.95; // EMA smoothing
@@ -265,7 +273,7 @@ Currently a placeholder. Future implementation will use WASM:
 
 ```typescript
 // Future: Integrate Rubber Band or Sonic library
-import { RubberBand } from 'rubberband-wasm';
+import { RubberBand } from "rubberband-wasm";
 
 const rubberband = await RubberBand.create(sampleRate);
 rubberband.setTimeRatio(1.1); // 10% faster

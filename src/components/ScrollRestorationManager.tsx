@@ -28,7 +28,10 @@ export function ScrollRestorationManager() {
 
   // Set manual scroll restoration on mount
   useEffect(() => {
-    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+    if (
+      typeof window !== "undefined" &&
+      "scrollRestoration" in window.history
+    ) {
       originalScrollRestorationRef.current = window.history.scrollRestoration;
       window.history.scrollRestoration = "manual";
     }
@@ -60,7 +63,10 @@ export function ScrollRestorationManager() {
           }
         } catch (error) {
           if (process.env.NODE_ENV !== "production") {
-            console.debug("[ScrollRestorationManager] Error stopping Lenis:", error);
+            console.debug(
+              "[ScrollRestorationManager] Error stopping Lenis:",
+              error,
+            );
           }
         }
       } else {
@@ -71,7 +77,10 @@ export function ScrollRestorationManager() {
           }
         } catch (error) {
           if (process.env.NODE_ENV !== "production") {
-            console.debug("[ScrollRestorationManager] Error starting Lenis:", error);
+            console.debug(
+              "[ScrollRestorationManager] Error starting Lenis:",
+              error,
+            );
           }
         }
       }
@@ -131,7 +140,7 @@ export function ScrollRestorationManager() {
         "[ScrollRestorationManager] Route change detected:",
         prevPathnameRef.current,
         "->",
-        pathname
+        pathname,
       );
     }
 
@@ -145,7 +154,10 @@ export function ScrollRestorationManager() {
           }
         } catch (error) {
           if (process.env.NODE_ENV !== "production") {
-            console.debug("[ScrollRestorationManager] Error stopping Lenis:", error);
+            console.debug(
+              "[ScrollRestorationManager] Error stopping Lenis:",
+              error,
+            );
           }
         }
       }
@@ -165,7 +177,10 @@ export function ScrollRestorationManager() {
         }
       } catch (error) {
         if (process.env.NODE_ENV !== "production") {
-          console.debug("[ScrollRestorationManager] Error resetting native scroll:", error);
+          console.debug(
+            "[ScrollRestorationManager] Error resetting native scroll:",
+            error,
+          );
         }
       }
 
@@ -176,7 +191,10 @@ export function ScrollRestorationManager() {
           lenis.scrollTo(0, { immediate: true, force: true });
         } catch (error) {
           if (process.env.NODE_ENV !== "production") {
-            console.debug("[ScrollRestorationManager] Error resetting Lenis scroll:", error);
+            console.debug(
+              "[ScrollRestorationManager] Error resetting Lenis scroll:",
+              error,
+            );
           }
         }
       }
@@ -194,7 +212,10 @@ export function ScrollRestorationManager() {
             }, 10);
           } catch (error) {
             if (process.env.NODE_ENV !== "production") {
-              console.debug("[ScrollRestorationManager] Error starting Lenis:", error);
+              console.debug(
+                "[ScrollRestorationManager] Error starting Lenis:",
+                error,
+              );
             }
           }
         }
@@ -225,4 +246,3 @@ export function ScrollRestorationManager() {
 
   return null;
 }
-

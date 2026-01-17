@@ -5,6 +5,7 @@
 ### 1. XY Kaoss Pad (`src/components/dj-ui/XYPad.tsx`)
 
 **Expert Features**:
+
 - Physics-based spring animations (`useSpring` from framer-motion)
 - High-performance gesture handling (`@use-gesture/react`)
 - Real-time ghost trail with opacity decay (requestAnimationFrame)
@@ -12,13 +13,14 @@
 - Brutalist design: 0px border-radius, Safety Yellow (#FFD700)
 
 **Props**:
+
 ```tsx
 interface XYPadProps {
-  label?: string;           // Default: "FX_KAOSS"
-  xLabel?: string;          // Default: "FREQ"
-  yLabel?: string;          // Default: "DRY/WET"
-  onChange: (x: number, y: number) => void;  // Required
-  onRelease?: () => void;   // Optional callback on release
+  label?: string; // Default: "FX_KAOSS"
+  xLabel?: string; // Default: "FREQ"
+  yLabel?: string; // Default: "DRY/WET"
+  onChange: (x: number, y: number) => void; // Required
+  onRelease?: () => void; // Optional callback on release
   className?: string;
 }
 ```
@@ -26,17 +28,20 @@ interface XYPadProps {
 ### 2. Slip Mode Engine (`src/hooks/useDualDeck.ts`)
 
 **Expert Features**:
+
 - Virtual playhead tracking (continuous background advancement)
 - Automatic seek on release when Slip Mode is active
 - Per-deck control (independent for Deck A and B)
 - Professional CDJ-3000 style behavior
 
 **New Function**:
+
 ```tsx
 handleScratch(velocity: number, isTouching: boolean, deck: "A" | "B")
 ```
 
 **Usage**:
+
 - `velocity`: Normalized speed (-5 to 5) maps to playbackRate adjustment
 - `isTouching`: `true` during drag, `false` on release
 - `deck`: Which deck to apply scratch to
@@ -44,6 +49,7 @@ handleScratch(velocity: number, isTouching: boolean, deck: "A" | "B")
 ### 3. Velocity-Based Scratch Physics (`src/components/dj-ui/JogWheel.tsx`)
 
 **Expert Features**:
+
 - Angular velocity calculation (degrees per millisecond)
 - Real-time playbackRate mapping (-1.5x to +2.0x)
 - Inertia physics with friction coefficient (0.95 per frame)
@@ -93,7 +99,7 @@ const handleXYPadChange = (x: number, y: number) => {
   xLabel="CUTOFF"
   yLabel="DRY/WET"
   onChange={handleXYPadChange}
-/>
+/>;
 ```
 
 ### Step 2: Wire XY Pad to Audio Graph
@@ -211,4 +217,3 @@ On Release: Seek to virtual position
 ---
 
 **Status**: Expert implementations complete. Ready for audio graph integration.
-

@@ -18,6 +18,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 - Smooth gain ramping (0.01s) to prevent clicks/pops
 
 **Integration:** `src/hooks/useDualDeck.ts`
+
 - Updated to use constant-power splitter
 - Crossfader position control (0.0 to 1.0)
 - Automatic gain application on position change
@@ -27,6 +28,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 **File:** `src/app/globals.css`
 
 **Updates:**
+
 - **Concrete Grit Overlay:** 12% opacity (increased from 8%)
 - **Brutalist 0px Radius:** Enforced globally via `* { border-radius: 0px !important; }`
 - **Skew Transformations:**
@@ -37,6 +39,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 - **User Selection:** Disabled for app-like feel
 
 **Palette:**
+
 - Midnight Black: `#050505`
 - Industrial Chrome: `#E0E0E0`
 - Safety Yellow: `#FFD700`
@@ -46,6 +49,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 **File:** `src/components/studio/SignalHatch.tsx`
 
 **Features:**
+
 - Drag & drop file upload
 - File validation (MP3, WAV, OGG, M4A, AAC)
 - Size limit: 50MB
@@ -59,17 +63,20 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 **File:** `public/worklets/v3-separator-worker.js`
 
 **Protocol:**
+
 1. Receive File → Decode AudioBuffer
 2. Execute WASM Inference
 3. Return separated stems (vocals, drums, bass, other)
 
 **Telemetry Messages:**
+
 - `IMPORT_UNVERIFIED_SIGNAL: [FILENAME]`
 - `DECRYPTING_SIGNAL_CHAIN...`
 - `CRACKING_SIGNAL: ISOLATING_FREQUENCIES... [25% | 50% | 75%]`
 - `SIGNAL_STRENGTH: 100% // VAULT_LOCKED`
 
 **Hook:** `src/hooks/useSignalCracker.ts`
+
 - Web Worker management
 - Progress tracking
 - StudioMonitor integration
@@ -77,6 +84,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 ### 5. ✅ Brand Asset Kit (SVGs)
 
 **Files:**
+
 - `public/images/branding/v3-stencil-logo.svg` - Massive 5% opacity backdrop
 - `public/images/branding/signal-cracker-icon.svg` - Boxed crosshair design
 - `public/images/branding/spray-drip-accent.svg` - Yellow drip for active states
@@ -86,6 +94,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 **File:** `src/components/ui/StudioMonitor.tsx`
 
 **Updates:**
+
 - Automatic linguistic normalization
 - Removes hacker/game vernacular:
   - `HACK|CRACK|BREACH` → `PROCESS`
@@ -100,6 +109,7 @@ The V3 "Urban Syndicate" overhaul transforms the Piko platform into a profession
 **File:** `src/components/navigation/TacticalBar.tsx`
 
 **Features:**
+
 - Bottom-fixed navigation (mobile only)
 - `-6deg` skew on mobile (reduced from desktop `-12deg`)
 - Spray-drip accent highlights for active routes
@@ -117,6 +127,7 @@ Deck B Source → Deck B Gain (Constant-Power) ┘
 ```
 
 **Constant-Power Formula:**
+
 - Crossfader at 0.0 (Deck A full): `gainA = 1.0`, `gainB = 0.0`
 - Crossfader at 0.5 (Center): `gainA = 0.707`, `gainB = 0.707`
 - Crossfader at 1.0 (Deck B full): `gainA = 0.0`, `gainB = 1.0`
@@ -144,6 +155,7 @@ Deck B Source → Deck B Gain (Constant-Power) ┘
 ## Files Modified/Created
 
 ### Created:
+
 - `src/utils/constantPowerSplitter.ts`
 - `src/components/studio/SignalHatch.tsx`
 - `public/worklets/v3-separator-worker.js`
@@ -154,6 +166,7 @@ Deck B Source → Deck B Gain (Constant-Power) ┘
 - `public/images/branding/spray-drip-accent.svg`
 
 ### Modified:
+
 - `src/hooks/useDualDeck.ts` - Constant-power integration
 - `src/app/globals.css` - Urban Syndicate theme
 - `src/components/ui/StudioMonitor.tsx` - V3 telemetry normalization
@@ -176,4 +189,3 @@ Deck B Source → Deck B Gain (Constant-Power) ┘
 **V3 Status:** ✅ **CORE_SYSTEMS_ONLINE**
 
 All foundational systems are in place. The platform is ready for WASM module integration and further refinements.
-

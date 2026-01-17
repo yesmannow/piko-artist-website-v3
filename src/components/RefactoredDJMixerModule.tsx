@@ -18,7 +18,11 @@ export function RefactoredDJMixerModule() {
     await engine.setVolume(deck, value);
   };
 
-  const setEQ = async (deck: "deckA" | "deckB", band: "low" | "mid" | "high", value: number) => {
+  const setEQ = async (
+    deck: "deckA" | "deckB",
+    band: "low" | "mid" | "high",
+    value: number,
+  ) => {
     const engine = await ensureAudioEngineReady();
     await engine.setEQ(deck, { [band]: value });
   };
@@ -88,8 +92,13 @@ export function RefactoredDJMixerModule() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {(["deckA", "deckB"] as const).map((deck) => (
-          <div key={deck} className="space-y-2 rounded-md border border-gray-800/80 bg-black/30 p-3">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{deck === "deckA" ? "Deck A" : "Deck B"}</p>
+          <div
+            key={deck}
+            className="space-y-2 rounded-md border border-gray-800/80 bg-black/30 p-3"
+          >
+            <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">
+              {deck === "deckA" ? "Deck A" : "Deck B"}
+            </p>
             <label className="text-xs uppercase text-gray-400">Volume</label>
             <input
               type="range"
@@ -101,14 +110,18 @@ export function RefactoredDJMixerModule() {
             />
             {(["low", "mid", "high"] as const).map((band) => (
               <div key={band} className="flex items-center gap-2">
-                <label className="w-10 text-[11px] uppercase text-gray-400">{band}</label>
+                <label className="w-10 text-[11px] uppercase text-gray-400">
+                  {band}
+                </label>
                 <input
                   type="range"
                   min={-12}
                   max={12}
                   step={0.5}
                   defaultValue={0}
-                  onChange={(e) => setEQ(deck, band, parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    setEQ(deck, band, parseFloat(e.target.value))
+                  }
                   className="flex-1"
                 />
               </div>
@@ -140,7 +153,9 @@ export function RefactoredDJMixerModule() {
       </div>
 
       <div className="space-y-2 rounded-md border border-gray-800/80 bg-black/30 p-3">
-        <label className="text-xs uppercase text-gray-400">FX Send (both decks)</label>
+        <label className="text-xs uppercase text-gray-400">
+          FX Send (both decks)
+        </label>
         <input
           type="range"
           min={0}
@@ -167,7 +182,9 @@ export function RefactoredDJMixerModule() {
       </div>
 
       <div className="space-y-2 rounded-md border border-gray-800/80 bg-black/30 p-3">
-        <label className="text-xs uppercase text-gray-400">Loop Start (seconds)</label>
+        <label className="text-xs uppercase text-gray-400">
+          Loop Start (seconds)
+        </label>
         <input
           type="number"
           min={0}

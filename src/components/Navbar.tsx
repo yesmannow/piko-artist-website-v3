@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useMotionValueEvent,
+} from "framer-motion";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useLenis } from "lenis/react";
@@ -10,7 +15,11 @@ import { useHaptic } from "@/hooks/useHaptic";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-import { primaryNavItems, type NavItem, type NavBadge } from "@/config/nav.config";
+import {
+  primaryNavItems,
+  type NavItem,
+  type NavBadge,
+} from "@/config/nav.config";
 
 const NavPill = ({ badge }: { badge: NavBadge }) => {
   const toneStyles =
@@ -21,7 +30,9 @@ const NavPill = ({ badge }: { badge: NavBadge }) => {
         : "bg-white/10 text-white border-white/20";
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${toneStyles}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${toneStyles}`}
+    >
       {badge.text}
     </span>
   );
@@ -88,7 +99,8 @@ const AnimatedLogo = ({
           <motion.div
             className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"
             style={{
-              background: "radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)",
+              background:
+                "radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)",
             }}
             animate={{
               scale: [1, 1.2, 1],
@@ -120,7 +132,6 @@ const AnimatedLogo = ({
     </motion.div>
   );
 };
-
 
 export function Navbar({ items }: { items?: NavItem[] }) {
   const pathname = usePathname();
@@ -160,10 +171,12 @@ export function Navbar({ items }: { items?: NavItem[] }) {
   // Ensure navbar remains interactive - force pointer-events-auto on interactive elements
   useEffect(() => {
     // This ensures that even if something goes wrong, interactive elements stay clickable
-    const interactiveElements = navRef.current?.querySelectorAll('[class*="pointer-events-auto"]');
+    const interactiveElements = navRef.current?.querySelectorAll(
+      '[class*="pointer-events-auto"]',
+    );
     interactiveElements?.forEach((el) => {
       if (el instanceof HTMLElement) {
-        el.style.pointerEvents = 'auto';
+        el.style.pointerEvents = "auto";
       }
     });
   }, [pathname, isOpen]);
@@ -194,34 +207,38 @@ export function Navbar({ items }: { items?: NavItem[] }) {
   }, [isOpen]);
 
   // Smooth scroll to section helper
-  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
-    const targetPath = item.href.split("#")[0] || item.href;
-    const targetSection = item.sectionId;
+  const handleNavClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
+      const targetPath = item.href.split("#")[0] || item.href;
+      const targetSection = item.sectionId;
 
-    if (targetSection && pathname === targetPath) {
-      const element = document.getElementById(targetSection);
-      if (element) {
-        e.preventDefault();
-        const navHeight = window.innerWidth >= 768 ? 96 : 80;
-        if (lenis) {
-          lenis.scrollTo(element, {
-            offset: -navHeight,
-            duration: 1.5,
-            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-          });
-        } else {
-          const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-          const offsetPosition = elementPosition - navHeight;
-          window.scrollTo({
-            top: offsetPosition,
-            behavior: "smooth",
-          });
+      if (targetSection && pathname === targetPath) {
+        const element = document.getElementById(targetSection);
+        if (element) {
+          e.preventDefault();
+          const navHeight = window.innerWidth >= 768 ? 96 : 80;
+          if (lenis) {
+            lenis.scrollTo(element, {
+              offset: -navHeight,
+              duration: 1.5,
+              easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            });
+          } else {
+            const elementPosition =
+              element.getBoundingClientRect().top + window.scrollY;
+            const offsetPosition = elementPosition - navHeight;
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth",
+            });
+          }
         }
       }
-    }
 
-    setIsOpen(false);
-  }, [pathname, lenis]);
+      setIsOpen(false);
+    },
+    [pathname, lenis],
+  );
 
   // Check if nav item is active (considering anchors on home page and route matching)
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -240,7 +257,7 @@ export function Navbar({ items }: { items?: NavItem[] }) {
           id: item.sectionId!,
           element: document.getElementById(item.sectionId!),
         }))
-        .filter(s => s.element !== null);
+        .filter((s) => s.element !== null);
 
       if (sections.length === 0) {
         // If at top of page, set home as active
@@ -314,7 +331,11 @@ export function Navbar({ items }: { items?: NavItem[] }) {
               : isScrolled && scrollDirection === "up"
                 ? `rgba(10, 10, 10, ${reducedMotion ? 0.85 : 0.75})`
                 : "rgba(0, 0, 0, 0)",
-          backdropFilter: isScrolled ? (reducedMotion ? "blur(8px)" : "blur(12px)") : "blur(0px)",
+          backdropFilter: isScrolled
+            ? reducedMotion
+              ? "blur(8px)"
+              : "blur(12px)"
+            : "blur(0px)",
           borderBottom: isScrolled
             ? "1px solid rgb(204 255 0 / 0.15)"
             : "1px solid transparent",
@@ -351,82 +372,98 @@ export function Navbar({ items }: { items?: NavItem[] }) {
             }}
             role="menubar"
           >
-          {menuItems.map((item) => {
-            const active = isActive(item);
-            const href = item.sectionId ? `${item.href}#${item.sectionId}` : item.href;
-            return (
-              <li key={`${item.href}-${item.sectionId || ""}`} className="relative group skew-x-[12deg]" role="none">
-                <Link
-                  href={href}
-                  onClick={(e) => handleNavClick(e, item)}
-                  className={`px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors block ${active ? "text-[#FFD700]" : "text-[#E0E0E0] hover:text-[#FFD700]"}`}
-                  style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
-                  role="menuitem"
-                  aria-current={active ? "page" : undefined}
-                  aria-label={`Navigate to ${item.label}${item.sectionId ? ` section` : ""}`}
+            {menuItems.map((item) => {
+              const active = isActive(item);
+              const href = item.sectionId
+                ? `${item.href}#${item.sectionId}`
+                : item.href;
+              return (
+                <li
+                  key={`${item.href}-${item.sectionId || ""}`}
+                  className="relative group skew-x-[12deg]"
+                  role="none"
                 >
-                  <span className="flex items-center gap-2">
-                    {item.icon && (
-                      <motion.span
-                        className={`relative inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 ${active ? "shadow-[0_0_18px_rgba(255,215,0,0.35)]" : ""}`}
-                        whileHover={reducedMotion ? undefined : { rotate: [0, 8, -8, 0] }}
-                        animate={
-                          reducedMotion
-                            ? {}
-                            : active
-                              ? { rotate: [0, 4, -4, 0], scale: 1.05 }
-                              : { rotate: 0, scale: 1 }
-                        }
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                      >
-                        {!reducedMotion && (
-                          <motion.span
-                            className="absolute inset-0 rounded-full bg-[#FFD700]/20 blur-md opacity-0 group-hover:opacity-100"
-                            transition={{ duration: 0.3 }}
-                          />
-                        )}
-                        <item.icon className="relative z-10 h-4 w-4" />
-                      </motion.span>
-                    )}
+                  <Link
+                    href={href}
+                    onClick={(e) => handleNavClick(e, item)}
+                    className={`px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors block ${active ? "text-[#FFD700]" : "text-[#E0E0E0] hover:text-[#FFD700]"}`}
+                    style={{
+                      fontFamily: "var(--font-lexend), system-ui, sans-serif",
+                    }}
+                    role="menuitem"
+                    aria-current={active ? "page" : undefined}
+                    aria-label={`Navigate to ${item.label}${item.sectionId ? ` section` : ""}`}
+                  >
                     <span className="flex items-center gap-2">
-                      {item.label}
-                      {item.badge ? <NavPill badge={item.badge} /> : null}
+                      {item.icon && (
+                        <motion.span
+                          className={`relative inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 ${active ? "shadow-[0_0_18px_rgba(255,215,0,0.35)]" : ""}`}
+                          whileHover={
+                            reducedMotion
+                              ? undefined
+                              : { rotate: [0, 8, -8, 0] }
+                          }
+                          animate={
+                            reducedMotion
+                              ? {}
+                              : active
+                                ? { rotate: [0, 4, -4, 0], scale: 1.05 }
+                                : { rotate: 0, scale: 1 }
+                          }
+                          transition={{ duration: 0.5, ease: "easeInOut" }}
+                        >
+                          {!reducedMotion && (
+                            <motion.span
+                              className="absolute inset-0 rounded-full bg-[#FFD700]/20 blur-md opacity-0 group-hover:opacity-100"
+                              transition={{ duration: 0.3 }}
+                            />
+                          )}
+                          <item.icon className="relative z-10 h-4 w-4" />
+                        </motion.span>
+                      )}
+                      <span className="flex items-center gap-2">
+                        {item.label}
+                        {item.badge ? <NavPill badge={item.badge} /> : null}
+                      </span>
                     </span>
-                  </span>
-                </Link>
+                  </Link>
 
-                {/* Active indicator */}
-                {active && (
-                  <motion.div
-                    layoutId="nav-active-indicator"
-                    className="absolute -bottom-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#FFD700]/0 via-[#FFD700] to-[#FFD700]/0 shadow-[0_0_16px_#FFD700]"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                  />
-                )}
+                  {/* Active indicator */}
+                  {active && (
+                    <motion.div
+                      layoutId="nav-active-indicator"
+                      className="absolute -bottom-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#FFD700]/0 via-[#FFD700] to-[#FFD700]/0 shadow-[0_0_16px_#FFD700]"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 28,
+                      }}
+                    />
+                  )}
 
-                {/* Hover gradient underline effect */}
-                {!reducedMotion && (
-                  <motion.div
-                    className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 w-full"
-                    transition={{ duration: 0.3 }}
-                    initial={false}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  {/* Hover gradient underline effect */}
+                  {!reducedMotion && (
+                    <motion.div
+                      className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 w-full"
+                      transition={{ duration: 0.3 }}
+                      initial={false}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
 
-        {/* System Status - Desktop Only */}
-        <div className="hidden lg:block ml-4 border-l border-white/10 pl-4 font-mono text-[9px] text-white/30 skew-x-[-12deg]">
-          <div className="skew-x-[12deg]">
-            SYS_OP: ACTIVE<br />
-            LOC: SYNDICATE_VAULT
+          {/* System Status - Desktop Only */}
+          <div className="hidden lg:block ml-4 border-l border-white/10 pl-4 font-mono text-[9px] text-white/30 skew-x-[-12deg]">
+            <div className="skew-x-[12deg]">
+              SYS_OP: ACTIVE
+              <br />
+              LOC: SYNDICATE_VAULT
+            </div>
           </div>
         </div>
-      </div>
-
       </motion.nav>
 
       {/* Mobile Full Screen Menu - Hidden on mobile (tray nav is primary) */}
@@ -453,7 +490,9 @@ export function Navbar({ items }: { items?: NavItem[] }) {
             <motion.div
               ref={mobileMenuRef}
               id="mobile-menu"
-              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: "-100%" }}
+              initial={
+                reducedMotion ? { opacity: 0 } : { opacity: 0, y: "-100%" }
+              }
               animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: "-100%" }}
               transition={
@@ -480,8 +519,16 @@ export function Navbar({ items }: { items?: NavItem[] }) {
             >
               {/* Mobile Logo */}
               <motion.div
-                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8, y: -30 }}
-                animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+                initial={
+                  reducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.8, y: -30 }
+                }
+                animate={
+                  reducedMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, scale: 1, y: 0 }
+                }
                 transition={
                   reducedMotion
                     ? { duration: 0.2, delay: 0.1 }
@@ -503,18 +550,33 @@ export function Navbar({ items }: { items?: NavItem[] }) {
               </motion.div>
 
               {/* Mobile Menu Title (hidden but for accessibility) */}
-              <h2 id="mobile-menu-title" className="sr-only">Mobile Navigation Menu</h2>
+              <h2 id="mobile-menu-title" className="sr-only">
+                Mobile Navigation Menu
+              </h2>
 
               {/* Mobile Menu Items */}
-              <nav className="flex flex-col gap-3 text-center w-full max-w-sm px-6" aria-label="Mobile navigation">
+              <nav
+                className="flex flex-col gap-3 text-center w-full max-w-sm px-6"
+                aria-label="Mobile navigation"
+              >
                 {menuItems.map((item, i) => {
                   const active = isActive(item);
-                  const href = item.sectionId ? `${item.href}#${item.sectionId}` : item.href;
+                  const href = item.sectionId
+                    ? `${item.href}#${item.sectionId}`
+                    : item.href;
                   return (
                     <motion.div
                       key={`${item.href}-${item.sectionId || ""}`}
-                      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -30, scale: 0.9 }}
-                      animate={reducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
+                      initial={
+                        reducedMotion
+                          ? { opacity: 0 }
+                          : { opacity: 0, x: -30, scale: 0.9 }
+                      }
+                      animate={
+                        reducedMotion
+                          ? { opacity: 1 }
+                          : { opacity: 1, x: 0, scale: 1 }
+                      }
                       transition={
                         reducedMotion
                           ? { duration: 0.2, delay: 0.1 + i * 0.03 }
@@ -554,7 +616,11 @@ export function Navbar({ items }: { items?: NavItem[] }) {
                                 transition={
                                   reducedMotion
                                     ? { duration: 0.1 }
-                                    : { type: "spring", stiffness: 500, damping: 30 }
+                                    : {
+                                        type: "spring",
+                                        stiffness: 500,
+                                        damping: 30,
+                                      }
                                 }
                               />
                               <motion.div
@@ -564,7 +630,11 @@ export function Navbar({ items }: { items?: NavItem[] }) {
                                 transition={
                                   reducedMotion
                                     ? { duration: 0.1 }
-                                    : { type: "spring", stiffness: 500, damping: 30 }
+                                    : {
+                                        type: "spring",
+                                        stiffness: 500,
+                                        damping: 30,
+                                      }
                                 }
                               />
                             </>
@@ -585,7 +655,11 @@ export function Navbar({ items }: { items?: NavItem[] }) {
                             {item.icon && (
                               <motion.span
                                 className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5"
-                                whileHover={reducedMotion ? undefined : { rotate: [0, 10, -10, 0] }}
+                                whileHover={
+                                  reducedMotion
+                                    ? undefined
+                                    : { rotate: [0, 10, -10, 0] }
+                                }
                                 transition={{ duration: 0.4 }}
                               >
                                 {active && (
@@ -600,7 +674,9 @@ export function Navbar({ items }: { items?: NavItem[] }) {
                             )}
                             <span className="flex items-center gap-2">
                               {item.label}
-                              {item.badge ? <NavPill badge={item.badge} /> : null}
+                              {item.badge ? (
+                                <NavPill badge={item.badge} />
+                              ) : null}
                             </span>
                           </span>
 
@@ -610,7 +686,11 @@ export function Navbar({ items }: { items?: NavItem[] }) {
                               className="absolute right-4 w-2 h-2 rounded-full bg-[#FFD700] shadow-[0_0_10px_#FFD700]"
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
-                              transition={reducedMotion ? { duration: 0.1 } : { delay: 0.2 }}
+                              transition={
+                                reducedMotion
+                                  ? { duration: 0.1 }
+                                  : { delay: 0.2 }
+                              }
                             />
                           )}
                         </Link>

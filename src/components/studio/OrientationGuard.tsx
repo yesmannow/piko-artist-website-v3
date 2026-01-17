@@ -65,7 +65,9 @@ export function OrientationGuard() {
             <div className="space-y-4">
               <h2
                 className="text-3xl md:text-4xl font-black italic uppercase text-[#FFD700]"
-                style={{ fontFamily: "var(--font-lexend), system-ui, sans-serif" }}
+                style={{
+                  fontFamily: "var(--font-lexend), system-ui, sans-serif",
+                }}
               >
                 ROTATE FOR FULL CONSOLE
               </h2>
@@ -85,4 +87,3 @@ export function OrientationGuard() {
     </AnimatePresence>
   );
 }
-

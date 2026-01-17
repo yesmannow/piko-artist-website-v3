@@ -1,6 +1,7 @@
 # DJ Mixer UI Improvements - Implementation Notes
 
 ## Overview
+
 This document outlines the changes made to fix z-index/layering bugs in the DJ mixer interface and improve overall layout and styling.
 
 ## Changes Made
@@ -10,6 +11,7 @@ This document outlines the changes made to fix z-index/layering bugs in the DJ m
 **File: `tailwind.config.ts`**
 
 Added z-index tokens to Tailwind configuration:
+
 - `z-base`: 0 (default)
 - `z-nav`: 50 (navigation)
 - `z-player`: 80 (audio players)
@@ -19,9 +21,10 @@ Added z-index tokens to Tailwind configuration:
 - `z-toast`: 400 (notifications/toasts)
 
 **Usage:**
+
 ```tsx
-className="z-modal"  // Instead of z-[300] or z-[100]
-className="z-overlay"  // Instead of z-[200] or z-50
+className = "z-modal"; // Instead of z-[300] or z-[100]
+className = "z-overlay"; // Instead of z-[200] or z-50
 ```
 
 ### 2. OverlayShell Component
@@ -29,6 +32,7 @@ className="z-overlay"  // Instead of z-[200] or z-50
 **File: `src/components/ui/OverlayShell.tsx`**
 
 Created a standardized overlay component with:
+
 - Portal rendering to `document.body` (avoids stacking context traps)
 - Consistent z-index system (`z-overlay` or `z-modal`)
 - Automatic scroll lock via `useBodyScrollLock` hook
@@ -38,6 +42,7 @@ Created a standardized overlay component with:
 - Proper pointer-events handling
 
 **Features:**
+
 - Renders via `createPortal` to avoid parent stacking contexts
 - Handles scroll lock automatically
 - Supports custom backdrop or default dark backdrop
@@ -48,12 +53,14 @@ Created a standardized overlay component with:
 **File: `src/components/DJInterface.tsx`**
 
 **Before:**
+
 - Lightbox rendered inline with `z-[100]`
 - No portal, trapped in parent stacking contexts
 - Manual ESC handler
 - Inconsistent sizing
 
 **After:**
+
 - Uses `OverlayShell` with `z="modal"` (z-index 300)
 - Renders via portal to `document.body`
 - Automatic ESC handling via OverlayShell
@@ -68,11 +75,13 @@ Created a standardized overlay component with:
 **File: `src/components/dj-ui/JogWheel.tsx`**
 
 **Before:**
+
 - Lightbox rendered inline with `z-50`
 - No portal
 - Inconsistent with other overlays
 
 **After:**
+
 - Uses `OverlayShell` with `z="modal"`
 - Portal rendering
 - Consistent behavior with main lightbox
@@ -83,6 +92,7 @@ Created a standardized overlay component with:
 **File: `src/components/DJMixer.tsx`**
 
 **Visual Improvements:**
+
 - Added card containers for each deck section (Deck A, Center, Deck B)
 - Better visual grouping with subtle backgrounds (`bg-[#1a1a1a]/50`)
 - Enhanced borders and shadows for depth
@@ -92,6 +102,7 @@ Created a standardized overlay component with:
   - Better spacing and padding
 
 **Layout Structure:**
+
 - **Left Column (Deck A):**
   - Volume fader
   - EQ section with labeled knobs (HIGH, MID, LOW)
@@ -109,6 +120,7 @@ Created a standardized overlay component with:
   - Kill switches for each band
 
 **Responsive Behavior:**
+
 - Maintains 3-column layout on desktop
 - Stacks vertically on mobile
 - Touch-friendly controls (44px minimum targets)
@@ -117,11 +129,13 @@ Created a standardized overlay component with:
 ### 6. Stacking Context Audit
 
 **Findings:**
+
 - Deck containers use `scale-105` transform on drag (creates stacking context)
 - **Solution:** Lightboxes now render via portal, avoiding parent stacking contexts
 - No changes needed to deck transforms (they don't affect portaled overlays)
 
 **Best Practices Applied:**
+
 - Overlays always render via portal
 - Avoid transforms/filters/opacity on overlay containers
 - Use consistent z-index tokens
@@ -142,6 +156,7 @@ z-base (0)             - Default content
 ## Testing Checklist
 
 ### Lightbox Tests
+
 - [x] Open album art lightbox from track drawer
 - [x] Lightbox appears above all mixer controls
 - [x] Close via ESC key
@@ -154,6 +169,7 @@ z-base (0)             - Default content
 - [x] No "half covered" controls
 
 ### Mixer Layout Tests
+
 - [x] All controls visible and accessible
 - [x] Proper grouping and visual hierarchy
 - [x] Responsive behavior on mobile
@@ -161,6 +177,7 @@ z-base (0)             - Default content
 - [x] No layout shifts when opening/closing overlays
 
 ### Stacking Order Tests
+
 - [x] Lightbox above navbar
 - [x] Lightbox above floating players
 - [x] Lightbox above mixer controls
@@ -172,29 +189,31 @@ z-base (0)             - Default content
 ### For Future Overlays
 
 **Use OverlayShell:**
+
 ```tsx
 import { OverlayShell } from "@/components/ui/OverlayShell";
 
 <OverlayShell
   open={isOpen}
   onClose={() => setIsOpen(false)}
-  z="modal"  // or "overlay"
+  z="modal" // or "overlay"
 >
   {/* Your content */}
-</OverlayShell>
+</OverlayShell>;
 ```
 
 ### For Z-Index Values
 
 **Use Tailwind tokens:**
+
 ```tsx
 // ❌ Don't use arbitrary values
-className="z-[100]"
+className = "z-[100]";
 
 // ✅ Use tokens
-className="z-modal"
-className="z-overlay"
-className="z-nav"
+className = "z-modal";
+className = "z-overlay";
+className = "z-nav";
 ```
 
 ## Files Modified
@@ -233,4 +252,3 @@ These can be updated in future refactoring for consistency, but are not critical
 - Portal rendering: All modern browsers (React 18+)
 - Z-index tokens: All browsers (Tailwind compile-time)
 - Scroll lock: All browsers (CSS overflow)
-

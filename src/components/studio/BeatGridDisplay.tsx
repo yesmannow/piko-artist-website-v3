@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Music, Link2 } from 'lucide-react';
-import { useBeatGrid } from '@/hooks/useBeatGrid';
-import { useKey } from '@/hooks/useKey';
-import type { BeatGridData } from '@/engine/BeatGridService';
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { Music, Link2 } from "lucide-react";
+import { useBeatGrid } from "@/hooks/useBeatGrid";
+import { useKey } from "@/hooks/useKey";
+import type { BeatGridData } from "@/engine/BeatGridService";
 
 interface BeatGridDisplayProps {
   audioBuffer: AudioBuffer | null;
@@ -28,16 +28,20 @@ export function BeatGridDisplay({
   audioBuffer,
   cacheKey,
   onSync,
-  className = '',
+  className = "",
 }: BeatGridDisplayProps) {
   const { isAnalyzing, beatGridData, analyze, error } = useBeatGrid();
-  const { isAnalyzing: isAnalyzingKey, keyData, analyze: analyzeKey } = useKey();
+  const {
+    isAnalyzing: isAnalyzingKey,
+    keyData,
+    analyze: analyzeKey,
+  } = useKey();
 
   // Auto-analyze beat grid when audio buffer is available
   useEffect(() => {
     if (audioBuffer && !beatGridData && !isAnalyzing) {
       analyze(audioBuffer, cacheKey).catch((err) => {
-        console.error('[BeatGridDisplay] Beat grid analysis failed:', err);
+        console.error("[BeatGridDisplay] Beat grid analysis failed:", err);
       });
     }
   }, [audioBuffer, beatGridData, isAnalyzing, cacheKey, analyze]);
@@ -46,7 +50,7 @@ export function BeatGridDisplay({
   useEffect(() => {
     if (audioBuffer && !keyData && !isAnalyzingKey && cacheKey) {
       analyzeKey(audioBuffer, cacheKey).catch((err) => {
-        console.error('[BeatGridDisplay] Key analysis failed:', err);
+        console.error("[BeatGridDisplay] Key analysis failed:", err);
       });
     }
   }, [audioBuffer, keyData, isAnalyzingKey, cacheKey, analyzeKey]);
@@ -66,7 +70,9 @@ export function BeatGridDisplay({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Music className="w-4 h-4 text-[#FFD700]" />
-            <span className="text-xs uppercase tracking-wider text-zinc-400">BPM</span>
+            <span className="text-xs uppercase tracking-wider text-zinc-400">
+              BPM
+            </span>
           </div>
           <div className="text-right">
             {isAnalyzing ? (
@@ -101,7 +107,9 @@ export function BeatGridDisplay({
         {/* Key Display */}
         <div className="mt-2 pt-2 border-t border-zinc-700">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-400">KEY</span>
+            <span className="text-xs uppercase tracking-wider text-zinc-400">
+              KEY
+            </span>
             <div className="text-right">
               {isAnalyzingKey ? (
                 <span className="text-zinc-500 text-sm">Analyzing...</span>
@@ -143,8 +151,8 @@ export function BeatGridDisplay({
           min-h-[48px]
           ${
             canSync
-              ? 'border-[#FFD700] text-[#FFD700] hover:border-[#FFD700]/80 hover:bg-black/90'
-              : 'border-zinc-700 text-zinc-500 cursor-not-allowed'
+              ? "border-[#FFD700] text-[#FFD700] hover:border-[#FFD700]/80 hover:bg-black/90"
+              : "border-zinc-700 text-zinc-500 cursor-not-allowed"
           }
         `}
         whileHover={canSync ? { scale: 1.02 } : {}}

@@ -1,9 +1,9 @@
-import { getAudioEngine } from './AudioEngine';
-import { useMIDIStore, type MIDIAction } from '@/store/useMIDIStore';
+import { getAudioEngine } from "./AudioEngine";
+import { useMIDIStore, type MIDIAction } from "@/store/useMIDIStore";
 
 /**
  * PHASE 7: MIDI Manager
- * 
+ *
  * Handles WebMIDI API integration for hardware controller support.
  * Features:
  * - Auto-detection of MIDI devices
@@ -21,20 +21,20 @@ class MIDIManager {
    */
   async initialize(): Promise<boolean> {
     if (this.initialized) {
-      console.warn('MIDIManager already initialized');
+      console.warn("MIDIManager already initialized");
       return true;
     }
 
     // Check for WebMIDI support
     if (!navigator.requestMIDIAccess) {
-      console.error('❌ WebMIDI not supported in this browser');
+      console.error("❌ WebMIDI not supported in this browser");
       return false;
     }
 
     try {
       // Request MIDI access
       this.midiAccess = await navigator.requestMIDIAccess();
-      console.log('✅ WebMIDI access granted');
+      console.log("✅ WebMIDI access granted");
 
       // List available inputs
       this.listInputs();
@@ -44,7 +44,7 @@ class MIDIManager {
 
       // Listen for device connection/disconnection
       this.midiAccess.onstatechange = (event) => {
-        console.log('MIDI state change:', event);
+        console.log("MIDI state change:", event);
         this.listInputs();
         this.connectInputs();
       };
@@ -52,7 +52,7 @@ class MIDIManager {
       this.initialized = true;
       return true;
     } catch (error) {
-      console.error('❌ Failed to initialize WebMIDI:', error);
+      console.error("❌ Failed to initialize WebMIDI:", error);
       return false;
     }
   }
@@ -63,20 +63,22 @@ class MIDIManager {
   private listInputs() {
     if (!this.midiAccess) return;
 
-    console.log('📋 Available MIDI Inputs:');
+    console.log("📋 Available MIDI Inputs:");
     const inputs = Array.from(this.midiAccess.inputs.values());
-    
+
     if (inputs.length === 0) {
-      console.log('  No MIDI devices connected');
+      console.log("  No MIDI devices connected");
       useMIDIStore.getState().setConnected(false);
     } else {
       inputs.forEach((input) => {
         console.log(`  - ${input.name} (${input.manufacturer})`);
       });
-      
+
       // Update store with first device
       const firstDevice = inputs[0];
-      useMIDIStore.getState().setConnected(true, firstDevice.name || 'Unknown Device');
+      useMIDIStore
+        .getState()
+        .setConnected(true, firstDevice.name || "Unknown Device");
     }
   }
 
@@ -98,17 +100,17 @@ class MIDIManager {
   private handleMIDIMessage(event: MIDIMessageEvent) {
     // Handle null data
     if (!event.data || event.data.length < 3) return;
-    
+
     const status = event.data[0];
     const data1 = event.data[1];
     const data2 = event.data[2];
-    
+
     // Update activity indicator
     useMIDIStore.getState().setActivity();
 
     // Parse MIDI message
     const messageType = status & 0xf0; // Upper 4 bits
-    const channel = status & 0x0f;     // Lower 4 bits
+    const channel = status & 0x0f; // Lower 4 bits
 
     // Normalize data
     const normalizedValue = data2 / 127; // 0-127 -> 0.0-1.0
@@ -116,15 +118,21 @@ class MIDIManager {
     // Create mapping key
     const midiKey = `${status}:${data1}`;
 
-    console.log(`🎹 MIDI: ${this.getMIDITypeName(messageType)} | Ch:${channel} | Data1:${data1} | Data2:${data2} | Normalized:${normalizedValue.toFixed(2)}`);
+    console.log(
+      `🎹 MIDI: ${this.getMIDITypeName(messageType)} | Ch:${channel} | Data1:${data1} | Data2:${data2} | Normalized:${normalizedValue.toFixed(2)}`,
+    );
 
     // Check if in learn mode
     const store = useMIDIStore.getState();
     if (store.learnMode && store.learnTarget) {
       // Map this MIDI input to the target action
-      store.setMapping(midiKey, store.learnTarget, `${this.getMIDITypeName(messageType)} ${data1}`);
+      store.setMapping(
+        midiKey,
+        store.learnTarget,
+        `${this.getMIDITypeName(messageType)} ${data1}`,
+      );
       store.stopLearn();
-      
+
       // Trigger haptic feedback for successful mapping
       if ("vibrate" in navigator) {
         try {
@@ -133,7 +141,7 @@ class MIDIManager {
           // Silently fail
         }
       }
-      
+
       console.log(`✅ Mapped ${midiKey} -> ${store.learnTarget}`);
       return;
     }
@@ -152,46 +160,50 @@ class MIDIManager {
   /**
    * Execute a mapped action
    */
-  private executeAction(action: MIDIAction, normalizedValue: number, rawValue: number) {
+  private executeAction(
+    action: MIDIAction,
+    normalizedValue: number,
+    rawValue: number,
+  ) {
     try {
       const engine = getAudioEngine();
 
       switch (action) {
-        case 'deckA_play':
-          if (rawValue > 0) engine.play('deckA');
+        case "deckA_play":
+          if (rawValue > 0) engine.play("deckA");
           break;
-        case 'deckA_pause':
-          if (rawValue > 0) engine.pause('deckA');
+        case "deckA_pause":
+          if (rawValue > 0) engine.pause("deckA");
           break;
-        case 'deckA_cue':
-          if (rawValue > 0) engine.seek('deckA', 0);
+        case "deckA_cue":
+          if (rawValue > 0) engine.seek("deckA", 0);
           break;
-        case 'deckA_volume':
-          engine.setVolume('deckA', normalizedValue);
+        case "deckA_volume":
+          engine.setVolume("deckA", normalizedValue);
           break;
-        case 'deckB_play':
-          if (rawValue > 0) engine.play('deckB');
+        case "deckB_play":
+          if (rawValue > 0) engine.play("deckB");
           break;
-        case 'deckB_pause':
-          if (rawValue > 0) engine.pause('deckB');
+        case "deckB_pause":
+          if (rawValue > 0) engine.pause("deckB");
           break;
-        case 'deckB_cue':
-          if (rawValue > 0) engine.seek('deckB', 0);
+        case "deckB_cue":
+          if (rawValue > 0) engine.seek("deckB", 0);
           break;
-        case 'deckB_volume':
-          engine.setVolume('deckB', normalizedValue);
+        case "deckB_volume":
+          engine.setVolume("deckB", normalizedValue);
           break;
-        case 'crossfader':
+        case "crossfader":
           // Crossfader logic would go here
           console.log(`Crossfader: ${normalizedValue.toFixed(2)}`);
           break;
-        case 'masterVolume':
+        case "masterVolume":
           // Master volume logic would go here
           console.log(`Master Volume: ${normalizedValue.toFixed(2)}`);
           break;
       }
     } catch (error) {
-      console.warn('Failed to execute MIDI action:', error);
+      console.warn("Failed to execute MIDI action:", error);
     }
   }
 
@@ -202,7 +214,7 @@ class MIDIManager {
     messageType: number,
     data1: number,
     data2: number,
-    normalizedValue: number
+    normalizedValue: number,
   ) {
     try {
       const engine = getAudioEngine();
@@ -211,20 +223,20 @@ class MIDIManager {
       if (messageType === 0x90 && data2 > 0) {
         switch (data1) {
           case 50: // Note 50: Deck A Play
-            engine.play('deckA');
-            console.log('🎵 Deck A Play (Note 50)');
+            engine.play("deckA");
+            console.log("🎵 Deck A Play (Note 50)");
             break;
           case 51: // Note 51: Deck A Cue
-            engine.seek('deckA', 0);
-            console.log('🎵 Deck A Cue (Note 51)');
+            engine.seek("deckA", 0);
+            console.log("🎵 Deck A Cue (Note 51)");
             break;
           case 52: // Note 52: Deck B Play
-            engine.play('deckB');
-            console.log('🎵 Deck B Play (Note 52)');
+            engine.play("deckB");
+            console.log("🎵 Deck B Play (Note 52)");
             break;
           case 53: // Note 53: Deck B Cue
-            engine.seek('deckB', 0);
-            console.log('🎵 Deck B Cue (Note 53)');
+            engine.seek("deckB", 0);
+            console.log("🎵 Deck B Cue (Note 53)");
             break;
         }
       }
@@ -238,21 +250,25 @@ class MIDIManager {
       if (messageType === 0xb0) {
         switch (data1) {
           case 0: // CC 0: Deck A Volume
-            engine.setVolume('deckA', normalizedValue);
-            console.log(`🎚️ Deck A Volume: ${normalizedValue.toFixed(2)} (CC 0)`);
+            engine.setVolume("deckA", normalizedValue);
+            console.log(
+              `🎚️ Deck A Volume: ${normalizedValue.toFixed(2)} (CC 0)`,
+            );
             break;
           case 1: // CC 1: Crossfader
             console.log(`🎚️ Crossfader: ${normalizedValue.toFixed(2)} (CC 1)`);
             // Crossfader implementation would go here
             break;
           case 2: // CC 2: Deck B Volume
-            engine.setVolume('deckB', normalizedValue);
-            console.log(`🎚️ Deck B Volume: ${normalizedValue.toFixed(2)} (CC 2)`);
+            engine.setVolume("deckB", normalizedValue);
+            console.log(
+              `🎚️ Deck B Volume: ${normalizedValue.toFixed(2)} (CC 2)`,
+            );
             break;
         }
       }
     } catch (error) {
-      console.warn('Failed to execute hardcoded MIDI mapping:', error);
+      console.warn("Failed to execute hardcoded MIDI mapping:", error);
     }
   }
 
@@ -261,14 +277,22 @@ class MIDIManager {
    */
   private getMIDITypeName(messageType: number): string {
     switch (messageType) {
-      case 0x80: return 'Note Off';
-      case 0x90: return 'Note On';
-      case 0xa0: return 'Aftertouch';
-      case 0xb0: return 'Control Change';
-      case 0xc0: return 'Program Change';
-      case 0xd0: return 'Channel Pressure';
-      case 0xe0: return 'Pitch Bend';
-      default: return `Unknown (0x${messageType.toString(16)})`;
+      case 0x80:
+        return "Note Off";
+      case 0x90:
+        return "Note On";
+      case 0xa0:
+        return "Aftertouch";
+      case 0xb0:
+        return "Control Change";
+      case 0xc0:
+        return "Program Change";
+      case 0xd0:
+        return "Channel Pressure";
+      case 0xe0:
+        return "Pitch Bend";
+      default:
+        return `Unknown (0x${messageType.toString(16)})`;
     }
   }
 
@@ -283,7 +307,7 @@ class MIDIManager {
     });
 
     useMIDIStore.getState().setConnected(false);
-    console.log('🎹 MIDI disconnected');
+    console.log("🎹 MIDI disconnected");
   }
 }
 
@@ -293,8 +317,8 @@ class MIDIManagerSingleton {
 
   public static getInstance(): MIDIManager {
     if (!MIDIManagerSingleton.instance) {
-      if (typeof window === 'undefined') {
-        throw new Error('MIDIManager cannot be instantiated on the server');
+      if (typeof window === "undefined") {
+        throw new Error("MIDIManager cannot be instantiated on the server");
       }
       MIDIManagerSingleton.instance = new MIDIManager();
     }

@@ -29,7 +29,7 @@ interface UseVoiceTagReturn {
  */
 export function useVoiceTag(
   audioContext: AudioContext | null | undefined,
-  masterNode: GainNode | null | undefined
+  masterNode: GainNode | null | undefined,
 ): UseVoiceTagReturn {
   const [micEnabled, setMicEnabled] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -315,7 +315,10 @@ export function useVoiceTag(
 
       // Create MediaRecorder
       const stream = tagDestRef.current.stream;
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType } : undefined,
+      );
       recorderRef.current = recorder;
 
       const startTime = Date.now();
@@ -350,10 +353,19 @@ export function useVoiceTag(
       recorder.start();
       setIsRecording(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start recording");
+      setError(
+        err instanceof Error ? err.message : "Failed to start recording",
+      );
       setIsRecording(false);
     }
-  }, [audioContext, masterNode, micEnabled, tagUrl, enableMic, getBestMimeType]);
+  }, [
+    audioContext,
+    masterNode,
+    micEnabled,
+    tagUrl,
+    enableMic,
+    getBestMimeType,
+  ]);
 
   // Stop recording tag
   const stopTagRecording = useCallback(async () => {
@@ -572,4 +584,3 @@ export function useVoiceTag(
     setTagVolume,
   };
 }
-

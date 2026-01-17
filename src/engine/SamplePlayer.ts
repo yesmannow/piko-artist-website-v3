@@ -10,14 +10,14 @@
  * - Velocity control
  */
 
-import { getBeatGridService } from '../engine/BeatGridService';
-import { getAudioEngine } from '../engine/AudioEngine';
+import { getBeatGridService } from "../engine/BeatGridService";
+import { getAudioEngine } from "../engine/AudioEngine";
 
 export interface SampleInfo {
   id: string;
   name: string;
   url: string;
-  category: 'drum' | 'scratch' | 'fx' | 'vocal' | 'stem';
+  category: "drum" | "scratch" | "fx" | "vocal" | "stem";
   bpm?: number;
   duration?: number;
   buffer?: AudioBuffer; // Cached audio buffer
@@ -26,7 +26,7 @@ export interface SampleInfo {
 export interface PlaybackOptions {
   velocity?: number; // 0-1
   syncToBeat?: boolean; // Whether to sync to nearest beat
-  deckId?: 'deckA' | 'deckB'; // Which deck to sync to
+  deckId?: "deckA" | "deckB"; // Which deck to sync to
 }
 
 /**
@@ -58,24 +58,25 @@ class SamplePlayer {
    * Initialize the sample player
    */
   async initialize(): Promise<void> {
-    if (typeof window === 'undefined') {
-      throw new Error('[SamplePlayer] Cannot initialize on server');
+    if (typeof window === "undefined") {
+      throw new Error("[SamplePlayer] Cannot initialize on server");
     }
 
     // Create AudioContext if needed
     if (!this.audioContext) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
       this.audioContext = new AudioContextClass({
-        latencyHint: 'interactive'
+        latencyHint: "interactive",
       });
 
       // Resume if suspended
-      if (this.audioContext.state === 'suspended') {
+      if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
     }
 
-    console.log('[SamplePlayer] Initialized');
+    console.log("[SamplePlayer] Initialized");
   }
 
   /**
@@ -91,7 +92,7 @@ class SamplePlayer {
       const arrayBuffer = await response.arrayBuffer();
 
       if (!this.audioContext) {
-        throw new Error('AudioContext not initialized');
+        throw new Error("AudioContext not initialized");
       }
 
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
@@ -99,7 +100,10 @@ class SamplePlayer {
 
       console.log(`[SamplePlayer] Preloaded sample: ${sample.name}`);
     } catch (error) {
-      console.error(`[SamplePlayer] Failed to preload sample ${sample.name}:`, error);
+      console.error(
+        `[SamplePlayer] Failed to preload sample ${sample.name}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -109,20 +113,16 @@ class SamplePlayer {
    */
   async playSample(
     sample: SampleInfo,
-    options: PlaybackOptions = {}
+    options: PlaybackOptions = {},
   ): Promise<void> {
-    const {
-      velocity = 0.8,
-      syncToBeat = true,
-      deckId = 'deckA'
-    } = options;
+    const { velocity = 0.8, syncToBeat = true, deckId = "deckA" } = options;
 
     if (!this.audioContext) {
-      throw new Error('SamplePlayer not initialized');
+      throw new Error("SamplePlayer not initialized");
     }
 
     // Resume context if suspended
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext.state === "suspended") {
       await this.audioContext.resume();
     }
 
@@ -166,13 +166,15 @@ class SamplePlayer {
       this.activeSources.delete(source);
     };
 
-    console.log(`[SamplePlayer] Playing sample: ${sample.name} at ${playTime.toFixed(3)}s (velocity: ${velocity})`);
+    console.log(
+      `[SamplePlayer] Playing sample: ${sample.name} at ${playTime.toFixed(3)}s (velocity: ${velocity})`,
+    );
   }
 
   /**
    * Calculate the next beat-synchronized play time
    */
-  private calculateBeatSyncTime(deckId: 'deckA' | 'deckB'): number {
+  private calculateBeatSyncTime(deckId: "deckA" | "deckB"): number {
     if (!this.audioContext) return this.audioContext!.currentTime;
 
     const currentTime = this.audioContext.currentTime;
@@ -193,7 +195,7 @@ class SamplePlayer {
     const currentBeat = Math.floor(timeSinceGrid / beatLength);
 
     // Calculate time of next beat
-    const nextBeatTime = gridOffset + ((currentBeat + 1) * beatLength);
+    const nextBeatTime = gridOffset + (currentBeat + 1) * beatLength;
 
     // Add a small lookahead to account for scheduling latency
     const lookaheadTime = 0.05; // 50ms lookahead
@@ -205,7 +207,7 @@ class SamplePlayer {
    * Stop all currently playing samples
    */
   stopAllSamples(): void {
-    this.activeSources.forEach(source => {
+    this.activeSources.forEach((source) => {
       try {
         source.stop();
       } catch (error) {
@@ -213,7 +215,7 @@ class SamplePlayer {
       }
     });
     this.activeSources.clear();
-    console.log('[SamplePlayer] Stopped all samples');
+    console.log("[SamplePlayer] Stopped all samples");
   }
 
   /**
@@ -228,7 +230,7 @@ class SamplePlayer {
    */
   clearCache(): void {
     this.sampleCache.clear();
-    console.log('[SamplePlayer] Cache cleared');
+    console.log("[SamplePlayer] Cache cleared");
   }
 
   /**
@@ -257,7 +259,7 @@ class SamplePlayer {
       this.audioContext = null;
     }
 
-    console.log('[SamplePlayer] Disposed');
+    console.log("[SamplePlayer] Disposed");
   }
 }
 

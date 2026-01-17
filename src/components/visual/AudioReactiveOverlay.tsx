@@ -22,7 +22,7 @@ export function AudioReactiveOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const { bass, mid, overall } = useAudioAnalyser(
     videoElement instanceof HTMLVideoElement ? videoElement : null,
-    enabled && videoElement instanceof HTMLVideoElement
+    enabled && videoElement instanceof HTMLVideoElement,
   );
 
   // Calculate scanline offset based on bass (horizontal tearing)
@@ -50,7 +50,10 @@ export function AudioReactiveOverlay({
   const brightnessJitter = mid * 0.05;
 
   return (
-    <div ref={overlayRef} className={`absolute inset-0 pointer-events-none ${className}`}>
+    <div
+      ref={overlayRef}
+      className={`absolute inset-0 pointer-events-none ${className}`}
+    >
       {/* Scanlines with pulsing glow */}
       <motion.div
         className="absolute inset-0"
@@ -113,4 +116,3 @@ export function AudioReactiveOverlay({
     </div>
   );
 }
-

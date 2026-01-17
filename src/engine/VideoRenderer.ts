@@ -12,7 +12,7 @@ export interface RenderOptions {
   height: number;
   frameRate: number;
   bitRate: number; // Mbps
-  format: 'webm' | 'mp4';
+  format: "webm" | "mp4";
   duration?: number; // seconds, auto-detected from audio if not provided
   onProgress?: (progress: number) => void;
   onComplete?: (videoBlob: Blob) => void;
@@ -53,7 +53,7 @@ class VideoRenderer {
    */
   async renderVideo(options: RenderOptions): Promise<Blob> {
     if (this.isRendering) {
-      throw new Error('Rendering already in progress');
+      throw new Error("Rendering already in progress");
     }
 
     this.isRendering = true;
@@ -75,14 +75,18 @@ class VideoRenderer {
       } = options;
 
       // Create audio context and buffer
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
       const audioBuffer = await this.loadAudioBuffer(audioBlob, audioContext);
 
       // Determine duration
       const audioDuration = duration || audioBuffer.duration;
       const totalFrames = Math.ceil(audioDuration * frameRate);
 
-      console.log(`[VideoRenderer] Starting render: ${totalFrames} frames, ${audioDuration.toFixed(1)}s`);
+      console.log(
+        `[VideoRenderer] Starting render: ${totalFrames} frames, ${audioDuration.toFixed(1)}s`,
+      );
 
       // Set up canvas for rendering
       const originalWidth = canvas.width;
@@ -132,7 +136,7 @@ class VideoRenderer {
         };
 
         mediaRecorder.onerror = (event) => {
-          const error = new Error('Video rendering failed');
+          const error = new Error("Video rendering failed");
           this.cleanup(canvas, originalWidth, originalHeight, audioContext);
 
           onError?.(error);
@@ -156,7 +160,6 @@ class VideoRenderer {
           reject(error);
         });
       });
-
     } catch (error) {
       this.cleanup();
       throw error;
@@ -187,23 +190,26 @@ class VideoRenderer {
   // PRIVATE METHODS
   // ==========================================================================
 
-  private async loadAudioBuffer(blob: Blob, audioContext: AudioContext): Promise<AudioBuffer> {
+  private async loadAudioBuffer(
+    blob: Blob,
+    audioContext: AudioContext,
+  ): Promise<AudioBuffer> {
     const arrayBuffer = await blob.arrayBuffer();
     return await audioContext.decodeAudioData(arrayBuffer);
   }
 
-  private getMimeType(format: 'webm' | 'mp4'): string {
+  private getMimeType(format: "webm" | "mp4"): string {
     switch (format) {
-      case 'webm':
-        return MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-          ? 'video/webm;codecs=vp9'
-          : 'video/webm;codecs=vp8';
-      case 'mp4':
-        return MediaRecorder.isTypeSupported('video/mp4')
-          ? 'video/mp4'
-          : 'video/webm;codecs=vp8';
+      case "webm":
+        return MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+          ? "video/webm;codecs=vp9"
+          : "video/webm;codecs=vp8";
+      case "mp4":
+        return MediaRecorder.isTypeSupported("video/mp4")
+          ? "video/mp4"
+          : "video/webm;codecs=vp8";
       default:
-        return 'video/webm;codecs=vp8';
+        return "video/webm;codecs=vp8";
     }
   }
 
@@ -215,12 +221,13 @@ class VideoRenderer {
     onProgress?: (progress: number) => void;
     signal: AbortSignal;
   }): Promise<void> {
-    const { canvas, audioBuffer, frameRate, totalFrames, onProgress, signal } = options;
+    const { canvas, audioBuffer, frameRate, totalFrames, onProgress, signal } =
+      options;
 
     for (let frame = 0; frame < totalFrames; frame++) {
       // Check for cancellation
       if (signal.aborted) {
-        throw new Error('Rendering cancelled');
+        throw new Error("Rendering cancelled");
       }
 
       const time = frame / frameRate;
@@ -233,14 +240,14 @@ class VideoRenderer {
       onProgress?.(progress);
 
       // Small delay to allow UI updates and prevent blocking
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
   }
 
   private async renderFrameAtTime(
     canvas: HTMLCanvasElement,
     audioBuffer: AudioBuffer,
-    time: number
+    time: number,
   ): Promise<void> {
     // Get audio data at this time point
     const sampleRate = audioBuffer.sampleRate;
@@ -249,7 +256,11 @@ class VideoRenderer {
 
     // Get frequency data (this would need to be implemented based on your visualizer)
     // For now, we'll create a placeholder that triggers a canvas render
-    const frequencyData = this.getFrequencyDataAtTime(audioBuffer, frameSample, samplesToAnalyze);
+    const frequencyData = this.getFrequencyDataAtTime(
+      audioBuffer,
+      frameSample,
+      samplesToAnalyze,
+    );
 
     // Trigger canvas render with this audio data
     // This assumes your visualizer has a method to render at a specific time
@@ -259,10 +270,12 @@ class VideoRenderer {
   private getFrequencyDataAtTime(
     audioBuffer: AudioBuffer,
     startSample: number,
-    samplesToAnalyze: number
+    samplesToAnalyze: number,
   ): Uint8Array {
     // Create analyzer node for frequency analysis
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
 
@@ -292,7 +305,7 @@ class VideoRenderer {
   private updateVisualizerForFrame(
     canvas: HTMLCanvasElement,
     frequencyData: Uint8Array,
-    time: number
+    time: number,
   ): void {
     // This is a placeholder - you would need to integrate with your specific visualizer
     // The visualizer should have a method to render based on frequency data and time
@@ -303,27 +316,27 @@ class VideoRenderer {
     // visualizer.render();
 
     // For now, we'll just trigger a canvas render
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Simple visualization placeholder
-    ctx.fillStyle = '#00ff00';
+    ctx.fillStyle = "#00ff00";
     for (let i = 0; i < frequencyData.length; i++) {
       const barHeight = (frequencyData[i] / 255) * canvas.height * 0.5;
       ctx.fillRect(
         (i / frequencyData.length) * canvas.width,
         canvas.height - barHeight,
-        (canvas.width / frequencyData.length) - 1,
-        barHeight
+        canvas.width / frequencyData.length - 1,
+        barHeight,
       );
     }
 
     // Add time overlay
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '24px monospace';
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "24px monospace";
     ctx.fillText(`Time: ${time.toFixed(1)}s`, 10, 30);
   }
 
@@ -331,7 +344,7 @@ class VideoRenderer {
     canvas?: HTMLCanvasElement,
     originalWidth?: number,
     originalHeight?: number,
-    audioContext?: AudioContext
+    audioContext?: AudioContext,
   ): void {
     // Restore canvas size
     if (canvas && originalWidth && originalHeight) {
@@ -340,7 +353,7 @@ class VideoRenderer {
     }
 
     // Close audio context
-    if (audioContext && audioContext.state !== 'closed') {
+    if (audioContext && audioContext.state !== "closed") {
       audioContext.close();
     }
   }
@@ -351,7 +364,7 @@ class VideoRenderer {
 
   dispose(): void {
     this.cancelRender();
-    console.log('[VideoRenderer] Disposed');
+    console.log("[VideoRenderer] Disposed");
   }
 }
 

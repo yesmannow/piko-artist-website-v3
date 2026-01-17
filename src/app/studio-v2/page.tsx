@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
-import { HelpProvider } from '@/context/HelpContext';
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import { StudioErrorBoundary } from "@/components/mobile-shell/StudioErrorBoundary";
+import { HelpProvider } from "@/context/HelpContext";
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
-import { DevAudioDebug } from '@/components/DevAudioDebug';
+import { DevAudioDebug } from "@/components/DevAudioDebug";
 
 // Dynamically import refactored DJInterface
 const DJInterface = dynamic(
-  () => import('@/components/RefactoredDJInterface').then(mod => mod.RefactoredDJInterface),
+  () =>
+    import("@/components/RefactoredDJInterface").then(
+      (mod) => mod.RefactoredDJInterface,
+    ),
   {
     ssr: false,
-    loading: () => <div className="fixed inset-0 bg-black flex items-center justify-center">
-      <div className="text-white text-lg">Loading DJ Mixer...</div>
-    </div>
-  }
+    loading: () => (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-white text-lg">Loading DJ Mixer...</div>
+      </div>
+    ),
+  },
 );
 
 /**
@@ -44,7 +49,7 @@ export default function StudioV2Page() {
     <StudioErrorBoundary>
       <HelpProvider>
         <DJInterface />
-        {process.env.NODE_ENV === 'development' && <DevAudioDebug />}
+        {process.env.NODE_ENV === "development" && <DevAudioDebug />}
       </HelpProvider>
     </StudioErrorBoundary>
   );

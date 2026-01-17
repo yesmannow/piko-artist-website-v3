@@ -7,11 +7,14 @@ import { X, ChevronDown, Maximize2 } from "lucide-react";
 import Image from "next/image";
 
 export function FloatingVideoPlayer() {
-  const { currentVideoId, isMinimized, closeVideo, toggleMinimize } = useVideo();
+  const { currentVideoId, isMinimized, closeVideo, toggleMinimize } =
+    useVideo();
 
   if (!currentVideoId) return null;
 
-  const video = tracks.find((t) => t.id === currentVideoId && t.type === "video");
+  const video = tracks.find(
+    (t) => t.id === currentVideoId && t.type === "video",
+  );
 
   if (!video) return null;
 
@@ -41,7 +44,7 @@ export function FloatingVideoPlayer() {
             {/* YouTube Embed */}
             <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl z-10">
               <iframe
-                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
                 title={video.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
@@ -149,4 +152,3 @@ export function FloatingVideoPlayer() {
     </AnimatePresence>
   );
 }
-

@@ -12,14 +12,18 @@ interface AutomixPanelProps {
   onTrackSelect?: (track: TrackMetadata) => void;
 }
 
-export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: AutomixPanelProps) {
+export function AutomixPanel({
+  currentTrack,
+  availableTracks,
+  onTrackSelect,
+}: AutomixPanelProps) {
   const automixEngine = getAutomixEngine();
   const [isActive, setIsActive] = useState(false);
   const [settings, setSettings] = useState<AutomixSettings>({
     transitionDuration: 8,
     vibeMatching: true,
     autoStartNext: true,
-    crossfadeCurve: 'constant-power'
+    crossfadeCurve: "constant-power",
   });
   const [showSettings, setShowSettings] = useState(false);
   const [nextTrack, setNextTrack] = useState<TrackMetadata | null>(null);
@@ -43,7 +47,11 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
   const handleStartAutomix = async () => {
     if (!currentTrack) return;
 
-    const success = await automixEngine.startAutomix('deckA', currentTrack, settings);
+    const success = await automixEngine.startAutomix(
+      "deckA",
+      currentTrack,
+      settings,
+    );
     if (success) {
       setIsActive(true);
     }
@@ -89,15 +97,18 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
       {/* Status */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-toxic-lime animate-pulse' : 'bg-gray-600'}`} />
+          <div
+            className={`w-2 h-2 rounded-full ${isActive ? "bg-toxic-lime animate-pulse" : "bg-gray-600"}`}
+          />
           <span className="text-sm text-gray-300">
-            {isActive ? 'Active' : 'Inactive'}
+            {isActive ? "Active" : "Inactive"}
           </span>
         </div>
 
         {currentTrack && (
           <div className="text-xs text-gray-400 mb-2">
-            Current: <span className="text-toxic-lime">{currentTrack.title}</span>
+            Current:{" "}
+            <span className="text-toxic-lime">{currentTrack.title}</span>
           </div>
         )}
 
@@ -160,7 +171,7 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
       {showSettings && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
           className="border-t border-gray-700 pt-4 space-y-4"
         >
@@ -175,7 +186,11 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
               max="16"
               step="1"
               value={settings.transitionDuration}
-              onChange={(e) => handleSettingsChange({ transitionDuration: Number(e.target.value) })}
+              onChange={(e) =>
+                handleSettingsChange({
+                  transitionDuration: Number(e.target.value),
+                })
+              }
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
             />
           </div>
@@ -187,7 +202,11 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
             </label>
             <select
               value={settings.crossfadeCurve}
-              onChange={(e) => handleSettingsChange({ crossfadeCurve: e.target.value as 'linear' | 'constant-power' })}
+              onChange={(e) =>
+                handleSettingsChange({
+                  crossfadeCurve: e.target.value as "linear" | "constant-power",
+                })
+              }
               className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
             >
               <option value="constant-power">Constant Power</option>
@@ -202,7 +221,9 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
               <input
                 type="checkbox"
                 checked={settings.vibeMatching}
-                onChange={(e) => handleSettingsChange({ vibeMatching: e.target.checked })}
+                onChange={(e) =>
+                  handleSettingsChange({ vibeMatching: e.target.checked })
+                }
                 className="w-4 h-4 text-toxic-lime bg-gray-800 border-gray-600 rounded focus:ring-toxic-lime"
               />
             </div>
@@ -211,7 +232,9 @@ export function AutomixPanel({ currentTrack, availableTracks, onTrackSelect }: A
               <input
                 type="checkbox"
                 checked={settings.autoStartNext}
-                onChange={(e) => handleSettingsChange({ autoStartNext: e.target.checked })}
+                onChange={(e) =>
+                  handleSettingsChange({ autoStartNext: e.target.checked })
+                }
                 className="w-4 h-4 text-toxic-lime bg-gray-800 border-gray-600 rounded focus:ring-toxic-lime"
               />
             </div>

@@ -9,28 +9,28 @@
  * Usage: npm run build:workers
  */
 
-import { readdirSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdirSync, existsSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
+const projectRoot = join(__dirname, "..");
 
-const WORKERS_SRC_DIR = join(projectRoot, 'src/workers');
-const WORKERS_PUBLIC_DIR = join(projectRoot, 'public/workers');
+const WORKERS_SRC_DIR = join(projectRoot, "src/workers");
+const WORKERS_PUBLIC_DIR = join(projectRoot, "public/workers");
 
 /**
  * Get all TypeScript worker files
  */
 function getWorkerFiles() {
   if (!existsSync(WORKERS_SRC_DIR)) {
-    console.warn('[build-workers] No src/workers directory found');
+    console.warn("[build-workers] No src/workers directory found");
     return [];
   }
 
   const files = readdirSync(WORKERS_SRC_DIR);
-  return files.filter((file) => file.endsWith('.worker.ts'));
+  return files.filter((file) => file.endsWith(".worker.ts"));
 }
 
 /**
@@ -38,31 +38,32 @@ function getWorkerFiles() {
  */
 async function compileWorker(workerFile) {
   const srcPath = join(WORKERS_SRC_DIR, workerFile);
-  const outputName = workerFile.replace('.ts', '.js');
+  const outputName = workerFile.replace(".ts", ".js");
   const outputPath = join(WORKERS_PUBLIC_DIR, outputName);
 
   console.log(`[build-workers] Compiling ${workerFile}...`);
 
   try {
     // Dynamic import esbuild (it's a dev dependency)
-    const esbuild = await import('esbuild');
+    const esbuild = await import("esbuild");
 
     // Determine if this worker needs bundling (e.g., stemSeparator needs onnxruntime-web)
     // Workers that use external libraries need bundling to include them
-    const needsBundling = workerFile.includes('stemSeparator') || workerFile.includes('key');
+    const needsBundling =
+      workerFile.includes("stemSeparator") || workerFile.includes("key");
 
     const buildOptions = {
       entryPoints: [srcPath],
       bundle: needsBundling, // Bundle dependencies for workers that need external libs
       outfile: outputPath,
-      format: 'iife', // IIFE format for classic workers
-      target: 'es2020',
-      platform: 'browser',
+      format: "iife", // IIFE format for classic workers
+      target: "es2020",
+      platform: "browser",
       sourcemap: false,
       minify: false, // Keep readable for debugging
       banner: {
         js: `/**
- * ${outputName} - ${workerFile.replace('.ts', '')} Worker (Compiled)
+ * ${outputName} - ${workerFile.replace(".ts", "")} Worker (Compiled)
  *
  * Phase 9C: Compiled from src/workers/${workerFile}
  *
@@ -85,7 +86,10 @@ async function compileWorker(workerFile) {
       return false;
     }
   } catch (error) {
-    console.error(`[build-workers] ❌ Failed to compile ${workerFile}:`, error.message);
+    console.error(
+      `[build-workers] ❌ Failed to compile ${workerFile}:`,
+      error.message,
+    );
     return false;
   }
 }
@@ -94,7 +98,7 @@ async function compileWorker(workerFile) {
  * Main build function
  */
 async function buildWorkers() {
-  console.log('[build-workers] Building workers...\n');
+  console.log("[build-workers] Building workers...\n");
 
   // Ensure public/workers directory exists
   if (!existsSync(WORKERS_PUBLIC_DIR)) {
@@ -105,7 +109,7 @@ async function buildWorkers() {
   const workerFiles = getWorkerFiles();
 
   if (workerFiles.length === 0) {
-    console.warn('[build-workers] No worker files found in src/workers/');
+    console.warn("[build-workers] No worker files found in src/workers/");
     return;
   }
 
@@ -121,21 +125,23 @@ async function buildWorkers() {
     } else {
       failCount++;
     }
-    console.log(''); // Empty line for readability
+    console.log(""); // Empty line for readability
   }
 
-  console.log(`[build-workers] Summary: ${successCount} succeeded, ${failCount} failed`);
+  console.log(
+    `[build-workers] Summary: ${successCount} succeeded, ${failCount} failed`,
+  );
 
   if (failCount > 0) {
-    console.error('\n[build-workers] ❌ Some workers failed to compile');
+    console.error("\n[build-workers] ❌ Some workers failed to compile");
     process.exit(1);
   } else {
-    console.log('\n[build-workers] ✅ All workers compiled successfully');
+    console.log("\n[build-workers] ✅ All workers compiled successfully");
   }
 }
 
 // Run if called directly
 buildWorkers().catch((error) => {
-  console.error('[build-workers] Fatal error:', error);
+  console.error("[build-workers] Fatal error:", error);
   process.exit(1);
 });

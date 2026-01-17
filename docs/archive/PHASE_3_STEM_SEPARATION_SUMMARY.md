@@ -3,6 +3,7 @@
 ## ✅ Completed Components
 
 ### 1. Device Detection (`src/utils/deviceDetection.ts`)
+
 - **Purpose**: Prevents UI freezing on low-end devices
 - **Features**:
   - Checks `navigator.hardwareConcurrency` for CPU cores
@@ -11,6 +12,7 @@
 - **Usage**: Used by `useStemSeparator` to disable feature on insufficient hardware
 
 ### 2. Web Worker (`public/workers/stem-worker.js`)
+
 - **Purpose**: Runs AI inference in separate thread
 - **Structure**: Message-based communication with main thread
 - **Status**: ⚠️ **Placeholder** - Requires Sherpa-ONNX integration
@@ -20,6 +22,7 @@
   - Implement actual stem separation logic
 
 ### 3. Stem Separator Hook (`src/hooks/useStemSeparator.ts`)
+
 - **Purpose**: Manages AI-powered stem separation
 - **Features**:
   - Initializes Web Worker
@@ -29,6 +32,7 @@
 - **State Management**: Tracks processing state, errors, and results
 
 ### 4. Stem Routing Hook (`src/hooks/useStemRouting.ts`)
+
 - **Purpose**: Manages audio routing for separated stems
 - **Features**:
   - Creates individual GainNodes for each stem
@@ -44,6 +48,7 @@
   ```
 
 ### 5. Stem Control Component (`src/components/studio/StemControl.tsx`)
+
 - **Purpose**: UI controls for individual stems
 - **Features**:
   - Mute/Solo buttons with visual feedback
@@ -54,6 +59,7 @@
 ## 🔧 Integration Status
 
 ### Current State
+
 - ✅ Device detection working
 - ✅ Web Worker structure in place
 - ✅ Audio routing architecture complete
@@ -63,6 +69,7 @@
 ### Next Steps (Sherpa-ONNX Integration)
 
 1. **Install Sherpa-ONNX**:
+
    ```bash
    # Add Sherpa-ONNX WASM files to public/sherpa-onnx/
    # Add Demucs model files to public/models/demucs/
@@ -72,11 +79,12 @@
    - Load Sherpa-ONNX WASM module
    - Initialize Demucs model
    - Implement actual separation logic:
+
    ```javascript
    // Example structure (needs actual Sherpa-ONNX API):
-   await importScripts('/sherpa-onnx/sherpa-onnx.js');
+   await importScripts("/sherpa-onnx/sherpa-onnx.js");
    const engine = new SherpaOnnx.StemSeparator({
-     model: '/models/demucs/model.onnx',
+     model: "/models/demucs/model.onnx",
      // ... other config
    });
 
@@ -96,10 +104,12 @@
 ## 📋 Required Files (Not Yet Created)
 
 ### Model Files (Need to be added to `public/`):
+
 - `public/sherpa-onnx/` - Sherpa-ONNX WASM files
 - `public/models/demucs/` - Quantized Demucs model files
 
 ### Documentation Needed:
+
 - Sherpa-ONNX API reference
 - Demucs model loading instructions
 - AudioBuffer serialization/deserialization for Web Worker
@@ -107,20 +117,24 @@
 ## 🎯 Key Features Implemented
 
 ### 1. Device Guard
+
 - Automatically disables stem separation on low-end devices
 - Shows terminal-style error: `> SYSTEM_ERROR: INSUFFICIENT_COMPUTE_POWER`
 
 ### 2. Drum-to-Sidechain Routing
+
 - **Most Important Feature**: Drum stem routes to SidechainProcessor Input 1
 - Creates accurate "pumping" effect based on actual kick drum hits
 - Not just bass frequencies - real drum detection
 
 ### 3. Individual Stem Control
+
 - Each stem has its own GainNode
 - Mute/Solo functionality
 - Real-time volume control (ready for implementation)
 
 ### 4. Web Worker Architecture
+
 - Prevents UI freezing during AI inference
 - Runs in separate thread
 - Message-based communication
@@ -187,4 +201,3 @@ function StudioPage() {
 ---
 
 **Status**: Architecture complete, awaiting Sherpa-ONNX model integration.
-

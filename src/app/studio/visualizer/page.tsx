@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
-import * as THREE from 'three';
+import { useEffect, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { getRealtimeAudioSystem } from "@/engine/rt/RealtimeAudioSystem";
+import * as THREE from "three";
 
 /**
  * AudioReactiveMaterial - Shader material driven by audio analyser data
@@ -40,28 +40,36 @@ function AudioReactiveMaterial() {
 
         analyserRef.current = analyser;
 
-        console.log('[Visualizer] Analyser initialized');
+        console.log("[Visualizer] Analyser initialized");
       }
     } catch (error) {
-      console.error('[Visualizer] Failed to initialize analyser:', error);
+      console.error("[Visualizer] Failed to initialize analyser:", error);
     }
   }, []);
 
   // Update shader uniforms based on audio data
   useFrame(() => {
-    if (!materialRef.current || !analyserRef.current || !analyserDataRef.current) return;
+    if (
+      !materialRef.current ||
+      !analyserRef.current ||
+      !analyserDataRef.current
+    )
+      return;
 
     // Update analyser data (reuses pre-allocated buffer)
     // Runtime guarantee: new Uint8Array(length) creates ArrayBuffer-backed array
     // TypeScript infers ArrayBufferLike, but runtime is correct (ArrayBuffer)
     // Type assertion is safe because createAudioBuffer uses new Uint8Array(length)
     const buffer = analyserDataRef.current;
-    analyserRef.current.getByteFrequencyData(buffer as Parameters<typeof analyserRef.current.getByteFrequencyData>[0]);
+    analyserRef.current.getByteFrequencyData(
+      buffer as Parameters<typeof analyserRef.current.getByteFrequencyData>[0],
+    );
 
     const analyserData = analyserDataRef.current;
 
     // Calculate audio metrics
-    const average = analyserData.reduce((a, b) => a + b, 0) / analyserData.length;
+    const average =
+      analyserData.reduce((a, b) => a + b, 0) / analyserData.length;
     const bass = analyserData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
     const mid = analyserData.slice(4, 16).reduce((a, b) => a + b, 0) / 12;
     const high = analyserData.slice(16, 32).reduce((a, b) => a + b, 0) / 16;
@@ -186,10 +194,10 @@ export default function StudioVisualizerPage() {
       setIsReady(rtAudio.isReady);
 
       if (!rtAudio.isReady) {
-        console.warn('[Visualizer] Audio system not initialized yet');
+        console.warn("[Visualizer] Audio system not initialized yet");
       }
     } catch (error) {
-      console.error('[Visualizer] Failed to access audio system:', error);
+      console.error("[Visualizer] Failed to access audio system:", error);
     }
   }, []);
 
@@ -202,7 +210,7 @@ export default function StudioVisualizerPage() {
             Studio Visualizer
           </h1>
           <div className="text-xs text-zinc-400 font-mono">
-            {isReady ? '● ACTIVE' : '○ WAITING FOR AUDIO'}
+            {isReady ? "● ACTIVE" : "○ WAITING FOR AUDIO"}
           </div>
         </div>
       </div>
@@ -219,8 +227,12 @@ export default function StudioVisualizerPage() {
         <div className="w-full h-full flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-white font-mono text-sm">Waiting for audio system...</p>
-            <p className="text-zinc-500 text-xs">Initialize the main studio window first</p>
+            <p className="text-white font-mono text-sm">
+              Waiting for audio system...
+            </p>
+            <p className="text-zinc-500 text-xs">
+              Initialize the main studio window first
+            </p>
           </div>
         </div>
       )}

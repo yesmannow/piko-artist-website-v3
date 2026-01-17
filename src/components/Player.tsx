@@ -7,7 +7,10 @@ import Image from "next/image";
 import { Play, Pause, Volume2 } from "lucide-react";
 import { tracks, MediaItem } from "@/lib/data";
 import { useHaptic } from "@/hooks/useHaptic";
-import { getSharedAudioContext, getOrCreateMediaSourceFor } from "@/hooks/useAudioAnalyser";
+import {
+  getSharedAudioContext,
+  getOrCreateMediaSourceFor,
+} from "@/hooks/useAudioAnalyser";
 
 const vibeColors = {
   chill: "bg-neon-green/20 text-neon-green border-neon-green",
@@ -42,12 +45,14 @@ export function Player() {
   const [currentTime, setCurrentTime] = useState("0:00");
   const [duration, setDuration] = useState("0:00");
   const [currentTrack, setCurrentTrack] = useState<MediaItem | null>(null);
-  const [visualizerData, setVisualizerData] = useState<number[]>([0, 0, 0, 0, 0]);
+  const [visualizerData, setVisualizerData] = useState<number[]>([
+    0, 0, 0, 0, 0,
+  ]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Select a random track on initialization
@@ -87,9 +92,13 @@ export function Player() {
       setDuration(formatTime(wavesurfer.getDuration()));
 
       // Get the backend's audio context if available; otherwise use shared
-      interface WaveSurferBackend { ac?: AudioContext; }
-      const backend = (wavesurfer as unknown as { backend?: WaveSurferBackend }).backend;
-      const audioContext = backend && backend.ac ? backend.ac : getSharedAudioContext();
+      interface WaveSurferBackend {
+        ac?: AudioContext;
+      }
+      const backend = (wavesurfer as unknown as { backend?: WaveSurferBackend })
+        .backend;
+      const audioContext =
+        backend && backend.ac ? backend.ac : getSharedAudioContext();
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       analyserRef.current = analyser;
@@ -188,47 +197,56 @@ export function Player() {
       {/* Content with relative positioning */}
       <div className="relative z-10">
         {/* Track Info */}
-      <div className="mb-4">
-        {currentTrack ? (
-          <>
-            <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4 mb-3">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-xl md:text-2xl mb-1 font-tag text-neon-green truncate">
-                  {currentTrack.title}
-                </h3>
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  by {currentTrack.artist}
-                </p>
+        <div className="mb-4">
+          {currentTrack ? (
+            <>
+              <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4 mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-xl md:text-2xl mb-1 font-tag text-neon-green truncate">
+                    {currentTrack.title}
+                  </h3>
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    by {currentTrack.artist}
+                  </p>
+                </div>
+
+                {/* Vibe Badge with Tooltip */}
+                <div className="group relative">
+                  <div
+                    className={`flex items-center gap-2 px-3 py-1 rounded-full border ${vibeColors[currentTrack.vibe]} font-tag text-sm cursor-help`}
+                  >
+                    <span>{vibeIcons[currentTrack.vibe]}</span>
+                    <span className="uppercase tracking-wider">
+                      {currentTrack.vibe}
+                    </span>
+                  </div>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-black/90 text-white text-xs font-tag rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border border-neon-green/50">
+                    {vibeTooltips[currentTrack.vibe]}
+                    <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
+                  </div>
+                </div>
               </div>
 
-              {/* Vibe Badge with Tooltip */}
-              <div className="group relative">
-                <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${vibeColors[currentTrack.vibe]} font-tag text-sm cursor-help`}>
-                  <span>{vibeIcons[currentTrack.vibe]}</span>
-                  <span className="uppercase tracking-wider">{currentTrack.vibe}</span>
-                </div>
-                {/* Tooltip */}
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-black/90 text-white text-xs font-tag rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border border-neon-green/50">
-                  {vibeTooltips[currentTrack.vibe]}
-                  <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
-                </div>
-              </div>
+              {/* Cover Art */}
+              <div
+                className={`w-full h-24 rounded-lg bg-gradient-to-r ${currentTrack.coverArt} mb-4 shadow-md`}
+              />
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground font-tag">
+                🎲 Roll the dice to select a random track
+              </p>
             </div>
-
-            {/* Cover Art */}
-            <div className={`w-full h-24 rounded-lg bg-gradient-to-r ${currentTrack.coverArt} mb-4 shadow-md`} />
-          </>
-        ) : (
-          <div className="text-center py-4">
-            <p className="text-muted-foreground font-tag">
-              🎲 Roll the dice to select a random track
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
         {/* Audio Visualizer - 5 Neon Bars */}
-        <div ref={visualizerRef} className="flex items-end justify-center gap-2 mb-6 h-24">
+        <div
+          ref={visualizerRef}
+          className="flex items-end justify-center gap-2 mb-6 h-24"
+        >
           {visualizerData.map((value, index) => (
             <motion.div
               key={index}
@@ -269,13 +287,24 @@ export function Player() {
               disabled={isLoading || !currentTrack}
               className="relative px-4 md:px-6 py-2 md:py-3 bg-black/80 border-2 border-neon-green font-tag text-neon-green hover:bg-neon-green hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-sm md:text-base"
               style={{
-                clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+                clipPath:
+                  "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
               }}
             >
-              {isPlaying ? <Pause className="w-4 h-4 md:w-5 md:h-5" /> : <Play className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />}
+              {isPlaying ? (
+                <Pause className="w-4 h-4 md:w-5 md:h-5" />
+              ) : (
+                <Play className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />
+              )}
               <span className="ml-1 md:ml-2 font-bold">PLAY</span>
             </button>
-            <div className="px-3 md:px-4 py-2 bg-black/80 border-2 border-neon-pink font-tag text-neon-pink" style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>
+            <div
+              className="px-3 md:px-4 py-2 bg-black/80 border-2 border-neon-pink font-tag text-neon-pink"
+              style={{
+                clipPath:
+                  "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+              }}
+            >
               <Volume2 className="w-4 h-4 md:w-5 md:h-5" />
             </div>
           </div>

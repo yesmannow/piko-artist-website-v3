@@ -33,23 +33,26 @@ export function ProdRuntimeGuards() {
     // Unhandled rejection handler
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       // Filter out expected audio loading AbortErrors
-      const isAbortError = 
+      const isAbortError =
         event.reason?.name === "AbortError" ||
         event.reason?.message?.includes("aborted") ||
         event.reason?.message?.includes("The user aborted a request");
-      
+
       // Silently ignore AbortErrors from audio loading
       if (isAbortError) {
         event.preventDefault(); // Prevent default error logging
         return;
       }
-      
+
       console.error("[UNHANDLED_REJECTION]", {
         reason: event.reason,
-        error: event.reason instanceof Error ? {
-          message: event.reason.message,
-          stack: event.reason.stack,
-        } : event.reason,
+        error:
+          event.reason instanceof Error
+            ? {
+                message: event.reason.message,
+                stack: event.reason.stack,
+              }
+            : event.reason,
         timestamp: new Date().toISOString(),
       });
     };
@@ -59,7 +62,9 @@ export function ProdRuntimeGuards() {
       // Check if error is related to chunk loading
       const isChunkError =
         event.message?.includes("Loading chunk") ||
-        event.message?.includes("Failed to fetch dynamically imported module") ||
+        event.message?.includes(
+          "Failed to fetch dynamically imported module",
+        ) ||
         event.filename?.includes("_next/static/chunks/") ||
         event.filename?.includes("_next/static/css/");
 
@@ -87,10 +92,12 @@ export function ProdRuntimeGuards() {
     return () => {
       window.removeEventListener("error", handleWindowError);
       window.removeEventListener("error", handleChunkLoadError);
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection,
+      );
     };
   }, []);
 
   return null;
 }
-

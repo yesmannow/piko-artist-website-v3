@@ -1,11 +1,11 @@
 /**
  * PHASE 10: Production Logger
- * 
+ *
  * Conditional logging that only outputs in development mode.
  * Errors are always logged for debugging production issues.
  */
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV === "development";
 
 export const logger = {
   log: (...args: any[]) => {

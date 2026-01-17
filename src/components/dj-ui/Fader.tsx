@@ -58,7 +58,9 @@ export function Fader({
   }, [value, height, isDragging, rawPosition]);
 
   // Check if this fader has a MIDI mapping
-  const hasMIDIMapping = midiAction ? Object.values(mappings).some(m => m.action === midiAction) : false;
+  const hasMIDIMapping = midiAction
+    ? Object.values(mappings).some((m) => m.action === midiAction)
+    : false;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // If in learn mode and we have a midiAction, start learning
@@ -152,15 +154,23 @@ export function Fader({
           <div
             className={`relative flex items-center gap-1 px-2 py-1 rounded text-xs font-mono ${
               hasMIDIMapping
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                 : learnMode
-                ? 'bg-cyan-500 text-black animate-pulse'
-                : 'bg-gray-700/50 text-gray-400 border border-gray-600/50'
+                  ? "bg-cyan-500 text-black animate-pulse"
+                  : "bg-gray-700/50 text-gray-400 border border-gray-600/50"
             }`}
-            title={hasMIDIMapping ? 'MIDI mapped' : learnMode ? 'Click to learn MIDI mapping' : 'No MIDI mapping'}
+            title={
+              hasMIDIMapping
+                ? "MIDI mapped"
+                : learnMode
+                  ? "Click to learn MIDI mapping"
+                  : "No MIDI mapping"
+            }
           >
             <Radio className="w-3 h-3" />
-            <span>{hasMIDIMapping ? 'MIDI' : learnMode ? 'LEARN' : 'NO MIDI'}</span>
+            <span>
+              {hasMIDIMapping ? "MIDI" : learnMode ? "LEARN" : "NO MIDI"}
+            </span>
           </div>
         )}
       </div>
@@ -179,22 +189,28 @@ export function Fader({
         <div
           className={`absolute inset-0 rounded-sm border transition-all ${
             hasMIDIMapping
-              ? 'bg-[#0a0a0a] border-cyan-500/50 shadow-lg shadow-cyan-500/20'
-              : 'bg-[#0a0a0a] border-gray-800'
+              ? "bg-[#0a0a0a] border-cyan-500/50 shadow-lg shadow-cyan-500/20"
+              : "bg-[#0a0a0a] border-gray-800"
           }`}
         >
           {/* Groove lines */}
-          <div className={`absolute inset-x-0 top-0 h-px ${hasMIDIMapping ? 'bg-cyan-400/50' : 'bg-gray-700'}`} />
-          <div className={`absolute inset-x-0 top-1/2 h-px ${hasMIDIMapping ? 'bg-cyan-400/50' : 'bg-gray-700'}`} />
-          <div className={`absolute inset-x-0 bottom-0 h-px ${hasMIDIMapping ? 'bg-cyan-400/50' : 'bg-gray-700'}`} />
+          <div
+            className={`absolute inset-x-0 top-0 h-px ${hasMIDIMapping ? "bg-cyan-400/50" : "bg-gray-700"}`}
+          />
+          <div
+            className={`absolute inset-x-0 top-1/2 h-px ${hasMIDIMapping ? "bg-cyan-400/50" : "bg-gray-700"}`}
+          />
+          <div
+            className={`absolute inset-x-0 bottom-0 h-px ${hasMIDIMapping ? "bg-cyan-400/50" : "bg-gray-700"}`}
+          />
         </div>
 
         {/* Fader cap with elastic boundaries */}
         <motion.div
           className={`absolute left-1/2 -translate-x-1/2 rounded-sm shadow-lg cursor-grab active:cursor-grabbing touch-manipulation border transition-all ${
             hasMIDIMapping
-              ? 'bg-cyan-600 border-cyan-400 shadow-cyan-500/50'
-              : 'bg-[#2a2a2a] border-gray-600'
+              ? "bg-cyan-600 border-cyan-400 shadow-cyan-500/50"
+              : "bg-[#2a2a2a] border-gray-600"
           }`}
           style={{
             top: displayPosition,
@@ -203,15 +219,19 @@ export function Fader({
             minWidth: isMobile ? 44 : 32,
             minHeight: isMobile ? 20 : 24,
             boxShadow: hasMIDIMapping
-              ? '0 0 15px rgba(6, 182, 212, 0.4), 0 0 30px rgba(6, 182, 212, 0.2)'
-              : '0 0 5px rgba(0,0,0,0.5)',
+              ? "0 0 15px rgba(6, 182, 212, 0.4), 0 0 30px rgba(6, 182, 212, 0.2)"
+              : "0 0 5px rgba(0,0,0,0.5)",
           }}
           whileHover={!isMobile ? { scale: 1.05 } : {}}
           whileTap={{ scale: 0.95 }}
         >
           {/* Cap detail lines */}
-          <div className={`absolute inset-x-1 top-1 h-px ${hasMIDIMapping ? 'bg-cyan-300' : 'bg-gray-500'}`} />
-          <div className={`absolute inset-x-1 bottom-1 h-px ${hasMIDIMapping ? 'bg-cyan-300' : 'bg-gray-500'}`} />
+          <div
+            className={`absolute inset-x-1 top-1 h-px ${hasMIDIMapping ? "bg-cyan-300" : "bg-gray-500"}`}
+          />
+          <div
+            className={`absolute inset-x-1 bottom-1 h-px ${hasMIDIMapping ? "bg-cyan-300" : "bg-gray-500"}`}
+          />
         </motion.div>
       </div>
     </div>

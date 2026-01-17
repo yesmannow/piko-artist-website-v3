@@ -5,9 +5,17 @@
  * Note: The actual types are exported from lenis package, but this declaration
  * helps IDEs resolve the module when using moduleResolution: "bundler"
  */
-declare module 'lenis/react' {
-  import type { LenisOptions, Lenis as LenisInstance, ScrollCallback } from 'lenis';
-  import type { ComponentPropsWithoutRef, ReactNode, RefAttributes } from 'react';
+declare module "lenis/react" {
+  import type {
+    LenisOptions,
+    Lenis as LenisInstance,
+    ScrollCallback,
+  } from "lenis";
+  import type {
+    ComponentPropsWithoutRef,
+    ReactNode,
+    RefAttributes,
+  } from "react";
 
   export interface LenisContextValue {
     lenis: LenisInstance;
@@ -15,13 +23,13 @@ declare module 'lenis/react' {
     removeCallback: (callback: ScrollCallback) => void;
   }
 
-  export interface LenisProps extends ComponentPropsWithoutRef<'div'> {
+  export interface LenisProps extends ComponentPropsWithoutRef<"div"> {
     /**
      * Setup a global instance of Lenis
      * if `asChild`, the component will render wrapper and content divs
      * @default false
      */
-    root?: boolean | 'asChild';
+    root?: boolean | "asChild";
     /**
      * Lenis options
      */
@@ -45,7 +53,13 @@ declare module 'lenis/react' {
   }
 
   export const ReactLenis: React.ForwardRefExoticComponent<
-    Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, 'ref'> &
+    Omit<
+      React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLDivElement>,
+        HTMLDivElement
+      >,
+      "ref"
+    > &
       LenisProps &
       RefAttributes<LenisRef>
   >;
@@ -57,9 +71,12 @@ declare module 'lenis/react' {
    * @param priority Optional priority for callback
    * @returns Lenis instance or undefined
    */
-  export function useLenis(callback?: ScrollCallback, deps?: React.DependencyList, priority?: number): LenisInstance | undefined;
+  export function useLenis(
+    callback?: ScrollCallback,
+    deps?: React.DependencyList,
+    priority?: number,
+  ): LenisInstance | undefined;
 
   export { ReactLenis as Lenis, ReactLenis as default };
   export type { LenisContextValue, LenisProps, LenisRef };
 }
-

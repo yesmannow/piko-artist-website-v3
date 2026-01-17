@@ -135,8 +135,12 @@ export function RefactoredDJDeck({
       </div>
 
       <div className="space-y-2 rounded-md border border-gray-800/80 bg-black/30 p-3">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">Scratch / Pitch</p>
-        <label className="text-xs uppercase text-gray-400">Scratch (nudge)</label>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">
+          Scratch / Pitch
+        </p>
+        <label className="text-xs uppercase text-gray-400">
+          Scratch (nudge)
+        </label>
         <input
           type="range"
           min={-1}

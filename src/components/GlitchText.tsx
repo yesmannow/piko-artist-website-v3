@@ -9,7 +9,11 @@ interface GlitchTextProps {
   delay?: number;
 }
 
-export function GlitchText({ text, className = "", delay = 0 }: GlitchTextProps) {
+export function GlitchText({
+  text,
+  className = "",
+  delay = 0,
+}: GlitchTextProps) {
   const [displayText, setDisplayText] = useState(text);
   const [isGlitching, setIsGlitching] = useState(false);
 
@@ -33,12 +37,14 @@ export function GlitchText({ text, className = "", delay = 0 }: GlitchTextProps)
 
             // Scramble remaining characters
             if (char !== " ") {
-              return glitchChars[Math.floor(Math.random() * glitchChars.length)];
+              return glitchChars[
+                Math.floor(Math.random() * glitchChars.length)
+              ];
             }
 
             return char;
           })
-          .join("")
+          .join(""),
       );
 
       currentIteration++;
@@ -75,4 +81,3 @@ export function GlitchText({ text, className = "", delay = 0 }: GlitchTextProps)
     </motion.span>
   );
 }
-
