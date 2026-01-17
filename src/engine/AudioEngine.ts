@@ -51,6 +51,9 @@ class AudioEngine {
   private initialized: boolean = false;
   state: "Uninitialized" | "Initializing" | "Running" | "Error" =
     "Uninitialized";
+  private mediaDestination: MediaStreamAudioDestinationNode | null = null;
+  private recorder: MediaRecorder | null = null;
+  private recordedChunks: BlobPart[] = [];
 
   private async ensureReady(): Promise<boolean> {
     if (!this.initialized) {
@@ -98,6 +101,10 @@ class AudioEngine {
 
       this.masterGain = this.context.createGain();
       this.masterGain.connect(this.context.destination);
+
+      // Setup recording destination
+      this.mediaDestination = this.context.createMediaStreamDestination();
+      this.masterGain.connect(this.mediaDestination);
 
       // Initialize Decks A and B
       this.initDeck("deckA");
@@ -695,6 +702,45 @@ class AudioEngine {
   getDuration(deckId: string): number {
     const deck = this.decks.get(deckId);
     return deck?.buffer?.duration ?? 0;
+  }
+
+  /**
+   * Start recording master output using MediaRecorder.
+   */
+  startRecording(): boolean {
+    if (!this.context || !this.mediaDestination) return false;
+    try {
+      const stream = this.mediaDestination.stream;
+      this.recordedChunks = [];
+      this.recorder = new MediaRecorder(stream);
+      this.recorder.ondataavailable = (evt) => {
+        if (evt.data.size > 0) this.recordedChunks.push(evt.data);
+      };
+      this.recorder.start();
+      return true;
+    } catch (error) {
+      console.error("[AudioEngine] Failed to start recording:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Stop recording and return a Blob.
+   */
+  stopRecording(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      if (!this.recorder) {
+        resolve(null);
+        return;
+      }
+      this.recorder.onstop = () => {
+        const blob = new Blob(this.recordedChunks, { type: "audio/webm" });
+        this.recorder = null;
+        this.recordedChunks = [];
+        resolve(blob);
+      };
+      this.recorder.stop();
+    });
   }
 
   debugDeckNode(deckId: string) {
