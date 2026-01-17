@@ -569,14 +569,26 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               snapToBeat(t - beatGridOffset, bpm, 1.0) + beatGridOffset;
             ws.seekTo(Math.max(0, Math.min(snapped, dur)) / dur);
             console.log(`DJDeck (${deckLabel}): Quantized playback starting at ${snapped}s`);
-            ws.play();
+            await ws.play();
+            
+            // Verify media element is actually playing
+            const mediaElement = ws.getMediaElement();
+            if (mediaElement) {
+              console.log(`DJDeck (${deckLabel}): After play() - Media element state: paused=${mediaElement.paused}, currentTime=${mediaElement.currentTime}, volume=${mediaElement.volume}`);
+            }
           } else {
             console.log(`DJDeck (${deckLabel}): Pausing playback`);
             ws.pause();
           }
         } else {
           console.log(`DJDeck (${deckLabel}): Toggling play/pause (no quantize)`);
-          ws.playPause();
+          await ws.playPause();
+          
+          // Verify media element state after playPause
+          const mediaElement = ws.getMediaElement();
+          if (mediaElement) {
+            console.log(`DJDeck (${deckLabel}): After playPause() - Media element state: paused=${mediaElement.paused}, currentTime=${mediaElement.currentTime}, volume=${mediaElement.volume}, duration=${mediaElement.duration}`);
+          }
         }
       }
       onPlayPause();
