@@ -10,6 +10,7 @@ import { DevAudioDebug } from "./DevAudioDebug";
 import { useDeckMixerStore } from "@/store/useDeckMixerStore";
 import { useAudioStore } from "@/store/useAudioStore";
 import { Pause, Play } from "lucide-react";
+import { useMIDI } from "@/lib/hooks/useMIDI";
 
 type DeckId = "deckA" | "deckB";
 
@@ -245,6 +246,44 @@ export function RefactoredDJInterface() {
     const target = progress * (durations[deck] || 0);
     await engine.seek(deck, target);
   };
+
+  // MIDI mapping: CC7 -> crossfader, CC20/21/22 -> Deck A EQ low/mid/high, CC23/24/25 -> Deck B EQ
+  useMIDI((data) => {
+    const [status, control, value] = data;
+    const isCC = status === 176;
+    const isNoteOn = status === 144;
+    if (isCC && control === 7) {
+      const v = value / 127;
+      setCrossfade(v);
+      void ensureAudioEngineReady().then((engine) => engine.setCrossfader(v));
+    }
+    if (isCC && control >= 20 && control <= 22) {
+      const band: keyof EQState =
+        control === 20 ? "low" : control === 21 ? "mid" : "high";
+      const v = (value / 127) * 12 - 6; // +/-6dB-ish
+      void ensureAudioEngineReady().then((engine) =>
+        engine.setEQ("deckA", { [band]: v }),
+      );
+    }
+    if (isCC && control >= 23 && control <= 25) {
+      const band: keyof EQState =
+        control === 23 ? "low" : control === 24 ? "mid" : "high";
+      const v = (value / 127) * 12 - 6;
+      void ensureAudioEngineReady().then((engine) =>
+        engine.setEQ("deckB", { [band]: v }),
+      );
+    }
+    if (isNoteOn && control === 60) {
+      void ensureAudioEngineReady().then((engine) =>
+        engine.triggerHotCue("deckA", 1),
+      );
+    }
+    if (isNoteOn && control === 61) {
+      void ensureAudioEngineReady().then((engine) =>
+        engine.triggerHotCue("deckB", 1),
+      );
+    }
+  });
 
   return (
     <>
