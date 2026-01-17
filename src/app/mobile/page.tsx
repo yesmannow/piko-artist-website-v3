@@ -5,10 +5,11 @@ import dynamic from 'next/dynamic';
 import { StudioErrorBoundary } from '@/components/mobile-shell/StudioErrorBoundary';
 import { HelpProvider } from '@/context/HelpContext';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
+import { DevAudioDebug } from '@/components/DevAudioDebug';
 
-// Dynamically import DJInterface for mobile
+// Dynamically import refactored DJInterface for mobile
 const DJInterface = dynamic(
-  () => import('@/components/DJInterface').then(mod => mod.DJInterface),
+  () => import('@/components/RefactoredDJInterface').then(mod => mod.RefactoredDJInterface),
   {
     ssr: false,
     loading: () => <div className="fixed inset-0 bg-black flex items-center justify-center">
@@ -62,6 +63,7 @@ export default function MobilePage() {
     <StudioErrorBoundary>
       <HelpProvider>
         <DJInterface />
+        {process.env.NODE_ENV === 'development' && <DevAudioDebug />}
       </HelpProvider>
     </StudioErrorBoundary>
   );

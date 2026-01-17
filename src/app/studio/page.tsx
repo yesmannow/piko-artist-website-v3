@@ -4,10 +4,11 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { HelpProvider } from '@/context/HelpContext';
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
+import { DevAudioDebug } from '@/components/DevAudioDebug';
 
-// Dynamically import DJInterface to avoid SSR issues
+// Dynamically import refactored DJInterface to avoid SSR issues
 const DJInterface = dynamic(
-  () => import('@/components/DJInterface').then(mod => mod.DJInterface),
+  () => import('@/components/RefactoredDJInterface').then(mod => mod.RefactoredDJInterface),
   {
     ssr: false,
     loading: () => (
@@ -41,7 +42,7 @@ export default function StudioPage() {
   return (
     <HelpProvider>
       <DJInterface />
+      {process.env.NODE_ENV === 'development' && <DevAudioDebug />}
     </HelpProvider>
   );
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from 'react';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady, getAudioEngine } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
 import { Play, Pause } from 'lucide-react';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
@@ -15,36 +15,40 @@ export const AlwaysOnBottomBar = () => {
   const prevCrossfaderRef = useRef(0.5);
 
   // Handlers
-  const handleDeckAPlayPause = () => {
+  const handleDeckAPlayPause = async () => {
     // PHASE 3: Use PLAY_TOGGLE pattern
     triggerHaptic(HAPTIC_PATTERNS.PLAY_TOGGLE);
+    const engine = await ensureAudioEngineReady();
     if (deckAState.isPlaying) {
-      getAudioEngine().pause('deckA');
+      engine.pause('deckA');
     } else {
-      getAudioEngine().play('deckA');
+      engine.play('deckA');
     }
   };
 
-  const handleDeckBPlayPause = () => {
+  const handleDeckBPlayPause = async () => {
     // PHASE 3: Use PLAY_TOGGLE pattern
     triggerHaptic(HAPTIC_PATTERNS.PLAY_TOGGLE);
+    const engine = await ensureAudioEngineReady();
     if (deckBState.isPlaying) {
-      getAudioEngine().pause('deckB');
+      engine.pause('deckB');
     } else {
-      getAudioEngine().play('deckB');
+      engine.play('deckB');
     }
   };
 
-  const handleLoadDeckA = () => {
+  const handleLoadDeckA = async () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const testTrack = 'https://archive.org/download/mythium/JLS_ATI.mp3';
-    getAudioEngine().loadTrack('deckA', testTrack);
+    const engine = await ensureAudioEngineReady();
+    engine.loadTrack('deckA', testTrack);
   };
 
-  const handleLoadDeckB = () => {
+  const handleLoadDeckB = async () => {
     triggerHaptic(HAPTIC_PATTERNS.CLICK);
     const testTrack = 'https://archive.org/download/mythium/JLS_ATI.mp3';
-    getAudioEngine().loadTrack('deckB', testTrack);
+    const engine = await ensureAudioEngineReady();
+    engine.loadTrack('deckB', testTrack);
   };
 
   const handleCrossfaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,12 +66,14 @@ export const AlwaysOnBottomBar = () => {
     }
 
     prevCrossfaderRef.current = value;
-    // TODO: Apply crossfader logic to audio engine
+    ensureAudioEngineReady().then((engine) => {
+      engine.setCrossfader(value);
+    });
   };
 
   // PHASE 8: Sync handlers
-  const handleSyncA = () => {
-    const engine = getAudioEngine();
+  const handleSyncA = async () => {
+    const engine = await ensureAudioEngineReady();
     const playbackRate = engine.getPlaybackRate('deckA');
 
     if (playbackRate !== 1.0) {
@@ -82,8 +88,8 @@ export const AlwaysOnBottomBar = () => {
     }
   };
 
-  const handleSyncB = () => {
-    const engine = getAudioEngine();
+  const handleSyncB = async () => {
+    const engine = await ensureAudioEngineReady();
     const playbackRate = engine.getPlaybackRate('deckB');
 
     if (playbackRate !== 1.0) {

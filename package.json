@@ -22,7 +22,8 @@
     "verify:stem-strict": "node scripts/verify-stem-assets-strict.mjs",
     "test:model-url": "node scripts/test-model-url.mjs",
     "download:model": "node scripts/download-model.mjs",
-    "download:fonts": "node scripts/download-fonts.mjs"
+    "download:fonts": "node scripts/download-fonts.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-spring/three": "^10.0.3",

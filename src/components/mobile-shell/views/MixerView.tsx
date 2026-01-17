@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from 'react';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 import { useAudioStore } from '@/store/useAudioStore';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/utils/haptics';
 
@@ -35,7 +35,7 @@ export const MixerView = () => {
     }
   };
 
-  const handleVolumeChange = (deckId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = async (deckId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     
     // PHASE 3: Check for midpoint crossing
@@ -49,10 +49,11 @@ export const MixerView = () => {
       lastVolumeB.current = val;
     }
     
-    getAudioEngine().setVolume(deckId, val);
+    const engine = await ensureAudioEngineReady();
+    engine.setVolume(deckId, val);
   };
 
-  const handleMasterVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMasterVolumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     
     // PHASE 3: Check for midpoint crossing
@@ -60,8 +61,8 @@ export const MixerView = () => {
     lastMaster.current = val;
     
     setMasterVolume(val);
-    // Note: Master volume control would need to be added to AudioEngine
-    // For now, this just updates the store
+    const engine = await ensureAudioEngineReady();
+    await engine.setMasterVolume(val);
   };
 
   return (

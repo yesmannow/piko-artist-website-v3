@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { getStudioEngine } from '@/engine/rt/StudioEngine';
 import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
-import { getAudioEngine } from '@/engine/AudioEngine';
+import { ensureAudioEngineReady } from '@/engine/AudioEngine';
 
 interface PanicStopButtonProps {
   className?: string;
@@ -40,7 +40,7 @@ export function PanicStopButton({ className = '', variant = 'desktop' }: PanicSt
 
       // Stop all AudioEngine decks
       try {
-        const audioEngine = getAudioEngine();
+        const audioEngine = await ensureAudioEngineReady();
         audioEngine.pause('deckA');
         audioEngine.pause('deckB');
       } catch (error) {
