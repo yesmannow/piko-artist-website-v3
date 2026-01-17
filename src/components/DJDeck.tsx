@@ -276,16 +276,23 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             if (!mediaSourceRef.current) {
               const mediaElement = ws.getMediaElement();
               if (!mediaElement) {
-                console.error("DJDeck: No media element available from WaveSurfer");
+                console.error(`DJDeck (${deckLabel}): No media element available from WaveSurfer`);
                 return;
               }
               
               console.log(`DJDeck (${deckLabel}): Creating MediaElementSource and connecting to output`);
+              console.log(`DJDeck (${deckLabel}): Media element state - paused: ${mediaElement.paused}, readyState: ${mediaElement.readyState}, volume: ${mediaElement.volume}, muted: ${mediaElement.muted}`);
+              
               const mediaSource = audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
               mediaSource.connect(outputNode);
               console.log(`DJDeck (${deckLabel}): Audio routing connected successfully`);
+              
+              // Ensure media element is ready for playback
+              if (mediaElement.paused && mediaElement.readyState >= 2) {
+                console.log(`DJDeck (${deckLabel}): Media element is ready but paused, waiting for play command`);
+              }
             } else {
               // Source already exists, ensure it's connected
               console.log(`DJDeck (${deckLabel}): MediaElementSource already exists, ensuring connection`);
