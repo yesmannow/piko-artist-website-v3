@@ -13,7 +13,6 @@ import {
   X,
   ExternalLink,
   Upload,
-  FileAudio,
   ChevronLeft,
   ChevronRight,
   Sliders,
@@ -39,7 +38,6 @@ import {
   extractDominantColors,
   type DominantColors,
 } from "@/utils/colorExtractor";
-import { AutomixPanel } from "./dj-ui/AutomixPanel";
 import { LibraryModal } from "./dj-ui/LibraryModal";
 import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
 import { Toast, type ToastType } from "./dj-ui/Toast";
@@ -844,42 +842,42 @@ export function DJInterface() {
       if (fxFlangerARef.current) {
         try {
           fxFlangerARef.current.oscillator.stop();
-        } catch (e) {
+        } catch {
           // Already stopped
         }
       }
       if (fxPhaserARef.current) {
         try {
           fxPhaserARef.current.oscillator.stop();
-        } catch (e) {
+        } catch {
           // Already stopped
         }
       }
       if (fxChorusARef.current) {
         try {
           fxChorusARef.current.oscillator.stop();
-        } catch (e) {
+        } catch {
           // Already stopped
         }
       }
       if (fxFlangerBRef.current) {
         try {
           fxFlangerBRef.current.oscillator.stop();
-        } catch (e) {
+        } catch {
           // Already stopped
         }
       }
       if (fxPhaserBRef.current) {
         try {
           fxPhaserBRef.current.oscillator.stop();
-        } catch (e) {
+        } catch {
           // Already stopped
         }
       }
       if (fxChorusBRef.current) {
         try {
           fxChorusBRef.current.oscillator.stop();
-        } catch (e) {
+        } catch {
           // Already stopped
         }
       }
@@ -1545,25 +1543,6 @@ export function DJInterface() {
   /**
    * Handle crossfader change with haptic feedback at center position
    */
-  const handleCrossfaderChange = useCallback(
-    (newValue: number) => {
-      const prev = prevCrossfaderRef.current;
-      const centerThreshold = 0.02; // 2% tolerance for center detection
-
-      // Check if crossfader crossed the center point (0.5)
-      const crossedCenter =
-        (prev < 0.5 && newValue >= 0.5) || (prev > 0.5 && newValue <= 0.5);
-
-      // Trigger haptic at center position
-      if (crossedCenter && Math.abs(newValue - 0.5) < centerThreshold) {
-        baseTriggerHaptic();
-      }
-
-      prevCrossfaderRef.current = newValue;
-      setCrossfader(newValue);
-    },
-    [baseTriggerHaptic]
-  );
 
   const handleDeckASync = useCallback(() => {
     if (deckARef.current && deckBRef.current) {

@@ -6,7 +6,6 @@ import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { getStudioEngine } from '@/engine/rt/StudioEngine';
 import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
 import { getAudioEngine } from '@/engine/AudioEngine';
-import type { DeckId } from '@/engine/rt/control/ControlLayout';
 
 interface PanicStopButtonProps {
   className?: string;

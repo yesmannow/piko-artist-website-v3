@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Zap } from 'lucide-react';
-import { getAudioEngine } from '@/engine/AudioEngine';
 import { getMIDIManager } from '@/engine/MIDIManager';
 import { getRealtimeAudioSystem } from '@/engine/rt/RealtimeAudioSystem';
 import { getStudioEngine } from '@/engine/rt/StudioEngine';
