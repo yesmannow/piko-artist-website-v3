@@ -287,6 +287,12 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               mediaSourceRef.current = mediaSource;
               // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
               mediaSource.connect(outputNode);
+              
+              // CRITICAL: Ensure media element remains unmuted and at full volume
+              // Some browsers may change these when creating MediaElementSource
+              mediaElement.muted = false;
+              mediaElement.volume = 1.0;
+              
               console.log(`DJDeck (${deckLabel}): Audio routing connected successfully`);
               
               // Ensure media element is ready for playback
@@ -552,6 +558,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               const mediaSource = audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               mediaSource.connect(outputNode);
+              
+              // CRITICAL: Ensure media element remains unmuted and at full volume
+              mediaElement.muted = false;
+              mediaElement.volume = 1.0;
+              
               console.log(`DJDeck (${deckLabel}): Emergency connection successful`);
             }
           } catch (error) {
@@ -621,6 +632,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               mediaSource.connect(outputNode);
+              
+              // CRITICAL: Ensure media element remains unmuted and at full volume
+              mediaElement.muted = false;
+              mediaElement.volume = 1.0;
+              
               console.log(`DJDeck (${deckLabel}): Backup connection successful`);
             }
           } catch (error) {
