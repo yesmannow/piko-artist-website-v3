@@ -44,7 +44,7 @@ function useLastSession() {
 
 function useRmsMeter() {
   const [rms, setRms] = useState(0);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const tick = () => {
