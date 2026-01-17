@@ -276,16 +276,29 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
             if (!mediaSourceRef.current) {
               const mediaElement = ws.getMediaElement();
               if (!mediaElement) {
-                console.error("DJDeck: No media element available from WaveSurfer");
+                console.error(`DJDeck (${deckLabel}): No media element available from WaveSurfer`);
                 return;
               }
               
               console.log(`DJDeck (${deckLabel}): Creating MediaElementSource and connecting to output`);
+              console.log(`DJDeck (${deckLabel}): Media element state - paused: ${mediaElement.paused}, readyState: ${mediaElement.readyState}, volume: ${mediaElement.volume}, muted: ${mediaElement.muted}`);
+              
               const mediaSource = audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               // Connect to the specific Deck Input (High/Mid/Low Filter Chain)
               mediaSource.connect(outputNode);
+              
+              // CRITICAL: Ensure media element remains unmuted and at full volume
+              // Some browsers may change these when creating MediaElementSource
+              mediaElement.muted = false;
+              mediaElement.volume = 1.0;
+              
               console.log(`DJDeck (${deckLabel}): Audio routing connected successfully`);
+              
+              // Ensure media element is ready for playback
+              if (mediaElement.paused && mediaElement.readyState >= 2) {
+                console.log(`DJDeck (${deckLabel}): Media element is ready but paused, waiting for play command`);
+              }
             } else {
               // Source already exists, ensure it's connected
               console.log(`DJDeck (${deckLabel}): MediaElementSource already exists, ensuring connection`);
@@ -545,6 +558,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               const mediaSource = audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               mediaSource.connect(outputNode);
+              
+              // CRITICAL: Ensure media element remains unmuted and at full volume
+              mediaElement.muted = false;
+              mediaElement.volume = 1.0;
+              
               console.log(`DJDeck (${deckLabel}): Emergency connection successful`);
             }
           } catch (error) {
@@ -562,14 +580,26 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
               snapToBeat(t - beatGridOffset, bpm, 1.0) + beatGridOffset;
             ws.seekTo(Math.max(0, Math.min(snapped, dur)) / dur);
             console.log(`DJDeck (${deckLabel}): Quantized playback starting at ${snapped}s`);
-            ws.play();
+            await ws.play();
+            
+            // Verify media element is actually playing
+            const mediaElement = ws.getMediaElement();
+            if (mediaElement) {
+              console.log(`DJDeck (${deckLabel}): After play() - Media element state: paused=${mediaElement.paused}, currentTime=${mediaElement.currentTime}, volume=${mediaElement.volume}`);
+            }
           } else {
             console.log(`DJDeck (${deckLabel}): Pausing playback`);
             ws.pause();
           }
         } else {
           console.log(`DJDeck (${deckLabel}): Toggling play/pause (no quantize)`);
-          ws.playPause();
+          await ws.playPause();
+          
+          // Verify media element state after playPause
+          const mediaElement = ws.getMediaElement();
+          if (mediaElement) {
+            console.log(`DJDeck (${deckLabel}): After playPause() - Media element state: paused=${mediaElement.paused}, currentTime=${mediaElement.currentTime}, volume=${mediaElement.volume}, duration=${mediaElement.duration}`);
+          }
         }
       }
       onPlayPause();
@@ -602,6 +632,11 @@ export const DJDeck = forwardRef<DJDeckRef, DJDeckProps>(
                 audioContext.createMediaElementSource(mediaElement);
               mediaSourceRef.current = mediaSource;
               mediaSource.connect(outputNode);
+              
+              // CRITICAL: Ensure media element remains unmuted and at full volume
+              mediaElement.muted = false;
+              mediaElement.volume = 1.0;
+              
               console.log(`DJDeck (${deckLabel}): Backup connection successful`);
             }
           } catch (error) {

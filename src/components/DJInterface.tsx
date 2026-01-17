@@ -70,6 +70,15 @@ const FX_DELAY_FEEDBACK_MAX = 0.9;
 function makeDistortionCurve(amount: number) {
   const k = Number.isFinite(amount) ? amount : DISTORTION_DEFAULT_K;
   const curve = new Float32Array(DISTORTION_CURVE_SAMPLES);
+  
+  // When amount is 0, return linear curve (y = x) for transparent bypass
+  if (k === 0) {
+    for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
+      curve[i] = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
+    }
+    return curve;
+  }
+  
   const deg = Math.PI / 180;
   for (let i = 0; i < DISTORTION_CURVE_SAMPLES; ++i) {
     const x = (i * 2) / DISTORTION_CURVE_SAMPLES - 1;
@@ -325,7 +334,7 @@ export function DJInterface() {
 
   // Clear All FX handlers
   const handleClearAllFXA = () => {
-    setFilterFreqA(1000);
+    setFilterFreqA(20000); // Reset to wide open (neutral/bypass)
     setFilterTypeA("lowpass");
     setReverbDryWetA(0);
     setDelayTimeA(0);
@@ -334,7 +343,7 @@ export function DJInterface() {
   };
 
   const handleClearAllFXB = () => {
-    setFilterFreqB(1000);
+    setFilterFreqB(20000); // Reset to wide open (neutral/bypass)
     setFilterTypeB("lowpass");
     setReverbDryWetB(0);
     setDelayTimeB(0);
@@ -581,7 +590,7 @@ export function DJInterface() {
     // Filter for Deck A
     const fxFilterA = ctx.createBiquadFilter();
     fxFilterA.type = "lowpass";
-    fxFilterA.frequency.value = 1000;
+    fxFilterA.frequency.value = 20000; // Match initial state (wide open, no filtering)
     fxFilterA.Q.value = 1;
     fxFilterARef.current = fxFilterA;
 
@@ -601,7 +610,7 @@ export function DJInterface() {
     fxDelayARef.current = delayA;
 
     const delayGainA = ctx.createGain();
-    delayGainA.gain.value = 0.5;
+    delayGainA.gain.value = 0; // Start at 0 - only increase when delay is active
     fxDelayGainARef.current = delayGainA;
 
     const delayFeedbackGainA = ctx.createGain();
@@ -627,7 +636,7 @@ export function DJInterface() {
     // Filter for Deck B
     const fxFilterB = ctx.createBiquadFilter();
     fxFilterB.type = "lowpass";
-    fxFilterB.frequency.value = 1000;
+    fxFilterB.frequency.value = 20000; // Match initial state (wide open, no filtering)
     fxFilterB.Q.value = 1;
     fxFilterBRef.current = fxFilterB;
 
@@ -647,7 +656,7 @@ export function DJInterface() {
     fxDelayBRef.current = delayB;
 
     const delayGainB = ctx.createGain();
-    delayGainB.gain.value = 0.5;
+    delayGainB.gain.value = 0; // Start at 0 - only increase when delay is active
     fxDelayGainBRef.current = delayGainB;
 
     const delayFeedbackGainB = ctx.createGain();
@@ -2756,11 +2765,11 @@ export function DJInterface() {
                   distortionBypassB={distortionBypassB}
                   onFilterBypassChangeA={(bypass) => {
                     setFilterBypassA(bypass);
-                    if (bypass) setFilterFreqA(1000); // Reset to neutral
+                    if (bypass) setFilterFreqA(20000); // Reset to wide open (neutral/bypass)
                   }}
                   onFilterBypassChangeB={(bypass) => {
                     setFilterBypassB(bypass);
-                    if (bypass) setFilterFreqB(1000); // Reset to neutral
+                    if (bypass) setFilterFreqB(20000); // Reset to wide open (neutral/bypass)
                   }}
                   onReverbBypassChangeA={(bypass) => {
                     setReverbBypassA(bypass);
