@@ -43,6 +43,12 @@ import { AutomixPanel } from "./dj-ui/AutomixPanel";
 import { LibraryModal } from "./dj-ui/LibraryModal";
 import { CollapsibleSection } from "./dj-ui/CollapsibleSection";
 import { Toast, type ToastType } from "./dj-ui/Toast";
+import {
+  createFlanger,
+  createPhaser,
+  createChorus,
+  createEcho,
+} from "@/utils/fxUtils";
 
 // Distortion scaling controls for WaveShaper intensity
 const DISTORTION_SCALE = 400;
@@ -215,6 +221,26 @@ export function DJInterface() {
   const [delayBypassB, setDelayBypassB] = useState(false);
   const [distortionBypassB, setDistortionBypassB] = useState(false);
 
+  // Additional FX state for Deck A
+  const [flangerRateA, setFlangerRateA] = useState(0.5);
+  const [flangerDepthA, setFlangerDepthA] = useState(0);
+  const [phaserRateA, setPhaserRateA] = useState(0.5);
+  const [phaserDepthA, setPhaserDepthA] = useState(0);
+  const [chorusRateA, setChorusRateA] = useState(1.5);
+  const [chorusDepthA, setChorusDepthA] = useState(0);
+  const [echoTimeA, setEchoTimeA] = useState(0.25);
+  const [echoFeedbackA, setEchoFeedbackA] = useState(0);
+
+  // Additional FX state for Deck B
+  const [flangerRateB, setFlangerRateB] = useState(0.5);
+  const [flangerDepthB, setFlangerDepthB] = useState(0);
+  const [phaserRateB, setPhaserRateB] = useState(0.5);
+  const [phaserDepthB, setPhaserDepthB] = useState(0);
+  const [chorusRateB, setChorusRateB] = useState(1.5);
+  const [chorusDepthB, setChorusDepthB] = useState(0);
+  const [echoTimeB, setEchoTimeB] = useState(0.25);
+  const [echoFeedbackB, setEchoFeedbackB] = useState(0);
+
   // Library modal handlers
   const handleOpenLibraryA = useCallback(() => {
     setLibraryTargetDeck("A");
@@ -241,12 +267,12 @@ export function DJInterface() {
       delayTimeA > 0 ||
       delayFeedbackA > 0 ||
       distortionAmountA > 0 ||
-      filterFreqA < 20000
-      // Additional FX are not fully implemented yet
-      // flangerDepthA > 0 ||
-      // phaserDepthA > 0 ||
-      // chorusDepthA > 0 ||
-      // echoFeedbackA > 0
+      filterFreqA < 20000 ||
+      // Additional FX (now implemented!)
+      flangerDepthA > 0 ||
+      phaserDepthA > 0 ||
+      chorusDepthA > 0 ||
+      echoFeedbackA > 0
     );
   }, [
     filterBypassA,
@@ -258,6 +284,10 @@ export function DJInterface() {
     delayFeedbackA,
     distortionAmountA,
     filterFreqA,
+    flangerDepthA,
+    phaserDepthA,
+    chorusDepthA,
+    echoFeedbackA,
   ]);
 
   const isFxActiveB = useMemo(() => {
@@ -270,12 +300,12 @@ export function DJInterface() {
       delayTimeB > 0 ||
       delayFeedbackB > 0 ||
       distortionAmountB > 0 ||
-      filterFreqB < 20000
-      // Additional FX are not fully implemented yet
-      // flangerDepthB > 0 ||
-      // phaserDepthB > 0 ||
-      // chorusDepthB > 0 ||
-      // echoFeedbackB > 0
+      filterFreqB < 20000 ||
+      // Additional FX (now implemented!)
+      flangerDepthB > 0 ||
+      phaserDepthB > 0 ||
+      chorusDepthB > 0 ||
+      echoFeedbackB > 0
     );
   }, [
     filterBypassB,
@@ -287,6 +317,10 @@ export function DJInterface() {
     delayFeedbackB,
     distortionAmountB,
     filterFreqB,
+    flangerDepthB,
+    phaserDepthB,
+    chorusDepthB,
+    echoFeedbackB,
   ]);
 
   // Clear All FX handlers
@@ -422,26 +456,6 @@ export function DJInterface() {
   const fxEchoBRef = useRef<ReturnType<
     typeof import("@/utils/fxUtils").createEcho
   > | null>(null);
-
-  // Additional FX state for Deck A
-  const [flangerRateA, setFlangerRateA] = useState(0.5);
-  const [flangerDepthA, setFlangerDepthA] = useState(0);
-  const [phaserRateA, setPhaserRateA] = useState(0.5);
-  const [phaserDepthA, setPhaserDepthA] = useState(0);
-  const [chorusRateA, setChorusRateA] = useState(1.5);
-  const [chorusDepthA, setChorusDepthA] = useState(0);
-  const [echoTimeA, setEchoTimeA] = useState(0.25);
-  const [echoFeedbackA, setEchoFeedbackA] = useState(0);
-
-  // Additional FX state for Deck B
-  const [flangerRateB, setFlangerRateB] = useState(0.5);
-  const [flangerDepthB, setFlangerDepthB] = useState(0);
-  const [phaserRateB, setPhaserRateB] = useState(0.5);
-  const [phaserDepthB, setPhaserDepthB] = useState(0);
-  const [chorusRateB, setChorusRateB] = useState(1.5);
-  const [chorusDepthB, setChorusDepthB] = useState(0);
-  const [echoTimeB, setEchoTimeB] = useState(0.25);
-  const [echoFeedbackB, setEchoFeedbackB] = useState(0);
 
   // 1. INITIALIZATION (Run ONCE - Empty dependency array)
   useEffect(() => {
@@ -644,6 +658,40 @@ export function DJInterface() {
     delayB.connect(delayFeedbackGainB);
     delayFeedbackGainB.connect(delayB);
 
+    // ========== ADDITIONAL FX FOR DECK A ==========
+    // Create Flanger effect
+    const flangerA = createFlanger(ctx, flangerRateA, flangerDepthA);
+    fxFlangerARef.current = flangerA;
+
+    // Create Phaser effect
+    const phaserA = createPhaser(ctx, phaserRateA, phaserDepthA);
+    fxPhaserARef.current = phaserA;
+
+    // Create Chorus effect
+    const chorusA = createChorus(ctx, chorusRateA, chorusDepthA);
+    fxChorusARef.current = chorusA;
+
+    // Create Echo effect
+    const echoA = createEcho(ctx, echoTimeA, echoFeedbackA);
+    fxEchoARef.current = echoA;
+
+    // ========== ADDITIONAL FX FOR DECK B ==========
+    // Create Flanger effect
+    const flangerB = createFlanger(ctx, flangerRateB, flangerDepthB);
+    fxFlangerBRef.current = flangerB;
+
+    // Create Phaser effect
+    const phaserB = createPhaser(ctx, phaserRateB, phaserDepthB);
+    fxPhaserBRef.current = phaserB;
+
+    // Create Chorus effect
+    const chorusB = createChorus(ctx, chorusRateB, chorusDepthB);
+    fxChorusBRef.current = chorusB;
+
+    // Create Echo effect
+    const echoB = createEcho(ctx, echoTimeB, echoFeedbackB);
+    fxEchoBRef.current = echoB;
+
     // ========= CUE MONITOR BUS =========
     const cueMaster = ctx.createGain();
     cueMaster.gain.value = 1.0;
@@ -699,6 +747,30 @@ export function DJInterface() {
     reverbConvolverA.connect(reverbGainA);
     reverbGainA.connect(masterGain);
 
+    // Wet Signal Path (Flanger A): Filter A -> Flanger A -> Master
+    fxFilterA.connect(flangerA.delayNode);
+    flangerA.gainNode.connect(masterGain);
+
+    // Wet Signal Path (Phaser A): Filter A -> Phaser filters -> Master
+    if (phaserA.filters.length > 0) {
+      fxFilterA.connect(phaserA.filters[0]);
+      for (let i = 0; i < phaserA.filters.length - 1; i++) {
+        phaserA.filters[i].connect(phaserA.filters[i + 1]);
+      }
+      phaserA.filters[phaserA.filters.length - 1].connect(masterGain);
+    }
+
+    // Wet Signal Path (Chorus A): Filter A -> Chorus A -> Master
+    fxFilterA.connect(chorusA.delayNode);
+    chorusA.gainNode.connect(masterGain);
+
+    // Wet Signal Path (Echo A): Filter A -> Echo taps -> Master
+    echoA.delayNodes.forEach((delayNode, index) => {
+      fxFilterA.connect(delayNode);
+      delayNode.connect(echoA.gainNodes[index]);
+      echoA.gainNodes[index].connect(masterGain);
+    });
+
     // ========== DECK B ROUTING ==========
     // Connect Deck B to its Pre-FX Mix
     deckBGain.connect(preFxGainB);
@@ -720,6 +792,30 @@ export function DJInterface() {
     reverbConvolverB.connect(reverbGainB);
     reverbGainB.connect(masterGain);
 
+    // Wet Signal Path (Flanger B): Filter B -> Flanger B -> Master
+    fxFilterB.connect(flangerB.delayNode);
+    flangerB.gainNode.connect(masterGain);
+
+    // Wet Signal Path (Phaser B): Filter B -> Phaser filters -> Master
+    if (phaserB.filters.length > 0) {
+      fxFilterB.connect(phaserB.filters[0]);
+      for (let i = 0; i < phaserB.filters.length - 1; i++) {
+        phaserB.filters[i].connect(phaserB.filters[i + 1]);
+      }
+      phaserB.filters[phaserB.filters.length - 1].connect(masterGain);
+    }
+
+    // Wet Signal Path (Chorus B): Filter B -> Chorus B -> Master
+    fxFilterB.connect(chorusB.delayNode);
+    chorusB.gainNode.connect(masterGain);
+
+    // Wet Signal Path (Echo B): Filter B -> Echo taps -> Master
+    echoB.delayNodes.forEach((delayNode, index) => {
+      fxFilterB.connect(delayNode);
+      delayNode.connect(echoB.gainNodes[index]);
+      echoB.gainNodes[index].connect(masterGain);
+    });
+
     // ========== MASTER OUTPUT ==========
     // Connect: masterGain -> limiter -> analyser -> destination
     // Recording is handled by useMixRecorder hook (connects to limiter output)
@@ -735,6 +831,50 @@ export function DJInterface() {
 
     return () => {
       // Cleanup ONLY on unmount
+      // Stop oscillators for additional FX
+      if (fxFlangerARef.current) {
+        try {
+          fxFlangerARef.current.oscillator.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+      if (fxPhaserARef.current) {
+        try {
+          fxPhaserARef.current.oscillator.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+      if (fxChorusARef.current) {
+        try {
+          fxChorusARef.current.oscillator.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+      if (fxFlangerBRef.current) {
+        try {
+          fxFlangerBRef.current.oscillator.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+      if (fxPhaserBRef.current) {
+        try {
+          fxPhaserBRef.current.oscillator.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+      if (fxChorusBRef.current) {
+        try {
+          fxChorusBRef.current.oscillator.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+
       if (audioContextRef.current) {
         try {
           audioContextRef.current.suspend();
@@ -861,6 +1001,96 @@ export function DJInterface() {
       );
     }
   }, [distortionAmountB]);
+
+  // Additional FX UPDATES - Deck A
+  useEffect(() => {
+    if (fxFlangerARef.current) {
+      fxFlangerARef.current.oscillator.frequency.value = flangerRateA;
+      fxFlangerARef.current.lfoGain.gain.value = flangerDepthA * 0.01;
+      // Control output gain based on depth to avoid overwhelming the mix
+      fxFlangerARef.current.gainNode.gain.value = flangerDepthA > 0 ? 0.5 : 0;
+    }
+  }, [flangerRateA, flangerDepthA]);
+
+  useEffect(() => {
+    if (fxPhaserARef.current) {
+      fxPhaserARef.current.oscillator.frequency.value = phaserRateA;
+      fxPhaserARef.current.lfoGain.gain.value = phaserDepthA * 1000;
+      // Control filter gain based on depth
+      fxPhaserARef.current.filters.forEach((filter) => {
+        filter.gain.value = phaserDepthA > 0 ? 0 : -100; // Bypass when depth is 0
+      });
+    }
+  }, [phaserRateA, phaserDepthA]);
+
+  useEffect(() => {
+    if (fxChorusARef.current) {
+      fxChorusARef.current.oscillator.frequency.value = chorusRateA;
+      fxChorusARef.current.lfoGain.gain.value = chorusDepthA * 0.02;
+      // Control output gain based on depth
+      fxChorusARef.current.gainNode.gain.value = chorusDepthA > 0 ? 0.5 : 0;
+    }
+  }, [chorusRateA, chorusDepthA]);
+
+  useEffect(() => {
+    if (fxEchoARef.current) {
+      // Update delay times
+      fxEchoARef.current.delayNodes.forEach((delay, i) => {
+        delay.delayTime.value = echoTimeA * (i + 1);
+      });
+      // Update feedback
+      fxEchoARef.current.feedbackGain.gain.value = echoFeedbackA;
+      // Update tap gains based on feedback
+      fxEchoARef.current.gainNodes.forEach((gain, i) => {
+        gain.gain.value = echoFeedbackA > 0 ? Math.pow(echoFeedbackA, i + 1) : 0;
+      });
+    }
+  }, [echoTimeA, echoFeedbackA]);
+
+  // Additional FX UPDATES - Deck B
+  useEffect(() => {
+    if (fxFlangerBRef.current) {
+      fxFlangerBRef.current.oscillator.frequency.value = flangerRateB;
+      fxFlangerBRef.current.lfoGain.gain.value = flangerDepthB * 0.01;
+      // Control output gain based on depth
+      fxFlangerBRef.current.gainNode.gain.value = flangerDepthB > 0 ? 0.5 : 0;
+    }
+  }, [flangerRateB, flangerDepthB]);
+
+  useEffect(() => {
+    if (fxPhaserBRef.current) {
+      fxPhaserBRef.current.oscillator.frequency.value = phaserRateB;
+      fxPhaserBRef.current.lfoGain.gain.value = phaserDepthB * 1000;
+      // Control filter gain based on depth
+      fxPhaserBRef.current.filters.forEach((filter) => {
+        filter.gain.value = phaserDepthB > 0 ? 0 : -100; // Bypass when depth is 0
+      });
+    }
+  }, [phaserRateB, phaserDepthB]);
+
+  useEffect(() => {
+    if (fxChorusBRef.current) {
+      fxChorusBRef.current.oscillator.frequency.value = chorusRateB;
+      fxChorusBRef.current.lfoGain.gain.value = chorusDepthB * 0.02;
+      // Control output gain based on depth
+      fxChorusBRef.current.gainNode.gain.value = chorusDepthB > 0 ? 0.5 : 0;
+    }
+  }, [chorusRateB, chorusDepthB]);
+
+  useEffect(() => {
+    if (fxEchoBRef.current) {
+      // Update delay times
+      fxEchoBRef.current.delayNodes.forEach((delay, i) => {
+        delay.delayTime.value = echoTimeB * (i + 1);
+      });
+      // Update feedback
+      fxEchoBRef.current.feedbackGain.gain.value = echoFeedbackB;
+      // Update tap gains based on feedback
+      fxEchoBRef.current.gainNodes.forEach((gain, i) => {
+        gain.gain.value = echoFeedbackB > 0 ? Math.pow(echoFeedbackB, i + 1) : 0;
+      });
+    }
+  }, [echoTimeB, echoFeedbackB]);
 
   // Update limiter threshold
   useEffect(() => {
