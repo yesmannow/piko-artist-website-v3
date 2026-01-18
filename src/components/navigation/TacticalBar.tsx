@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Music, Video, Settings, Mail, LayoutTemplate } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import {
+  labsNavItems,
+  primaryNavItems,
+  type NavItem,
+} from "@/config/nav.config";
+import { useUIStore } from "@/store/useUIStore";
 
 /**
  * TacticalBar - Bottom-fixed navigation for mobile
@@ -12,17 +17,19 @@ import { motion } from "framer-motion";
  * V3 Urban Syndicate: Brutalist navigation bar with -6deg skew on mobile
  * Features spray-drip accent highlights for active routes.
  */
-export function TacticalBar() {
+export function TacticalBar({ labsEnabled = false }: { labsEnabled?: boolean }) {
   const pathname = usePathname();
+  const labsFromStore = useUIStore((state) => state.labsEnabled);
 
-  const navItems = [
-    { href: "/", icon: Home, label: "HOME" },
-    { href: "/music", icon: Music, label: "MUSIC" },
-    { href: "/videos", icon: Video, label: "VIDEOS" },
-    { href: "/studio", icon: Settings, label: "STUDIO" },
-    { href: "/contact", icon: Mail, label: "CONTACT" },
-    { href: "/timeline", icon: LayoutTemplate, label: "TIMELINE" },
-  ];
+  const navConfig: NavItem[] =
+    labsEnabled || labsFromStore ? labsNavItems : primaryNavItems;
+  const allowed = new Set(["/", "/music", "/videos", "/studio", "/contact"]);
+  const navItems = navConfig.filter((item) => allowed.has(item.href));
+
+  if (labsEnabled) {
+    const timeline = navConfig.find((item) => item.href === "/timeline");
+    if (timeline) navItems.push(timeline);
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
@@ -31,6 +38,7 @@ export function TacticalBar() {
         <div className="flex items-center justify-around px-2 py-3">
           {navItems.map((item) => {
             const Icon = item.icon;
+            if (!Icon) return null;
             const isActive = pathname === item.href;
 
             return (

@@ -9,6 +9,9 @@ const UI_STORAGE_KEY = "piko-ui-preferences";
 interface UIStore {
   activeView: ViewMode;
   setActiveView: (view: ViewMode) => void;
+  labsEnabled: boolean;
+  setLabsEnabled: (value: boolean) => void;
+  toggleLabsEnabled: () => void;
 
   // Library drawer state
   isLibraryOpen: boolean;
@@ -36,6 +39,10 @@ export const useUIStore = create<UIStore>()(
     (set, get) => ({
       activeView: "WAVEFORM", // Default view
       setActiveView: (view) => set({ activeView: view }),
+      labsEnabled: false,
+      setLabsEnabled: (value) => set({ labsEnabled: value }),
+      toggleLabsEnabled: () =>
+        set((state) => ({ labsEnabled: !state.labsEnabled })),
 
       // Library drawer defaults
       isLibraryOpen: false,

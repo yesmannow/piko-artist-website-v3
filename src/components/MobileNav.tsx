@@ -24,7 +24,9 @@ import {
   quickNavItems,
   type NavItem,
   type NavBadge,
+  labsNavItems,
 } from "@/config/nav.config";
+import { useUIStore } from "@/store/useUIStore";
 
 // Social links for mobile menu
 const socialLinks = [
@@ -79,13 +81,16 @@ const getHref = (item: NavItem) =>
 export function MobileNav({
   items,
   quickItems,
+  labsEnabled = false,
 }: {
   items?: NavItem[];
   quickItems?: NavItem[];
+  labsEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const { triggerHaptic } = useHaptic();
+  const labsFromStore = useUIStore((state) => state.labsEnabled);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -93,7 +98,11 @@ export function MobileNav({
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const drawerContentRef = useRef<HTMLDivElement>(null);
   const { currentTrack, isPlaying } = useAudio();
-  const menuItems = useMemo(() => items ?? primaryNavItems, [items]);
+  const menuItems = useMemo(
+    () =>
+      labsEnabled || labsFromStore ? labsNavItems : items ?? primaryNavItems,
+    [items, labsEnabled, labsFromStore],
+  );
   const pinnedItems = useMemo(
     () => quickItems ?? quickNavItems ?? menuItems.slice(0, 3),
     [quickItems, menuItems],

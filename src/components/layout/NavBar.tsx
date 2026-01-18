@@ -11,20 +11,21 @@ import {
   labsNavItems,
   type NavItem,
 } from "@/config/nav.config";
+import { useUIStore } from "@/store/useUIStore";
 
 export function NavBar() {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [labs, setLabs] = useState(false);
+  const { labsEnabled, setLabsEnabled } = useUIStore();
 
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
   const items = useMemo(
-    () => (labs ? labsNavItems : primaryNavItems),
-    [labs],
+    () => (labsEnabled ? labsNavItems : primaryNavItems),
+    [labsEnabled],
   );
 
   const isActive = (href: string) => {
@@ -91,8 +92,8 @@ export function NavBar() {
             <input
               type="checkbox"
               className="h-3.5 w-3.5 rounded border-white/40 bg-black/50 text-[#c1ff00] accent-[#c1ff00]"
-              checked={labs}
-              onChange={(e) => setLabs(e.target.checked)}
+              checked={labsEnabled}
+              onChange={(e) => setLabsEnabled(e.target.checked)}
             />
             <span className="flex items-center gap-1">
               <Sparkles className="h-3 w-3 text-[#7c3aed]" />
@@ -123,8 +124,8 @@ export function NavBar() {
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-white/40 bg-black/50 text-[#c1ff00] accent-[#c1ff00]"
-                  checked={labs}
-                  onChange={(e) => setLabs(e.target.checked)}
+                  checked={labsEnabled}
+                  onChange={(e) => setLabsEnabled(e.target.checked)}
                 />
                 <span className="flex items-center gap-1">
                   <Sparkles className="h-3.5 w-3.5 text-[#7c3aed]" />
