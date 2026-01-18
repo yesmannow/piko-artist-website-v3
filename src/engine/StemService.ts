@@ -61,7 +61,7 @@ class StemService {
   private cancellationToken: AbortController | null = null;
 
   // Cache for separated stems (keyed by audio buffer hash or URL)
-  private stemCache: Map<string, SeparatedStems> = new Map();
+  private stemCache = new Map<string, SeparatedStems>();
 
   // Private constructor enforces singleton
   private constructor() {}
@@ -399,7 +399,7 @@ class StemService {
     context: AudioContext,
     arrayBuffer: ArrayBuffer | null,
     sampleRate: number,
-    numberOfChannels: number = 1,
+    numberOfChannels = 1,
   ): AudioBuffer | null {
     if (!arrayBuffer) {
       return null;

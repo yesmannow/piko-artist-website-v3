@@ -38,8 +38,8 @@ class SamplePlayer {
   private audioContext: AudioContext | null = null;
   private beatGridService = getBeatGridService();
   private audioEngine = getAudioEngine();
-  private sampleCache: Map<string, AudioBuffer> = new Map();
-  private activeSources: Set<AudioBufferSourceNode> = new Set();
+  private sampleCache = new Map<string, AudioBuffer>();
+  private activeSources = new Set<AudioBufferSourceNode>();
 
   // Private constructor enforces singleton
   private constructor() {}

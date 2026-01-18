@@ -211,7 +211,7 @@ function parseGradientString(gradientStr: string): DominantColors {
  * Generate a lighter/darker shade of a color
  */
 export function adjustColorBrightness(rgb: string, percent: number): string {
-  const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  const match = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(rgb);
   if (!match) return rgb;
 
   let [, r, g, b] = match.map(Number);

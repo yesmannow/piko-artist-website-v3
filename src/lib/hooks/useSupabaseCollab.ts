@@ -50,7 +50,10 @@ export function useSupabaseCollab(sessionId: string | null) {
       });
 
     channel.on("presence", { event: "sync" }, () => {
-      const state = channel.presenceState() as Record<string, { nickname?: string }[]>;
+      const state = channel.presenceState() as Record<
+        string,
+        { nickname?: string }[]
+      >;
       const nicknames = Object.values(state).flatMap((entries) =>
         entries.map((e) => e.nickname).filter(Boolean),
       ) as string[];

@@ -144,8 +144,7 @@ export function useAudioGraph() {
 
     // Initialize or resize buffer if needed (only when bufferLength changes)
     if (
-      !frequencyDataBufferRef.current ||
-      frequencyDataBufferRef.current.length !== bufferLength
+      frequencyDataBufferRef.current?.length !== bufferLength
     ) {
       frequencyDataBufferRef.current = new Uint8Array(bufferLength);
     }
@@ -172,7 +171,7 @@ export function useAudioGraph() {
    */
   const stopWithTapeEffect = (
     sourceNode: AudioBufferSourceNode,
-    duration: number = 0.8,
+    duration = 0.8,
   ) => {
     if (!audioContext || !sourceNode.playbackRate) {
       return;

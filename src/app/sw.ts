@@ -15,7 +15,7 @@ import {
 
 // =============== Size Metadata Plugin (LRU by size) ===============
 const METADATA_CACHE = "cache-metadata";
-type MetaRecord = { cacheName: string; url: string; size: number; ts: number };
+interface MetaRecord { cacheName: string; url: string; size: number; ts: number }
 async function deleteMeta(cacheName: string, url: string) {
   try {
     const metaCache = await caches.open(METADATA_CACHE);
@@ -456,7 +456,7 @@ serwist.setCatchHandler(async ({ request }) => {
 self.addEventListener("message", (event: Event) => {
   const e = event as any;
   const data = e?.data;
-  if (data && data.type === "CLEANUP_CACHES") {
+  if (data?.type === "CLEANUP_CACHES") {
     const ev = event as unknown as ExtendableEvent;
     ev.waitUntil(cleanupOldCaches());
   }

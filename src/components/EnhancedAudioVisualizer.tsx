@@ -83,7 +83,7 @@ export function EnhancedAudioVisualizer({
       const bufferLength = analyserRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(
         new ArrayBuffer(bufferLength),
-      ) as Uint8Array<ArrayBuffer>;
+      );
       analyserRef.current.getByteFrequencyData(dataArray);
 
       // Clear canvas

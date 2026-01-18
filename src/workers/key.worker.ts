@@ -55,7 +55,7 @@ async function loadEssentia(): Promise<boolean> {
     // @ts-expect-error - essentia.js may not have type definitions
     const EssentiaWASM = await import("essentia.js");
 
-    if (!EssentiaWASM || !EssentiaWASM.EssentiaWASM) {
+    if (!EssentiaWASM?.EssentiaWASM) {
       throw new Error("Essentia.js module not found");
     }
 
@@ -223,7 +223,7 @@ function toCamelot(root: string, scale: string): string {
   const normalizedRoot = normalizeRoot(root);
   const key = scale === "minor" ? `${normalizedRoot}m` : normalizedRoot;
 
-  return camelotMap[key] || camelotMap["C"] || "8B"; // Default to C major
+  return camelotMap[key] || camelotMap.C || "8B"; // Default to C major
 }
 
 /**

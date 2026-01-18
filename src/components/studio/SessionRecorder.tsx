@@ -51,7 +51,7 @@ export function SessionRecorder({
     }
 
     // Find canvas element (works with React Three Fiber Canvas)
-    const canvas = document.querySelector(canvasSelector) as HTMLCanvasElement;
+    const canvas = document.querySelector<HTMLCanvasElement>(canvasSelector);
     if (!canvas) {
       console.error(
         "[SessionRecorder] Canvas element not found:",

@@ -135,7 +135,7 @@ async function loadONNXRuntime(): Promise<void> {
 
     // Configure WASM paths for local assets
     // This ensures ONNX Runtime loads WASM files from /ort/ instead of CDN
-    if (ort.env && ort.env.wasm) {
+    if (ort.env?.wasm) {
       ort.env.wasm.wasmPaths = WASM_PATH;
       console.log(`[StemSeparatorWorker] Configured WASM paths: ${WASM_PATH}`);
     }
@@ -289,7 +289,7 @@ async function processChunk(
   // Extract outputs (Demucs outputs 4 stems: vocals, drums, bass, other)
   // Output shape: [batch, stems, channels, samples]
   const output = results.output as { data: Float32Array; dims: number[] };
-  const outputData = output.data as Float32Array;
+  const outputData = output.data;
   const [batch, numStems, channels, samples] = output.dims;
 
   // Extract each stem (assuming output order: vocals, drums, bass, other)

@@ -19,8 +19,8 @@ const DEFAULT_CONFIG: AudioEngineConfig = {
 
 export class AudioBufferManager {
   private audioContext: AudioContext;
-  private bufferCache: Map<string, AudioBuffer> = new Map();
-  private loadingPromises: Map<string, Promise<AudioBuffer>> = new Map();
+  private bufferCache = new Map<string, AudioBuffer>();
+  private loadingPromises = new Map<string, Promise<AudioBuffer>>();
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;

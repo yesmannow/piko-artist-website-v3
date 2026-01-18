@@ -34,7 +34,7 @@ class KeyService {
   private worker: Worker | null = null;
 
   // Cache for key data (keyed by track URL or hash)
-  private keyCache: Map<string, KeyAnalysisResult> = new Map();
+  private keyCache = new Map<string, KeyAnalysisResult>();
 
   // Private constructor enforces singleton
   private constructor() {}

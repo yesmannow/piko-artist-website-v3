@@ -253,9 +253,7 @@ export default function GuestbookPage() {
                     </label>
                     <div className="grid grid-cols-4 gap-2">
                       {(
-                        Object.keys(vibeEmojis) as Array<
-                          keyof typeof vibeEmojis
-                        >
+                        Object.keys(vibeEmojis) as (keyof typeof vibeEmojis)[]
                       ).map((vibe) => (
                         <button
                           key={vibe}
@@ -353,7 +351,7 @@ export default function GuestbookPage() {
               >
                 All ({entries.length})
               </button>
-              {(Object.keys(vibeEmojis) as Array<keyof typeof vibeEmojis>).map(
+              {(Object.keys(vibeEmojis) as (keyof typeof vibeEmojis)[]).map(
                 (vibe) => {
                   const count = entries.filter((e) => e.vibe === vibe).length;
                   return (

@@ -33,7 +33,7 @@ export function isCrossOriginIsolated(): boolean {
  * @param context - Context string for logging (e.g., "StudioEngine")
  */
 export function verifyCrossOriginIsolated(
-  context: string = "Unknown",
+  context = "Unknown",
 ): boolean {
   const isIsolated = isCrossOriginIsolated();
 

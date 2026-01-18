@@ -29,7 +29,7 @@ export function useGlobeCameraFlyTo() {
   const { camera } = useThree();
 
   const flyTo = useCallback(
-    (lat: number, lng: number, distance: number = 2.5) => {
+    (lat: number, lng: number, distance = 2.5) => {
       const targetPos = latLngToVector3(lat, lng, distance);
       const lookAt = latLngToVector3(lat, lng, 1.01);
 

@@ -20,7 +20,7 @@ interface GyroData {
  * @param intensity - Multiplier for gyro sensitivity (default: 1.0)
  * @returns GyroData with normalized x/y values and permission controls
  */
-export function useGyroLighting(intensity: number = 1.0): GyroData {
+export function useGyroLighting(intensity = 1.0): GyroData {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
 

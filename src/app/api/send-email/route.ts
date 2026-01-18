@@ -242,7 +242,7 @@ Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
 
     // Log success in development only
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
+       
       console.log("Email sent:", info.messageId);
     }
 
@@ -257,7 +257,7 @@ Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
         : "Failed to send email";
 
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
+       
       console.error("Error sending email:", error);
     }
 

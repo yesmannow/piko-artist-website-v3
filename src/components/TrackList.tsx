@@ -113,6 +113,7 @@ interface TrackCardProps {
   onPlay: () => void;
   onDragStart: (event: DragStartLike, track: (typeof tracks)[0]) => void;
   loadedDecks: DeckId[];
+  onGhostPreview: (trackId: string) => void;
 }
 
 function TrackCard({
@@ -122,6 +123,7 @@ function TrackCard({
   onPlay,
   onDragStart,
   loadedDecks,
+  onGhostPreview,
 }: TrackCardProps) {
   const { triggerHaptic } = useHaptic();
   const [isLoaded, setIsLoaded] = useState(false);
@@ -320,11 +322,11 @@ function TrackCard({
             <div className="font-header text-sm font-semibold truncate mb-1 tracking-tight">
               {track.title}
             </div>
-          <div className="font-industrial text-xs text-white/80 truncate mb-1">
-            {track.artist}
-          </div>
-          <div className="flex items-center gap-2">
-            <span
+            <div className="font-industrial text-xs text-white/80 truncate mb-1">
+              {track.artist}
+            </div>
+            <div className="flex items-center gap-2">
+              <span
                 className={[
                   "px-2 py-0.5 rounded text-[10px] font-industrial font-bold uppercase tracking-wider border",
                   vibeColors[track.vibe],
@@ -332,16 +334,16 @@ function TrackCard({
               >
                 {track.vibe}
               </span>
-            <span className="text-white/60 text-xs">3:00</span>
-            {track.keyInfo?.camelot ? (
-              <span className="text-safety-yellow text-[11px] uppercase tracking-[0.14em]">
-                Key {track.keyInfo.camelot}
-              </span>
-            ) : null}
+              <span className="text-white/60 text-xs">3:00</span>
+              {track.keyInfo?.camelot ? (
+                <span className="text-safety-yellow text-[11px] uppercase tracking-[0.14em]">
+                  Key {track.keyInfo.camelot}
+                </span>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
 
       {/* Metadata Below Image - Always Visible */}
       <div className="p-3 md:p-4 bg-[#e5e5e5] border-t-2 border-black/10">
@@ -378,6 +380,17 @@ function TrackCard({
                 .join(" • ")}
             </span>
           )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerHaptic();
+              onGhostPreview(track.id);
+            }}
+            className="ml-auto inline-flex items-center gap-2 rounded-full border border-black bg-black text-white px-3 py-1 text-[10px] font-industrial uppercase tracking-[0.14em] shadow-hard"
+          >
+            Preview Ghost
+          </button>
         </div>
       </div>
     </motion.button>
@@ -396,6 +409,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
     deckA: state.decks.deckA.track?.id,
     deckB: state.decks.deckB.track?.id,
   }));
+  const loadGhostTrack = useDeckMixerStore((state) => state.loadGhostTrack);
 
   const handleDragStart = (event: DragStartLike, track: (typeof tracks)[0]) => {
     if (!("dataTransfer" in event) || !event.dataTransfer) return;
@@ -415,16 +429,27 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
     return loaded;
   };
 
-  const keyDistance = (reference: string, candidate?: string | null): number => {
+  const handleGhostPreview = (trackId: string) => {
+    triggerHaptic();
+    loadGhostTrack(trackId);
+  };
+
+  const keyDistance = (
+    reference: string,
+    candidate?: string | null,
+  ): number => {
     if (!candidate) return Number.MAX_SAFE_INTEGER;
-    const refMatch = reference.match(/^(\d{1,2})([AB])$/i);
-    const candMatch = candidate.match(/^(\d{1,2})([AB])$/i);
+    const refMatch = /^(\d{1,2})([AB])$/i.exec(reference);
+    const candMatch = /^(\d{1,2})([AB])$/i.exec(candidate);
     if (!refMatch || !candMatch) return Number.MAX_SAFE_INTEGER - 1;
     const refNum = parseInt(refMatch[1], 10);
     const candNum = parseInt(candMatch[1], 10);
     const refLetter = refMatch[2].toUpperCase();
     const candLetter = candMatch[2].toUpperCase();
-    const delta = Math.min(Math.abs(refNum - candNum), 12 - Math.abs(refNum - candNum));
+    const delta = Math.min(
+      Math.abs(refNum - candNum),
+      12 - Math.abs(refNum - candNum),
+    );
     const letterBonus = refLetter === candLetter ? 0 : 1; // minor penalty for parallel key
     return delta + letterBonus;
   };
@@ -698,15 +723,27 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                         </div>
 
                         {/* Col 5: Duration */}
-                        <div
-                          className={[
-                            "flex items-center justify-end text-sm font-mono",
-                            isActive
-                              ? "text-[#FFD700]/90"
-                              : "text-[#E0E0E0]/70",
-                          ].join(" ")}
-                        >
-                          3:00
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleGhostPreview(track.id);
+                            }}
+                            className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white hover:border-[#c1ff00]/40"
+                          >
+                            Preview in Ghost
+                          </button>
+                          <span
+                            className={[
+                              "text-sm font-mono",
+                              isActive
+                                ? "text-[#FFD700]/90"
+                                : "text-[#E0E0E0]/70",
+                            ].join(" ")}
+                          >
+                            3:00
+                          </span>
                         </div>
                       </motion.button>
                     </motion.div>
@@ -735,6 +772,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                     triggerHaptic();
                     playTrack(track);
                   }}
+                  onGhostPreview={handleGhostPreview}
                 />
               </div>
             </TrackDrawer>

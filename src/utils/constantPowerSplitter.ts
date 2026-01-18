@@ -109,7 +109,7 @@ export function applyCrossfaderGains(
   crossfaderPosition: number,
   audioContext: AudioContext,
   curve: CrossfaderCurve = "constant-power",
-  rampTime: number = 0.02,
+  rampTime = 0.02,
 ): void {
   const { gainA, gainB } = calculateCrossfaderGains(crossfaderPosition, curve);
   const currentTime = audioContext.currentTime;
@@ -135,7 +135,7 @@ export function applyConstantPowerGains(
   gainNodeB: GainNode,
   crossfaderPosition: number,
   audioContext: AudioContext,
-  rampTime: number = 0.02,
+  rampTime = 0.02,
 ): void {
   applyCrossfaderGains(
     gainNodeA,

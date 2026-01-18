@@ -1,23 +1,31 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Grid3x3, LayoutList, List, Music2, Radio } from "lucide-react";
+import {
+  Grid3x3,
+  LayoutList,
+  List,
+  Music2,
+  Radio,
+  LayoutTemplate,
+} from "lucide-react";
 
 export type LibraryView = "list" | "card" | "compact";
 
-type LibraryHeaderProps = {
+interface LibraryHeaderProps {
   view: LibraryView;
   onViewChange: (view: LibraryView) => void;
   tracksCount: number;
   vibes?: string[];
   lastSession?: string | null;
-};
+}
 
-const viewButtons: Array<{
+const viewButtons: {
   view: LibraryView;
   label: string;
   icon: typeof List;
-}> = [
+}[] = [
   { view: "list", label: "List", icon: List },
   { view: "card", label: "Grid", icon: Grid3x3 },
   { view: "compact", label: "Compact", icon: LayoutList },
@@ -91,6 +99,13 @@ export function LibraryHeader({
               </motion.button>
             );
           })}
+          <Link
+            href="/timeline"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#c1ff00]/50 bg-[#c1ff00]/15 px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_15px_rgba(193,255,0,0.25)] hover:border-[#c1ff00]"
+          >
+            <LayoutTemplate className="h-4 w-4" />
+            Open Timeline
+          </Link>
         </div>
       </div>
     </header>

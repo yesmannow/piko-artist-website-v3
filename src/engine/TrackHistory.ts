@@ -39,7 +39,7 @@ class TrackHistory {
 
   private currentSession: SessionHistory | null = null;
   private currentTrack: TrackHistoryEntry | null = null;
-  private sessions: Map<string, SessionHistory> = new Map();
+  private sessions = new Map<string, SessionHistory>();
 
   // Private constructor enforces singleton
   private constructor() {}
@@ -186,14 +186,14 @@ class TrackHistory {
   /**
    * Generate tracklist for export (with relative timestamps)
    */
-  generateTracklist(sessionId?: string): Array<{
+  generateTracklist(sessionId?: string): {
     title: string;
     artist: string;
     startTime: number; // seconds from session start
     duration?: number;
     bpm?: number;
     camelot?: string;
-  }> {
+  }[] {
     const session = sessionId
       ? this.getSession(sessionId)
       : this.currentSession;

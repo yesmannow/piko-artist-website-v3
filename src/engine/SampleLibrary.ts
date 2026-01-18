@@ -33,9 +33,9 @@ export interface SampleLibraryConfig {
 class SampleLibrary {
   private static instance: SampleLibrary | null = null;
 
-  private baseUrl: string = "/audio";
-  private samplePacks: Map<string, SamplePack> = new Map();
-  private loadedPacks: Set<string> = new Set();
+  private baseUrl = "/audio";
+  private samplePacks = new Map<string, SamplePack>();
+  private loadedPacks = new Set<string>();
 
   // Private constructor enforces singleton
   private constructor() {

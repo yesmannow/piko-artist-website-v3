@@ -9,9 +9,7 @@ interface DeckState {
 }
 
 interface AudioStore {
-  decks: {
-    [key: string]: DeckState;
-  };
+  decks: Record<string, DeckState>;
   masterVolume: number;
 
   // Actions called by the AudioEngine to sync state

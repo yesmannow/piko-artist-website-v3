@@ -145,7 +145,7 @@ export function AudioReactiveVisualizer({
       updateFrequencyData();
     } catch (err) {
       if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
+         
         console.error("Visualizer failed to initialize:", err);
       }
     }
@@ -156,7 +156,7 @@ export function AudioReactiveVisualizer({
           analyzer.destroy();
         } catch (e) {
           if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
+             
             console.error("Error cleaning up analyzer:", e);
           }
         }

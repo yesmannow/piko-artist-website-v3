@@ -41,7 +41,7 @@ const COLORS = {
 export function Waveform({
   audioUrl,
   progress,
-  isPlaying: _isPlaying, // eslint-disable-line @typescript-eslint/no-unused-vars
+  isPlaying: _isPlaying,  
   onSeek,
   height = 60,
   hotCues = {},

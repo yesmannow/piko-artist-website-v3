@@ -136,11 +136,11 @@ export async function searchVisuals({
   const query = theme.trim() || DEFAULT_QUERY;
 
   // Determine distribution across providers based on which keys exist
-  const candidates: ReadonlyArray<{
+  const candidates: readonly {
     name: VisualProvider;
     fn: (q: string, per: number, p: number) => Promise<VisualImage[]>;
     hasKey: boolean;
-  }> = [
+  }[] = [
     { name: "pexels", fn: fetchPexels, hasKey: !!process.env.PEXELS_API_KEY },
     {
       name: "unsplash",

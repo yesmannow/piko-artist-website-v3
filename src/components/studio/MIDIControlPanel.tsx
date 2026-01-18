@@ -64,11 +64,11 @@ export function MIDIControlPanel({ onClose }: MIDIControlPanelProps) {
   }, [lastActivity]);
 
   // Available actions for MIDI mapping
-  const availableActions: Array<{
+  const availableActions: {
     action: MIDIAction;
     label: string;
     group: string;
-  }> = [
+  }[] = [
     { action: "deckA_play", label: "Deck A: Play", group: "Deck A" },
     { action: "deckA_pause", label: "Deck A: Pause", group: "Deck A" },
     { action: "deckA_cue", label: "Deck A: Cue", group: "Deck A" },

@@ -4,7 +4,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Play, Sparkles, X } from "lucide-react";
-import { VideoFilterNav, type VideoCategory } from "@/components/video/VideoFilterNav";
+import {
+  VideoFilterNav,
+  type VideoCategory,
+} from "@/components/video/VideoFilterNav";
 import { tracks, MediaItem } from "@/lib/data";
 
 const fallbackImages = [
@@ -31,10 +34,12 @@ function VideoThumbnail({
     `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
   );
   const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setSrc(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
     setFailed(false);
+    setLoading(true);
   }, [videoId]);
 
   const fallback = useMemo(() => {
@@ -64,21 +69,29 @@ function VideoThumbnail({
   }
 
   return (
-    <Image
-      src={src}
-      alt={title}
-      fill
-      className={className}
-      onError={() => {
-        if (src.includes("maxres")) {
-          setSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
-        } else {
-          setFailed(true);
-        }
-      }}
-      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      unoptimized
-    />
+    <div className="relative h-full w-full">
+      <Image
+        src={src}
+        alt={title}
+        fill
+        className={className}
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          if (src.includes("maxres")) {
+            setSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
+            setLoading(true);
+          } else {
+            setFailed(true);
+            setLoading(false);
+          }
+        }}
+        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        unoptimized
+      />
+      {loading ? (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/10 via-white/5 to-transparent" />
+      ) : null}
+    </div>
   );
 }
 
@@ -125,7 +138,9 @@ function FeaturedVideoCard({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           <div className="absolute left-4 bottom-4 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/70">
-            <span className="rounded-full bg-white/10 px-3 py-1">{video.vibe}</span>
+            <span className="rounded-full bg-white/10 px-3 py-1">
+              {video.vibe}
+            </span>
             <span className="rounded-full bg-white/10 px-3 py-1">Featured</span>
           </div>
         </div>
@@ -155,7 +170,11 @@ function ArchiveVideoCard({
         aria-label={`Play ${video.title}`}
       />
       <div className="relative h-48 overflow-hidden">
-        <VideoThumbnail videoId={video.id} title={video.title} className="object-cover" />
+        <VideoThumbnail
+          videoId={video.id}
+          title={video.title}
+          className="object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white">
           {video.vibe}
@@ -230,20 +249,30 @@ export default function VideosPage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
   const videos = useMemo(
-    () => tracks.filter((t): t is MediaItem => t.type === "video" && Boolean(t.id)),
+    () =>
+      tracks.filter((t): t is MediaItem => t.type === "video" && Boolean(t.id)),
     [],
   );
 
   const featuredVideo = videos.at(-1) ?? null;
   const archiveVideos = useMemo(
-    () => (featuredVideo ? videos.filter((v) => v.id !== featuredVideo.id) : videos),
+    () =>
+      featuredVideo ? videos.filter((v) => v.id !== featuredVideo.id) : videos,
     [videos, featuredVideo],
   );
 
   const categories = useMemo<VideoCategory[]>(() => {
-    const base: VideoCategory[] = ["ALL", "HYPE", "CHILL", "STORYTELLING", "CLASSIC"];
+    const base: VideoCategory[] = [
+      "ALL",
+      "HYPE",
+      "CHILL",
+      "STORYTELLING",
+      "CLASSIC",
+    ];
     const present = new Set(
-      videos.map((v) => v.vibe?.toUpperCase()).filter(Boolean) as VideoCategory[],
+      videos
+        .map((v) => v.vibe?.toUpperCase())
+        .filter(Boolean) as VideoCategory[],
     );
     return base.filter((cat) => cat === "ALL" || present.has(cat));
   }, [videos]);
@@ -256,7 +285,9 @@ export default function VideosPage() {
   if (videos.length === 0) {
     return (
       <div className="min-h-screen bg-background px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl text-white/70">No videos available.</div>
+        <div className="mx-auto max-w-5xl text-white/70">
+          No videos available.
+        </div>
       </div>
     );
   }
@@ -277,7 +308,8 @@ export default function VideosPage() {
             Videos & Sessions
           </h1>
           <p className="text-white/65 text-sm sm:text-base">
-            Latest drop + archive grid with vibe filters and resilient thumbnails.
+            Latest drop + archive grid with vibe filters and resilient
+            thumbnails.
           </p>
         </div>
 
@@ -315,7 +347,10 @@ export default function VideosPage() {
         </div>
       </div>
 
-      <VideoModal videoId={selectedVideoId} onClose={() => setSelectedVideoId(null)} />
+      <VideoModal
+        videoId={selectedVideoId}
+        onClose={() => setSelectedVideoId(null)}
+      />
     </div>
   );
 }

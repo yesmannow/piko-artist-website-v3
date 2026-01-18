@@ -7,14 +7,15 @@ import {
   PanelsTopLeft,
   Sparkles,
   Waves,
+  LayoutTemplate,
 } from "lucide-react";
 
-export type NavBadge = {
+export interface NavBadge {
   text: string;
   tone?: "live" | "beta" | "default";
-};
+}
 
-export type NavItem = {
+export interface NavItem {
   label: string;
   href: string;
   sectionId?: string;
@@ -22,14 +23,7 @@ export type NavItem = {
   badge?: NavBadge;
   enabled?: boolean;
   external?: boolean;
-};
-
-const featureFlags = {
-  vault: process.env.NEXT_PUBLIC_ENABLE_VAULT === "true",
-  exportMix: process.env.NEXT_PUBLIC_ENABLE_MIX_EXPORT === "true",
-  install: process.env.NEXT_PUBLIC_ENABLE_INSTALL === "true",
-  studioV2Live: process.env.NEXT_PUBLIC_STUDIO_V2_LIVE === "true",
-};
+}
 
 const baseNavItems: NavItem[] = [
   {
@@ -38,43 +32,29 @@ const baseNavItems: NavItem[] = [
     icon: Disc3,
   },
   {
-    label: "Studio",
+    label: "Music",
+    href: "/music",
+    icon: Headphones,
+  },
+  {
+    label: "Videos",
+    href: "/videos",
+    icon: PanelsTopLeft,
+  },
+  {
+    label: "DJ Studio",
     href: "/studio",
     icon: Waves,
   },
   {
-    label: "Mobile DJ",
-    href: "/mobile",
-    icon: Headphones,
-  },
-  {
-    label: "Studio V2",
-    href: "/studio-v2",
-    icon: PanelsTopLeft,
-    badge: {
-      text: featureFlags.studioV2Live ? "🎧 Live" : "🧪 Beta",
-      tone: featureFlags.studioV2Live ? "live" : "beta",
-    },
-  },
-  {
-    label: "Vault",
-    href: "/vault",
+    label: "Contact",
+    href: "/contact",
     icon: Lock,
-    badge: { text: "🧪 Beta", tone: "beta" },
-    enabled: featureFlags.vault,
-  },
-  {
-    label: "Mix Export",
-    href: "/export",
-    icon: Download,
-    enabled: featureFlags.exportMix,
   },
   {
     label: "Install",
     href: "/install",
     icon: Sparkles,
-    badge: { text: "🎧 Live", tone: "live" },
-    enabled: featureFlags.install,
   },
 ];
 
@@ -83,3 +63,8 @@ export const primaryNavItems = baseNavItems.filter(
 );
 
 export const quickNavItems = primaryNavItems.slice(0, 3);
+
+export const labsNavItems: NavItem[] = [
+  ...primaryNavItems,
+  { label: "Timeline", href: "/timeline", icon: LayoutTemplate },
+];

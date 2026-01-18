@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ensureAudioEngineReady } from "@/engine/AudioEngine";
 import { tracks, type MediaItem } from "@/lib/data";
 import { TrackList } from "./TrackList";
@@ -9,15 +10,28 @@ import { WaveformPreview } from "./WaveformPreview";
 import { DevAudioDebug } from "./DevAudioDebug";
 import { useDeckMixerStore } from "@/store/useDeckMixerStore";
 import { useAudioStore } from "@/store/useAudioStore";
-import { Pause, Play } from "lucide-react";
+import {
+  Pause,
+  Play,
+  HelpCircle,
+  Radio,
+  RotateCw,
+  Share2,
+  Sparkles,
+} from "lucide-react";
 import { useMIDI } from "@/lib/hooks/useMIDI";
+import { useUIStore } from "@/store/useUIStore";
+import { LayoutToggle } from "./layout/LayoutToggle";
+import { TourMode } from "./ui/TourMode";
+import { OnboardingModal } from "./ui/OnboardingModal";
+import { ShareMixModal } from "./ShareMixModal";
 
 type DeckId = "deckA" | "deckB";
-type EQState = {
+interface EQState {
   low: number;
   mid: number;
   high: number;
-};
+}
 
 interface DeckPanelProps {
   deckId: DeckId;
@@ -203,6 +217,30 @@ export function RefactoredDJInterface() {
     deckA: 0,
     deckB: 0,
   });
+  const {
+    layoutMode,
+    setTourModeEnabled,
+    setLayoutMode,
+    resetTourProgress,
+    onboardingComplete,
+    setOnboardingComplete,
+  } = useUIStore((state) => ({
+    layoutMode: state.layoutMode,
+    setTourModeEnabled: state.setTourModeEnabled,
+    setLayoutMode: state.setLayoutMode,
+    resetTourProgress: state.resetTourProgress,
+    onboardingComplete: state.onboardingComplete,
+    setOnboardingComplete: state.setOnboardingComplete,
+  }));
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [fxDeck, setFxDeck] = useState<DeckId>("deckA");
+  const [fxFilter, setFxFilter] = useState(35);
+  const [fxSpace, setFxSpace] = useState(25);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordTimer, setRecordTimer] = useState(0);
+  const [recorded, setRecorded] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const deckMeta = useDeckMixerStore((state) => state.decks);
   const keyWarning = useDeckMixerStore((state) => state.keyWarning);
@@ -233,7 +271,7 @@ export function RefactoredDJInterface() {
   const handleDropToDeck = useCallback(
     (deck: DeckId, trackId: string) => {
       const match = audioTracks.find((t) => t.id === trackId);
-      if (match && match.type === "audio") {
+      if (match?.type === "audio") {
         void handleLoadTrack(deck, match);
       }
     },
@@ -252,6 +290,20 @@ export function RefactoredDJInterface() {
     void prime();
   }, [handleLoadTrack, initialDecks]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("onboarding_complete");
+    if (stored === "true") {
+      if (!onboardingComplete) {
+        setOnboardingComplete(true);
+      }
+      return;
+    }
+    if (!onboardingComplete) {
+      setShowOnboarding(true);
+    }
+  }, [onboardingComplete, setOnboardingComplete]);
+
   const handlePlay = async (deck: DeckId) => {
     const engine = await ensureAudioEngineReady();
     await engine.play(deck);
@@ -266,6 +318,63 @@ export function RefactoredDJInterface() {
     const engine = await ensureAudioEngineReady();
     const target = progress * (durations[deck] || 0);
     await engine.seek(deck, target);
+  };
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (isRecording) {
+      timer = setInterval(() => {
+        setRecordTimer((t) => t + 1);
+      }, 1000);
+    } else {
+      setRecordTimer(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isRecording]);
+
+  const handleOnboardingStart = () => {
+    setOnboardingComplete(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("onboarding_complete", "true");
+    }
+    setShowOnboarding(false);
+    setLayoutMode("studio");
+    setTourModeEnabled(true);
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingNever = () => {
+    setOnboardingComplete(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("onboarding_complete", "true");
+    }
+    setShowOnboarding(false);
+  };
+
+  const handleRecordToggle = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      setRecorded(true);
+      setShareOpen(true);
+    } else {
+      setRecorded(false);
+      setIsRecording(true);
+    }
+  };
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const secs = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${mins}:${secs}`;
   };
 
   // MIDI mapping: CC7 -> crossfader, CC20/21/22 -> Deck A EQ low/mid/high, CC23/24/25 -> Deck B EQ
@@ -308,6 +417,20 @@ export function RefactoredDJInterface() {
 
   return (
     <>
+      <TourMode />
+      <OnboardingModal
+        open={showOnboarding}
+        onStart={handleOnboardingStart}
+        onSkip={handleOnboardingSkip}
+        onDismissPermanently={handleOnboardingNever}
+      />
+      <ShareMixModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title="Latest session bounce"
+        mixUrl="https://piko.studio/mix/latest"
+        coverArt="/images/branding/piko-logo.png"
+      />
       {process.env.NODE_ENV !== "production" ? (
         <DevAudioDebug intervalMs={800} />
       ) : null}
@@ -325,49 +448,289 @@ export function RefactoredDJInterface() {
           </label>
         </div>
       ) : null}
-      <div className="space-y-6">
-        <div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr]">
-          <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">
-                Piko Catalog
-              </p>
-              <span className="rounded border border-safety-yellow px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-safety-yellow">
-                Drag to load Decks
-              </span>
+      <div className="space-y-6" data-tour-id="studio-shell">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <LayoutToggle />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setLayoutMode("studio");
+                setTourModeEnabled(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80 transition hover:border-white/40"
+            >
+              <Radio className="h-4 w-4 text-[#FFD700]" />
+              Start tour
+            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setHelpOpen((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80 transition hover:border-white/40"
+              >
+                <HelpCircle className="h-4 w-4 text-white/70" />
+                Help
+              </button>
+              <AnimatePresence>
+                {helpOpen ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute right-0 mt-2 w-52 rounded-xl border border-white/10 bg-[#0c0c10] p-3 shadow-xl"
+                  >
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/60 mb-2">
+                      Assistance
+                    </p>
+                    <div className="grid gap-2">
+                      <button
+                        onClick={() => {
+                          setLayoutMode("studio");
+                          resetTourProgress();
+                          setHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-left text-sm text-white/80 hover:border-white/30"
+                      >
+                        <RotateCw className="h-4 w-4 text-[#FFD700]" />
+                        Restart tour
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLayoutMode("studio");
+                          setShowOnboarding(true);
+                          setHelpOpen(false);
+                        }}
+                        className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-left text-sm text-white/80 hover:border-white/30"
+                      >
+                        <Sparkles className="h-4 w-4 text-white/70" />
+                        Replay onboarding
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
-            <TrackList />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <DeckPanel
-              deckId="deckA"
-              track={deckMeta.deckA.track ?? initialDecks.deckA}
-              duration={durations.deckA}
-              isPlaying={playbackStore.deckA.isPlaying}
-              keyInfo={
-                deckMeta.deckA.keyInfo || deckMeta.deckA.track?.keyInfo || null
-              }
-              onDropTrack={(id) => handleDropToDeck("deckA", id)}
-              onPlay={() => handlePlay("deckA")}
-              onPause={() => handlePause("deckA")}
-              onSeek={(p) => handleSeek("deckA", p)}
-            />
-            <DeckPanel
-              deckId="deckB"
-              track={deckMeta.deckB.track ?? initialDecks.deckB}
-              duration={durations.deckB}
-              isPlaying={playbackStore.deckB.isPlaying}
-              keyInfo={
-                deckMeta.deckB.keyInfo || deckMeta.deckB.track?.keyInfo || null
-              }
-              onDropTrack={(id) => handleDropToDeck("deckB", id)}
-              onPlay={() => handlePlay("deckB")}
-              onPause={() => handlePause("deckB")}
-              onSeek={(p) => handleSeek("deckB", p)}
-            />
           </div>
         </div>
+
+        <motion.div
+          key={layoutMode}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-6"
+        >
+          <div
+            className={`grid gap-6 ${layoutMode === "studio" ? "lg:grid-cols-[minmax(320px,420px)_1fr]" : ""}`}
+          >
+            {layoutMode === "studio" ? (
+              <motion.div
+                key="library"
+                layout
+                className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-4"
+                data-tour-id="library"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">
+                    Piko Catalog
+                  </p>
+                  <span className="rounded border border-safety-yellow px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-safety-yellow">
+                    Drag to load Decks
+                  </span>
+                </div>
+                <TrackList />
+              </motion.div>
+            ) : null}
+
+            <div
+              className="grid gap-4 lg:grid-cols-2"
+              data-tour-id="deck-surface"
+            >
+              <DeckPanel
+                deckId="deckA"
+                track={deckMeta.deckA.track ?? initialDecks.deckA}
+                duration={durations.deckA}
+                isPlaying={playbackStore.deckA.isPlaying}
+                keyInfo={
+                  deckMeta.deckA.keyInfo ||
+                  deckMeta.deckA.track?.keyInfo ||
+                  null
+                }
+                onDropTrack={(id) => handleDropToDeck("deckA", id)}
+                onPlay={() => handlePlay("deckA")}
+                onPause={() => handlePause("deckA")}
+                onSeek={(p) => handleSeek("deckA", p)}
+              />
+              <DeckPanel
+                deckId="deckB"
+                track={deckMeta.deckB.track ?? initialDecks.deckB}
+                duration={durations.deckB}
+                isPlaying={playbackStore.deckB.isPlaying}
+                keyInfo={
+                  deckMeta.deckB.keyInfo ||
+                  deckMeta.deckB.track?.keyInfo ||
+                  null
+                }
+                onDropTrack={(id) => handleDropToDeck("deckB", id)}
+                onPlay={() => handlePlay("deckB")}
+                onPause={() => handlePause("deckB")}
+                onSeek={(p) => handleSeek("deckB", p)}
+              />
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {layoutMode === "studio" ? (
+              <motion.div
+                key="fx-recorder"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.25 }}
+                className="grid gap-4 lg:grid-cols-3"
+              >
+                <div
+                  data-tour-id="fx-rack"
+                  className="rounded-xl border border-white/10 bg-gradient-to-br from-black/60 via-[#0c0c12] to-black/50 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+                        FX Rack
+                      </p>
+                      <p className="text-sm font-semibold text-white">
+                        Texture + Space
+                      </p>
+                    </div>
+                    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5">
+                      <button
+                        className={`px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${fxDeck === "deckA" ? "bg-[#FFD700] text-black font-bold" : "text-white/70"}`}
+                        onClick={() => setFxDeck("deckA")}
+                      >
+                        Deck A
+                      </button>
+                      <button
+                        className={`px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${fxDeck === "deckB" ? "bg-[#FFD700] text-black font-bold" : "text-white/70"}`}
+                        onClick={() => setFxDeck("deckB")}
+                      >
+                        Deck B
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.18em] text-white/60">
+                        <span>Filter Sweep</span>
+                        <span className="text-white">{fxFilter}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={fxFilter}
+                        onChange={(e) => setFxFilter(Number(e.target.value))}
+                        className="mt-2 w-full accent-[#FFD700]"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.18em] text-white/60">
+                        <span>Space / Delay</span>
+                        <span className="text-white">{fxSpace}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={fxSpace}
+                        onChange={(e) => setFxSpace(Number(e.target.value))}
+                        className="mt-2 w-full accent-[#A78BFA]"
+                      />
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+                      Blend filters with the crossfader moves. Try quick echo +
+                      filter cuts when you hand off between decks.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2 grid gap-4 lg:grid-cols-2">
+                  <div
+                    data-tour-id="recorder"
+                    className="rounded-xl border border-white/10 bg-black/50 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+                          Record Mix
+                        </p>
+                        <p className="text-sm font-semibold text-white">
+                          Capture the next 30s
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${isRecording ? "border-red-400/60 bg-red-500/10 text-red-200" : "border-white/15 bg-white/5 text-white/70"}`}
+                      >
+                        <span className="h-2 w-2 rounded-full bg-current animate-pulse" />
+                        {isRecording ? "Armed" : "Idle"}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="text-2xl font-black text-white">
+                        {formatTimer(recordTimer)}
+                      </div>
+                      <button
+                        onClick={handleRecordToggle}
+                        className={`rounded-lg px-4 py-2 text-sm font-black uppercase tracking-[0.2em] transition ${isRecording ? "bg-red-500 text-white hover:brightness-110" : "bg-[#FFD700] text-black hover:brightness-110"}`}
+                      >
+                        {isRecording ? "Stop" : "Record"}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-white/60">
+                      We store the take locally—no uploads until you export.
+                    </p>
+                  </div>
+
+                  <div
+                    data-tour-id="export-share"
+                    className="rounded-xl border border-white/10 bg-black/40 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+                          Export &amp; Share
+                        </p>
+                        <p className="text-sm font-semibold text-white">
+                          Ship the session
+                        </p>
+                      </div>
+                      <Share2 className="h-5 w-5 text-[#FFD700]" />
+                    </div>
+                    <p className="mt-3 text-sm text-white/70">
+                      {recorded
+                        ? "Latest take is ready. Push it to socials or copy the link."
+                        : "Record a short pass, then bounce it when you like the flow."}
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => setShareOpen(true)}
+                        className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-white hover:bg-white/20"
+                      >
+                        Open share drawer
+                      </button>
+                      <button
+                        onClick={() => setTourModeEnabled(true)}
+                        className="rounded-lg border border-white/10 px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-white/70 hover:border-white/30"
+                      >
+                        Resume tour
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </>
   );

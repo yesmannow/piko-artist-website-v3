@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Music, Video, Settings } from "lucide-react";
+import { Home, Music, Video, Settings, Mail, LayoutTemplate } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -20,6 +20,8 @@ export function TacticalBar() {
     { href: "/music", icon: Music, label: "MUSIC" },
     { href: "/videos", icon: Video, label: "VIDEOS" },
     { href: "/studio", icon: Settings, label: "STUDIO" },
+    { href: "/contact", icon: Mail, label: "CONTACT" },
+    { href: "/timeline", icon: LayoutTemplate, label: "TIMELINE" },
   ];
 
   return (

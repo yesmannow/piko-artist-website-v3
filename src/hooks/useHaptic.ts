@@ -65,7 +65,7 @@ export function useHaptic() {
         } catch (error) {
           // Silently fail if vibration is not supported or blocked
           if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
+             
             console.debug("Haptic feedback not available:", error);
           }
         }

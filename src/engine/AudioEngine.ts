@@ -43,12 +43,12 @@ const DEBUG_BYPASS_FX = false; // flip to true to bypass filters when debugging 
 class AudioEngine {
   context: AudioContext | null = null;
   masterGain: GainNode | null = null;
-  decks: Map<string, DeckNode> = new Map();
+  decks = new Map<string, DeckNode>();
   // Reusable buffer for analyser data (avoid GC)
   private analyserDataBuffer: Uint8Array<ArrayBuffer> = new Uint8Array(
     new ArrayBuffer(32),
   );
-  private initialized: boolean = false;
+  private initialized = false;
   state: "Uninitialized" | "Initializing" | "Running" | "Error" =
     "Uninitialized";
   private mediaDestination: MediaStreamAudioDestinationNode | null = null;
@@ -61,7 +61,7 @@ class AudioEngine {
       if (!ok) return false;
     }
 
-    if (this.context && this.context.state === "suspended") {
+    if (this.context?.state === "suspended") {
       await this.context.resume();
     }
 
@@ -249,8 +249,7 @@ class AudioEngine {
 
     const deck = this.decks.get(deckId);
     if (
-      !deck ||
-      !deck.buffer ||
+      !deck?.buffer ||
       useAudioStore.getState().decks[deckId].isPlaying
     )
       return;
@@ -301,7 +300,7 @@ class AudioEngine {
     if (!(await this.ensureReady()) || !this.context) return;
 
     const deck = this.decks.get(deckId);
-    if (!deck || !deck.source) return;
+    if (!deck?.source) return;
 
     deck.source.stop();
     // Calculate where we stopped
@@ -319,7 +318,7 @@ class AudioEngine {
     if (!(await this.ensureReady()) || !this.context) return;
 
     const deck = this.decks.get(deckId);
-    if (!deck || !deck.buffer) return;
+    if (!deck?.buffer) return;
 
     const wasPlaying = useAudioStore.getState().decks[deckId].isPlaying;
 
@@ -512,7 +511,7 @@ class AudioEngine {
     }
 
     const deck = this.decks.get(deckId);
-    if (!deck || !deck.buffer) return;
+    if (!deck?.buffer) return;
 
     // If end not provided, calculate 4-beat loop
     // Assume 120 BPM: 0.5s per beat * 4 = 2s loop
@@ -591,7 +590,7 @@ class AudioEngine {
     }
 
     const deck = this.decks.get(deckId);
-    if (!deck || !deck.buffer) return;
+    if (!deck?.buffer) return;
 
     // Calculate current playback position
     const currentTime =
@@ -617,7 +616,7 @@ class AudioEngine {
     }
 
     const deck = this.decks.get(deckId);
-    if (!deck || !deck.buffer) return;
+    if (!deck?.buffer) return;
 
     // If cue exists, jump to it
     if (deck.hotCues.has(index)) {
@@ -661,7 +660,7 @@ class AudioEngine {
    * @param bpm - Detected tempo
    * @param gridOffset - Time of first beat in seconds
    */
-  setBPM(deckId: string, bpm: number, gridOffset: number = 0) {
+  setBPM(deckId: string, bpm: number, gridOffset = 0) {
     const deck = this.decks.get(deckId);
     if (!deck) return;
 
@@ -916,7 +915,7 @@ export async function ensureAudioEngineReady(): Promise<AudioEngine> {
     await initializationPromise;
   }
 
-  if (engine.context && engine.context.state === "suspended") {
+  if (engine.context?.state === "suspended") {
     await engine.context.resume();
   }
 

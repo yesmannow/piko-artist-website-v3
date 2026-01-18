@@ -321,7 +321,7 @@ export function useLatencyBenchmark(audioContext: AudioContext | null) {
 
   // Auto-start monitoring when audio context is available
   useEffect(() => {
-    if (audioContext && audioContext.state === "running") {
+    if (audioContext?.state === "running") {
       setupGlitchDetection();
       runBenchmark();
     }

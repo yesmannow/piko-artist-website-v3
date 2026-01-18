@@ -38,11 +38,7 @@
     const mean = sum / data.length;
     const adaptiveThreshold = mean * (1 + threshold);
     for (let i = 1; i < data.length - 1; i++) {
-      if (
-        data[i] > adaptiveThreshold &&
-        data[i] > data[i - 1] &&
-        data[i] > data[i + 1]
-      ) {
+      if (data[i] > adaptiveThreshold && data[i] > data[i - 1] && data[i] > data[i + 1]) {
         peaks.push(i);
       }
     }
@@ -106,8 +102,7 @@
       for (let beat = 1; beat < 4; beat++) {
         const expectedPeak = candidate + samplesPerBeat * beat;
         const closest = peaks.find(
-          (p) =>
-            p > candidate && Math.abs(p - expectedPeak) < samplesPerBeat * 0.3,
+          (p) => p > candidate && Math.abs(p - expectedPeak) < samplesPerBeat * 0.3
         );
         if (closest) {
           score += 1 - Math.abs(closest - expectedPeak) / samplesPerBeat;
@@ -158,28 +153,23 @@
         bpm: defaultBPM,
         downbeatTime: defaultDownbeat,
         beatTimestamps: generateBeatGrid(defaultBPM, defaultDownbeat, duration),
-        confidence: 0,
+        confidence: 0
       };
     }
     const intervals = calculateIntervals(peaks);
     const { bpm, confidence } = findTempo(
       intervals,
       sampleRate,
-      downsampleFactor,
+      downsampleFactor
     );
-    const downbeatPeak = detectDownbeat(
-      peaks,
-      bpm,
-      sampleRate,
-      downsampleFactor,
-    );
-    const downbeatTime = (downbeatPeak * downsampleFactor) / sampleRate;
+    const downbeatPeak = detectDownbeat(peaks, bpm, sampleRate, downsampleFactor);
+    const downbeatTime = downbeatPeak * downsampleFactor / sampleRate;
     const beatTimestamps = generateBeatGrid(bpm, downbeatTime, duration);
     return {
       bpm,
       downbeatTime,
       beatTimestamps,
-      confidence,
+      confidence
     };
   }
   self.onmessage = (event) => {
@@ -190,7 +180,7 @@
       const result = analyzeBeatGrid(channelData, sampleRate);
       const endTime = performance.now();
       console.log(
-        `[BeatGridWorker] \u2705 Detected ${result.bpm} BPM, ${result.beatTimestamps.length} beats (confidence: ${(result.confidence * 100).toFixed(1)}%) in ${(endTime - startTime).toFixed(0)}ms`,
+        `[BeatGridWorker] \u2705 Detected ${result.bpm} BPM, ${result.beatTimestamps.length} beats (confidence: ${(result.confidence * 100).toFixed(1)}%) in ${(endTime - startTime).toFixed(0)}ms`
       );
       self.postMessage(result);
     } catch (error) {
@@ -200,7 +190,7 @@
         downbeatTime: 0,
         beatTimestamps: [],
         confidence: 0,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   };

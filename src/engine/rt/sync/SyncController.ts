@@ -50,7 +50,7 @@ export interface SyncState {
  * SyncController - PLL-based phase sync for dual decks
  */
 export class SyncController {
-  private enabled: boolean = false;
+  private enabled = false;
   private slaveDeck: DeckId | null = null;
   private masterDeck: DeckId | null = null;
   private slaveBeatGrid: BeatGridData | null = null;
@@ -67,17 +67,17 @@ export class SyncController {
   };
 
   // Internal state
-  private smoothedRate: number = 1.0;
-  private integral: number = 0; // Integral term for PI controller
-  private lastTickTime: number = 0; // Last tick time for dt calculation
-  private lastSlaveBeatTime: number = 0; // Track time of last slave beat
-  private lastMasterBeatTime: number = 0; // Track time of last master beat
+  private smoothedRate = 1.0;
+  private integral = 0; // Integral term for PI controller
+  private lastTickTime = 0; // Last tick time for dt calculation
+  private lastSlaveBeatTime = 0; // Track time of last slave beat
+  private lastMasterBeatTime = 0; // Track time of last master beat
 
   // Deck graph references (set by StudioEngine)
-  private deckGraphs: Map<DeckId, DeckGraph> = new Map();
+  private deckGraphs = new Map<DeckId, DeckGraph>();
 
   // Cache keys for beat grids (set by StudioEngine)
-  private deckCacheKeys: Map<DeckId, string> = new Map();
+  private deckCacheKeys = new Map<DeckId, string>();
 
   /**
    * Set deck graph references (called by StudioEngine)

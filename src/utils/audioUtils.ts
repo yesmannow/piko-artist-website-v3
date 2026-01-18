@@ -62,7 +62,7 @@ export function calculateBeatPositions(
 export function snapToBeat(
   time: number,
   bpm: number,
-  snapStrength: number = 1.0,
+  snapStrength = 1.0,
 ): number {
   if (!bpm || bpm <= 0) return time;
 

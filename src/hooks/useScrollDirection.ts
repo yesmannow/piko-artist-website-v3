@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
  * Hook for detecting scroll direction (up/down) with throttling
  * Returns 'up' | 'down' | null (null on initial load or no scroll)
  */
-export function useScrollDirection(threshold: number = 50) {
+export function useScrollDirection(threshold = 50) {
   const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(
     null,
   );

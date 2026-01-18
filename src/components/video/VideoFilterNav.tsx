@@ -2,13 +2,18 @@
 
 import { motion } from "framer-motion";
 
-export type VideoCategory = "ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC";
+export type VideoCategory =
+  | "ALL"
+  | "HYPE"
+  | "CHILL"
+  | "STORYTELLING"
+  | "CLASSIC";
 
-type VideoFilterNavProps = {
+interface VideoFilterNavProps {
   categories: VideoCategory[];
   active: VideoCategory;
   onChange: (category: VideoCategory) => void;
-};
+}
 
 export function VideoFilterNav({
   categories,

@@ -158,10 +158,10 @@ export function ExportMixModal({
 
       const { blob } = recording;
 
-      // Get canvas for visualizer
-      const canvas = document.querySelector(
+      // Safe-typed canvas lookup for captureStream previews
+      const canvas = document.querySelector<HTMLCanvasElement>(
         exportOptions.canvasSelector,
-      ) as HTMLCanvasElement;
+      );
       if (!canvas) {
         throw new Error(`Canvas not found: ${exportOptions.canvasSelector}`);
       }

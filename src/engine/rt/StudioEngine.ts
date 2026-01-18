@@ -47,7 +47,7 @@ class StudioEngine {
   private syncController: SyncController;
 
   // Track URLs for cache key generation
-  private deckUrls: Map<DeckId, string> = new Map();
+  private deckUrls = new Map<DeckId, string>();
 
   // Private constructor enforces singleton
   private constructor() {

@@ -33,7 +33,7 @@ class BeatGridService {
   private worker: Worker | null = null;
 
   // Cache for beat grid data (keyed by track URL or hash)
-  private beatGridCache: Map<string, BeatGridData> = new Map();
+  private beatGridCache = new Map<string, BeatGridData>();
 
   // Private constructor enforces singleton
   private constructor() {}

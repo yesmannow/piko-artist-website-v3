@@ -7,6 +7,7 @@ import {
   Music,
   ExternalLink,
   Mail,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,9 +58,11 @@ const socialLinks = [
 
 const quickLinks = [
   { name: "Home", href: "/" },
-  { name: "Studio", href: "/studio" },
   { name: "Music", href: "/music" },
+  { name: "Videos", href: "/videos" },
+  { name: "Studio", href: "/studio" },
   { name: "Contact", href: "/contact" },
+  { name: "Install", href: "/install" },
 ];
 
 export function Footer() {
@@ -218,30 +221,62 @@ export function Footer() {
             >
               Business inquiries, features, beats, and collaborations.
             </motion.p>
-            <motion.a
-              href="/contact"
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFD700] text-black font-bold italic uppercase text-sm border-2 border-black"
-              style={{
-                fontFamily: "var(--font-lexend), system-ui, sans-serif",
-                transform: "skewX(-12deg)",
-                boxShadow: "4px 4px 0px #000",
-              }}
             >
-              <span
-                style={{ transform: "skewX(12deg)", display: "inline-block" }}
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFD700] text-black font-bold italic uppercase text-sm border-2 border-black"
+                style={{
+                  fontFamily: "var(--font-lexend), system-ui, sans-serif",
+                  transform: "skewX(-12deg)",
+                  boxShadow: "4px 4px 0px #000",
+                }}
               >
-                <Mail className="w-4 h-4 inline mr-1" />
-                Contact / Collab
-              </span>
-            </motion.a>
+                <span
+                  style={{ transform: "skewX(12deg)", display: "inline-block" }}
+                >
+                  <Mail className="w-4 h-4 inline mr-1" />
+                  Contact / Collab
+                </span>
+              </Link>
+            </motion.div>
           </div>
         </div>
+
+        {/* Studio Tour CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="mb-10 mt-2 flex flex-col gap-3 rounded-2xl border border-[#FFD700]/30 bg-gradient-to-r from-[#0b0b0b] via-[#141414] to-[#0b0b0b] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.35)] md:flex-row md:items-center md:justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFD700]/15 text-[#FFD700]">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-[#E0E0E0]/70">
+                Guided Walkthrough
+              </p>
+              <p className="text-lg font-black uppercase text-white">
+                Launch Tour Mode in the Studio
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/studio?tour=1"
+            className="inline-flex items-center justify-center rounded-xl bg-[#FFD700] px-4 py-2 text-sm font-black uppercase tracking-[0.2em] text-black transition hover:brightness-110"
+          >
+            Start Tour Mode
+          </Link>
+        </motion.div>
 
         {/* Divider */}
         <div className="border-t-2 border-[#E0E0E0]/10 mb-8" />

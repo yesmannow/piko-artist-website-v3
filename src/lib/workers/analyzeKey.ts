@@ -1,8 +1,8 @@
-export type KeyResult = {
+export interface KeyResult {
   root: string;
   scale: "major" | "minor";
   camelot: string;
-};
+}
 
 type WorkerResponse =
   | { type: "ANALYZE_KEY_DONE"; data: KeyResult }

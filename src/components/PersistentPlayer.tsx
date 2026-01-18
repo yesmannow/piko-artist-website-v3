@@ -76,7 +76,7 @@ export function PersistentPlayer() {
           await audioRef.current.play();
         } catch (error) {
           if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
+             
             console.error("Error playing audio from MediaSession:", error);
           }
         }
@@ -198,7 +198,7 @@ export function PersistentPlayer() {
             </div>
 
             {/* Enhanced Audio Visualization (Desktop only) */}
-            {!isMobile && currentTrack && currentTrack.type === "audio" && (
+            {!isMobile && currentTrack?.type === "audio" && (
               <div
                 className="w-full px-2 space-y-2"
                 style={{ viewTransitionName: "player-visualization" }}

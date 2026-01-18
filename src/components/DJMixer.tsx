@@ -324,8 +324,7 @@ export function DJMixer({
               <div className="flex items-center gap-3 mt-1">
                 <button
                   onClick={() =>
-                    onHapticsEnabledChange &&
-                    onHapticsEnabledChange(!hapticsEnabled)
+                    onHapticsEnabledChange?.(!hapticsEnabled)
                   }
                   className={`px-3 py-1.5 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[32px] ${
                     hapticsEnabled
@@ -342,7 +341,7 @@ export function DJMixer({
                     (opt) => (
                       <button
                         key={opt}
-                        onClick={() => onThemeChange && onThemeChange(opt)}
+                        onClick={() => onThemeChange?.(opt)}
                         className={`px-2 py-1 text-[10px] font-barlow uppercase rounded border transition-colors min-h-[28px] ${
                           theme === opt
                             ? "bg-[#FFD700] text-black border-[#FFD700]"

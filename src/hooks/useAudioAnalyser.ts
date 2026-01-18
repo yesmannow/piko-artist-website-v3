@@ -42,7 +42,7 @@ interface AudioAnalyserResult {
  */
 export function useAudioAnalyser(
   videoElement: HTMLVideoElement | HTMLIFrameElement | null,
-  enabled: boolean = true,
+  enabled = true,
 ): AudioAnalyserResult {
   const [levels, setLevels] = useState<AudioAnalyserResult>({
     bass: 0,
@@ -93,7 +93,7 @@ export function useAudioAnalyser(
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(
       new ArrayBuffer(bufferLength),
-    ) as Uint8Array<ArrayBuffer>;
+    );
     dataArrayRef.current = dataArray;
 
     const updateLevels = () => {

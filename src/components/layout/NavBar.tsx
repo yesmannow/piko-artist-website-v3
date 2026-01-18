@@ -6,21 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Headphones, Radio, Waves, Sparkles } from "lucide-react";
-
-type NavItem = {
-  label: string;
-  href: string;
-};
-
-const baseItems: NavItem[] = [
-  { label: "Home", href: "/" },
-  { label: "Studio", href: "/studio" },
-  { label: "Mobile DJ", href: "/mobile" },
-  { label: "Music", href: "/music" },
-  { label: "Videos", href: "/videos" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
+import {
+  primaryNavItems,
+  labsNavItems,
+  type NavItem,
+} from "@/config/nav.config";
 
 export function NavBar() {
   const pathname = usePathname() ?? "/";
@@ -32,13 +22,10 @@ export function NavBar() {
     setOpen(false);
   }, [pathname]);
 
-  const items = useMemo(() => {
-    const list = [...baseItems];
-    if (labs) {
-      list.splice(3, 0, { label: "Studio V2", href: "/studio-v2" });
-    }
-    return list;
-  }, [labs]);
+  const items = useMemo(
+    () => (labs ? labsNavItems : primaryNavItems),
+    [labs],
+  );
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";

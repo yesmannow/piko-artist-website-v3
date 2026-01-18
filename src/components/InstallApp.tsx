@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { useHaptic } from "@/hooks/useHaptic";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -16,6 +18,8 @@ export function InstallApp() {
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const { triggerHaptic } = useHaptic();
+  const router = useRouter();
+  const { installAvailable, triggerInstall } = usePwaInstall();
 
   useEffect(() => {
     // Check if already installed
@@ -52,21 +56,33 @@ export function InstallApp() {
     triggerHaptic();
 
     if (deferredPrompt) {
-      // Android install
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
         setDeferredPrompt(null);
         setIsInstalled(true);
+        return;
       }
-    } else if (showIOSPrompt) {
-      // iOS - show instructions
-      setShowIOSPrompt(false);
-      // Could show a modal with instructions here
     }
+
+    if (installAvailable) {
+      const outcome = await triggerInstall();
+      if (outcome === "accepted") {
+        setIsInstalled(true);
+        return;
+      }
+    }
+
+    if (showIOSPrompt) {
+      setShowIOSPrompt(false);
+      router.push("/install#manual");
+      return;
+    }
+
+    router.push("/install");
   };
 
-  if (isInstalled || (!deferredPrompt && !showIOSPrompt)) {
+  if (isInstalled || (!deferredPrompt && !showIOSPrompt && !installAvailable)) {
     return null;
   }
 

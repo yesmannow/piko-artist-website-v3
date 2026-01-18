@@ -1,20 +1,39 @@
 import { create } from "zustand";
-import { MediaItem } from "@/lib/data";
+import { MediaItem, tracks } from "@/lib/data";
 import { ensureAudioEngineReady } from "@/engine/AudioEngine";
 import { analyzeTrackKey } from "@/lib/workers/analyzeKey";
+import { detectBPM } from "@/utils/bpmDetection";
 
 type DeckId = "deckA" | "deckB";
 type EQBand = "low" | "mid" | "high";
 type FxType = "flanger" | "phaser" | "delay";
 type CamelotKey = `${number}${"A" | "B"}` | string;
+type GhostStatus = "idle" | "loading" | "ready" | "error";
+
+type TimelineTransition = "fade" | "cut" | "echo-out" | "filter-in" | undefined;
+
+export type TimelineSegment = {
+  id: string;
+  trackId: string;
+  startBeat: number;
+  endBeat?: number;
+  transition?: TimelineTransition;
+};
+
+type TimelineRenderState = {
+  status: "idle" | "rendering" | "ready" | "error";
+  url?: string | null;
+  duration?: number | null;
+  error?: string | null;
+};
 
 export function areKeysCompatible(
   camelotA?: CamelotKey | null,
   camelotB?: CamelotKey | null,
 ): boolean {
   if (!camelotA || !camelotB) return true;
-  const matchA = camelotA.match(/^(\d{1,2})([AB])$/i);
-  const matchB = camelotB.match(/^(\d{1,2})([AB])$/i);
+  const matchA = /^(\d{1,2})([AB])$/i.exec(camelotA);
+  const matchB = /^(\d{1,2})([AB])$/i.exec(camelotB);
   if (!matchA || !matchB) return true;
 
   const numA = parseInt(matchA[1], 10);
@@ -38,16 +57,27 @@ interface DeckMetaState {
   loop: { start: number | null; end: number | null; enabled: boolean };
   showBeatGrid: boolean;
   showElapsed: boolean;
-   keyInfo: MediaItem["keyInfo"];
-   keyStatus: "idle" | "loading" | "ready" | "error";
-   keyError: string | null;
+  keyInfo: MediaItem["keyInfo"];
+  keyStatus: "idle" | "loading" | "ready" | "error";
+  keyError: string | null;
 }
 
 interface DeckMixerStore {
   decks: Record<DeckId, DeckMetaState>;
+  ghostDeck: {
+    track: MediaItem | null;
+    keyInfo: MediaItem["keyInfo"];
+    bpm: number | null;
+    status: GhostStatus;
+    error?: string | null;
+  };
+  mixTimeline: TimelineSegment[];
+  timelineRender: TimelineRenderState;
   allowKeyClash: boolean;
   keyWarning: string | null;
   loadTrackToDeck: (deck: DeckId, track: MediaItem) => Promise<void>;
+  loadGhostTrack: (trackId: string) => Promise<void>;
+  unloadGhostTrack: () => void;
   setEQ: (deck: DeckId, band: EQBand, value: number) => Promise<void>;
   setFXAmount: (deck: DeckId, type: FxType, value: number) => Promise<void>;
   setCuePoint: (deck: DeckId, padIndex: number, time?: number) => Promise<void>;
@@ -58,6 +88,12 @@ interface DeckMixerStore {
   toggleBeatGrid: (deck: DeckId) => void;
   toggleTimeMode: (deck: DeckId) => void;
   toggleAllowKeyClash: (value: boolean) => void;
+  addTimelineSegment: (segment: Omit<TimelineSegment, "id">) => void;
+  updateTimelineSegment: (id: string, update: Partial<TimelineSegment>) => void;
+  removeTimelineSegment: (id: string) => void;
+  clearTimeline: () => void;
+  startTimelineRender: (bpm?: number) => Promise<void>;
+  resetTimelineRender: () => void;
 }
 
 const defaultDeckState: DeckMetaState = {
@@ -100,6 +136,15 @@ export const useDeckMixerStore = create<DeckMixerStore>((set, get) => ({
     deckA: cloneDeckState(),
     deckB: cloneDeckState(),
   },
+  ghostDeck: {
+    track: null,
+    keyInfo: null,
+    bpm: null,
+    status: "idle",
+    error: null,
+  },
+  mixTimeline: [],
+  timelineRender: { status: "idle", url: null, duration: null, error: null },
   allowKeyClash: false,
   keyWarning: null,
 
@@ -310,4 +355,208 @@ export const useDeckMixerStore = create<DeckMixerStore>((set, get) => ({
       allowKeyClash: value,
       keyWarning: null,
     })),
+
+  loadGhostTrack: async (trackId) => {
+    const track = tracks.find((t) => t.id === trackId);
+    if (!track) {
+      set((state) => ({
+        ghostDeck: {
+          ...state.ghostDeck,
+          status: "error",
+          error: "Track not found",
+        },
+      }));
+      return;
+    }
+
+    set((state) => ({
+      ghostDeck: {
+        ...state.ghostDeck,
+        status: "loading",
+        error: null,
+        track,
+      },
+    }));
+
+    let keyInfo = track.keyInfo ?? null;
+    let bpm = track.bpm ?? null;
+    try {
+      if (typeof window !== "undefined") {
+        // Fetch/decode for analysis if needed
+        if (!keyInfo || !bpm) {
+          const response = await fetch(track.src);
+          const arrayBuffer = await response.arrayBuffer();
+          const audioContext = new AudioContext();
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+          if (!keyInfo) {
+            keyInfo = await analyzeTrackKey(audioBuffer);
+          }
+
+          if (!bpm) {
+            const bpmResult = await detectBPM(audioBuffer);
+            bpm = bpmResult.bpm;
+          }
+        }
+      }
+
+      const updatedTrack = { ...track };
+      if (keyInfo) updatedTrack.keyInfo = keyInfo;
+      if (bpm) updatedTrack.bpm = bpm;
+
+      set((state) => ({
+        ghostDeck: {
+          ...state.ghostDeck,
+          track: updatedTrack,
+          keyInfo: keyInfo ?? null,
+          bpm: bpm ?? null,
+          status: "ready",
+          error: null,
+        },
+      }));
+    } catch (error) {
+      console.error("[GhostDeck] analysis failed", error);
+      set((state) => ({
+        ghostDeck: {
+          ...state.ghostDeck,
+          status: "error",
+          error:
+            error instanceof Error
+              ? error.message
+              : "Ghost deck analysis failed",
+        },
+      }));
+    }
+  },
+
+  unloadGhostTrack: () =>
+    set((state) => ({
+      ghostDeck: {
+        ...state.ghostDeck,
+        track: null,
+        keyInfo: null,
+        bpm: null,
+        status: "idle",
+        error: null,
+      },
+    })),
+
+  addTimelineSegment: (segment) =>
+    set((state) => ({
+      mixTimeline: [
+        ...state.mixTimeline,
+        {
+          ...segment,
+          id: `timeline_${Date.now()}_${state.mixTimeline.length}`,
+        },
+      ],
+    })),
+
+  updateTimelineSegment: (id, update) =>
+    set((state) => ({
+      mixTimeline: state.mixTimeline.map((segment) =>
+        segment.id === id ? { ...segment, ...update } : segment,
+      ),
+    })),
+
+  removeTimelineSegment: (id) =>
+    set((state) => ({
+      mixTimeline: state.mixTimeline.filter((segment) => segment.id !== id),
+    })),
+
+  clearTimeline: () =>
+    set(() => ({
+      mixTimeline: [],
+    })),
+
+  startTimelineRender: async (bpm = 120) => {
+    const { renderTimeline } = await import("@/engine/renderTimeline");
+    const segments = get().mixTimeline;
+    if (segments.length === 0) {
+      set((state) => ({
+        timelineRender: {
+          ...state.timelineRender,
+          status: "error",
+          error: "Timeline is empty",
+        },
+      }));
+      return;
+    }
+    set((state) => ({
+      timelineRender: { ...state.timelineRender, status: "rendering", error: null },
+    }));
+    try {
+      const { audioBuffer, duration } = await renderTimeline({ segments, bpm });
+      const wavBlob = audioBufferToWav(audioBuffer);
+      const url = URL.createObjectURL(wavBlob);
+      set((state) => ({
+        timelineRender: { ...state.timelineRender, status: "ready", url, duration },
+      }));
+    } catch (error) {
+      set((state) => ({
+        timelineRender: {
+          ...state.timelineRender,
+          status: "error",
+          error: error instanceof Error ? error.message : "Render failed",
+        },
+      }));
+    }
+  },
+
+  resetTimelineRender: () =>
+    set(() => ({
+      timelineRender: { status: "idle", url: null, duration: null, error: null },
+    })),
 }));
+
+function audioBufferToWav(buffer: AudioBuffer): Blob {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArray = new ArrayBuffer(length);
+  const view = new DataView(bufferArray);
+  const channels: Float32Array[] = [];
+  let offset = 0;
+  let pos = 0;
+
+  setUint32(0x46464952);
+  setUint32(length - 8);
+  setUint32(0x45564157);
+
+  setUint32(0x20746d66);
+  setUint32(16);
+  setUint16(1);
+  setUint16(numOfChan);
+  setUint32(buffer.sampleRate);
+  setUint32(buffer.sampleRate * 2 * numOfChan);
+  setUint16(numOfChan * 2);
+  setUint16(16);
+
+  setUint32(0x61746164);
+  setUint32(length - pos - 4);
+
+  for (let i = 0; i < buffer.numberOfChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  while (pos < length) {
+    for (let i = 0; i < numOfChan; i++) {
+      let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+      sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+      view.setInt16(pos, sample, true);
+      pos += 2;
+    }
+    offset++;
+  }
+
+  return new Blob([bufferArray], { type: "audio/wav" });
+
+  function setUint16(data: number) {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  }
+
+  function setUint32(data: number) {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  }
+}

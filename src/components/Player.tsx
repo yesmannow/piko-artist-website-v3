@@ -98,7 +98,7 @@ export function Player() {
       const backend = (wavesurfer as unknown as { backend?: WaveSurferBackend })
         .backend;
       const audioContext =
-        backend && backend.ac ? backend.ac : getSharedAudioContext();
+        backend?.ac ? backend.ac : getSharedAudioContext();
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       analyserRef.current = analyser;

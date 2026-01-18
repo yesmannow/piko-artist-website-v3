@@ -41,19 +41,19 @@ class StepSequencer {
   private static instance: StepSequencer | null = null;
 
   private samplePlayer = getSamplePlayer();
-  private patterns: Map<string, SequencerPattern> = new Map();
+  private patterns = new Map<string, SequencerPattern>();
   private currentPatternId: string | null = null;
 
   // Sequencer state
   private state: SequencerState = "stopped";
-  private tempo: number = 120;
-  private swing: number = 0; // 0 = no swing, 1 = maximum swing
+  private tempo = 120;
+  private swing = 0; // 0 = no swing, 1 = maximum swing
   private currentStep = { row: 0, col: 0 };
   private grid: GridStep[][];
 
   // Timing
   private intervalId: NodeJS.Timeout | null = null;
-  private lastStepTime: number = 0;
+  private lastStepTime = 0;
 
   // Callbacks
   private onStepChange?: (step: { row: number; col: number }) => void;

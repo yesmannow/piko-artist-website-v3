@@ -65,7 +65,7 @@ export function calculateBPMCompatibility(
 export function calculateCompatibilityScore(
   masterTrack: TrackMetadata,
   candidateTrack: TrackMetadata,
-  vibeMatching: boolean = true,
+  vibeMatching = true,
 ): CompatibilityScore {
   const bpmScore = calculateBPMCompatibility(
     masterTrack.bpm || 120,
@@ -105,8 +105,8 @@ export function calculateCompatibilityScore(
 export function rankCompatibleTracks(
   masterTrack: TrackMetadata,
   libraryTracks: TrackMetadata[],
-  limit: number = 10,
-  vibeMatching: boolean = true,
+  limit = 10,
+  vibeMatching = true,
 ): CompatibilityScore[] {
   const scores = libraryTracks
     .filter((track) => track.id !== masterTrack.id) // Exclude master track
@@ -125,7 +125,7 @@ export function rankCompatibleTracks(
 export function findNextCompatibleTrack(
   masterTrack: TrackMetadata,
   libraryTracks: TrackMetadata[],
-  vibeMatching: boolean = true,
+  vibeMatching = true,
 ): TrackMetadata | null {
   const ranked = rankCompatibleTracks(
     masterTrack,
@@ -165,7 +165,7 @@ export function calculateConstantPowerCrossfade(position: number): {
  */
 export function findNextPhraseBoundary(
   currentBeat: number,
-  beatsPerPhrase: number = 4,
+  beatsPerPhrase = 4,
 ): number {
   const nextPhrase = Math.ceil(currentBeat / beatsPerPhrase) * beatsPerPhrase;
   return nextPhrase;

@@ -68,7 +68,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         playPromiseRef.current = null;
         if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
+           
           console.error("Error playing audio:", error);
         }
         setIsPlaying(false);
@@ -103,7 +103,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           playPromiseRef.current = null;
           if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
+             
             console.error("Error playing audio:", error);
           }
           setIsPlaying(false);
@@ -205,7 +205,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           setIsPlaying(true);
         } catch (error) {
           if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
+             
             console.error("Error playing audio from MediaSession:", error);
           }
         }

@@ -67,7 +67,7 @@ function useTrackDuration(track: MediaItem | null) {
   );
 
   useEffect(() => {
-    if (!track || track.type !== "audio") return;
+    if (track?.type !== "audio") return;
     if (track.duration) {
       setDuration(track.duration);
       return;
@@ -200,7 +200,9 @@ function NowPlayingCard({
             <h2 className="text-3xl font-black leading-tight text-white sm:text-4xl">
               {track.title}
             </h2>
-            <p className="text-white/70 text-lg font-semibold">{track.artist}</p>
+            <p className="text-white/70 text-lg font-semibold">
+              {track.artist}
+            </p>
             <p className="flex items-center gap-2 text-sm text-white/60">
               <Clock className="h-4 w-4" />
               {formatDuration(duration)}
@@ -559,7 +561,7 @@ export default function MusicPage() {
   );
 
   const featuredTrack =
-    currentTrack?.type === "audio" ? currentTrack : audioTracks[0] ?? null;
+    currentTrack?.type === "audio" ? currentTrack : (audioTracks[0] ?? null);
 
   const handlePlay = (track: MediaItem) => {
     triggerHaptic();
@@ -585,6 +587,8 @@ export default function MusicPage() {
         });
       } else if (navigator.clipboard && shareUrl) {
         await navigator.clipboard.writeText(shareUrl);
+      } else if (shareUrl) {
+        window.open(shareUrl, "_blank", "noopener");
       }
     } catch {
       // Silent fallback

@@ -52,7 +52,7 @@ const vibeEmojis: Record<GuestbookEntry["vibe"], string> = {
   real: "💯",
 };
 
-const vibeOptions: Array<{ value: GuestbookEntry["vibe"]; label: string }> = [
+const vibeOptions: { value: GuestbookEntry["vibe"]; label: string }[] = [
   { value: "fire", label: "Fire" },
   { value: "hype", label: "Hype" },
   { value: "chill", label: "Chill" },
@@ -128,7 +128,9 @@ function GuestbookWidget() {
           <p className="text-xs uppercase tracking-[0.22em] text-white/60">
             Guestbook
           </p>
-          <h3 className="text-2xl font-black text-white">Sign & Leave a Note</h3>
+          <h3 className="text-2xl font-black text-white">
+            Sign & Leave a Note
+          </h3>
           <p className="text-white/60 text-sm">
             Entries save locally and sync with the main guestbook.
           </p>
@@ -167,7 +169,9 @@ function GuestbookWidget() {
           <textarea
             name="message"
             value={form.message}
-            onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, message: e.target.value }))
+            }
             placeholder="Drop your message"
             required
             rows={4}
@@ -286,11 +290,17 @@ export default function ContactPage() {
                     <action.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">{action.label}</p>
-                    <p className="text-xs text-white/60">Tap to pre-fill form</p>
+                    <p className="text-sm font-semibold text-white">
+                      {action.label}
+                    </p>
+                    <p className="text-xs text-white/60">
+                      Tap to pre-fill form
+                    </p>
                   </div>
                 </div>
-                <p className="mt-3 text-sm text-white/60">{action.description}</p>
+                <p className="mt-3 text-sm text-white/60">
+                  {action.description}
+                </p>
               </Link>
             ))}
           </div>
@@ -303,7 +313,9 @@ export default function ContactPage() {
             <p className="text-xs uppercase tracking-[0.22em] text-white/60">
               Booking & Contact
             </p>
-            <h2 className="text-2xl font-black text-white">Project Intake Form</h2>
+            <h2 className="text-2xl font-black text-white">
+              Project Intake Form
+            </h2>
             <p className="text-white/60 text-sm">
               Submit a collab, feature, or production request. We respond via
               email with availability and rate cards.

@@ -98,7 +98,7 @@ function detectPlatform() {
 
   const ua = navigator.userAgent || "";
   const isIOS = /iPad|iPhone|iPod/.test(ua);
-  const isAndroid = /Android/.test(ua);
+  const isAndroid = ua.includes('Android');
   const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
   const isMobile =
     /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(ua);

@@ -103,7 +103,7 @@ export const PerformancePads = ({ deckId }: PerformancePadsProps) => {
   };
 
   // Hot Cue Controls
-  const handleHotCue = (index: number, isLongPress: boolean = false) => {
+  const handleHotCue = (index: number, isLongPress = false) => {
     // PHASE 3: Different haptics for cue set vs jump
     if (isLongPress) {
       triggerHaptic(HAPTIC_PATTERNS.ERROR); // Delete cue

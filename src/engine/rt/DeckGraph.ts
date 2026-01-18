@@ -41,11 +41,11 @@ export class DeckGraph {
   // Track state
   private audioBuffer: AudioBuffer | null = null;
   private currentState: DeckState = "stopped";
-  private playbackRate: number = 1.0;
+  private playbackRate = 1.0;
 
   // Timing state (for pause/resume)
-  private startTime: number = 0; // When playback started (context time)
-  private pauseTime: number = 0; // Where in the track we paused (track time)
+  private startTime = 0; // When playback started (context time)
+  private pauseTime = 0; // Where in the track we paused (track time)
 
   constructor(
     context: AudioContext,

@@ -14,7 +14,7 @@ import { useMIDIStore, type MIDIAction } from "@/store/useMIDIStore";
 
 class MIDIManager {
   private midiAccess: MIDIAccess | null = null;
-  private initialized: boolean = false;
+  private initialized = false;
 
   /**
    * Initialize WebMIDI and connect to available devices

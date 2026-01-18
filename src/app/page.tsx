@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, MouseEvent, ReactNode } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,15 +19,17 @@ import {
 } from "lucide-react";
 import { ArtistSignalMeter } from "@/components/visual/ArtistSignalMeter";
 import { tracks } from "@/lib/data";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
-type FeatureCardProps = {
+interface FeatureCardProps {
   title: string;
   href: string;
   description: string;
   icon: ComponentType<{ className?: string }>;
   pill: string;
   accent: string;
-};
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+}
 
 function useLastSession() {
   const [lastTrack, setLastTrack] = useState<string | null>(null);
@@ -52,10 +54,12 @@ function CtaButton({
   href,
   children,
   variant = "primary",
+  onClick,
 }: {
   href: string;
   children: ReactNode;
   variant?: "primary" | "ghost";
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const base =
     "inline-flex items-center justify-center gap-3 rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
@@ -67,7 +71,11 @@ function CtaButton({
   };
   return (
     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-      <Link href={href} className={`${base} ${variants[variant]}`}>
+      <Link
+        href={href}
+        onClick={onClick}
+        className={`${base} ${variants[variant]}`}
+      >
         {children}
         <ArrowRight className="h-4 w-4" />
       </Link>
@@ -82,6 +90,7 @@ function FeatureCard({
   icon: Icon,
   pill,
   accent,
+  onClick,
 }: FeatureCardProps) {
   return (
     <motion.article
@@ -105,6 +114,7 @@ function FeatureCard({
       </div>
       <Link
         href={href}
+        onClick={onClick}
         className="relative mt-6 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#c1ff00]"
       >
         Enter
@@ -141,6 +151,7 @@ function SectionHeading({
 
 export default function HomePage() {
   const router = useRouter();
+  const { triggerInstall, installAvailable } = usePwaInstall();
   const lastTrack = useLastSession();
   const audioCount = useMemo(
     () => tracks.filter((t) => t.type === "audio").length,
@@ -169,6 +180,17 @@ export default function HomePage() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [router]);
+
+  const handleInstallCTA = async (event?: MouseEvent<HTMLAnchorElement>) => {
+    event?.preventDefault();
+    const outcome = await triggerInstall();
+    if (outcome === "accepted") return;
+    if (outcome === "dismissed") {
+      router.push("/install#manual");
+      return;
+    }
+    router.push("/install");
+  };
 
   const featureCards: FeatureCardProps[] = [
     {
@@ -206,6 +228,7 @@ export default function HomePage() {
       icon: Download,
       pill: "PWA",
       accent: "from-[#facc15]/16 via-transparent to-[#7c3aed]/12",
+      onClick: handleInstallCTA,
     },
   ];
 
@@ -417,10 +440,11 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/install"
+                onClick={handleInstallCTA}
                 className="inline-flex items-center gap-2 rounded-full bg-[#c1ff00] px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-black shadow-[0_10px_40px_rgba(193,255,0,0.3)]"
               >
                 <Download className="h-4 w-4" />
-                Install Piko DJ
+                {installAvailable ? "Install Piko DJ" : "Open Install Guide"}
               </Link>
               <Link
                 href="/studio"

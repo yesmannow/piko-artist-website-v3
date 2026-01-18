@@ -46,9 +46,7 @@ export interface CollaborationState {
   };
 
   // Effects state
-  effects: {
-    [key: string]: boolean | number;
-  };
+  effects: Record<string, boolean | number>;
 
   // Connected peers
   peers: string[];
@@ -309,7 +307,7 @@ export function useCollaborativeValue<K extends keyof CollaborationState>(
   collaboration: ReturnType<typeof useCollaboration>,
 ): [CollaborationState[K], (value: CollaborationState[K]) => void] {
   const value = (collaboration.state[key] ??
-    defaultValue) as CollaborationState[K];
+    defaultValue);
 
   const setValue = useCallback(
     (newValue: CollaborationState[K]) => {

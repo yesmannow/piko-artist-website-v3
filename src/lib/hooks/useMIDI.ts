@@ -2,17 +2,17 @@
 
 import { useEffect } from "react";
 
-type MidiMessageEvent = {
+interface MidiMessageEvent {
   data: Uint8Array;
-};
+}
 
-type MidiInput = {
+interface MidiInput {
   onmidimessage: ((event: MidiMessageEvent) => void) | null;
-};
+}
 
-type MidiAccess = {
+interface MidiAccess {
   inputs: Iterable<MidiInput>;
-};
+}
 
 /**
  * Basic MIDI subscription hook.
@@ -20,7 +20,7 @@ type MidiAccess = {
  */
 export function useMIDI(onMidiMessage: (data: Uint8Array) => void) {
   useEffect(() => {
-    let cleanup: Array<() => void> = [];
+    let cleanup: (() => void)[] = [];
 
     if (typeof navigator === "undefined") {
       return;
@@ -34,13 +34,16 @@ export function useMIDI(onMidiMessage: (data: Uint8Array) => void) {
       return;
     }
 
-    nav.requestMIDIAccess()
+    nav
+      .requestMIDIAccess()
       .then((midiAccess) => {
         const inputs =
           "values" in midiAccess.inputs
-            ? (midiAccess.inputs as Iterable<MidiInput> & {
-                values: () => Iterable<MidiInput>;
-              }).values()
+            ? (
+                midiAccess.inputs as Iterable<MidiInput> & {
+                  values: () => Iterable<MidiInput>;
+                }
+              ).values()
             : midiAccess.inputs;
         for (const input of inputs) {
           const handler = (message: MidiMessageEvent) => {

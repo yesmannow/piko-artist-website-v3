@@ -257,7 +257,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                           <div className="text-white/40">Crossfader</div>
                           <div className="text-white font-bold">
                             {(
-                              (collaboration.state.crossfader as number) * 100
+                              (collaboration.state.crossfader!) * 100
                             ).toFixed(0)}
                             %
                           </div>
@@ -267,7 +267,7 @@ export function CollaborationPanel({ onClose }: CollaborationPanelProps) {
                           <div className="text-white/40">Master Volume</div>
                           <div className="text-white font-bold">
                             {(
-                              (collaboration.state.masterVolume as number) * 100
+                              (collaboration.state.masterVolume!) * 100
                             ).toFixed(0)}
                             %
                           </div>

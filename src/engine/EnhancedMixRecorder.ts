@@ -114,10 +114,10 @@ class EnhancedMixRecorder {
       let combinedStream: MediaStream;
 
       if (includeVideo) {
-        // Capture video from canvas
-        const canvas = document.querySelector(
+        // Capture video from canvas safely
+        const canvas = document.querySelector<HTMLCanvasElement>(
           canvasSelector,
-        ) as HTMLCanvasElement;
+        );
         if (!canvas) {
           throw new Error(`Canvas element not found: ${canvasSelector}`);
         }

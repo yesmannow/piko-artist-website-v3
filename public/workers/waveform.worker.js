@@ -59,7 +59,7 @@
       self.postMessage(response);
     } catch (error) {
       self.postMessage({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   };

@@ -287,7 +287,7 @@ export const WaveformCanvas = ({ deckId, color }: WaveformCanvasProps) => {
         const engine = await getEngine();
         const deck = engine?.decks.get(deckId);
 
-        if (!deck || !deck.buffer) {
+        if (!deck?.buffer) {
           setError("No audio buffer available");
           setIsProcessing(false);
           return;

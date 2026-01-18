@@ -85,7 +85,7 @@ export function Contact() {
         "Network error. Please check your connection and try again.",
       );
       if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
+         
         console.error("Error submitting form:", error);
       }
     } finally {

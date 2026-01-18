@@ -26,7 +26,7 @@ export class CrashGuard extends Component<CrashGuardProps, CrashGuardState> {
     // Error boundaries should log errors for monitoring
     // In production, consider sending to error tracking service
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
+       
       console.error("DJ Console Error:", error, errorInfo);
     }
   }

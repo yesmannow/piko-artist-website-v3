@@ -45,7 +45,7 @@ function downsample(data: Float32Array, factor: number): Float32Array {
 /**
  * Simple low-pass filter to isolate bass frequencies
  */
-function lowPassFilter(data: Float32Array, alpha: number = 0.1): Float32Array {
+function lowPassFilter(data: Float32Array, alpha = 0.1): Float32Array {
   const result = new Float32Array(data.length);
   result[0] = data[0];
 
@@ -59,7 +59,7 @@ function lowPassFilter(data: Float32Array, alpha: number = 0.1): Float32Array {
 /**
  * Detect peaks in energy envelope
  */
-function detectPeaks(data: Float32Array, threshold: number = 0.5): number[] {
+function detectPeaks(data: Float32Array, threshold = 0.5): number[] {
   const peaks: number[] = [];
 
   // Calculate adaptive threshold
@@ -110,7 +110,7 @@ function findTempo(
   }
 
   // Group intervals into buckets (tolerance for variation)
-  const buckets: Map<number, number> = new Map();
+  const buckets = new Map<number, number>();
   const tolerance = 5; // Allow 5% variation
 
   for (const interval of intervals) {

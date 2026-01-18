@@ -40,7 +40,7 @@ export function VideoProvider({ children }: { children: ReactNode }) {
       setCurrentVideoId(null);
       setIsMinimized(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [pathname, isPlaying, togglePlay]); // Only depend on pathname to avoid infinite loops
 
   const playVideo = (id: string) => {

@@ -50,7 +50,7 @@ export function SyndicateEQ({ stems, onStemGainChange }: SyndicateEQProps) {
 
     // Create gain nodes for each stem
     const nodes = new Map<keyof StemGains, GainNode>();
-    (Object.keys(stems) as Array<keyof StemGains>).forEach((stem) => {
+    (Object.keys(stems) as (keyof StemGains)[]).forEach((stem) => {
       if (stems[stem]) {
         const gainNode = audioContext.createGain();
         gainNode.gain.value = gains[stem];
@@ -87,11 +87,11 @@ export function SyndicateEQ({ stems, onStemGainChange }: SyndicateEQProps) {
     [audioContext, onStemGainChange],
   );
 
-  const stemConfigs: Array<{
+  const stemConfigs: {
     key: keyof StemGains;
     label: string;
     color: string;
-  }> = [
+  }[] = [
     { key: "vocals", label: "VOX", color: "#FFD700" },
     { key: "bass", label: "BASS", color: "#E0E0E0" },
     { key: "drums", label: "DRUM", color: "#FFD700" },

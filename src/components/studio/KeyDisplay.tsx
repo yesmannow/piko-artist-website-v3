@@ -29,7 +29,7 @@ export function KeyDisplay({
     return areKeysCompatible(keyData.camelot, referenceKey);
   }, [keyData?.camelot, referenceKey, showCompatibility]);
 
-  if (!keyData || !keyData.available) {
+  if (!keyData?.available) {
     return (
       <span className={`text-xs text-zinc-500 italic ${className}`}>
         Key N/A

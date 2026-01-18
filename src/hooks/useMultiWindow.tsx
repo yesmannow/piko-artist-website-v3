@@ -350,7 +350,7 @@ export function MultiWindowControlPanel({
 }: MultiWindowControlPanelProps) {
   const { openWindow, closeWindow, isWindowOpen } = useMultiWindow();
 
-  const windowTypes: Array<{ type: WindowType; label: string }> = [
+  const windowTypes: { type: WindowType; label: string }[] = [
     { type: "visualizer", label: "Visualizer" },
     { type: "playlist", label: "Playlist" },
     { type: "effects", label: "Effects" },

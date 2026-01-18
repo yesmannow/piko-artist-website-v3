@@ -86,7 +86,7 @@ export async function detectBPM(audioBuffer: AudioBuffer): Promise<BPMResult> {
 /**
  * Find peaks in audio signal
  */
-function findPeaks(signal: Float32Array, threshold: number = 0.3): number[] {
+function findPeaks(signal: Float32Array, threshold = 0.3): number[] {
   const peaks: number[] = [];
   const windowSize = 100; // samples
 
