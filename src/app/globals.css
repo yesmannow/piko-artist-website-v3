@@ -453,6 +453,12 @@
   .vhs-noise {
     animation: vhs-noise 0.15s infinite;
   }
+
+  /* Remove left and top positioning from Next.js portal elements */
+  nextjs-portal {
+    left: unset !important;
+    top: unset !important;
+  }
 }
 
 @layer utilities {

@@ -7,7 +7,6 @@ import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/audio/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/audio/FloatingVideoPlayer";
 import { PageTransition } from "@/components/shared/PageTransition";
-import { TacticalBar } from "@/components/navigation/TacticalBar";
 import { InstallApp } from "@/components/shared/InstallApp";
 import { InstallPrompt } from "@/components/shared/pwa/InstallPrompt";
 import { SmoothScroll } from "@/components/shared/SmoothScroll";
@@ -16,7 +15,7 @@ import { ProdRuntimeGuards } from "@/components/shared/ProdRuntimeGuards";
 import { LogoIntro } from "@/components/branding/LogoIntro";
 import { ServiceWorkerRegistration } from "@/components/shared/ServiceWorkerRegistration";
 import { ParticlesBackground } from "@/components/visual/ParticlesBackground";
-import { NavBar } from "@/components/layout/NavBar";
+import NavBar from "@/components/layout/NavBar";
 import { PWAInstallPrompt } from "@/components/shared/PWAInstallPrompt";
 
 // 1. Graffiti Font (Accents & Logos)
@@ -173,7 +172,6 @@ export default function RootLayout({
             <Footer />
             <FloatingVideoPlayer />
             <PersistentPlayer />
-            <TacticalBar />
             <InstallApp />
             <InstallPrompt />
           </VideoProvider>

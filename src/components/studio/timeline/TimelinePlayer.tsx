@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useFXEngine } from '@/hooks/useFXEngine';
 import { Play, Pause, Square } from 'lucide-react';
 import type { AutomationTrack } from '@/lib/fx/FXAutomation';
+import { computeFXAtTime } from '@/lib/fx/FXEngine';
 
 interface TimelinePlayerProps {
   engine?: ReturnType<typeof useFXEngine>;
@@ -12,16 +13,16 @@ interface TimelinePlayerProps {
 
 /**
  * TimelinePlayer - Visual component for FX automation playback
- * 
+ *
  * Features:
  * - Play/pause automation timeline
  * - Visual timeline scrubber
  * - Integration with FX engine for real-time parameter updates
  * - Timeline markers for preset changes
  */
-export function TimelinePlayer({ 
+export function TimelinePlayer({
   engine,
-  onTimeUpdate 
+  onTimeUpdate
 }: TimelinePlayerProps) {
   // Use provided engine or create new instance
   const defaultEngine = useFXEngine();
@@ -50,7 +51,7 @@ export function TimelinePlayer({
         const newTime = Math.min(elapsed, duration);
         setCurrentTime(newTime);
         fx.seekAutomation(newTime);
-        
+
         if (onTimeUpdate) {
           onTimeUpdate(newTime);
         }
@@ -62,7 +63,7 @@ export function TimelinePlayer({
           fx.stopAutomation();
         }
       };
-      
+
       startTimeRef.current = Date.now() - currentTime * 1000;
       animationFrameRef.current = requestAnimationFrame(animate);
     } else {
@@ -105,6 +106,35 @@ export function TimelinePlayer({
   };
 
   const progress = (currentTime / duration) * 100;
+
+  // Compute FX state at current time if preset has automation
+  const fxState = useMemo(() => {
+    if (!fx.currentPreset) return null;
+
+    // Convert current preset to FXEngine format if it has automation tracks
+    const preset = fx.currentPreset;
+    if (preset.automationTracks && preset.automationTracks.length > 0) {
+      // Map automation tracks to lanes format
+      const lanes = preset.automationTracks.map(track => ({
+        param: track.type as any, // delay, reverb, filter
+        keyframes: track.keyframes.map(kf => ({ time: kf.time, value: kf.value })),
+      }));
+
+      const enginePreset = {
+        id: preset.id,
+        name: preset.name,
+        params: {
+          delay: preset.delay,
+          reverb: preset.reverb,
+          filter: preset.filter,
+        },
+        lanes,
+      };
+
+      return computeFXAtTime(enginePreset, currentTime);
+    }
+    return null;
+  }, [fx.currentPreset, currentTime]);
 
   return (
     <div className="space-y-4 rounded-lg border border-white/10 bg-black/40 p-4">
@@ -151,6 +181,18 @@ export function TimelinePlayer({
           <span>{formatTime(duration)}</span>
         </div>
       </div>
+
+      {/* FX State Readout */}
+      {fxState && (
+        <div className="grid grid-cols-3 gap-2 text-[11px] text-white/80">
+          {Object.entries(fxState).map(([k, v]) => (
+            <div key={k} className="rounded-lg bg-white/5 p-2">
+              <div className="text-white/50">{k}</div>
+              <div className="font-semibold">{Number(v).toFixed(3)}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Preset Markers */}
       {fx.presets.length > 0 && (

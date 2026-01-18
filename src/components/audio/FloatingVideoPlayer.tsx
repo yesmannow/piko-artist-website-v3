@@ -27,7 +27,7 @@ export function FloatingVideoPlayer() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
+          className="fixed inset-0 z-[5000] flex items-center justify-center p-4 pointer-events-none"
           data-modal-open="true"
         >
           {/* Backdrop - REMEDIATION: pointer-events-auto for interaction */}

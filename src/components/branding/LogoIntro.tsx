@@ -161,7 +161,7 @@ export function LogoIntro() {
       {isActive && (
         <motion.div
           ref={overlayRef}
-          className="fixed inset-0 z-[200] bg-black pointer-events-auto"
+          className="fixed inset-0 z-[5000] bg-black pointer-events-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

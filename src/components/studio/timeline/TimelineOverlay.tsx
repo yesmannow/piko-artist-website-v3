@@ -6,7 +6,7 @@ import { useUIStore } from '@/store/useUIStore';
 
 /**
  * TimelineOverlay - Floating timeline player overlay
- * 
+ *
  * Decoupled from FXPresetEditor, visible across entire /studio/fx session.
  * Positioned at bottom center of viewport with backdrop blur.
  */
@@ -20,7 +20,7 @@ export default function TimelineOverlay() {
   }
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 w-[90%] max-w-4xl -translate-x-1/2 rounded-xl border border-white/10 bg-black/80 p-4 shadow-xl backdrop-blur-md">
+    <div className="fixed bottom-4 left-1/2 z-50 w-[92%] max-w-5xl -translate-x-1/2 rounded-2xl bg-black/80 p-4 shadow-xl backdrop-blur-md">
       <TimelinePlayer engine={fx} />
     </div>
   );
