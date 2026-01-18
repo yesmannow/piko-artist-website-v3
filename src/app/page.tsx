@@ -1,6 +1,6 @@
 "use client";
 
-import type { ElementType, ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,7 +24,7 @@ type FeatureCardProps = {
   title: string;
   href: string;
   description: string;
-  icon: ElementType;
+  icon: ComponentType<{ className?: string }>;
   pill: string;
   accent: string;
 };

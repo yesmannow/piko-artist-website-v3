@@ -159,8 +159,8 @@ function NowPlayingCard({
   onShare: () => void;
   onDownload: () => void;
 }) {
-  if (!track) return null;
   const duration = useTrackDuration(track);
+  if (!track) return null;
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
