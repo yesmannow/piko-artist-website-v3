@@ -87,6 +87,7 @@ export const useUIStore = create<UIStore>()(
         layoutMode: state.layoutMode,
         onboardingComplete: state.onboardingComplete,
         tourCompleted: state.tourCompleted,
+        labsEnabled: state.labsEnabled,
       }),
       onRehydrateStorage: () => (state) => {
         // Sync legacy flag if present

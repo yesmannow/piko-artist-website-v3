@@ -4,12 +4,12 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { HelpProvider } from "@/context/HelpContext";
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
-import { DevAudioDebug } from "@/components/DevAudioDebug";
+import { DevAudioDebug } from "@/components/shared/DevAudioDebug";
 
 // Dynamically import refactored DJInterface to avoid SSR issues
 const DJInterface = dynamic(
   () =>
-    import("@/components/RefactoredDJInterface").then(
+    import("@/components/studio/RefactoredDJInterface").then(
       (mod) => mod.RefactoredDJInterface,
     ),
   {

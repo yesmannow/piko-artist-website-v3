@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCollabSessionStore } from "@/lib/stores/collab";
-import { ChatPanel } from "@/components/ChatPanel";
+import { ChatPanel } from "@/components/content/ChatPanel";
 import { VoteQueue } from "@/components/VoteQueue";
 import { useSupabaseCollab } from "@/lib/hooks/useSupabaseCollab";
 import { v4 as uuidv4 } from "uuid";

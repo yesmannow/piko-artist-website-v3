@@ -5,12 +5,12 @@ import dynamic from "next/dynamic";
 import { StudioErrorBoundary } from "@/components/mobile-shell/StudioErrorBoundary";
 import { HelpProvider } from "@/context/HelpContext";
 import { verifyStudioCrossOriginIsolation } from "@/utils/crossOriginCheck";
-import { DevAudioDebug } from "@/components/DevAudioDebug";
+import { DevAudioDebug } from "@/components/shared/DevAudioDebug";
 
 // Dynamically import refactored DJInterface
 const DJInterface = dynamic(
   () =>
-    import("@/components/RefactoredDJInterface").then(
+    import("@/components/studio/RefactoredDJInterface").then(
       (mod) => mod.RefactoredDJInterface,
     ),
   {

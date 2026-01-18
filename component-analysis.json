@@ -1,0 +1,283 @@
+{
+  "summary": {
+    "total": 134,
+    "wrappers": 3,
+    "unused": 55,
+    "duplicates": 5,
+    "used": 76
+  },
+  "wrappers": [
+    {
+      "name": "DJDeck",
+      "path": "components/DJDeck.tsx",
+      "wraps": "RefactoredDJDeck",
+      "imports": 0
+    },
+    {
+      "name": "DJInterface",
+      "path": "components/DJInterface.tsx",
+      "wraps": "RefactoredDJInterface",
+      "imports": 3
+    },
+    {
+      "name": "DJMixerModule",
+      "path": "components/DJMixerModule.tsx",
+      "wraps": "RefactoredDJMixerModule",
+      "imports": 0
+    }
+  ],
+  "unused": [
+    {
+      "name": "StudioCanvas",
+      "path": "components/3d/StudioCanvas.tsx"
+    },
+    {
+      "name": "AutomixPanel",
+      "path": "components/dj-ui/AutomixPanel.tsx"
+    },
+    {
+      "name": "CollapsibleSection",
+      "path": "components/dj-ui/CollapsibleSection.tsx"
+    },
+    {
+      "name": "ConsoleTour",
+      "path": "components/dj-ui/ConsoleTour.tsx"
+    },
+    {
+      "name": "CrashGuard",
+      "path": "components/dj-ui/CrashGuard.tsx"
+    },
+    {
+      "name": "DetachableRemixGrid",
+      "path": "components/dj-ui/DetachableRemixGrid.tsx"
+    },
+    {
+      "name": "DrawerAudioMeters",
+      "path": "components/dj-ui/DrawerAudioMeters.tsx"
+    },
+    {
+      "name": "ExportMixModal",
+      "path": "components/dj-ui/ExportMixModal.tsx"
+    },
+    {
+      "name": "JogWheel",
+      "path": "components/dj-ui/JogWheel.tsx"
+    },
+    {
+      "name": "LibraryModal",
+      "path": "components/dj-ui/LibraryModal.tsx"
+    },
+    {
+      "name": "MIDIButton",
+      "path": "components/dj-ui/MIDIButton.tsx"
+    },
+    {
+      "name": "PerformancePads",
+      "path": "components/dj-ui/PerformancePads.tsx"
+    },
+    {
+      "name": "preload3D",
+      "path": "components/dj-ui/preload3D.ts"
+    },
+    {
+      "name": "SpinningVinyl",
+      "path": "components/dj-ui/SpinningVinyl.tsx"
+    },
+    {
+      "name": "Toast",
+      "path": "components/dj-ui/Toast.tsx"
+    },
+    {
+      "name": "TrackTransition",
+      "path": "components/dj-ui/TrackTransition.tsx"
+    },
+    {
+      "name": "DJMixer",
+      "path": "components/DJMixer.tsx"
+    },
+    {
+      "name": "FXUnit",
+      "path": "components/FXUnit.tsx"
+    },
+    {
+      "name": "GlitchText",
+      "path": "components/GlitchText.tsx"
+    },
+    {
+      "name": "GuestbookPreview",
+      "path": "components/guestbook/GuestbookPreview.tsx"
+    },
+    {
+      "name": "GuestbookWidget",
+      "path": "components/GuestbookWidget.tsx"
+    },
+    {
+      "name": "ImageGallery",
+      "path": "components/ImageGallery.tsx"
+    },
+    {
+      "name": "MicInput",
+      "path": "components/MicInput.tsx"
+    },
+    {
+      "name": "AlwaysOnBottomBar",
+      "path": "components/mobile-shell/AlwaysOnBottomBar.tsx"
+    },
+    {
+      "name": "AlwaysOnTopBar",
+      "path": "components/mobile-shell/AlwaysOnTopBar.tsx"
+    },
+    {
+      "name": "LibraryDrawer",
+      "path": "components/mobile-shell/LibraryDrawer.tsx"
+    },
+    {
+      "name": "MainDeckContainer",
+      "path": "components/mobile-shell/MainDeckContainer.tsx"
+    },
+    {
+      "name": "SettingsModal",
+      "path": "components/mobile-shell/modals/SettingsModal.tsx"
+    },
+    {
+      "name": "OrientationGuard",
+      "path": "components/mobile-shell/OrientationGuard.tsx"
+    },
+    {
+      "name": "MobileNav",
+      "path": "components/MobileNav.tsx"
+    },
+    {
+      "name": "ModalPlayer",
+      "path": "components/ModalPlayer.tsx"
+    },
+    {
+      "name": "Navbar",
+      "path": "components/Navbar.tsx"
+    },
+    {
+      "name": "SectionHeader",
+      "path": "components/SectionHeader.tsx"
+    },
+    {
+      "name": "BeatGridDisplay",
+      "path": "components/studio/BeatGridDisplay.tsx"
+    },
+    {
+      "name": "KeyDisplay",
+      "path": "components/studio/KeyDisplay.tsx"
+    },
+    {
+      "name": "OrientationGuard",
+      "path": "components/studio/OrientationGuard.tsx"
+    },
+    {
+      "name": "PanicStopButton",
+      "path": "components/studio/PanicStopButton.tsx"
+    },
+    {
+      "name": "Phase4AdvancedFeaturesDemo",
+      "path": "components/studio/Phase4AdvancedFeaturesDemo.tsx"
+    },
+    {
+      "name": "SamplerGrid",
+      "path": "components/studio/SamplerGrid.tsx"
+    },
+    {
+      "name": "SessionSummary",
+      "path": "components/studio/SessionSummary.tsx"
+    },
+    {
+      "name": "SignalHatch",
+      "path": "components/studio/SignalHatch.tsx"
+    },
+    {
+      "name": "StemControl",
+      "path": "components/studio/StemControl.tsx"
+    },
+    {
+      "name": "StemDeck",
+      "path": "components/studio/StemDeck.tsx"
+    },
+    {
+      "name": "StemSeparatorButton",
+      "path": "components/studio/StemSeparatorButton.tsx"
+    },
+    {
+      "name": "StudioEngineSection",
+      "path": "components/studio/StudioEngineSection.tsx"
+    },
+    {
+      "name": "StudioMixerPreview",
+      "path": "components/studio/StudioMixerPreview.tsx"
+    },
+    {
+      "name": "StudioPreview3D",
+      "path": "components/studio/StudioPreview3D.tsx"
+    },
+    {
+      "name": "SyndicateEQ",
+      "path": "components/studio/SyndicateEQ.tsx"
+    },
+    {
+      "name": "ThermalMeter",
+      "path": "components/studio/ThermalMeter.tsx"
+    },
+    {
+      "name": "TerminalLog",
+      "path": "components/ui/TerminalLog.tsx"
+    },
+    {
+      "name": "VaultVisuals",
+      "path": "components/VaultVisuals.tsx"
+    },
+    {
+      "name": "VideoCard",
+      "path": "components/VideoCard.tsx"
+    },
+    {
+      "name": "VideoGallery",
+      "path": "components/VideoGallery.tsx"
+    },
+    {
+      "name": "AudioReactiveOverlay",
+      "path": "components/visual/AudioReactiveOverlay.tsx"
+    },
+    {
+      "name": "VoiceTagPanel",
+      "path": "components/VoiceTagPanel.tsx"
+    }
+  ],
+  "duplicates": [
+    {
+      "name": "NavBar",
+      "path": "components/layout/NavBar.tsx",
+      "original": "Navbar",
+      "imports": 1
+    },
+    {
+      "name": "PersistentPlayer",
+      "path": "components/PersistentPlayer.tsx",
+      "original": "Player",
+      "imports": 1
+    },
+    {
+      "name": "RefactoredDJDeck",
+      "path": "components/RefactoredDJDeck.tsx",
+      "original": "DJDeck",
+      "imports": 1
+    },
+    {
+      "name": "RefactoredDJInterface",
+      "path": "components/RefactoredDJInterface.tsx",
+      "original": "DJInterface",
+      "imports": 1
+    },
+    {
+      "name": "RefactoredDJMixerModule",
+      "path": "components/RefactoredDJMixerModule.tsx",
+      "original": "DJMixerModule",
+      "imports": 1
+    }
+  ]
+}

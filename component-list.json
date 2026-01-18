@@ -1,0 +1,538 @@
+[
+  {
+    "name": "GlitchController",
+    "path": "src/components/3d/GlitchController.tsx"
+  },
+  {
+    "name": "HolographicDeck",
+    "path": "src/components/3d/HolographicDeck.tsx"
+  },
+  {
+    "name": "HolographicMaterial",
+    "path": "src/components/3d/materials/HolographicMaterial.tsx"
+  },
+  {
+    "name": "StudioCanvas",
+    "path": "src/components/3d/StudioCanvas.tsx"
+  },
+  {
+    "name": "Logo",
+    "path": "src/components/branding/Logo.tsx"
+  },
+  {
+    "name": "LogoIntro",
+    "path": "src/components/branding/LogoIntro.tsx"
+  },
+  {
+    "name": "ChatPanel",
+    "path": "src/components/ChatPanel.tsx"
+  },
+  {
+    "name": "Contact",
+    "path": "src/components/Contact.tsx"
+  },
+  {
+    "name": "DevAudioDebug",
+    "path": "src/components/DevAudioDebug.tsx"
+  },
+  {
+    "name": "AudioReactiveVisualizer",
+    "path": "src/components/dj-ui/AudioReactiveVisualizer.tsx"
+  },
+  {
+    "name": "AutomixPanel",
+    "path": "src/components/dj-ui/AutomixPanel.tsx"
+  },
+  {
+    "name": "CollapsibleSection",
+    "path": "src/components/dj-ui/CollapsibleSection.tsx"
+  },
+  {
+    "name": "ConsoleTour",
+    "path": "src/components/dj-ui/ConsoleTour.tsx"
+  },
+  {
+    "name": "CrashGuard",
+    "path": "src/components/dj-ui/CrashGuard.tsx"
+  },
+  {
+    "name": "Crossfader",
+    "path": "src/components/dj-ui/Crossfader.tsx"
+  },
+  {
+    "name": "DeskProps",
+    "path": "src/components/dj-ui/DeskProps.tsx"
+  },
+  {
+    "name": "DetachableRemixGrid",
+    "path": "src/components/dj-ui/DetachableRemixGrid.tsx"
+  },
+  {
+    "name": "DrawerAudioMeters",
+    "path": "src/components/dj-ui/DrawerAudioMeters.tsx"
+  },
+  {
+    "name": "ExportMixModal",
+    "path": "src/components/dj-ui/ExportMixModal.tsx"
+  },
+  {
+    "name": "Fader",
+    "path": "src/components/dj-ui/Fader.tsx"
+  },
+  {
+    "name": "JogWheel",
+    "path": "src/components/dj-ui/JogWheel.tsx"
+  },
+  {
+    "name": "JogWheel3D",
+    "path": "src/components/dj-ui/JogWheel3D.tsx"
+  },
+  {
+    "name": "Knob",
+    "path": "src/components/dj-ui/Knob.tsx"
+  },
+  {
+    "name": "LibraryModal",
+    "path": "src/components/dj-ui/LibraryModal.tsx"
+  },
+  {
+    "name": "MIDIButton",
+    "path": "src/components/dj-ui/MIDIButton.tsx"
+  },
+  {
+    "name": "PerformancePads",
+    "path": "src/components/dj-ui/PerformancePads.tsx"
+  },
+  {
+    "name": "preload3D",
+    "path": "src/components/dj-ui/preload3D.ts"
+  },
+  {
+    "name": "RemixGrid",
+    "path": "src/components/dj-ui/RemixGrid.tsx"
+  },
+  {
+    "name": "SpinningVinyl",
+    "path": "src/components/dj-ui/SpinningVinyl.tsx"
+  },
+  {
+    "name": "Toast",
+    "path": "src/components/dj-ui/Toast.tsx"
+  },
+  {
+    "name": "Tooltip",
+    "path": "src/components/dj-ui/Tooltip.tsx"
+  },
+  {
+    "name": "TrackTransition",
+    "path": "src/components/dj-ui/TrackTransition.tsx"
+  },
+  {
+    "name": "VUMeter",
+    "path": "src/components/dj-ui/VUMeter.tsx"
+  },
+  {
+    "name": "Waveform",
+    "path": "src/components/dj-ui/Waveform.tsx"
+  },
+  {
+    "name": "XYPad",
+    "path": "src/components/dj-ui/XYPad.tsx"
+  },
+  {
+    "name": "DJDeck",
+    "path": "src/components/DJDeck.tsx"
+  },
+  {
+    "name": "DJInterface",
+    "path": "src/components/DJInterface.tsx"
+  },
+  {
+    "name": "DJMixer",
+    "path": "src/components/DJMixer.tsx"
+  },
+  {
+    "name": "DJMixerModule",
+    "path": "src/components/DJMixerModule.tsx"
+  },
+  {
+    "name": "EmbedPlayer",
+    "path": "src/components/EmbedPlayer.tsx"
+  },
+  {
+    "name": "EnhancedAudioVisualizer",
+    "path": "src/components/EnhancedAudioVisualizer.tsx"
+  },
+  {
+    "name": "FloatingVideoPlayer",
+    "path": "src/components/FloatingVideoPlayer.tsx"
+  },
+  {
+    "name": "Footer",
+    "path": "src/components/Footer.tsx"
+  },
+  {
+    "name": "FXUnit",
+    "path": "src/components/FXUnit.tsx"
+  },
+  {
+    "name": "GhostDeck",
+    "path": "src/components/ghost/GhostDeck.tsx"
+  },
+  {
+    "name": "GlitchText",
+    "path": "src/components/GlitchText.tsx"
+  },
+  {
+    "name": "GuestbookPreview",
+    "path": "src/components/guestbook/GuestbookPreview.tsx"
+  },
+  {
+    "name": "GuestbookWidget",
+    "path": "src/components/GuestbookWidget.tsx"
+  },
+  {
+    "name": "ImageGallery",
+    "path": "src/components/ImageGallery.tsx"
+  },
+  {
+    "name": "InstallApp",
+    "path": "src/components/InstallApp.tsx"
+  },
+  {
+    "name": "LayoutToggle",
+    "path": "src/components/layout/LayoutToggle.tsx"
+  },
+  {
+    "name": "NavBar",
+    "path": "src/components/layout/NavBar.tsx"
+  },
+  {
+    "name": "LibraryHeader",
+    "path": "src/components/LibraryHeader.tsx"
+  },
+  {
+    "name": "MicInput",
+    "path": "src/components/MicInput.tsx"
+  },
+  {
+    "name": "AlwaysOnBottomBar",
+    "path": "src/components/mobile-shell/AlwaysOnBottomBar.tsx"
+  },
+  {
+    "name": "AlwaysOnTopBar",
+    "path": "src/components/mobile-shell/AlwaysOnTopBar.tsx"
+  },
+  {
+    "name": "LibraryDrawer",
+    "path": "src/components/mobile-shell/LibraryDrawer.tsx"
+  },
+  {
+    "name": "MainDeckContainer",
+    "path": "src/components/mobile-shell/MainDeckContainer.tsx"
+  },
+  {
+    "name": "MobileAutomix",
+    "path": "src/components/mobile-shell/MobileAutomix.tsx"
+  },
+  {
+    "name": "SettingsModal",
+    "path": "src/components/mobile-shell/modals/SettingsModal.tsx"
+  },
+  {
+    "name": "OrientationGuard",
+    "path": "src/components/mobile-shell/OrientationGuard.tsx"
+  },
+  {
+    "name": "StudioErrorBoundary",
+    "path": "src/components/mobile-shell/StudioErrorBoundary.tsx"
+  },
+  {
+    "name": "FXView",
+    "path": "src/components/mobile-shell/views/FXView.tsx"
+  },
+  {
+    "name": "MixerView",
+    "path": "src/components/mobile-shell/views/MixerView.tsx"
+  },
+  {
+    "name": "ScrubLayer",
+    "path": "src/components/mobile-shell/views/ScrubLayer.tsx"
+  },
+  {
+    "name": "WaveformCanvas",
+    "path": "src/components/mobile-shell/views/WaveformCanvas.tsx"
+  },
+  {
+    "name": "WaveformView",
+    "path": "src/components/mobile-shell/views/WaveformView.tsx"
+  },
+  {
+    "name": "XYPad",
+    "path": "src/components/mobile-shell/views/XYPad.tsx"
+  },
+  {
+    "name": "MobileNav",
+    "path": "src/components/MobileNav.tsx"
+  },
+  {
+    "name": "ModalPlayer",
+    "path": "src/components/ModalPlayer.tsx"
+  },
+  {
+    "name": "Navbar",
+    "path": "src/components/Navbar.tsx"
+  },
+  {
+    "name": "TacticalBar",
+    "path": "src/components/navigation/TacticalBar.tsx"
+  },
+  {
+    "name": "PageTransition",
+    "path": "src/components/PageTransition.tsx"
+  },
+  {
+    "name": "ParticlesBackground",
+    "path": "src/components/ParticlesBackground.tsx"
+  },
+  {
+    "name": "PersistentPlayer",
+    "path": "src/components/PersistentPlayer.tsx"
+  },
+  {
+    "name": "Player",
+    "path": "src/components/Player.tsx"
+  },
+  {
+    "name": "ProdRuntimeGuards",
+    "path": "src/components/ProdRuntimeGuards.tsx"
+  },
+  {
+    "name": "InstallPrompt",
+    "path": "src/components/pwa/InstallPrompt.tsx"
+  },
+  {
+    "name": "PWAInstallPrompt",
+    "path": "src/components/PWAInstallPrompt.tsx"
+  },
+  {
+    "name": "RefactoredDJDeck",
+    "path": "src/components/RefactoredDJDeck.tsx"
+  },
+  {
+    "name": "RefactoredDJInterface",
+    "path": "src/components/RefactoredDJInterface.tsx"
+  },
+  {
+    "name": "RefactoredDJMixerModule",
+    "path": "src/components/RefactoredDJMixerModule.tsx"
+  },
+  {
+    "name": "ScrollRestorationManager",
+    "path": "src/components/ScrollRestorationManager.tsx"
+  },
+  {
+    "name": "SectionHeader",
+    "path": "src/components/SectionHeader.tsx"
+  },
+  {
+    "name": "ServiceWorkerRegistration",
+    "path": "src/components/ServiceWorkerRegistration.tsx"
+  },
+  {
+    "name": "ShareMixModal",
+    "path": "src/components/ShareMixModal.tsx"
+  },
+  {
+    "name": "SmartSuggestButton",
+    "path": "src/components/SmartSuggestButton.tsx"
+  },
+  {
+    "name": "SmoothScroll",
+    "path": "src/components/SmoothScroll.tsx"
+  },
+  {
+    "name": "AudioReactiveShaderVisualizer",
+    "path": "src/components/studio/AudioReactiveShaderVisualizer.tsx"
+  },
+  {
+    "name": "BeatGridDisplay",
+    "path": "src/components/studio/BeatGridDisplay.tsx"
+  },
+  {
+    "name": "CollaborationPanel",
+    "path": "src/components/studio/CollaborationPanel.tsx"
+  },
+  {
+    "name": "KeyDisplay",
+    "path": "src/components/studio/KeyDisplay.tsx"
+  },
+  {
+    "name": "LatencyMonitor",
+    "path": "src/components/studio/LatencyMonitor.tsx"
+  },
+  {
+    "name": "MIDIControlPanel",
+    "path": "src/components/studio/MIDIControlPanel.tsx"
+  },
+  {
+    "name": "OrientationGuard",
+    "path": "src/components/studio/OrientationGuard.tsx"
+  },
+  {
+    "name": "PanicStopButton",
+    "path": "src/components/studio/PanicStopButton.tsx"
+  },
+  {
+    "name": "Phase4AdvancedFeaturesDemo",
+    "path": "src/components/studio/Phase4AdvancedFeaturesDemo.tsx"
+  },
+  {
+    "name": "SamplerGrid",
+    "path": "src/components/studio/SamplerGrid.tsx"
+  },
+  {
+    "name": "SessionRecorder",
+    "path": "src/components/studio/SessionRecorder.tsx"
+  },
+  {
+    "name": "SessionSummary",
+    "path": "src/components/studio/SessionSummary.tsx"
+  },
+  {
+    "name": "SignalHatch",
+    "path": "src/components/studio/SignalHatch.tsx"
+  },
+  {
+    "name": "StemControl",
+    "path": "src/components/studio/StemControl.tsx"
+  },
+  {
+    "name": "StemDeck",
+    "path": "src/components/studio/StemDeck.tsx"
+  },
+  {
+    "name": "StemSeparatorButton",
+    "path": "src/components/studio/StemSeparatorButton.tsx"
+  },
+  {
+    "name": "StudioEngineSection",
+    "path": "src/components/studio/StudioEngineSection.tsx"
+  },
+  {
+    "name": "StudioMixerPreview",
+    "path": "src/components/studio/StudioMixerPreview.tsx"
+  },
+  {
+    "name": "StudioPreview3D",
+    "path": "src/components/studio/StudioPreview3D.tsx"
+  },
+  {
+    "name": "StudioVideoPreview",
+    "path": "src/components/studio/StudioVideoPreview.tsx"
+  },
+  {
+    "name": "SyncControl",
+    "path": "src/components/studio/SyncControl.tsx"
+  },
+  {
+    "name": "SyndicateEQ",
+    "path": "src/components/studio/SyndicateEQ.tsx"
+  },
+  {
+    "name": "ThermalMeter",
+    "path": "src/components/studio/ThermalMeter.tsx"
+  },
+  {
+    "name": "SuggestedTracksModal",
+    "path": "src/components/SuggestedTracksModal.tsx"
+  },
+  {
+    "name": "ExportTimelineModal",
+    "path": "src/components/timeline/ExportTimelineModal.tsx"
+  },
+  {
+    "name": "TemplateLibrary",
+    "path": "src/components/timeline/TemplateLibrary.tsx"
+  },
+  {
+    "name": "TimelineEditor",
+    "path": "src/components/timeline/TimelineEditor.tsx"
+  },
+  {
+    "name": "TrackDrawer",
+    "path": "src/components/TrackDrawer.tsx"
+  },
+  {
+    "name": "TrackList",
+    "path": "src/components/TrackList.tsx"
+  },
+  {
+    "name": "LabsToggle",
+    "path": "src/components/ui/LabsToggle.tsx"
+  },
+  {
+    "name": "OnboardingModal",
+    "path": "src/components/ui/OnboardingModal.tsx"
+  },
+  {
+    "name": "OverlayShell",
+    "path": "src/components/ui/OverlayShell.tsx"
+  },
+  {
+    "name": "Skeleton",
+    "path": "src/components/ui/Skeleton.tsx"
+  },
+  {
+    "name": "StudioMonitor",
+    "path": "src/components/ui/StudioMonitor.tsx"
+  },
+  {
+    "name": "TerminalLog",
+    "path": "src/components/ui/TerminalLog.tsx"
+  },
+  {
+    "name": "TourMode",
+    "path": "src/components/ui/TourMode.tsx"
+  },
+  {
+    "name": "WindowManager",
+    "path": "src/components/ui/WindowManager.tsx"
+  },
+  {
+    "name": "VaultVisuals",
+    "path": "src/components/VaultVisuals.tsx"
+  },
+  {
+    "name": "VideoFilterNav",
+    "path": "src/components/video/VideoFilterNav.tsx"
+  },
+  {
+    "name": "VideoCard",
+    "path": "src/components/VideoCard.tsx"
+  },
+  {
+    "name": "VideoGallery",
+    "path": "src/components/VideoGallery.tsx"
+  },
+  {
+    "name": "ArtistSignalMeter",
+    "path": "src/components/visual/ArtistSignalMeter.tsx"
+  },
+  {
+    "name": "AudioReactiveOverlay",
+    "path": "src/components/visual/AudioReactiveOverlay.tsx"
+  },
+  {
+    "name": "VoiceTagPanel",
+    "path": "src/components/VoiceTagPanel.tsx"
+  },
+  {
+    "name": "VoteQueue",
+    "path": "src/components/VoteQueue.tsx"
+  },
+  {
+    "name": "WaveformPreview",
+    "path": "src/components/WaveformPreview.tsx"
+  }
+]

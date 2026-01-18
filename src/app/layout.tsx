@@ -4,20 +4,20 @@ import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { AudioProvider } from "@/context/AudioContext";
 import { VideoProvider } from "@/context/VideoContext";
-import { PersistentPlayer } from "@/components/PersistentPlayer";
-import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
-import { PageTransition } from "@/components/PageTransition";
+import { PersistentPlayer } from "@/components/audio/PersistentPlayer";
+import { FloatingVideoPlayer } from "@/components/audio/FloatingVideoPlayer";
+import { PageTransition } from "@/components/shared/PageTransition";
 import { TacticalBar } from "@/components/navigation/TacticalBar";
-import { InstallApp } from "@/components/InstallApp";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
-import { SmoothScroll } from "@/components/SmoothScroll";
-import { ScrollRestorationManager } from "@/components/ScrollRestorationManager";
-import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
+import { InstallApp } from "@/components/shared/InstallApp";
+import { InstallPrompt } from "@/components/shared/pwa/InstallPrompt";
+import { SmoothScroll } from "@/components/shared/SmoothScroll";
+import { ScrollRestorationManager } from "@/components/shared/ScrollRestorationManager";
+import { ProdRuntimeGuards } from "@/components/shared/ProdRuntimeGuards";
 import { LogoIntro } from "@/components/branding/LogoIntro";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import { ParticlesBackground } from "@/components/ParticlesBackground";
+import { ServiceWorkerRegistration } from "@/components/shared/ServiceWorkerRegistration";
+import { ParticlesBackground } from "@/components/visual/ParticlesBackground";
 import { NavBar } from "@/components/layout/NavBar";
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { PWAInstallPrompt } from "@/components/shared/PWAInstallPrompt";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = localFont({

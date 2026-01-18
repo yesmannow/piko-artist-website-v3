@@ -2,10 +2,38 @@
 
 import Link from "next/link";
 import { ArrowLeft, LayoutTemplate } from "lucide-react";
-import { TimelineEditor } from "@/components/timeline/TimelineEditor";
+import { TimelineEditor } from "@/components/studio/timeline/TimelineEditor";
 import { GhostDeck } from "@/components/ghost/GhostDeck";
+import { useUIStore } from "@/store/useUIStore";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function TimelinePage() {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const labsEnabled = useUIStore((state) => state.labsEnabled);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Guard: only allow when Labs is enabled (client-side check)
+  useEffect(() => {
+    if (mounted && !labsEnabled) {
+      router.replace("/");
+    }
+  }, [mounted, labsEnabled, router]);
+
+  if (!mounted || !labsEnabled) {
+    return (
+      <main className="relative min-h-screen overflow-hidden bg-[#050505] pb-16 text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white/60">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050505] pb-16 text-white">
       <div className="pointer-events-none absolute inset-0 -z-10">

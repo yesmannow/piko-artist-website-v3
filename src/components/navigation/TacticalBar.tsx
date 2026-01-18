@@ -10,6 +10,7 @@ import {
   type NavItem,
 } from "@/config/nav.config";
 import { useUIStore } from "@/store/useUIStore";
+import { LabsToggle } from "@/components/ui/LabsToggle";
 
 /**
  * TacticalBar - Bottom-fixed navigation for mobile
@@ -26,13 +27,16 @@ export function TacticalBar({ labsEnabled = false }: { labsEnabled?: boolean }) 
   const allowed = new Set(["/", "/music", "/videos", "/studio", "/contact"]);
   const navItems = navConfig.filter((item) => allowed.has(item.href));
 
-  if (labsEnabled) {
+  if (labsEnabled || labsFromStore) {
     const timeline = navConfig.find((item) => item.href === "/timeline");
     if (timeline) navItems.push(timeline);
   }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+      <div className="flex items-center justify-end px-3 py-2 bg-[#050505]/90 border-t border-[#E0E0E0]/10">
+        <LabsToggle />
+      </div>
       {/* Background with brutalist styling */}
       <div className="bg-[#050505] border-t-4 border-[#E0E0E0]">
         <div className="flex items-center justify-around px-2 py-3">
@@ -47,6 +51,7 @@ export function TacticalBar({ labsEnabled = false }: { labsEnabled?: boolean }) 
                 href={item.href}
                 className="relative flex flex-col items-center gap-1 px-3 py-2 transition-all"
                 data-urban="skew"
+                data-active={isActive ? "true" : "false"}
               >
                 {/* Active Indicator - Spray Drip */}
                 {isActive && (
@@ -79,7 +84,7 @@ export function TacticalBar({ labsEnabled = false }: { labsEnabled?: boolean }) 
                 {/* Label */}
                 <span
                   className={`text-[8px] font-mono uppercase tracking-wider transition-colors ${
-                    isActive ? "text-[#FFD700] font-bold" : "text-[#E0E0E0]/50"
+                    isActive ? "text-[#FFD700] font-bold drop-shadow-[0_0_8px_rgba(255,215,0,0.45)]" : "text-[#E0E0E0]/50"
                   }`}
                 >
                   {item.label}

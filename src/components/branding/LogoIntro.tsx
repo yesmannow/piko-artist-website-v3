@@ -10,6 +10,7 @@ const STORAGE_KEY = "piko_logo_intro_seen";
 export function LogoIntro() {
   const [isActive, setIsActive] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const hasCompletedRef = useRef(false);
@@ -19,9 +20,14 @@ export function LogoIntro() {
     scale: number;
   } | null>(null);
 
+  // Ensure component only renders on client to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     // Check if intro has been seen
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !mounted) return;
 
     const hasSeen = localStorage.getItem(STORAGE_KEY);
     if (hasSeen) {
@@ -145,7 +151,8 @@ export function LogoIntro() {
     }, 300);
   };
 
-  if (!shouldRender) {
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted || !shouldRender) {
     return null;
   }
 

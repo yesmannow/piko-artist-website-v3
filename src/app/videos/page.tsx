@@ -7,7 +7,7 @@ import { Play, Sparkles, X } from "lucide-react";
 import {
   VideoFilterNav,
   type VideoCategory,
-} from "@/components/video/VideoFilterNav";
+} from "@/components/content/video/VideoFilterNav";
 import { tracks, MediaItem } from "@/lib/data";
 
 const fallbackImages = [

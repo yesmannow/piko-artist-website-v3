@@ -35,3 +35,11 @@ tmp/
 temp/
 *.tmp
 
+# Large assets - exclude from Vercel deployment
+# These should be served from external CDN or downloaded on-demand
+public/models/*.onnx
+public/audio/stems/jardin/*.mp3
+public/ort/*.wasm
+
+# Model README (documentation, not needed in deployment)
+public/models/README.md

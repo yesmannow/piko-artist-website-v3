@@ -12,7 +12,7 @@ import {
   Send,
   Zap,
 } from "lucide-react";
-import { Contact } from "@/components/Contact";
+import { Contact } from "@/components/content/Contact";
 
 const quickActions = [
   {

@@ -14,7 +14,7 @@ import {
   SkipForward,
   Volume2,
 } from "lucide-react";
-import { LibraryHeader, type LibraryView } from "@/components/LibraryHeader";
+import { LibraryHeader, type LibraryView } from "@/components/content/LibraryHeader";
 import { useAudio } from "@/context/AudioContext";
 import { useHaptic } from "@/hooks/useHaptic";
 import { tracks, MediaItem } from "@/lib/data";

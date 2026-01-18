@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { EmbedPlayer } from "@/components/EmbedPlayer";
+import { EmbedPlayer } from "@/components/audio/EmbedPlayer";
 
 export default function EmbedPage({ params }: { params: { id: string } }) {
   const search = useSearchParams();

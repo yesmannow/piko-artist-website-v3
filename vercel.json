@@ -1,4 +1,13 @@
 {
+  "buildCommand": "npm run build",
+  "ignoreCommand": "node scripts/audit-repo.mjs || exit 0",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/install-pwa",
+      "destination": "/install"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
