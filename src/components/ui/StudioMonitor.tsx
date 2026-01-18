@@ -22,11 +22,7 @@ interface StudioMonitorProps {
  * - Glassmorphism styling with gold accents
  * - STUDIO_CORE or V3_CORE prefix for professional console feedback
  */
-export function StudioMonitor({
-  logs,
-  maxLines = 10,
-  className = "",
-}: StudioMonitorProps) {
+export function StudioMonitor({ logs, maxLines = 10, className = "" }: StudioMonitorProps) {
   const [displayedLogs, setDisplayedLogs] = useState<string[]>([]);
 
   // Update displayed logs (limit to maxLines)
@@ -40,28 +36,15 @@ export function StudioMonitor({
       <div
         className="relative bg-[#000000] border-4 border-[#E0E0E0] p-6 overflow-y-auto max-h-64"
         style={{
-          boxShadow:
-            "inset 0 0 20px rgba(0,0,0,0.8), 8px 8px 0px rgba(0,0,0,1)",
+          boxShadow: "inset 0 0 20px rgba(0,0,0,0.8), 8px 8px 0px rgba(0,0,0,1)",
         }}
       >
         {/* Chrome Bolts - Top Corners */}
-        <div
-          className="absolute -top-2 -left-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black"
-          style={{ clipPath: "circle(50%)" }}
-        />
-        <div
-          className="absolute -top-2 -right-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black"
-          style={{ clipPath: "circle(50%)" }}
-        />
+        <div className="absolute -top-2 -left-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
+        <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
         {/* Chrome Bolts - Bottom Corners */}
-        <div
-          className="absolute -bottom-2 -left-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black"
-          style={{ clipPath: "circle(50%)" }}
-        />
-        <div
-          className="absolute -bottom-2 -right-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black"
-          style={{ clipPath: "circle(50%)" }}
-        />
+        <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
+        <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-[#E0E0E0] border-2 border-black" style={{ clipPath: "circle(50%)" }} />
 
         {/* Header - Lexend Black Italic */}
         <div className="mb-4 pb-2 border-b-2 border-[#E0E0E0]/20">
@@ -91,9 +74,7 @@ export function StudioMonitor({
                 .replace(/SUCCESS|COMPLETE/gi, "OPERATION_COMPLETE");
 
               // Determine text color: Safety Yellow for status, White for info
-              const isStatus =
-                cleanLog.includes("STUDIO_ENGINE:") ||
-                cleanLog.includes("STUDIO_CORE:");
+              const isStatus = cleanLog.includes("STUDIO_ENGINE:") || cleanLog.includes("STUDIO_CORE:");
               const textColor = isStatus ? "#FFD700" : "#FFFFFF";
 
               return (
@@ -131,9 +112,7 @@ export function useStudioMonitor() {
 
   const addLog = (message: string) => {
     // Support both prefixed messages (e.g., "STUDIO_CORE: ...") and plain messages
-    const logMessage = message.includes(":")
-      ? message
-      : `STUDIO_CORE: ${message}`;
+    const logMessage = message.includes(":") ? message : `STUDIO_CORE: ${message}`;
     setLogs((prev) => [...prev, logMessage]);
   };
 
@@ -147,3 +126,4 @@ export function useStudioMonitor() {
     clearLogs,
   };
 }
+

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useEffect,
-  useRef,
-} from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAudio } from "./AudioContext";
 
@@ -40,7 +33,7 @@ export function VideoProvider({ children }: { children: ReactNode }) {
       setCurrentVideoId(null);
       setIsMinimized(false);
     }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, isPlaying, togglePlay]); // Only depend on pathname to avoid infinite loops
 
   const playVideo = (id: string) => {
@@ -92,3 +85,4 @@ export function useVideo() {
   }
   return context;
 }
+

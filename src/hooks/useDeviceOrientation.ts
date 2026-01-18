@@ -47,19 +47,14 @@ export function useDeviceOrientation() {
       // Normalize gamma (left/right tilt) and beta (forward/back tilt) to -1 to 1 range
       // Gamma: -90 to 90 -> -1 to 1
       // Beta: -180 to 180 -> -1 to 1 (clamped to reasonable range)
-      const normalizedX =
-        gamma !== null ? Math.max(-1, Math.min(1, gamma / 90)) : 0;
-      const normalizedY =
-        beta !== null ? Math.max(-1, Math.min(1, (beta - 90) / 90)) : 0;
+      const normalizedX = gamma !== null ? Math.max(-1, Math.min(1, gamma / 90)) : 0;
+      const normalizedY = beta !== null ? Math.max(-1, Math.min(1, (beta - 90) / 90)) : 0;
 
       setNormalized({ x: normalizedX, y: normalizedY });
     };
 
     // Request permission on iOS 13+
-    if (
-      isIOS &&
-      typeof (DeviceOrientationEvent as any).requestPermission === "function"
-    ) {
+    if (isIOS && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
       (DeviceOrientationEvent as any)
         .requestPermission()
         .then((response: string) => {
@@ -81,3 +76,4 @@ export function useDeviceOrientation() {
 
   return { normalized, isSupported, raw: orientation };
 }
+

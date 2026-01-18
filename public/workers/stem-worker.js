@@ -24,7 +24,7 @@ self.onmessage = async (e) => {
   const { type, buffer, sampleRate, data } = e.data;
 
   try {
-    if (type === "INIT") {
+    if (type === 'INIT') {
       // Initialize Demucs model with quantized ONNX weights
       // TODO: Load Sherpa-ONNX WASM library
       // await importScripts('/sherpa-onnx-wasm/sherpa-onnx-wasm.js');
@@ -36,10 +36,10 @@ self.onmessage = async (e) => {
       // });
 
       // Placeholder: Signal ready (actual implementation pending)
-      self.postMessage({ type: "READY" });
+      self.postMessage({ type: 'READY' });
     }
 
-    if (type === "PROCESS" && separator) {
+    if (type === 'PROCESS' && separator) {
       // Perform source separation (Vocals, Drums, Bass, Other)
       // TODO: Implement actual separation
       // const stems = await separator.process(buffer, sampleRate);
@@ -63,7 +63,7 @@ self.onmessage = async (e) => {
 
       // Placeholder: Return empty stems (actual implementation pending)
       self.postMessage({
-        type: "DONE",
+        type: 'DONE',
         stems: {
           vocals: null,
           drums: null,
@@ -73,7 +73,7 @@ self.onmessage = async (e) => {
       });
     }
 
-    if (type === "TERMINATE") {
+    if (type === 'TERMINATE') {
       // Cleanup
       if (separator) {
         separator = null;
@@ -82,8 +82,9 @@ self.onmessage = async (e) => {
     }
   } catch (error) {
     self.postMessage({
-      type: "ERROR",
-      error: error.message || "Unknown error in stem worker",
+      type: 'ERROR',
+      error: error.message || 'Unknown error in stem worker',
     });
   }
 };
+

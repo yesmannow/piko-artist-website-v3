@@ -113,10 +113,7 @@ export function useStemSeparator() {
     } catch (error) {
       setState((prev) => ({
         ...prev,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to initialize worker",
+        error: error instanceof Error ? error.message : "Failed to initialize worker",
       }));
     }
   }, [canProcess]);
@@ -158,7 +155,7 @@ export function useStemSeparator() {
         },
       });
     },
-    [state.isReady, canProcess],
+    [state.isReady, canProcess]
   );
 
   // Initialize on mount
@@ -182,3 +179,4 @@ export function useStemSeparator() {
     initialize,
   };
 }
+

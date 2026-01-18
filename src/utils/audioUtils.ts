@@ -7,14 +7,11 @@
  * Reverse an audio buffer
  * Creates a new buffer with reversed audio data
  */
-export function reverseAudioBuffer(
-  audioBuffer: AudioBuffer,
-  audioContext: AudioContext,
-): AudioBuffer {
+export function reverseAudioBuffer(audioBuffer: AudioBuffer, audioContext: AudioContext): AudioBuffer {
   const reversed = audioContext.createBuffer(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
-    audioBuffer.sampleRate,
+    audioBuffer.sampleRate
   );
 
   for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
@@ -36,10 +33,7 @@ export function reverseAudioBuffer(
  * @param bpm Beats per minute
  * @returns Array of beat positions in seconds
  */
-export function calculateBeatPositions(
-  duration: number,
-  bpm: number,
-): number[] {
+export function calculateBeatPositions(duration: number, bpm: number): number[] {
   const beats: number[] = [];
   const beatInterval = 60 / bpm; // seconds per beat
 
@@ -59,11 +53,7 @@ export function calculateBeatPositions(
  * @param snapStrength How close to beat (0-1, 1 = exact beat)
  * @returns Snapped time in seconds
  */
-export function snapToBeat(
-  time: number,
-  bpm: number,
-  snapStrength = 1.0,
-): number {
+export function snapToBeat(time: number, bpm: number, snapStrength: number = 1.0): number {
   if (!bpm || bpm <= 0) return time;
 
   const beatInterval = 60 / bpm;
@@ -91,7 +81,7 @@ export function quantizeLoop(
   startTime: number,
   endTime: number,
   bpm: number,
-  loopBeats: number,
+  loopBeats: number
 ): { start: number; end: number } {
   if (!bpm || bpm <= 0) {
     return { start: startTime, end: endTime };
@@ -99,10 +89,11 @@ export function quantizeLoop(
 
   const beatInterval = 60 / bpm;
   const quantizedStart = Math.round(startTime / beatInterval) * beatInterval;
-  const quantizedEnd = quantizedStart + loopBeats * beatInterval;
+  const quantizedEnd = quantizedStart + (loopBeats * beatInterval);
 
   return {
     start: Math.max(0, quantizedStart),
     end: quantizedEnd,
   };
 }
+

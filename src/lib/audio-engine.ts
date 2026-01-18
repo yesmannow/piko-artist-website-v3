@@ -8,19 +8,19 @@
  */
 
 export interface AudioEngineConfig {
-  lookahead: number; // How far ahead to schedule (seconds)
+  lookahead: number;      // How far ahead to schedule (seconds)
   scheduleInterval: number; // How often to call scheduler (ms)
 }
 
 const DEFAULT_CONFIG: AudioEngineConfig = {
-  lookahead: 0.1, // 100ms lookahead
-  scheduleInterval: 25, // Check every 25ms
+  lookahead: 0.1,        // 100ms lookahead
+  scheduleInterval: 25,   // Check every 25ms
 };
 
 export class AudioBufferManager {
   private audioContext: AudioContext;
-  private bufferCache = new Map<string, AudioBuffer>();
-  private loadingPromises = new Map<string, Promise<AudioBuffer>>();
+  private bufferCache: Map<string, AudioBuffer> = new Map();
+  private loadingPromises: Map<string, Promise<AudioBuffer>> = new Map();
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
@@ -67,7 +67,7 @@ export class AudioBufferManager {
    * Preload multiple audio files in parallel
    */
   async preloadBuffers(urls: string[]): Promise<void> {
-    await Promise.all(urls.map((url) => this.loadBuffer(url)));
+    await Promise.all(urls.map(url => this.loadBuffer(url)));
   }
 
   /**
@@ -119,7 +119,7 @@ export class LookaheadScheduler {
   constructor(
     audioContext: AudioContext,
     callbacks: SchedulerCallbacks,
-    config: Partial<AudioEngineConfig> = {},
+    config: Partial<AudioEngineConfig> = {}
   ) {
     this.audioContext = audioContext;
     this.callbacks = callbacks;
@@ -179,10 +179,7 @@ export class LookaheadScheduler {
 
     // Use setInterval just to call the scheduler regularly
     // The actual timing is handled by audioContext.currentTime
-    this.timerID = window.setInterval(
-      this.scheduler,
-      this.config.scheduleInterval,
-    );
+    this.timerID = window.setInterval(this.scheduler, this.config.scheduleInterval);
   }
 
   /**
@@ -249,10 +246,10 @@ export function playBuffer(
   buffer: AudioBuffer,
   destination: AudioNode,
   options: {
-    time?: number; // When to start (audioContext.currentTime)
+    time?: number;        // When to start (audioContext.currentTime)
     playbackRate?: number;
     gain?: number;
-  } = {},
+  } = {}
 ): AudioBufferSourceNode {
   const { time = 0, playbackRate = 1.0, gain = 1.0 } = options;
 
@@ -318,10 +315,8 @@ export class AudioEngine {
 
   constructor() {
     // Create AudioContext (will be in suspended state until user interaction)
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
+    const AudioContextClass = window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.audioContext = new AudioContextClass();
 
     this.bufferManager = new AudioBufferManager(this.audioContext);
@@ -335,9 +330,7 @@ export class AudioEngine {
     this.masterGain.gain.value = 1.0;
 
     this.waveShaperNode = this.audioContext.createWaveShaper();
-    this.waveShaperNode.curve = createDistortionCurve(
-      0,
-    ) as Float32Array<ArrayBuffer>;
+    this.waveShaperNode.curve = createDistortionCurve(0) as Float32Array<ArrayBuffer>;
     this.waveShaperNode.oversample = "4x";
 
     // Connect: filter -> masterGain -> waveShaper -> destination
@@ -374,7 +367,7 @@ export class AudioEngine {
       time?: number;
       playbackRate?: number;
       gain?: number;
-    } = {},
+    } = {}
   ): AudioBufferSourceNode {
     return playBuffer(this.audioContext, buffer, this.filterNode, options);
   }
@@ -394,9 +387,7 @@ export class AudioEngine {
    * Set grit/distortion amount (0-100)
    */
   setGrit(value: number): void {
-    this.waveShaperNode.curve = createDistortionCurve(
-      value,
-    ) as Float32Array<ArrayBuffer>;
+    this.waveShaperNode.curve = createDistortionCurve(value) as Float32Array<ArrayBuffer>;
   }
 
   /**
@@ -450,3 +441,4 @@ export function disposeAudioEngine(): void {
     audioEngineInstance = null;
   }
 }
+

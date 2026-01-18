@@ -1,356 +1,385 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { useLenis } from "lenis/react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { Play, Sparkles, X } from "lucide-react";
-import {
-  VideoFilterNav,
-  type VideoCategory,
-} from "@/components/content/video/VideoFilterNav";
 import { tracks, MediaItem } from "@/lib/data";
+import { X, Play } from "lucide-react";
 
-const fallbackImages = [
-  "/images/tracks/abstract-1846847_1280.jpg",
-  "/images/tracks/aurora-borealis-9267515_1280.jpg",
-  "/images/tracks/background-1833056_1280.jpg",
-  "/images/tracks/dj-2581269_1280.jpg",
-  "/images/tracks/graffiti-1476119_1280.jpg",
-  "/images/tracks/graffiti-3750912_1280.jpg",
-  "/images/tracks/starry-sky-1655503_1280.jpg",
-  "/images/tracks/wallpaper-5928106_1280.png",
-];
+// Thumbnail component with fallback strategy
+function VideoThumbnail({ videoId, title, className }: { videoId: string; title: string; className?: string }) {
+  // Get fallback images from public/images/tracks directory
+  const trackImages = [
+    "/images/tracks/abstract-1846847_1280.jpg",
+    "/images/tracks/architecture-3189972_1280.jpg",
+    "/images/tracks/aurora-borealis-9267515_1280.jpg",
+    "/images/tracks/background-1833056_1280.jpg",
+    "/images/tracks/bicycle-3045580_1280.jpg",
+    "/images/tracks/dj-2581269_1280.jpg",
+    "/images/tracks/gong-8255081_1280.jpg",
+    "/images/tracks/graffiti-1476119_1280.jpg",
+    "/images/tracks/graffiti-3750912_1280.jpg",
+    "/images/tracks/hamburg-2718329_1280.jpg",
+    "/images/tracks/love-2724141_1280.png",
+    "/images/tracks/skateboard-447147_1280.jpg",
+    "/images/tracks/skull-and-crossbones-414207_1280.jpg",
+    "/images/tracks/starry-sky-1655503_1280.jpg",
+    "/images/tracks/street-art-1499524_1280.jpg",
+    "/images/tracks/tube-7260586_1280.jpg",
+    "/images/tracks/vinyl-1595847_1280.jpg",
+    "/images/tracks/wall-2583885_1280.jpg",
+    "/images/tracks/wallpaper-5928106_1280.png",
+    "/images/tracks/woman-3633737_1280.jpg",
+  ];
 
-function VideoThumbnail({
-  videoId,
-  title,
-  className,
-}: {
-  videoId: string;
-  title: string;
-  className?: string;
-}) {
-  const [src, setSrc] = useState(
-    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-  );
-  const [failed, setFailed] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Use videoId to deterministically select a fallback image
+  const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
+  const fallbackImage = trackImages[fallbackIndex];
 
-  useEffect(() => {
-    setSrc(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
-    setFailed(false);
-    setLoading(true);
-  }, [videoId]);
+  const [imgSrc, setImgSrc] = useState(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
+  const [errorCount, setErrorCount] = useState(0);
 
-  const fallback = useMemo(() => {
-    const hash =
-      videoId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
-      fallbackImages.length;
-    return fallbackImages[hash];
-  }, [videoId]);
-
-  if (failed) {
-    return (
-      <div className={`relative h-full w-full overflow-hidden ${className}`}>
-        <Image
-          src={fallback}
-          alt={title}
-          fill
-          className="object-cover opacity-70"
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          priority={false}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-center text-center text-sm uppercase tracking-[0.22em] text-white/80">
-          Thumbnail queued
-        </div>
-      </div>
-    );
-  }
+  const handleError = () => {
+    if (errorCount === 0) {
+      // First fallback: try hqdefault
+      setErrorCount(1);
+      setImgSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
+    } else if (errorCount === 1) {
+      // Second fallback: use track image
+      setErrorCount(2);
+      setImgSrc(fallbackImage);
+    }
+  };
 
   return (
-    <div className="relative h-full w-full">
-      <Image
-        src={src}
-        alt={title}
-        fill
-        className={className}
-        onLoad={() => setLoading(false)}
-        onError={() => {
-          if (src.includes("maxres")) {
-            setSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
-            setLoading(true);
-          } else {
-            setFailed(true);
-            setLoading(false);
-          }
-        }}
-        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        unoptimized
-      />
-      {loading ? (
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/10 via-white/5 to-transparent" />
-      ) : null}
+    <Image
+      src={imgSrc}
+      alt={title}
+      fill
+      className={className}
+      onError={handleError}
+      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      unoptimized={imgSrc.includes('i.ytimg.com')} // YouTube images are already optimized
+    />
+  );
+}
+
+// Video Card Component
+function VideoCard({ video, onPlay }: { video: MediaItem; onPlay: (id: string) => void }) {
+  if (!video?.id) return null;
+
+  return (
+    <div
+      key={video.id}
+      className="group relative aspect-video bg-zinc-900 rounded-lg overflow-hidden cursor-pointer border-2 border-zinc-800 hover:border-toxic-lime transition-all shadow-lg hover:shadow-xl"
+      onClick={() => onPlay(video.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay(video.id);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play video: ${video.title}`}
+    >
+      <div className="relative w-full h-full">
+        <VideoThumbnail
+          videoId={video.id}
+          title={video.title}
+          className="object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+        />
+      </div>
+
+      {/* Play Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
+        <div className="w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center shadow-[0_0_20px_#FFD700]">
+          <Play className="w-5 h-5 text-black fill-current" />
+        </div>
+      </div>
+
+      {/* Info Overlay */}
+      <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <h3 className="text-white font-bold truncate">{video.title}</h3>
+        <p className="text-[#FFD700] text-xs font-mono uppercase tracking-wider mt-1">{video.vibe}</p>
+      </div>
     </div>
   );
 }
 
-function FeaturedVideoCard({
-  video,
-  onPlay,
-}: {
-  video: MediaItem;
-  onPlay: (id: string) => void;
-}) {
+// Featured Video Hero Component
+function FeaturedVideoHero({ video, onPlay }: { video: MediaItem; onPlay: (id: string) => void }) {
+  if (!video?.id) return null;
+
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0b0f1c] via-[#0b1224] to-[#0f172a] p-6 sm:p-8"
+    <div
+      className="relative w-full h-[60vh] md:h-[70vh] mb-8 md:mb-12 rounded-lg overflow-hidden border-2 border-zinc-800 shadow-2xl group cursor-pointer focus-within:ring-2 focus-within:ring-toxic-lime focus-within:ring-offset-2"
+      onClick={() => onPlay(video.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay(video.id);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play featured video: ${video.title}`}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(193,255,0,0.12),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(124,58,237,0.18),transparent_40%)]" />
-      <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-white/70">
-            <Sparkles className="h-4 w-4 text-[#c1ff00]" />
-            Latest Drop
-          </div>
-          <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl">
-            {video.title}
-          </h1>
-          <p className="text-white/70 text-sm">
-            Dive into the newest session, then jump into the archive by vibe.
-          </p>
-          <button
-            type="button"
-            onClick={() => onPlay(video.id)}
-            className="inline-flex items-center gap-3 rounded-full bg-[#c1ff00] px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-black shadow-[0_10px_30px_rgba(193,255,0,0.35)] transition-transform hover:scale-[1.02]"
-          >
-            <Play className="h-4 w-4" />
-            Watch Now
-          </button>
-        </div>
-        <div className="relative h-64 overflow-hidden rounded-2xl border border-white/10">
+      {/* Background Image */}
+      <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-105">
+        <div className="relative w-full h-full">
           <VideoThumbnail
             videoId={video.id}
             title={video.title}
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-          <div className="absolute left-4 bottom-4 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/70">
-            <span className="rounded-full bg-white/10 px-3 py-1">
-              {video.vibe}
-            </span>
-            <span className="rounded-full bg-white/10 px-3 py-1">Featured</span>
-          </div>
         </div>
       </div>
-    </motion.article>
-  );
-}
 
-function ArchiveVideoCard({
-  video,
-  onPlay,
-}: {
-  video: MediaItem;
-  onPlay: (id: string) => void;
-}) {
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5"
-      whileHover={{ y: -3 }}
-    >
-      <button
-        type="button"
-        onClick={() => onPlay(video.id)}
-        className="absolute inset-0 z-10"
-        aria-label={`Play ${video.title}`}
-      />
-      <div className="relative h-48 overflow-hidden">
-        <VideoThumbnail
-          videoId={video.id}
-          title={video.title}
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white">
-          {video.vibe}
-        </div>
-      </div>
-      <div className="space-y-2 p-4">
-        <h3 className="truncate text-base font-semibold text-white">
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/50 to-transparent" />
+
+      {/* Content */}
+      <div className="absolute bottom-0 left-0 p-8 md:p-16 w-full md:w-2/3">
+        <span className="inline-block px-3 py-1 mb-4 text-xs font-bold text-black bg-[#FFD700] rounded-full uppercase tracking-widest">
+          Latest Drop
+        </span>
+        <h1 className="text-4xl md:text-6xl font-black text-white mb-4 uppercase leading-none tracking-tighter">
           {video.title}
-        </h3>
-        <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-          {video.artist}
-        </p>
+        </h1>
+        <div className="flex items-center gap-4">
+          <button
+            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-full hover:bg-toxic-lime transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Watch featured video"
+          >
+            <Play className="w-5 h-5 fill-current" />
+            WATCH NOW
+          </button>
+          <span className="text-zinc-400 font-mono text-sm uppercase tracking-wider">
+            {video.vibe.toUpperCase()} EDITION
+          </span>
+        </div>
       </div>
-    </motion.article>
+    </div>
   );
 }
 
-function VideoModal({
-  videoId,
-  onClose,
-}: {
-  videoId: string | null;
-  onClose: () => void;
-}) {
+// Video Modal Component
+function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () => void }) {
+  const pathname = usePathname();
+
+  // Close modal on route change
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    if (videoId) {
+      onClose();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Close on ESC key
+  useEffect(() => {
+    if (!videoId) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
     };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [videoId, onClose]);
 
   if (!videoId) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
+    <div
+      className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
+      data-modal-open="true"
+      onClick={(e) => {
+        // Close on backdrop click
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 bg-zinc-800 rounded-full hover:bg-white hover:text-black transition-colors z-10"
+        aria-label="Close video"
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white hover:border-[#c1ff00]/40"
-          aria-label="Close video"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <div className="flex h-full items-center justify-center p-4 sm:p-8">
-          <div className="aspect-video w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-black">
-            <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-              className="h-full w-full"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              title="Video player"
-            />
-          </div>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+        <X className="w-6 h-6" />
+      </button>
+
+      <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-zinc-800">
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+          className="w-full h-full"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          referrerPolicy="no-referrer-when-downgrade"
+          title="Video player"
+          loading="lazy"
+        />
+      </div>
+    </div>
   );
 }
 
 export default function VideosPage() {
-  const [filter, setFilter] = useState<VideoCategory>("ALL");
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC">("ALL");
+  const pathname = usePathname();
+  const lenis = useLenis();
 
-  const videos = useMemo(
-    () =>
-      tracks.filter((t): t is MediaItem => t.type === "video" && Boolean(t.id)),
-    [],
-  );
+  // Derived data - defensive checks
+  const videos = useMemo(() => {
+    return tracks.filter((t): t is MediaItem => t.type === 'video' && !!t.id);
+  }, []);
 
-  const featuredVideo = videos.at(-1) ?? null;
-  const archiveVideos = useMemo(
-    () =>
-      featuredVideo ? videos.filter((v) => v.id !== featuredVideo.id) : videos,
-    [videos, featuredVideo],
-  );
+  const featuredVideo = useMemo(() => {
+    return videos.length > 0 ? videos[videos.length - 1] : null;
+  }, [videos]);
 
-  const categories = useMemo<VideoCategory[]>(() => {
-    const base: VideoCategory[] = [
-      "ALL",
-      "HYPE",
-      "CHILL",
-      "STORYTELLING",
-      "CLASSIC",
-    ];
-    const present = new Set(
-      videos
-        .map((v) => v.vibe?.toUpperCase())
-        .filter(Boolean) as VideoCategory[],
-    );
-    return base.filter((cat) => cat === "ALL" || present.has(cat));
+  const gridVideos = useMemo(() => {
+    if (!featuredVideo) return videos;
+    return videos.filter(v => v.id !== featuredVideo.id);
+  }, [videos, featuredVideo]);
+
+  const availableFilters = useMemo(() => {
+    const vibes = new Set(videos.map(v => v.vibe?.toUpperCase()).filter(Boolean) as string[]);
+    return ["ALL", ...Array.from(vibes).sort()] as Array<"ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC">;
   }, [videos]);
 
   const filteredVideos = useMemo(() => {
-    if (filter === "ALL") return archiveVideos;
-    return archiveVideos.filter((v) => v.vibe?.toUpperCase() === filter);
-  }, [archiveVideos, filter]);
+    if (filter === "ALL") return gridVideos;
+    return gridVideos.filter(v => v.vibe?.toUpperCase() === filter);
+  }, [gridVideos, filter]);
 
+  // Close modal on route change
+  useEffect(() => {
+    if (selectedVideoId) {
+      setSelectedVideoId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Scroll sanity: reset scroll on route change and unmount
+  useEffect(() => {
+    // Reset scroll immediately on mount/route change
+    if (lenis) {
+      try {
+        lenis.stop();
+        lenis.scrollTo(0, { immediate: true });
+        lenis.start();
+      } catch {
+        // Fallback if Lenis fails
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+        }
+      }
+    } else if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.scrollTo(0, 0);
+      }
+    };
+  }, [pathname, lenis]);
+
+  // Empty state
   if (videos.length === 0) {
     return (
-      <div className="min-h-screen bg-background px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl text-white/70">
-          No videos available.
+      <div className="min-h-screen bg-background pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12">
+            <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter mb-2">
+              VISUAL{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-green-500">
+                ARCHIVE
+              </span>
+            </h1>
+            <p className="text-zinc-400 font-mono">
+              Exploring the visual landscape of sound.
+            </p>
+          </div>
+          <div className="text-center text-foreground/60 py-12 font-industrial">No videos available.</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(193,255,0,0.12),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(124,58,237,0.16),transparent_35%),radial-gradient(circle_at_50%_80%,rgba(34,211,238,0.12),transparent_38%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:120px_120px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-        <div className="mb-8 space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-white/70">
-            Visual Archive
-          </div>
-          <h1 className="text-3xl font-black leading-tight text-white sm:text-5xl">
-            Videos & Sessions
+    <div className="min-h-screen bg-background pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-header text-foreground tracking-tighter mb-2">
+            VISUAL{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-toxic-lime to-green-500">
+              ARCHIVE
+            </span>
           </h1>
-          <p className="text-white/65 text-sm sm:text-base">
-            Latest drop + archive grid with vibe filters and resilient
-            thumbnails.
+          <p className="text-foreground/60 font-industrial text-sm md:text-base">
+            Exploring the visual landscape of sound.
           </p>
         </div>
 
-        {featuredVideo ? (
-          <FeaturedVideoCard
+        {/* Featured Video Hero */}
+        {featuredVideo && (
+          <FeaturedVideoHero
             video={featuredVideo}
             onPlay={setSelectedVideoId}
           />
-        ) : null}
+        )}
 
-        <div className="mt-8 flex items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.22em] text-white/60">
-              Archive Filters
-            </p>
-            <VideoFilterNav
-              categories={categories}
-              active={filter}
-              onChange={setFilter}
-            />
+        {/* Filter Bar */}
+        {availableFilters.length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {availableFilters.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-2.5 text-xs font-bold rounded-full border-2 transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2 ${
+                  filter === cat
+                    ? "bg-white text-black border-white shadow-lg"
+                    : "bg-transparent text-foreground/60 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5"
+                }`}
+                aria-label={`Filter by ${cat}`}
+                aria-pressed={filter === cat}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
-          <p className="text-xs uppercase tracking-[0.18em] text-white/50">
-            {filteredVideos.length} videos
-          </p>
-        </div>
+        )}
 
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredVideos.map((video) => (
-            <ArchiveVideoCard
-              key={video.id}
-              video={video}
-              onPlay={setSelectedVideoId}
-            />
-          ))}
-        </div>
+        {/* Video Grid */}
+        {filteredVideos.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredVideos.map((video) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                onPlay={setSelectedVideoId}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-foreground/60 py-12 font-industrial">
+            No videos found for this filter.
+          </div>
+        )}
+
+        {/* Video Modal */}
+        <VideoModal
+          videoId={selectedVideoId}
+          onClose={() => setSelectedVideoId(null)}
+        />
       </div>
-
-      <VideoModal
-        videoId={selectedVideoId}
-        onClose={() => setSelectedVideoId(null)}
-      />
     </div>
   );
 }

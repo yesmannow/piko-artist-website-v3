@@ -5,10 +5,7 @@ import { useEffect, useRef } from "react";
  * @param isActive - Whether the focus trap should be active
  * @param containerRef - Ref to the container element
  */
-export function useFocusTrap(
-  isActive: boolean,
-  containerRef: React.RefObject<HTMLElement | null>,
-) {
+export function useFocusTrap(isActive: boolean, containerRef: React.RefObject<HTMLElement | null>) {
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -22,21 +19,20 @@ export function useFocusTrap(
     // Get all focusable elements within the container
     const getFocusableElements = (): HTMLElement[] => {
       const focusableSelectors = [
-        "a[href]",
-        "button:not([disabled])",
-        "textarea:not([disabled])",
-        "input:not([disabled])",
-        "select:not([disabled])",
+        'a[href]',
+        'button:not([disabled])',
+        'textarea:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
         '[tabindex]:not([tabindex="-1"])',
-      ].join(", ");
+      ].join(', ');
 
-      return Array.from(
-        container.querySelectorAll<HTMLElement>(focusableSelectors),
-      ).filter((el) => {
-        // Filter out hidden elements
-        const style = window.getComputedStyle(el);
-        return style.display !== "none" && style.visibility !== "hidden";
-      });
+      return Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors))
+        .filter((el) => {
+          // Filter out hidden elements
+          const style = window.getComputedStyle(el);
+          return style.display !== 'none' && style.visibility !== 'hidden';
+        });
     };
 
     const focusableElements = getFocusableElements();
@@ -47,11 +43,9 @@ export function useFocusTrap(
     focusableElements[0]?.focus();
 
     const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
+      if (e.key !== 'Tab') return;
 
-      const currentIndex = focusableElements.indexOf(
-        document.activeElement as HTMLElement,
-      );
+      const currentIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
 
       if (e.shiftKey) {
         // Shift + Tab: move backwards
@@ -68,10 +62,10 @@ export function useFocusTrap(
       }
     };
 
-    container.addEventListener("keydown", handleTabKey);
+    container.addEventListener('keydown', handleTabKey);
 
     return () => {
-      container.removeEventListener("keydown", handleTabKey);
+      container.removeEventListener('keydown', handleTabKey);
       // Restore focus to previous element when trap is deactivated
       if (previousActiveElement.current) {
         previousActiveElement.current.focus();
@@ -79,3 +73,4 @@ export function useFocusTrap(
     };
   }, [isActive, containerRef]);
 }
+

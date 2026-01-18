@@ -10,7 +10,6 @@ const STORAGE_KEY = "piko_logo_intro_seen";
 export function LogoIntro() {
   const [isActive, setIsActive] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const hasCompletedRef = useRef(false);
@@ -20,14 +19,9 @@ export function LogoIntro() {
     scale: number;
   } | null>(null);
 
-  // Ensure component only renders on client to prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   useEffect(() => {
     // Check if intro has been seen
-    if (typeof window === "undefined" || !mounted) return;
+    if (typeof window === "undefined") return;
 
     const hasSeen = localStorage.getItem(STORAGE_KEY);
     if (hasSeen) {
@@ -68,12 +62,8 @@ export function LogoIntro() {
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
         const isMobile = viewportWidth < 768;
-        const targetX = isMobile
-          ? -viewportWidth / 2 + 32
-          : -viewportWidth / 2 + 48;
-        const targetY = isMobile
-          ? -viewportHeight / 2 + 32
-          : -viewportHeight / 2 + 48;
+        const targetX = isMobile ? -viewportWidth / 2 + 32 : -viewportWidth / 2 + 48;
+        const targetY = isMobile ? -viewportHeight / 2 + 32 : -viewportHeight / 2 + 48;
         setTargetPosition({
           x: targetX,
           y: targetY,
@@ -151,8 +141,7 @@ export function LogoIntro() {
     }, 300);
   };
 
-  // Don't render anything until mounted to prevent hydration mismatch
-  if (!mounted || !shouldRender) {
+  if (!shouldRender) {
     return null;
   }
 
@@ -161,7 +150,7 @@ export function LogoIntro() {
       {isActive && (
         <motion.div
           ref={overlayRef}
-          className="fixed inset-0 z-[5000] bg-black pointer-events-auto"
+          className="fixed inset-0 z-[200] bg-black pointer-events-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -203,3 +192,4 @@ export function LogoIntro() {
     </AnimatePresence>
   );
 }
+

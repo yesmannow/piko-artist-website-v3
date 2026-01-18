@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useRef,
-  ReactNode,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
 import { MediaItem, tracks } from "@/lib/data";
 
 interface AudioContextType {
@@ -41,73 +33,34 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
-  const playPromiseRef = useRef<Promise<void> | null>(null);
 
-  const togglePlay = async () => {
+  const togglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
-
-    // Wait for any pending play promise to resolve
-    if (playPromiseRef.current) {
-      try {
-        await playPromiseRef.current;
-      } catch {
-        // Ignore errors from previous play attempts
-      }
-      playPromiseRef.current = null;
-    }
 
     if (isPlaying) {
       audioRef.current.pause();
-      setIsPlaying(false);
     } else {
-      try {
-        playPromiseRef.current = audioRef.current.play();
-        await playPromiseRef.current;
-        playPromiseRef.current = null;
-        setIsPlaying(true);
-      } catch (error) {
-        playPromiseRef.current = null;
-        if (process.env.NODE_ENV === "development") {
-           
-          console.error("Error playing audio:", error);
-        }
-        setIsPlaying(false);
-      }
+      audioRef.current.play();
     }
+    setIsPlaying(!isPlaying);
   };
 
-  const playTrack = useCallback(async (track: MediaItem) => {
-    // Wait for any pending play promise to resolve
-    if (playPromiseRef.current) {
-      try {
-        await playPromiseRef.current;
-      } catch {
-        // Ignore errors from previous play attempts
-      }
-      playPromiseRef.current = null;
-    }
-
+  const playTrack = useCallback((track: MediaItem) => {
     setCurrentTrack(track);
+    setIsPlaying(true);
 
     // Load and play the track
     if (audioRef.current) {
       if (track.type === "audio") {
         audioRef.current.src = track.src;
         audioRef.current.load();
-
-        try {
-          playPromiseRef.current = audioRef.current.play();
-          await playPromiseRef.current;
-          playPromiseRef.current = null;
-          setIsPlaying(true);
-        } catch (error) {
-          playPromiseRef.current = null;
+        audioRef.current.play().catch((error) => {
           if (process.env.NODE_ENV === "development") {
-             
+            // eslint-disable-next-line no-console
             console.error("Error playing audio:", error);
           }
           setIsPlaying(false);
-        }
+        });
       } else {
         // For video tracks, we might need different handling
         // For now, just set the track
@@ -128,8 +81,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (!currentTrack) return;
     const audioTracks = tracks.filter((t) => t.type === "audio");
     const currentIndex = audioTracks.findIndex((t) => t.id === currentTrack.id);
-    const prevIndex =
-      currentIndex === 0 ? audioTracks.length - 1 : currentIndex - 1;
+    const prevIndex = currentIndex === 0 ? audioTracks.length - 1 : currentIndex - 1;
     playTrack(audioTracks[prevIndex]);
   }, [currentTrack, playTrack]);
 
@@ -198,17 +150,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     });
 
     // Set action handlers
-    mediaSession.setActionHandler("play", async () => {
+    mediaSession.setActionHandler("play", () => {
       if (audioRef.current && !isPlaying) {
-        try {
-          await audioRef.current.play();
-          setIsPlaying(true);
-        } catch (error) {
-          if (process.env.NODE_ENV === "development") {
-             
-            console.error("Error playing audio from MediaSession:", error);
-          }
-        }
+        audioRef.current.play();
+        setIsPlaying(true);
       }
     });
 
@@ -294,3 +239,4 @@ export function useAudio() {
   }
   return context;
 }
+

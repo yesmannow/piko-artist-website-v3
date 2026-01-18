@@ -11,71 +11,6 @@
  * At the mid-point (0.5), both consoles maintain equal volume.
  */
 
-export type CrossfaderCurve = "linear" | "constant-power" | "sharp" | "smooth";
-
-/**
- * Calculate gain values based on crossfader curve type
- *
- * @param crossfaderPosition - Position from 0.0 (Console A full) to 1.0 (Console B full)
- * @param curve - Crossfader curve type
- * @returns Object with gainA and gainB values (0.0 to 1.0)
- */
-export function calculateCrossfaderGains(
-  crossfaderPosition: number,
-  curve: CrossfaderCurve = "constant-power",
-): {
-  gainA: number;
-  gainB: number;
-} {
-  // Clamp to valid range
-  const x = Math.max(0, Math.min(1, crossfaderPosition));
-
-  switch (curve) {
-    case "linear":
-      // Simple linear fade (can cause volume dip at center)
-      return {
-        gainA: 1 - x,
-        gainB: x,
-      };
-
-    case "constant-power":
-      // Equal-power curve using cosine/sine (default, professional standard)
-      // When x = 0: gainA = cos(0) = 1.0, gainB = sin(0) = 0.0 (Console A full)
-      // When x = 0.5: gainA = cos(π/4) = 0.707, gainB = sin(π/4) = 0.707 (Equal power)
-      // When x = 1.0: gainA = cos(π/2) = 0.0, gainB = sin(π/2) = 1.0 (Console B full)
-      return {
-        gainA: Math.cos((x * Math.PI) / 2),
-        gainB: Math.sin((x * Math.PI) / 2),
-      };
-
-    case "sharp":
-      // Sharp cut (DJ-style) - faster transition near edges
-      // Uses exponential curve for aggressive mixing
-      const sharpA = Math.pow(1 - x, 2);
-      const sharpB = Math.pow(x, 2);
-      return {
-        gainA: Math.sqrt(sharpA), // Normalize to avoid excessive volume drop
-        gainB: Math.sqrt(sharpB),
-      };
-
-    case "smooth":
-      // Extra smooth transition - slower in the middle
-      // Uses S-curve (smoothstep) for very gradual blending
-      const smoothX = x * x * (3 - 2 * x); // Smoothstep function
-      return {
-        gainA: Math.cos((smoothX * Math.PI) / 2),
-        gainB: Math.sin((smoothX * Math.PI) / 2),
-      };
-
-    default:
-      // Fallback to constant-power
-      return {
-        gainA: Math.cos((x * Math.PI) / 2),
-        gainB: Math.sin((x * Math.PI) / 2),
-      };
-  }
-}
-
 /**
  * Calculate constant-power gain values for dual-console mixing
  *
@@ -84,40 +19,22 @@ export function calculateCrossfaderGains(
  *
  * @param crossfaderPosition - Position from 0.0 (Console A full) to 1.0 (Console B full)
  * @returns Object with gainA and gainB values (0.0 to 1.0)
- * @deprecated Use calculateCrossfaderGains with 'constant-power' curve instead
  */
 export function calculateConstantPowerGains(crossfaderPosition: number): {
   gainA: number;
   gainB: number;
 } {
-  return calculateCrossfaderGains(crossfaderPosition, "constant-power");
-}
+  // Clamp to valid range
+  const x = Math.max(0, Math.min(1, crossfaderPosition));
 
-/**
- * Apply crossfader gains to GainNode instances with curve selection
- *
- * @param gainNodeA - GainNode for Deck A
- * @param gainNodeB - GainNode for Deck B
- * @param crossfaderPosition - Position from 0.0 to 1.0
- * @param audioContext - AudioContext for scheduling
- * @param curve - Crossfader curve type (default: 'constant-power')
- * @param rampTime - Optional ramp time in seconds (default: 0.02 for smooth transitions)
- */
-export function applyCrossfaderGains(
-  gainNodeA: GainNode,
-  gainNodeB: GainNode,
-  crossfaderPosition: number,
-  audioContext: AudioContext,
-  curve: CrossfaderCurve = "constant-power",
-  rampTime = 0.02,
-): void {
-  const { gainA, gainB } = calculateCrossfaderGains(crossfaderPosition, curve);
-  const currentTime = audioContext.currentTime;
+  // Constant-power curve using cosine/sine
+  // When x = 0: gainA = cos(0) = 1.0, gainB = sin(0) = 0.0 (Console A full)
+  // When x = 0.5: gainA = cos(π/4) = 0.707, gainB = sin(π/4) = 0.707 (Equal power)
+  // When x = 1.0: gainA = cos(π/2) = 0.0, gainB = sin(π/2) = 1.0 (Console B full)
+  const gainA = Math.cos(x * Math.PI / 2);
+  const gainB = Math.sin(x * Math.PI / 2);
 
-  // Apply gains with smooth ramping to prevent clicks/pops
-  // Using 0.02s rampTime for professional-grade smooth transitions
-  gainNodeA.gain.setTargetAtTime(gainA, currentTime, rampTime);
-  gainNodeB.gain.setTargetAtTime(gainB, currentTime, rampTime);
+  return { gainA, gainB };
 }
 
 /**
@@ -127,24 +44,22 @@ export function applyCrossfaderGains(
  * @param gainNodeB - GainNode for Deck B
  * @param crossfaderPosition - Position from 0.0 to 1.0
  * @param audioContext - AudioContext for scheduling
- * @param rampTime - Optional ramp time in seconds (default: 0.02 for smooth transitions)
- * @deprecated Use applyCrossfaderGains with 'constant-power' curve instead
+ * @param rampTime - Optional ramp time in seconds (default: 0.01 for smooth transitions)
  */
 export function applyConstantPowerGains(
   gainNodeA: GainNode,
   gainNodeB: GainNode,
   crossfaderPosition: number,
   audioContext: AudioContext,
-  rampTime = 0.02,
+  rampTime: number = 0.02
 ): void {
-  applyCrossfaderGains(
-    gainNodeA,
-    gainNodeB,
-    crossfaderPosition,
-    audioContext,
-    "constant-power",
-    rampTime,
-  );
+  const { gainA, gainB } = calculateConstantPowerGains(crossfaderPosition);
+  const currentTime = audioContext.currentTime;
+
+  // Apply gains with smooth ramping to prevent clicks/pops
+  // Using 0.02s rampTime for professional-grade smooth transitions
+  gainNodeA.gain.setTargetAtTime(gainA, currentTime, rampTime);
+  gainNodeB.gain.setTargetAtTime(gainB, currentTime, rampTime);
 }
 
 /**
@@ -163,7 +78,7 @@ export function applyConstantPowerGains(
  */
 export function createConstantPowerSplitter(
   audioContext: AudioContext,
-  masterDestination: AudioNode,
+  masterDestination: AudioNode
 ): {
   gainNodeA: GainNode;
   gainNodeB: GainNode;
@@ -173,8 +88,8 @@ export function createConstantPowerSplitter(
   const gainNodeB = audioContext.createGain();
 
   // Initialize to center position (equal power)
-  gainNodeA.gain.value = Math.cos((0.5 * Math.PI) / 2); // cos(π/4) ≈ 0.707
-  gainNodeB.gain.value = Math.sin((0.5 * Math.PI) / 2); // sin(π/4) ≈ 0.707
+  gainNodeA.gain.value = Math.cos(0.5 * Math.PI / 2); // cos(π/4) ≈ 0.707
+  gainNodeB.gain.value = Math.sin(0.5 * Math.PI / 2); // sin(π/4) ≈ 0.707
 
   // Connect both to master destination
   gainNodeA.connect(masterDestination);
@@ -182,3 +97,4 @@ export function createConstantPowerSplitter(
 
   return { gainNodeA, gainNodeB };
 }
+

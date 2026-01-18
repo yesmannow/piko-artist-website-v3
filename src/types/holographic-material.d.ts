@@ -1,5 +1,5 @@
-import * as THREE from "three";
-import * as React from "react";
+import * as THREE from 'three';
+import * as React from 'react';
 
 declare global {
   namespace JSX {
@@ -21,3 +21,4 @@ declare global {
     }
   }
 }
+

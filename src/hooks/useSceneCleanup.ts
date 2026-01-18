@@ -20,9 +20,7 @@ import * as THREE from "three";
  * useSceneCleanup(sceneRef);
  * ```
  */
-export function useSceneCleanup(
-  sceneRef: RefObject<THREE.Scene | THREE.Object3D | null>,
-) {
+export function useSceneCleanup(sceneRef: RefObject<THREE.Scene | THREE.Object3D | null>) {
   useEffect(() => {
     return () => {
       if (!sceneRef.current) return;
@@ -32,22 +30,14 @@ export function useSceneCleanup(
       // Traverse the scene graph and dispose of all resources
       scene.traverse((object) => {
         // Dispose geometries
-        if (
-          object instanceof THREE.Mesh ||
-          object instanceof THREE.Line ||
-          object instanceof THREE.Points
-        ) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
           if (object.geometry) {
             object.geometry.dispose();
           }
         }
 
         // Dispose materials
-        if (
-          object instanceof THREE.Mesh ||
-          object instanceof THREE.Line ||
-          object instanceof THREE.Points
-        ) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
           if (object.material) {
             // Handle both single materials and material arrays
             const materials = Array.isArray(object.material)
@@ -89,3 +79,4 @@ export function useSceneCleanup(
     };
   }, [sceneRef]);
 }
+

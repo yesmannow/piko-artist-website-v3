@@ -47,10 +47,8 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
     try {
       // Create AudioContext (starts in 'suspended' state)
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
+      const AudioContextClass = window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
 
       const audioContext = new AudioContextClass({
         sampleRate: 44100, // Standard sample rate
@@ -59,9 +57,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
       // Register the AudioWorklet module
       // This loads the sidechain-processor.js file that runs on the audio thread
-      await audioContext.audioWorklet.addModule(
-        "/worklets/sidechain-processor.js",
-      );
+      await audioContext.audioWorklet.addModule("/worklets/sidechain-processor.js");
 
       // Resume the context (required for autoplay policy compliance)
       // This must be called from a user interaction context
@@ -88,3 +84,4 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     set({ isPlaying: playing });
   },
 }));
+

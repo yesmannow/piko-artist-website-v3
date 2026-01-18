@@ -121,7 +121,7 @@ export function useStemRouting() {
       const playStem = (
         buffer: AudioBuffer | null,
         gainNode: GainNode | null,
-        key: StemType,
+        key: StemType
       ) => {
         if (!buffer || !gainNode) return;
 
@@ -137,7 +137,7 @@ export function useStemRouting() {
       playStem(stems.bass, bassGainRef.current, "bass");
       playStem(stems.other, otherGainRef.current, "other");
     },
-    [audioContext, masterGainNode],
+    [audioContext, masterGainNode]
   );
 
   /**
@@ -167,43 +167,46 @@ export function useStemRouting() {
   /**
    * Toggle solo for a stem
    */
-  const toggleSolo = useCallback((type: StemType) => {
-    setStemStates((prev) => {
-      const newState = { ...prev };
-      const wasSolo = newState[type].isSolo;
-      newState[type].isSolo = !wasSolo;
+  const toggleSolo = useCallback(
+    (type: StemType) => {
+      setStemStates((prev) => {
+        const newState = { ...prev };
+        const wasSolo = newState[type].isSolo;
+        newState[type].isSolo = !wasSolo;
 
-      // If soloing this stem, mute all others
-      // If unsoloing, restore previous states
-      Object.keys(newState).forEach((key) => {
-        const stemKey = key as StemType;
-        if (stemKey !== type) {
-          if (!wasSolo) {
-            // Solo mode: mute others
-            newState[stemKey].isMuted = true;
-          } else {
-            // Unsolo mode: restore others
-            newState[stemKey].isMuted = false;
+        // If soloing this stem, mute all others
+        // If unsoloing, restore previous states
+        Object.keys(newState).forEach((key) => {
+          const stemKey = key as StemType;
+          if (stemKey !== type) {
+            if (!wasSolo) {
+              // Solo mode: mute others
+              newState[stemKey].isMuted = true;
+            } else {
+              // Unsolo mode: restore others
+              newState[stemKey].isMuted = false;
+            }
+
+            const gainNode = {
+              vocals: vocalsGainRef.current,
+              drums: drumsGainRef.current,
+              bass: bassGainRef.current,
+              other: otherGainRef.current,
+            }[stemKey];
+
+            if (gainNode) {
+              gainNode.gain.value = newState[stemKey].isMuted
+                ? 0
+                : newState[stemKey].gain;
+            }
           }
+        });
 
-          const gainNode = {
-            vocals: vocalsGainRef.current,
-            drums: drumsGainRef.current,
-            bass: bassGainRef.current,
-            other: otherGainRef.current,
-          }[stemKey];
-
-          if (gainNode) {
-            gainNode.gain.value = newState[stemKey].isMuted
-              ? 0
-              : newState[stemKey].gain;
-          }
-        }
+        return newState;
       });
-
-      return newState;
-    });
-  }, []);
+    },
+    []
+  );
 
   return {
     stemStates,
@@ -212,3 +215,4 @@ export function useStemRouting() {
     toggleSolo,
   };
 }
+

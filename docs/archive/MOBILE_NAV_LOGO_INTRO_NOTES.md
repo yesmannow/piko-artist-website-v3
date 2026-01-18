@@ -73,13 +73,11 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 ## Key Features Implemented
 
 ### 1. Fixed "Double Nav" on Mobile ✅
-
 - **Before**: Both tray nav AND hamburger menu visible on mobile
 - **After**: Only tray nav visible on mobile; desktop navbar hidden on mobile
 - Navbar uses `hidden md:flex` to hide completely on mobile
 
 ### 2. Mobile Tray Nav Redesign ✅
-
 - **Visual Style**:
   - Matte black gradient background
   - Subtle grain texture (base64 SVG)
@@ -93,13 +91,11 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 - **Safe-area padding**: Preserved for iOS
 
 ### 3. Logo Integration ✅
-
 - **Mobile tray**: Logo on far-left, links home, anchor ID for intro
 - **Desktop navbar**: Logo on far-left (already present), anchor ID added
 - **Intro animation**: Logo animates from center to nav position
 
 ### 4. First-Entry Logo Intro ✅
-
 - Shows only once per browser (localStorage flag)
 - Respects `prefers-reduced-motion`
 - Animates logo from center to nav position
@@ -107,7 +103,6 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 - Cleans up completely after animation
 
 ### 5. About Piko Panel ✅
-
 - **Trigger**: Long press (500ms) on mobile tray logo
 - **Content**: Quick links (Listen, Videos, Tour)
 - **Behavior**:
@@ -117,7 +112,6 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
   - Grain texture background
 
 ### 6. Now Playing Pill ✅
-
 - **Display**: Above tray when audio is playing
 - **Content**: Shows current track title
 - **Action**: Links to `/music` page
@@ -125,7 +119,6 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 - **Styling**: Matches tray design with grain texture
 
 ### 7. Grain Texture ✅
-
 - **Implementation**: Base64 SVG inline (no external asset)
 - **Location**: Applied to tray nav and About Piko panel
 - **Style**: Subtle noise pattern (opacity 0.04)
@@ -133,22 +126,18 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 ## Constraints Met
 
 ✅ **No global overlay that persists across route changes**
-
 - LogoIntro unmounts completely after animation
 - About Piko panel closes on route change
 
 ✅ **No body/html inline style mutations**
-
 - Uses `data-modal-open` attribute only
 - No `document.body.style` manipulations
 
 ✅ **No duplicate nav systems**
-
 - Mobile: Only tray nav visible
 - Desktop: Only navbar visible
 
 ✅ **Preserved existing fixes**
-
 - PageTransition cleanup: ✅
 - Modal route-change cleanup: ✅
 - Scroll-lock management: ✅
@@ -159,7 +148,6 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 ## Manual Testing Checklist
 
 ### Mobile (< 768px)
-
 - [ ] Only tray nav visible (no top navbar)
 - [ ] Logo visible and clickable on far-left
 - [ ] Active indicator animates smoothly between items
@@ -172,47 +160,40 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 - [ ] Safe-area padding preserved (test on iOS device)
 
 ### Desktop (>= 768px)
-
 - [ ] Desktop navbar renders (tray nav hidden)
 - [ ] Logo visible on left of navbar
 - [ ] Intro animation targets desktop logo position
 
 ### Route Changes
-
 - [ ] No persistent overlays
 - [ ] No pointer-events dead zones
 - [ ] No scroll-lock stuck
 - [ ] About Piko panel closes on navigation
 
 ### Build & Lint
-
 - [ ] `npm run lint` passes (only pre-existing warnings in DJInterface/DJMixer)
 - [ ] `npm run build` passes
 
 ## Technical Notes
 
 ### Grain Texture
-
 - Implemented as base64 SVG inline
 - No external asset required
 - Applied via `style={{ backgroundImage: grainTexture }}`
 - Subtle opacity (0.04) for non-intrusive effect
 
 ### Long Press Detection
-
 - Uses `onTouchStart`/`onTouchEnd` for mobile
 - Uses `onMouseDown`/`onMouseUp` for desktop testing
 - 500ms threshold
 - Cleans up timer on unmount
 
 ### Active Indicator Animation
-
 - Uses Framer Motion `layoutId="mobileNavIndicator"`
 - Spring animation (stiffness: 500, damping: 30)
 - Smoothly transitions between items
 
 ### Z-Index Hierarchy
-
 - Tray nav: `z-50`
 - About Piko panel: `z-[61]` (above tray)
 - Now Playing pill: `z-40` (below tray)
@@ -241,3 +222,4 @@ This PR implements comprehensive mobile navigation improvements, logo integratio
 2. Test long press on various devices
 3. Verify intro animation on different screen sizes
 4. Test Now Playing pill with various track titles (truncation)
+

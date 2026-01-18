@@ -3,27 +3,15 @@
 @tailwind utilities;
 
 @layer base {
-  /* REMEDIATION: Unlock Box Model for Lenis */
   html,
   body {
-    width: 100%;
-    min-height: 100vh;
-    overscroll-behavior-y: none; /* iOS Rubber-banding fix */
-    background-color: black;
+    overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  html.lenis {
-    height: auto;
-  }
-
-  .lenis.lenis-smooth {
-    scroll-behavior: auto !important;
   }
 
   :root {
     /* Base Color Palette - Dark Theme */
-    --background: 240 5% 8% / 0.9;
+    --background: 240 5% 8%;
     --foreground: 60 5% 90%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -55,67 +43,26 @@
   }
 
   body {
-    @apply bg-[#050505]/90 text-[#E0E0E0];
+    @apply bg-[#050505] text-[#E0E0E0];
     background-image:
       /* Spray Paint Streaks - V3 Urban Syndicate */
-      linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 215, 0, 0.04) 50%,
-        transparent 70%
-      ),
-      linear-gradient(
-        -45deg,
-        transparent 30%,
-        rgba(255, 215, 0, 0.03) 50%,
-        transparent 70%
-      ),
+      linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.04) 50%, transparent 70%),
+      linear-gradient(-45deg, transparent 30%, rgba(255, 215, 0, 0.03) 50%, transparent 70%),
       /* Concrete texture overlay */
-        repeating-linear-gradient(
-          0deg,
-          rgba(224, 224, 224, 0.01) 0px,
-          transparent 1px,
-          transparent 2px,
-          rgba(224, 224, 224, 0.01) 3px
-        );
+      repeating-linear-gradient(
+        0deg,
+        rgba(224, 224, 224, 0.01) 0px,
+        transparent 1px,
+        transparent 2px,
+        rgba(224, 224, 224, 0.01) 3px
+      );
     background-blend-mode: normal, normal, overlay;
     background-attachment: fixed;
     cursor: crosshair;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    overflow-x: hidden;
     position: relative;
-  }
-
-  /* Particles.js background - must be behind all content */
-  #particles-js,
-  #particles-js canvas {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: -1 !important;
-    pointer-events: none !important;
-  }
-
-  /* Make main content areas slightly transparent to show particles */
-  .bg-background {
-    background-color: rgba(19, 19, 21, 0.9) !important;
-  }
-
-  .bg-\[#050505\] {
-    background-color: rgba(5, 5, 5, 0.9) !important;
-  }
-
-  .bg-\[#121212\] {
-    background-color: rgba(18, 18, 18, 0.9) !important;
-  }
-
-  .bg-\[#121214\] {
-    background-color: rgba(18, 18, 20, 0.9) !important;
-  }
-
-  .bg-\[#131315\] {
-    background-color: rgba(19, 19, 21, 0.9) !important;
+    user-select: none; /* Prevent text selection for app-like feel */
   }
 
   /* Global Concrete Grit & Brutalist Overrides - V3 Urban Syndicate */
@@ -128,77 +75,50 @@
     background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     opacity: 1;
     pointer-events: none;
-    z-index: 1;
+    z-index: 9999;
     mix-blend-mode: overlay;
   }
 
   /* Brutalist: 0px radius enforced globally */
-  button,
-  input,
-  .card,
-  .section-bg,
-  [class*="rounded"],
-  * {
+  button, input, .card, .section-bg, [class*="rounded"], * {
     border-radius: 0px !important;
   }
 
   /* Urban Syndicate: -12deg skew for buttons and bars (desktop) */
   @media (min-width: 769px) {
-    button,
-    .bar,
-    .nav-item,
-    [data-urban="skew"] {
+    button, .bar, .nav-item, [data-urban="skew"] {
       transform: skew(-12deg);
     }
 
-    button > *,
-    .bar > *,
-    .nav-item > *,
-    [data-urban="skew"] > * {
+    button > *, .bar > *, .nav-item > *, [data-urban="skew"] > * {
       transform: skew(12deg); /* Counter-skew content */
     }
   }
 
   /* Mobile: -6deg skew (reduced for touch targets) */
   @media (max-width: 768px) {
-    button,
-    .bar,
-    .nav-item,
-    [data-urban="skew"] {
+    button, .bar, .nav-item, [data-urban="skew"] {
       transform: skew(-6deg);
     }
 
-    button > *,
-    .bar > *,
-    .nav-item > *,
-    [data-urban="skew"] > * {
+    button > *, .bar > *, .nav-item > *, [data-urban="skew"] > * {
       transform: skew(6deg);
     }
   }
 
   ::selection {
-    background: #ffd700;
+    background: #FFD700;
     color: #000;
   }
 
   /* Accent Mapping */
-  .text-toxic-lime {
-    color: #ffd700 !important;
-  }
-  .bg-toxic-lime {
-    background-color: #ffd700 !important;
-  }
-  .border-toxic-lime {
-    border-color: #ffd700 !important;
-  }
+  .text-toxic-lime { color: #FFD700 !important; }
+  .bg-toxic-lime { background-color: #FFD700 !important; }
+  .border-toxic-lime { border-color: #FFD700 !important; }
 
   @keyframes marquee {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
 
   .animate-marquee {
@@ -220,7 +140,7 @@
   pre,
   .mono,
   [class*="font-mono"] {
-    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
   }
 
   /* Mobile bottom nav spacing */
@@ -230,53 +150,8 @@
     }
   }
 
-  /* PHASE 3: Mobile-First PWA - Fixed Canvas Interface */
-  /* Applied to mobile studio route for no-scroll, app-like feel */
-  body.mobile-studio {
-    overscroll-behavior: none;
-    touch-action: none;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for mobile */
-    padding-top: env(safe-area-inset-top, 0);
-    padding-right: env(safe-area-inset-right, 0);
-    padding-bottom: env(safe-area-inset-bottom, 0);
-    padding-left: env(safe-area-inset-left, 0);
-  }
-
-  /* PHASE 3: Safe area insets for notch handling */
-  .safe-top {
-    padding-top: env(safe-area-inset-top, 0);
-  }
-
-  .safe-right {
-    padding-right: env(safe-area-inset-right, 0);
-  }
-
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-
-  .safe-left {
-    padding-left: env(safe-area-inset-left, 0);
-  }
-
-  .safe-area {
-    padding-top: env(safe-area-inset-top, 0);
-    padding-right: env(safe-area-inset-right, 0);
-    padding-bottom: env(safe-area-inset-bottom, 0);
-    padding-left: env(safe-area-inset-left, 0);
-  }
-
   /* Typography - Urban Syndicate: Lexend Black Italic for headers */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-lexend), system-ui, sans-serif;
     font-weight: 900;
     font-style: italic;
@@ -296,18 +171,12 @@
     @apply text-2xl md:text-3xl;
   }
 
-  p,
-  span,
-  div {
+  p, span, div {
     @apply font-industrial;
   }
 
   /* Interactive Elements */
-  a,
-  button,
-  [role="button"],
-  input[type="submit"],
-  input[type="button"] {
+  a, button, [role="button"], input[type="submit"], input[type="button"] {
     cursor: pointer;
     @apply touch-manipulation;
   }
@@ -318,27 +187,22 @@
   input[type="submit"]:active,
   input[type="button"]:active {
     transform: scale(0.98) translateY(2px) !important;
-    box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 1) !important;
-    transition:
-      transform 0.1s ease-out,
-      box-shadow 0.1s ease-out;
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,1) !important;
+    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
   }
 
   /* Hard, high-contrast hover states - Urban Syndicate */
   button:hover,
   [role="button"]:hover,
   a:hover {
-    transition:
-      background-color 0s,
-      color 0s,
-      border-color 0s !important;
+    transition: background-color 0s, color 0s, border-color 0s !important;
   }
 
   /* Instant color jumps on hover (no soft glows) */
   .hover-instant:hover {
-    background-color: #ffd700 !important;
+    background-color: #FFD700 !important;
     color: #000 !important;
-    border-color: #ffd700 !important;
+    border-color: #FFD700 !important;
   }
 
   /* Focus States for Accessibility */
@@ -353,46 +217,22 @@
   /* Torn Paper Effect for Cards */
   .torn-edge {
     clip-path: polygon(
-      0% 0%,
-      100% 0%,
-      100% 100%,
-      95% 98%,
-      90% 100%,
-      85% 98%,
-      80% 100%,
-      75% 98%,
-      70% 100%,
-      65% 98%,
-      60% 100%,
-      55% 98%,
-      50% 100%,
-      45% 98%,
-      40% 100%,
-      35% 98%,
-      30% 100%,
-      25% 98%,
-      20% 100%,
-      15% 98%,
-      10% 100%,
-      5% 98%,
-      0% 100%
+      0% 0%, 100% 0%, 100% 100%,
+      95% 98%, 90% 100%, 85% 98%, 80% 100%, 75% 98%, 70% 100%, 65% 98%, 60% 100%,
+      55% 98%, 50% 100%, 45% 98%, 40% 100%, 35% 98%, 30% 100%, 25% 98%, 20% 100%,
+      15% 98%, 10% 100%, 5% 98%, 0% 100%
     );
   }
 
   /* Recording Pulse Animation */
   @keyframes recording-pulse {
-    0%,
-    100% {
+    0%, 100% {
       border-color: #ef4444;
-      box-shadow:
-        4px 4px 0px 0px rgba(0, 0, 0, 1),
-        0 0 0px rgba(239, 68, 68, 0);
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1), 0 0 0px rgba(239, 68, 68, 0);
     }
     50% {
       border-color: #dc2626;
-      box-shadow:
-        4px 4px 0px 0px rgba(0, 0, 0, 1),
-        0 0 20px rgba(239, 68, 68, 0.8);
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1), 0 0 20px rgba(239, 68, 68, 0.8);
     }
   }
 
@@ -423,8 +263,7 @@
 
   /* CRT Flicker Animation */
   @keyframes crt-flicker {
-    0%,
-    100% {
+    0%, 100% {
       opacity: 0;
     }
     50% {
@@ -453,12 +292,6 @@
   .vhs-noise {
     animation: vhs-noise 0.15s infinite;
   }
-
-  /* Remove left and top positioning from Next.js portal elements */
-  nextjs-portal {
-    left: unset !important;
-    top: unset !important;
-  }
 }
 
 @layer utilities {
@@ -475,14 +308,6 @@
   .touch-manipulation {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  /* OVERLAY UTILITIES - Pointer Event Layering */
-  .pointer-events-none-wrapper {
-    pointer-events: none;
-  }
-  .pointer-events-auto-child {
-    pointer-events: auto;
   }
 
   /* View Transitions API - Smooth animations for PersistentPlayer */

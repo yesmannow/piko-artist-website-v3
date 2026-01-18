@@ -1,536 +1,567 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import {
-  Clock,
-  Download,
-  Headphones,
-  Pause,
-  Play,
-  Share2,
-  SkipBack,
-  SkipForward,
-  Volume2,
-} from "lucide-react";
-import { LibraryHeader, type LibraryView } from "@/components/content/LibraryHeader";
 import { useAudio } from "@/context/AudioContext";
-import { useHaptic } from "@/hooks/useHaptic";
 import { tracks, MediaItem } from "@/lib/data";
+import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack } from "lucide-react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { useHaptic } from "@/hooks/useHaptic";
+import { useState, useEffect, useMemo } from "react";
 
-const isImagePath = (coverArt: string): boolean => coverArt.startsWith("/");
+// Helper to check if coverArt is an image path
+const isImagePath = (coverArt: string): boolean => {
+  return coverArt.startsWith("/");
+};
 
-function useImageFallback(initialSrc: string, theme: string) {
-  const [src, setSrc] = useState(initialSrc);
-  const [attempted, setAttempted] = useState(false);
-
-  useEffect(() => {
-    setSrc(initialSrc);
-    setAttempted(false);
-  }, [initialSrc]);
-
-  const onError = () => {
-    if (attempted) return;
-    setAttempted(true);
-    fetch(`/api/visuals?theme=${encodeURIComponent(theme)}&count=1`, {
-      cache: "no-store",
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        const next = d?.images?.[0]?.src as string | undefined;
-        if (next) setSrc(next);
-      })
-      .catch(() => {});
-  };
-
-  return { src, onError } as const;
-}
-
-const formatDuration = (seconds?: number | null): string => {
-  if (!seconds || Number.isNaN(seconds)) return "0:00";
+// Format duration in MM:SS format
+const formatDuration = (seconds: number): string => {
+  if (!seconds || isNaN(seconds)) return "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
+// Get vibe badge color
 const vibeColors: Record<string, string> = {
-  chill: "bg-blue-500/20 text-blue-200 border-blue-400/40",
-  hype: "bg-red-500/20 text-red-200 border-red-400/40",
-  storytelling: "bg-purple-500/20 text-purple-200 border-purple-400/40",
-  classic: "bg-amber-500/20 text-amber-100 border-amber-400/40",
+  chill: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  hype: "bg-red-500/20 text-red-400 border-red-500/30",
+  storytelling: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  classic: "bg-amber-500/20 text-amber-400 border-amber-500/30",
 };
 
-function useTrackDuration(track: MediaItem | null) {
-  const [duration, setDuration] = useState<number | null>(
-    track?.duration ?? null,
-  );
+type ViewType = "list" | "card" | "compact";
+
+// Track duration hook
+function useTrackDuration(track: MediaItem): number {
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
-    if (track?.type !== "audio") return;
-    if (track.duration) {
-      setDuration(track.duration);
+    if (track.type !== "audio") {
+      setDuration(0);
       return;
     }
 
     const audio = new Audio(track.src);
-    const onLoaded = () => setDuration(audio.duration || null);
-    audio.addEventListener("loadedmetadata", onLoaded);
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.load();
 
     return () => {
-      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [track]);
+  }, [track.src, track.type]);
 
   return duration;
 }
 
-function CoverArt({
-  track,
-  className,
-  priority = false,
-}: {
-  track: MediaItem;
-  className?: string;
-  priority?: boolean;
-}) {
-  const { src, onError } = useImageFallback(
-    track.coverArt,
-    "graffiti hip hop rap album cover street urban",
-  );
+// Cover Art Component
+function CoverArt({ coverArt, className }: { coverArt: string; className?: string }) {
   return (
-    <div
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/70 ${className}`}
-    >
-      {isImagePath(track.coverArt) ? (
+    <div className={`relative flex-shrink-0 rounded overflow-hidden bg-zinc-800 ${className || ""}`}>
+      {isImagePath(coverArt) ? (
         <Image
-          src={src}
-          alt={track.title}
+          src={coverArt}
+          alt=""
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 100vw, 320px"
-          priority={priority}
-          onError={onError}
+          sizes="40px"
         />
       ) : (
-        <div className={`h-full w-full bg-gradient-to-br ${track.coverArt}`} />
+        <div className={`w-full h-full bg-gradient-to-r ${coverArt}`} />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
     </div>
   );
 }
 
-function VibeBadge({ vibe }: { vibe: MediaItem["vibe"] }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
-        vibeColors[vibe] || "border-white/20 text-white/70"
-      }`}
-    >
-      {vibe}
-    </span>
-  );
-}
-
-function KeyBadge({ camelot }: { camelot?: string | null }) {
-  if (!camelot) return null;
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
-      Key {camelot}
-    </span>
-  );
-}
-
-function NowPlayingCard({
-  track,
-  isPlaying,
-  onPlayPause,
-  onNext,
-  onPrevious,
-  onShare,
-  onDownload,
-}: {
+// Hero Section for Currently Playing Track
+function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
   track: MediaItem | null;
   isPlaying: boolean;
-  onPlayPause: () => void;
+  onPlay: () => void;
+  onPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
-  onShare: () => void;
-  onDownload: () => void;
 }) {
-  const duration = useTrackDuration(track);
-  if (!track) return null;
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative mb-8 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0b0f1c] via-[#0c1022] to-[#0e172a] p-6 sm:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.55)]"
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(193,255,0,0.16),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(124,58,237,0.22),transparent_32%)]" />
-      <div className="relative grid gap-6 lg:grid-cols-[320px,1fr] lg:items-center">
-        <div className="relative">
-          <CoverArt track={track} className="h-[280px] w-full" priority />
-          <div className="absolute left-4 top-4 flex flex-col gap-2">
-            <VibeBadge vibe={track.vibe} />
-            <KeyBadge camelot={track.camelot} />
-          </div>
-          <AnimatePresence>
-            {isPlaying ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.3 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-[#c1ff00]/20"
-              />
-            ) : null}
-          </AnimatePresence>
-        </div>
+  // Always call hooks unconditionally
+  const duration = useTrackDuration(track || { type: "audio", src: "", title: "", coverArt: "", vibe: "chill" } as MediaItem);
 
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-white/70">
-              Now Playing
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-white/70">
-              Stream • Download • Share
-            </span>
+  if (!track) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative mb-8 md:mb-12 rounded-xl overflow-hidden border-2 border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 p-6 md:p-8 lg:p-12">
+        {/* Left: Large Cover Art */}
+        <motion.div
+          className="relative aspect-square w-full max-w-md mx-auto lg:max-w-none"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="relative w-full h-full rounded-lg overflow-hidden bg-zinc-900 shadow-2xl">
+            {isImagePath(track.coverArt) ? (
+              <Image
+                src={track.coverArt}
+                alt={track.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+              />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+            )}
+            {/* Animated overlay when playing */}
+            <AnimatePresence>
+              {isPlaying && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.3 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-toxic-lime mix-blend-overlay"
+                />
+              )}
+            </AnimatePresence>
           </div>
-          <div className="space-y-1">
-            <h2 className="text-3xl font-black leading-tight text-white sm:text-4xl">
+        </motion.div>
+
+        {/* Right: Track Info & Controls */}
+        <div className="flex flex-col justify-center space-y-6">
+          <div>
+            <div className="mb-2">
+              <span
+                className={`inline-block px-3 py-1 rounded-full border text-xs font-industrial font-bold tracking-wider uppercase ${
+                  vibeColors[track.vibe] || vibeColors.chill
+                }`}
+              >
+                {track.vibe}
+              </span>
+            </div>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-header mb-3 text-foreground">
               {track.title}
-            </h2>
-            <p className="text-white/70 text-lg font-semibold">
+            </h1>
+            <p className="text-xl md:text-2xl font-industrial text-foreground/80 mb-4 font-medium">
               {track.artist}
             </p>
-            <p className="flex items-center gap-2 text-sm text-white/60">
-              <Clock className="h-4 w-4" />
-              {formatDuration(duration)}
-            </p>
+            {duration > 0 && (
+              <div className="flex items-center gap-2 text-foreground/60 font-industrial">
+                <Clock className="w-4 h-4" />
+                <span>{formatDuration(duration)}</span>
+              </div>
+            )}
           </div>
-          <div className="flex flex-wrap gap-3">
+
+          {/* Playback Controls */}
+          <div className="flex items-center gap-4">
             <button
-              type="button"
-              onClick={onPlayPause}
-              className="inline-flex items-center gap-3 rounded-full bg-[#c1ff00] px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-black shadow-[0_10px_30px_rgba(193,255,0,0.35)] transition-transform hover:scale-[1.02]"
+              onClick={onPrevious}
+              className="p-3 rounded-full border-2 border-zinc-700 hover:border-toxic-lime transition-colors"
+              aria-label="Previous track"
+            >
+              <SkipBack className="w-5 h-5 text-foreground" />
+            </button>
+            <button
+              onClick={isPlaying ? onPause : onPlay}
+              className="relative p-6 rounded-full bg-toxic-lime text-black hover:scale-110 transition-transform shadow-[0_0_20px_rgba(255,215,0,0.5)]"
+              aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? (
-                <>
-                  <Pause className="h-4 w-4" />
-                  Pause
-                </>
+                <Pause className="w-8 h-8" fill="currentColor" />
               ) : (
-                <>
-                  <Play className="h-4 w-4" />
-                  Stream
-                </>
+                <Play className="w-8 h-8" fill="currentColor" />
               )}
             </button>
             <button
-              type="button"
-              onClick={onDownload}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white hover:border-[#c1ff00]/50"
+              onClick={onNext}
+              className="p-3 rounded-full border-2 border-zinc-700 hover:border-toxic-lime transition-colors"
+              aria-label="Next track"
             >
-              <Download className="h-4 w-4" />
-              Download
+              <SkipForward className="w-5 h-5 text-foreground" />
             </button>
-            <button
-              type="button"
-              onClick={onShare}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white hover:border-[#c1ff00]/50"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="flex items-center gap-2">
-              <Volume2 className="h-4 w-4 text-[#c1ff00]" />
-              <span className="text-sm text-white/70">Live signal ready</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onPrevious}
-                className="rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs uppercase tracking-[0.16em]"
-              >
-                <SkipBack className="mr-1 h-3.5 w-3.5" />
-                Prev
-              </button>
-              <button
-                type="button"
-                onClick={onNext}
-                className="rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs uppercase tracking-[0.16em]"
-              >
-                Next
-                <SkipForward className="ml-1 h-3.5 w-3.5" />
-              </button>
-            </div>
           </div>
         </div>
       </div>
-    </motion.section>
+
+      {/* Glow effect when playing */}
+      <AnimatePresence>
+        {isPlaying && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: "radial-gradient(circle at center, rgba(255,215,0,0.1) 0%, transparent 70%)",
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
-function TrackRow({
-  track,
-  index,
-  isActive,
-  onPlay,
-  onShare,
-  onDownload,
-}: {
+// Table Row Item Component
+function TableRowItem({ track, index, isActive, onPlay }: {
   track: MediaItem;
   index: number;
   isActive: boolean;
   onPlay: () => void;
-  onShare: () => void;
-  onDownload: () => void;
 }) {
+  const duration = useTrackDuration(track);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(index * 0.02, 0.25) }}
-      className={`grid grid-cols-[60px_minmax(220px,1.4fr)_minmax(160px,1fr)_120px_110px_100px] items-center gap-4 px-4 py-3 text-sm ${
-        isActive ? "bg-[#c1ff00]/5 text-[#c1ff00]" : "text-white/80"
-      }`}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.25) }}
+      onClick={onPlay}
+      className={[
+        "group w-full text-left",
+        "grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px]",
+        "px-4 py-3 md:py-4",
+        "hover:bg-foreground/5 transition-colors",
+        isActive ? "text-toxic-lime" : "text-foreground",
+      ].join(" ")}
     >
-      <button
-        type="button"
-        onClick={onPlay}
-        className="group relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition"
-        aria-label={`Play ${track.title}`}
-      >
+      {/* Col 1: Index / Play icon / Active Equalizer */}
+      <div className="relative flex items-center justify-center">
         {isActive ? (
-          <div className="flex items-end gap-0.5">
-            {[0.25, 0.6, 0.4, 0.7].map((height, idx) => (
-              <motion.span
-                key={idx}
-                className="w-0.5 bg-[#c1ff00]"
-                animate={{ height: `${height * 100}%` }}
+          <div className="flex items-end gap-0.5 h-4">
+            {[0.3, 0.6, 0.4, 0.8, 0.5].map((height, eqIdx) => (
+              <motion.div
+                key={eqIdx}
+                className="w-0.5 bg-toxic-lime rounded-t"
+                animate={{
+                  height: `${height * 100}%`,
+                }}
                 transition={{
                   duration: 0.5,
                   repeat: Infinity,
-                  delay: idx * 0.1,
+                  delay: eqIdx * 0.1,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  boxShadow: "0 0 4px #FFD700",
                 }}
               />
             ))}
           </div>
         ) : (
-          <Play className="h-4 w-4" />
+          <>
+            <span
+              className={[
+                "text-sm font-industrial font-bold",
+                "group-hover:opacity-0 transition-opacity",
+                "opacity-100 text-white/70",
+              ].join(" ")}
+            >
+              {index + 1}
+            </span>
+            <span
+              className={[
+                "absolute",
+                "opacity-0 group-hover:opacity-100 transition-opacity",
+              ].join(" ")}
+              aria-hidden="true"
+            >
+              <Play className="w-4 h-4" fill="currentColor" />
+            </span>
+          </>
         )}
-      </button>
-      <div className="flex items-center gap-3 truncate">
-        <div className="h-12 w-12 overflow-hidden rounded-lg border border-white/10 bg-white/5">
-          <CoverArt track={track} className="h-full w-full" />
-        </div>
+      </div>
+
+      {/* Col 2: Cover + Title */}
+      <div className="flex items-center gap-3 min-w-0">
+        <CoverArt coverArt={track.coverArt} className="w-10 h-10" />
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold">{track.title}</p>
-          <p className="truncate text-xs uppercase tracking-[0.18em] text-white/60">
-            {track.artist}
-          </p>
+          <div
+            className={[
+              "truncate font-industrial font-semibold uppercase tracking-tight text-sm md:text-base",
+              isActive ? "text-toxic-lime" : "text-foreground",
+            ].join(" ")}
+          >
+            {track.title}
+          </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <VibeBadge vibe={track.vibe} />
-        <KeyBadge camelot={track.camelot} />
+
+      {/* Col 3: Artist */}
+      <div className={["flex items-center", isActive ? "text-toxic-lime/80" : "text-foreground/80"].join(" ")}>
+        <span className="truncate text-sm font-medium">{track.artist}</span>
       </div>
-      <div className="text-white/60">{formatDuration(track.duration)}</div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onShare}
-          className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/80 hover:border-[#c1ff00]/40"
+
+      {/* Col 4: Vibe badge */}
+      <div className="flex items-center">
+        <span
+          className={[
+            "px-3 py-1 rounded-full border text-[11px] font-industrial font-bold tracking-[0.2em] uppercase",
+            vibeColors[track.vibe] || vibeColors.chill,
+          ].join(" ")}
         >
-          Share
-        </button>
-        <button
-          type="button"
-          onClick={onDownload}
-          className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/80 hover:border-[#c1ff00]/40"
-        >
-          DL
-        </button>
+          {track.vibe}
+        </span>
       </div>
-      <div className="justify-self-end text-xs uppercase tracking-[0.2em] text-white/50">
-        #{index + 1}
+
+      {/* Col 5: Duration */}
+      <div className={["flex items-center justify-end text-sm font-mono", isActive ? "text-toxic-lime/80" : "text-foreground/70"].join(" ")}>
+        {duration > 0 ? formatDuration(duration) : "0:00"}
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
-function TableListView({
-  tracks,
-  currentTrack,
-  isPlaying,
-  onPlay,
-  onShare,
-  onDownload,
-}: {
+// Table List View (matching Latest Drops style)
+function TableListView({ tracks, currentTrack, isPlaying, onPlay }: {
   tracks: MediaItem[];
   currentTrack: MediaItem | null;
   isPlaying: boolean;
   onPlay: (track: MediaItem) => void;
-  onShare: (track: MediaItem) => void;
-  onDownload: (track: MediaItem) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-      <div className="grid grid-cols-[60px_minmax(220px,1.4fr)_minmax(160px,1fr)_120px_110px_100px] items-center gap-4 border-b border-white/10 px-4 py-3 text-[11px] uppercase tracking-[0.24em] text-white/60">
-        <span>Play</span>
-        <span>Track</span>
-        <span>Vibe / Key</span>
-        <span>Length</span>
-        <span>Actions</span>
-        <span className="justify-self-end">#</span>
-      </div>
-      <div className="divide-y divide-white/5">
-        {tracks.map((track, idx) => (
-          <TrackRow
-            key={track.id}
-            track={track}
-            index={idx}
-            isActive={currentTrack?.id === track.id && isPlaying}
-            onPlay={() => onPlay(track)}
-            onShare={() => onShare(track)}
-            onDownload={() => onDownload(track)}
-          />
-        ))}
+    <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
+      <div className="min-w-[min(100%,760px)] rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm overflow-hidden mx-4 md:mx-0">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-10 bg-black/70 backdrop-blur-md border-b border-white/10">
+          <div className="grid grid-cols-[56px_minmax(260px,1.6fr)_minmax(160px,1fr)_120px_72px] px-4 py-3 text-xs tracking-[0.25em] text-white/60 font-industrial font-bold">
+            <div>#</div>
+            <div>TITLE</div>
+            <div>ARTIST</div>
+            <div>VIBE</div>
+            <div className="text-right">TIME</div>
+          </div>
+        </div>
+
+        {/* Rows */}
+        <div className="divide-y divide-white/10">
+          {tracks.map((track, idx) => {
+            const isActive = currentTrack?.id === track.id && isPlaying;
+            return (
+              <TableRowItem
+                key={track.id}
+                track={track}
+                index={idx}
+                isActive={isActive}
+                onPlay={() => onPlay(track)}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-function CardGridView({
-  tracks,
-  currentTrack,
-  onPlay,
-  onShare,
-}: {
-  tracks: MediaItem[];
-  currentTrack: MediaItem | null;
-  onPlay: (track: MediaItem) => void;
-  onShare: (track: MediaItem) => void;
-}) {
+// Card View Component (Grid)
+function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; index: number; isActive: boolean; onPlay: () => void }) {
+  const duration = useTrackDuration(track);
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {tracks.map((track, idx) => {
-        const active = currentTrack?.id === track.id;
-        return (
-          <motion.article
-            key={track.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.04 }}
-            className={`group relative overflow-hidden rounded-2xl border bg-white/5 ${
-              active
-                ? "border-[#c1ff00] shadow-[0_0_30px_rgba(193,255,0,0.35)]"
-                : "border-white/10 hover:border-[#c1ff00]/40"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      onClick={onPlay}
+      className={`group relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-300 shadow-lg ${
+        isActive
+          ? "border-toxic-lime shadow-[0_0_20px_rgba(255,215,0,0.3)] ring-2 ring-toxic-lime"
+          : "border-zinc-800 hover:border-toxic-lime/50 hover:shadow-xl"
+      }`}
+    >
+      {/* Cover Art */}
+      <div className="relative aspect-square w-full overflow-hidden bg-zinc-900 rounded-t-lg">
+        {isImagePath(track.coverArt) ? (
+          <motion.div
+            className="relative w-full h-full"
+            whileHover={{ scale: 1.08, y: -4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <Image
+              src={track.coverArt}
+              alt={track.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            className={`w-full h-full bg-gradient-to-r ${track.coverArt}`}
+            whileHover={{ scale: 1.08, y: -4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          />
+        )}
+
+        {/* Hover Overlay with Play Button */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-30">
+          <motion.div
+            className="relative"
+            initial={{ scale: 0.8, opacity: 0 }}
+            whileHover={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="absolute inset-0 bg-toxic-lime/30 rounded-full blur-xl animate-pulse" />
+            <Play
+              className="relative w-16 h-16 text-white"
+              fill="currentColor"
+              style={{
+                filter: `drop-shadow(0 0 15px #FFD700)`,
+              }}
+            />
+          </motion.div>
+        </div>
+
+        {/* Active Indicator */}
+        {isActive && (
+          <div className="absolute top-2 right-2 z-30">
+            <div className="w-3 h-3 bg-toxic-lime rounded-full animate-pulse shadow-[0_0_8px_#FFD700]" />
+          </div>
+        )}
+      </div>
+
+      {/* Track Info */}
+      <div className="p-3 md:p-4 bg-zinc-900 rounded-b-lg border-t-2 border-zinc-800/50">
+        <h3
+          className={`font-header font-semibold text-sm md:text-base mb-1 truncate tracking-tight ${
+            isActive ? "text-toxic-lime" : "text-white"
+          }`}
+        >
+          {track.title}
+        </h3>
+        <p className="font-industrial text-zinc-300 text-xs md:text-sm truncate mb-2">
+          {track.artist}
+        </p>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <span
+            className={`px-2 py-1 rounded text-[10px] font-industrial font-semibold uppercase border ${
+              vibeColors[track.vibe] || vibeColors.chill
             }`}
           >
-            <button
-              type="button"
-              onClick={() => onPlay(track)}
-              className="absolute inset-0 z-10 focus:outline-none"
-              aria-label={`Play ${track.title}`}
-            />
-            <div className="relative h-48 overflow-hidden">
-              <CoverArt track={track} className="h-full w-full" />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg">
-                  <Play className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="absolute left-3 top-3 flex flex-col gap-2">
-                <VibeBadge vibe={track.vibe} />
-                <KeyBadge camelot={track.camelot} />
-              </div>
-            </div>
-            <div className="space-y-2 p-4">
-              <h3 className="truncate text-lg font-semibold text-white">
-                {track.title}
-              </h3>
-              <p className="truncate text-xs uppercase tracking-[0.2em] text-white/60">
-                {track.artist}
-              </p>
-              <div className="flex items-center justify-between text-xs text-white/60">
-                <span>{formatDuration(track.duration)}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShare(track);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 uppercase tracking-[0.18em] text-white/80 transition hover:border-[#c1ff00]/40"
-                >
-                  <Share2 className="h-3.5 w-3.5" />
-                  Share
-                </button>
-              </div>
-            </div>
-          </motion.article>
+            {track.vibe}
+          </span>
+          {duration > 0 && (
+            <span className="flex items-center gap-1 text-zinc-400 text-xs font-industrial">
+              <Clock className="w-3 h-3" />
+              {formatDuration(duration)}
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Card View Component (Grid)
+function CardView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; currentTrack: MediaItem | null; onPlay: (track: MediaItem) => void }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+      {tracks.map((track, index) => {
+        const isActive = currentTrack?.id === track.id;
+        return (
+          <CardViewItem
+            key={track.id}
+            track={track}
+            index={index}
+            isActive={isActive}
+            onPlay={() => onPlay(track)}
+          />
         );
       })}
     </div>
   );
 }
 
-function CompactListView({
-  tracks,
-  currentTrack,
-  onPlay,
-}: {
-  tracks: MediaItem[];
-  currentTrack: MediaItem | null;
-  onPlay: (track: MediaItem) => void;
-}) {
+// Compact View Track Item
+function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem; index: number; isActive: boolean; onPlay: () => void }) {
+  const duration = useTrackDuration(track);
+
   return (
-    <div className="space-y-1.5">
-      {tracks.map((track, idx) => {
-        const active = currentTrack?.id === track.id;
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.01 }}
+      onClick={onPlay}
+      className={`group relative flex items-center gap-3 p-2 rounded-md transition-all duration-150 cursor-pointer ${
+        isActive
+          ? "bg-toxic-lime/10 border-l-2 border-toxic-lime"
+          : "hover:bg-zinc-900/50 border-l-2 border-transparent"
+      }`}
+    >
+      {/* Track Number / Play Icon */}
+      <div className="w-6 flex-shrink-0 flex items-center justify-center">
+        {isActive ? (
+          <div className="w-4 h-4 bg-toxic-lime rounded-full animate-pulse" />
+        ) : (
+          <span className="text-zinc-400 text-xs font-industrial group-hover:hidden">
+            {index + 1}
+          </span>
+        )}
+        <Play
+          className={`w-4 h-4 hidden group-hover:block ${
+            isActive ? "text-toxic-lime" : "text-zinc-300"
+          }`}
+          fill={isActive ? "currentColor" : "none"}
+        />
+      </div>
+
+      {/* Track Art - Small */}
+      <div className="relative w-10 h-10 flex-shrink-0 rounded overflow-hidden bg-zinc-800">
+        {isImagePath(track.coverArt) ? (
+          <Image
+            src={track.coverArt}
+            alt={track.title}
+            fill
+            className="object-cover"
+            sizes="40px"
+          />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+        )}
+      </div>
+
+      {/* Track Info */}
+      <div className="flex-1 min-w-0">
+        <h3
+          className={`font-header font-semibold text-sm truncate tracking-tight ${
+            isActive ? "text-toxic-lime" : "text-white"
+          }`}
+        >
+          {track.title}
+        </h3>
+        <p className="font-industrial text-zinc-300 text-xs truncate">
+          {track.artist} • {track.vibe}
+        </p>
+      </div>
+
+      {/* Duration */}
+      {duration > 0 && (
+        <div className="flex-shrink-0 text-zinc-400 text-xs font-industrial">
+          {formatDuration(duration)}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// Compact View Component (Minimal list)
+function CompactView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; currentTrack: MediaItem | null; onPlay: (track: MediaItem) => void }) {
+  return (
+    <div className="space-y-1">
+      {tracks.map((track, index) => {
+        const isActive = currentTrack?.id === track.id;
         return (
-          <motion.button
+          <CompactViewItem
             key={track.id}
-            type="button"
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.01 }}
-            onClick={() => onPlay(track)}
-            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left text-sm transition ${
-              active
-                ? "border-[#c1ff00] bg-[#c1ff00]/10 text-[#c1ff00]"
-                : "border-white/10 bg-white/5 text-white/80 hover:border-[#c1ff00]/30"
-            }`}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5">
-              {active ? (
-                <div className="flex items-end gap-0.5">
-                  {[0.3, 0.6, 0.4].map((h, bar) => (
-                    <motion.span
-                      key={bar}
-                      className="w-0.5 bg-[#c1ff00]"
-                      animate={{ height: `${h * 100}%` }}
-                      transition={{ duration: 0.6, repeat: Infinity }}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Headphones className="h-4 w-4" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-base font-semibold">{track.title}</p>
-              <p className="truncate text-xs uppercase tracking-[0.18em] text-white/60">
-                {track.artist} • {track.vibe}
-              </p>
-            </div>
-            <span className="text-xs text-white/60">
-              {formatDuration(track.duration)}
-            </span>
-          </motion.button>
+            track={track}
+            index={index}
+            isActive={isActive}
+            onPlay={() => onPlay(track)}
+          />
         );
       })}
     </div>
@@ -538,139 +569,106 @@ function CompactListView({
 }
 
 export default function MusicPage() {
-  const {
-    currentTrack,
-    isPlaying,
-    playTrack,
-    togglePlay,
-    skipNext,
-    skipPrevious,
-  } = useAudio();
+  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious } = useAudio();
   const { triggerHaptic } = useHaptic();
-  const [viewType, setViewType] = useState<LibraryView>("list");
+  const [viewType, setViewType] = useState<ViewType>("list");
 
-  const audioTracks = useMemo(
-    () => tracks.filter((t) => t.type === "audio"),
-    [],
-  );
-
-  const vibeList = useMemo(
-    () =>
-      Array.from(new Set(audioTracks.map((t) => t.vibe.toUpperCase()))).sort(),
-    [audioTracks],
-  );
-
-  const featuredTrack =
-    currentTrack?.type === "audio" ? currentTrack : (audioTracks[0] ?? null);
+  // Filter to only audio tracks
+  const audioTracks = useMemo(() => tracks.filter((t) => t.type === "audio"), []);
 
   const handlePlay = (track: MediaItem) => {
     triggerHaptic();
-    if (currentTrack?.id === track.id) {
-      togglePlay();
-    } else {
-      playTrack(track);
-    }
+    playTrack(track);
   };
 
-  const handleShare = async (track: MediaItem) => {
+  const handlePlayPause = () => {
     triggerHaptic();
-    try {
-      const shareUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/music`
-          : undefined;
-      if (navigator.share && shareUrl) {
-        await navigator.share({
-          title: track.title,
-          text: `${track.title} — ${track.artist}`,
-          url: shareUrl,
-        });
-      } else if (navigator.clipboard && shareUrl) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else if (shareUrl) {
-        window.open(shareUrl, "_blank", "noopener");
-      }
-    } catch {
-      // Silent fallback
-    }
+    togglePlay();
   };
 
-  const handleDownload = (track: MediaItem) => {
-    triggerHaptic();
-    if (typeof window === "undefined") return;
-    const link = document.createElement("a");
-    link.href = track.src;
-    link.download = `${track.title}.mp3`;
-    link.rel = "noopener";
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const viewIcons = {
+    list: List,
+    card: Grid3x3,
+    compact: LayoutList,
   };
+
+  // Get featured track (currently playing or first track)
+  const featuredTrack = currentTrack || audioTracks[0];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(193,255,0,0.12),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(124,58,237,0.18),transparent_32%),radial-gradient(circle_at_50%_80%,rgba(34,211,238,0.12),transparent_38%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:120px_120px]" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <section className="relative py-12 md:py-20 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 md:mb-12">
+            <div className="text-center mb-6">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-header mb-3 md:mb-4 text-foreground">
+                MUSIC LIBRARY
+              </h1>
+              <p className="text-foreground/70 font-industrial text-sm md:text-base tracking-normal font-medium">
+                STREAMING • DOWNLOAD • SHARE
+              </p>
+            </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-        <LibraryHeader
-          view={viewType}
-          onViewChange={setViewType}
-          tracksCount={audioTracks.length}
-          vibes={vibeList}
-          lastSession={currentTrack?.title ?? null}
-        />
+            {/* View Toggle Buttons */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              {(["list", "card", "compact"] as ViewType[]).map((view) => {
+                const Icon = viewIcons[view];
+                const isActive = viewType === view;
+                return (
+                  <button
+                    key={view}
+                    type="button"
+                    onClick={() => setViewType(view)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all duration-200 font-industrial text-sm uppercase tracking-wider ${
+                      isActive
+                        ? "border-toxic-lime bg-toxic-lime/10 text-toxic-lime shadow-[0_0_10px_rgba(255,215,0,0.2)]"
+                        : "border-zinc-800 text-foreground/70 hover:border-zinc-700 hover:text-foreground"
+                    }`}
+                    aria-label={`Switch to ${view} view`}
+                    aria-pressed={isActive}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{view}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        <NowPlayingCard
-          track={featuredTrack}
-          isPlaying={
-            Boolean(featuredTrack) &&
-            Boolean(currentTrack?.id === featuredTrack?.id && isPlaying)
-          }
-          onPlayPause={() => featuredTrack && handlePlay(featuredTrack)}
-          onNext={() => {
-            triggerHaptic();
-            skipNext();
-          }}
-          onPrevious={() => {
-            triggerHaptic();
-            skipPrevious();
-          }}
-          onShare={() => featuredTrack && handleShare(featuredTrack)}
-          onDownload={() => featuredTrack && handleDownload(featuredTrack)}
-        />
-
-        {viewType === "list" ? (
-          <TableListView
-            tracks={audioTracks}
-            currentTrack={currentTrack}
-            isPlaying={isPlaying}
-            onPlay={handlePlay}
-            onShare={handleShare}
-            onDownload={handleDownload}
+          {/* Hero Section - Currently Playing Track */}
+          <TrackHero
+            track={featuredTrack}
+            isPlaying={isPlaying && currentTrack?.id === featuredTrack?.id}
+            onPlay={handlePlayPause}
+            onPause={handlePlayPause}
+            onNext={() => {
+              triggerHaptic();
+              skipNext();
+            }}
+            onPrevious={() => {
+              triggerHaptic();
+              skipPrevious();
+            }}
           />
-        ) : null}
 
-        {viewType === "card" ? (
-          <CardGridView
-            tracks={audioTracks}
-            currentTrack={currentTrack}
-            onPlay={handlePlay}
-            onShare={handleShare}
-          />
-        ) : null}
-
-        {viewType === "compact" ? (
-          <CompactListView
-            tracks={audioTracks}
-            currentTrack={currentTrack}
-            onPlay={handlePlay}
-          />
-        ) : null}
-      </div>
+          {/* Track Views */}
+          {viewType === "list" && (
+            <TableListView
+              tracks={audioTracks}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              onPlay={handlePlay}
+            />
+          )}
+          {viewType === "card" && (
+            <CardView tracks={audioTracks} currentTrack={currentTrack} onPlay={handlePlay} />
+          )}
+          {viewType === "compact" && (
+            <CompactView tracks={audioTracks} currentTrack={currentTrack} onPlay={handlePlay} />
+          )}
+        </div>
+      </section>
     </div>
   );
 }

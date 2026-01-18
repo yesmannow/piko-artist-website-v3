@@ -1,33 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-// Shared Web Audio singletons to prevent InvalidStateError
-let __sharedAudioContext: AudioContext | null = null;
-const __mediaSourceMap = new WeakMap<
-  HTMLMediaElement,
-  MediaElementAudioSourceNode
->();
-
-export function getSharedAudioContext(): AudioContext {
-  if (!__sharedAudioContext) {
-    const AC = (window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext) as unknown as typeof AudioContext;
-    __sharedAudioContext = new AC();
-  }
-  return __sharedAudioContext;
-}
-
-export function getOrCreateMediaSourceFor(
-  el: HTMLMediaElement,
-): MediaElementAudioSourceNode {
-  const existing = __mediaSourceMap.get(el);
-  if (existing) return existing;
-  const ac = getSharedAudioContext();
-  const src = ac.createMediaElementSource(el);
-  __mediaSourceMap.set(el, src);
-  return src;
-}
-
 interface AudioAnalyserResult {
   bass: number; // 0-1, low frequencies (0-200Hz)
   mid: number; // 0-1, mid frequencies (200Hz-2kHz)
@@ -42,7 +14,7 @@ interface AudioAnalyserResult {
  */
 export function useAudioAnalyser(
   videoElement: HTMLVideoElement | HTMLIFrameElement | null,
-  enabled = true,
+  enabled: boolean = true
 ): AudioAnalyserResult {
   const [levels, setLevels] = useState<AudioAnalyserResult>({
     bass: 0,
@@ -64,8 +36,11 @@ export function useAudioAnalyser(
       return;
     }
 
-    // Initialize shared AudioContext
-    const audioContext = getSharedAudioContext();
+    // Initialize AudioContext
+    const AudioContextClass =
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+
+    const audioContext = new AudioContextClass();
     audioContextRef.current = audioContext;
 
     // Create analyser
@@ -77,9 +52,8 @@ export function useAudioAnalyser(
     // For HTML5 video elements
     if (videoElement instanceof HTMLVideoElement) {
       try {
-        const source = getOrCreateMediaSourceFor(videoElement);
+        const source = audioContext.createMediaElementSource(videoElement);
         source.connect(analyser);
-        // CRITICAL: Connect analyser to destination so audio is actually heard
         analyser.connect(audioContext.destination);
         sourceRef.current = source;
       } catch (error) {
@@ -91,9 +65,7 @@ export function useAudioAnalyser(
     // For now, we'll return zero levels for iframes
 
     const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(
-      new ArrayBuffer(bufferLength),
-    );
+    const dataArray = new Uint8Array(new ArrayBuffer(bufferLength)) as Uint8Array<ArrayBuffer>;
     dataArrayRef.current = dataArray;
 
     const updateLevels = () => {
@@ -146,14 +118,15 @@ export function useAudioAnalyser(
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (sourceRef.current && analyserRef.current) {
-        try {
-          sourceRef.current.disconnect(analyserRef.current);
-        } catch {}
+      if (sourceRef.current) {
+        sourceRef.current.disconnect();
       }
-      // Do not close shared audio context here
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
   }, [videoElement, enabled]);
 
   return levels;
 }
+

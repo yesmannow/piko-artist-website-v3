@@ -66,8 +66,7 @@ export async function detectBPM(audioBuffer: AudioBuffer): Promise<BPMResult> {
 
     // Convert interval to BPM
     // interval is in samples at downsampled rate
-    const intervalSeconds =
-      (mostCommonInterval * downsampleFactor) / sampleRate;
+    const intervalSeconds = (mostCommonInterval * downsampleFactor) / sampleRate;
     const bpm = Math.round(60 / intervalSeconds);
 
     // Clamp to reasonable BPM range
@@ -86,7 +85,7 @@ export async function detectBPM(audioBuffer: AudioBuffer): Promise<BPMResult> {
 /**
  * Find peaks in audio signal
  */
-function findPeaks(signal: Float32Array, threshold = 0.3): number[] {
+function findPeaks(signal: Float32Array, threshold: number = 0.3): number[] {
   const peaks: number[] = [];
   const windowSize = 100; // samples
 
@@ -118,10 +117,7 @@ function findPeaks(signal: Float32Array, threshold = 0.3): number[] {
  * Estimate BPM from track metadata or filename
  * This is a fallback when audio analysis isn't available
  */
-export function estimateBPMFromMetadata(
-  trackTitle: string,
-  trackArtist: string,
-): number | null {
+export function estimateBPMFromMetadata(trackTitle: string, trackArtist: string): number | null {
   // Try to extract BPM from filename patterns like "track-128bpm.mp3"
   const bpmMatch = /(\d{2,3})\s*bpm/i.exec(trackTitle + " " + trackArtist);
   if (bpmMatch) {
@@ -132,3 +128,4 @@ export function estimateBPMFromMetadata(
   }
   return null;
 }
+

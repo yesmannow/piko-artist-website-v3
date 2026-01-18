@@ -1,36 +1,29 @@
 {
-  "name": "Piko DJ Studio",
-  "short_name": "Piko DJ",
-  "description": "Professional Mobile DJ Workstation",
-  "start_url": "/",
+  "name": "Piko Artist Studio",
+  "short_name": "Piko Studio",
+  "description": "High-performance holographic DJ mixer and artist platform.",
+  "categories": ["music", "entertainment"],
+  "start_url": "/studio",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#000000",
-  "theme_color": "#FFD700",
-  "scope": "/",
+  "theme_color": "#00ffff",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.ico",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/x-icon"
     },
     {
-      "src": "/icons/icon-256x256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "/favicon.ico",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/x-icon"
     }
-  ],
-  "categories": ["music", "entertainment", "utilities"],
-  "prefer_related_applications": false
+  ]
 }
+

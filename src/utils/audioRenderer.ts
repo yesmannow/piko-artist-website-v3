@@ -17,13 +17,13 @@
 export async function renderMixToWAV(
   audioContext: AudioContext,
   masterGainNode: GainNode,
-  duration: number,
+  duration: number
 ): Promise<Blob> {
   // Create OfflineAudioContext for rendering
   const offlineContext = new OfflineAudioContext(
     audioContext.sampleRate,
     Math.ceil(duration * audioContext.sampleRate),
-    2, // Stereo
+    2 // Stereo
   );
 
   // Create a destination node in offline context
@@ -95,18 +95,12 @@ export function audioBufferToWAV(buffer: AudioBuffer): Blob {
   let offset = 44;
   for (let i = 0; i < length; i++) {
     for (let channel = 0; channel < numberOfChannels; channel++) {
-      const sample = Math.max(
-        -1,
-        Math.min(1, buffer.getChannelData(channel)[i]),
-      );
-      view.setInt16(
-        offset,
-        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
-        true,
-      );
+      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
       offset += 2;
     }
   }
 
   return new Blob([arrayBuffer], { type: "audio/wav" });
 }
+

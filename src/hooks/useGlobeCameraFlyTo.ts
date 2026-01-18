@@ -5,11 +5,7 @@ import { useThree } from "@react-three/fiber";
 /**
  * Converts lat/lng coordinates to 3D spherical coordinates
  */
-export function latLngToVector3(
-  lat: number,
-  lng: number,
-  radius: number,
-): THREE.Vector3 {
+export function latLngToVector3(lat: number, lng: number, radius: number): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
 
@@ -29,7 +25,7 @@ export function useGlobeCameraFlyTo() {
   const { camera } = useThree();
 
   const flyTo = useCallback(
-    (lat: number, lng: number, distance = 2.5) => {
+    (lat: number, lng: number, distance: number = 2.5) => {
       const targetPos = latLngToVector3(lat, lng, distance);
       const lookAt = latLngToVector3(lat, lng, 1.01);
 
@@ -47,10 +43,9 @@ export function useGlobeCameraFlyTo() {
         const progress = Math.min(elapsed / duration, 1);
 
         // Easing function (ease-in-out)
-        const eased =
-          progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        const eased = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
         // Interpolate camera position
         camera.position.lerpVectors(startPos, targetPos, eased);
@@ -63,8 +58,9 @@ export function useGlobeCameraFlyTo() {
 
       requestAnimationFrame(animate);
     },
-    [camera],
+    [camera]
   );
 
   return flyTo;
 }
+

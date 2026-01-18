@@ -22,9 +22,7 @@ export default function Error({
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center space-y-6">
-        <h1 className="text-4xl font-header text-foreground">
-          Something went wrong
-        </h1>
+        <h1 className="text-4xl font-header text-foreground">Something went wrong</h1>
         <p className="text-foreground/60 font-industrial">
           An unexpected error occurred. Please try reloading the page.
         </p>
@@ -46,3 +44,4 @@ export default function Error({
     </div>
   );
 }
+

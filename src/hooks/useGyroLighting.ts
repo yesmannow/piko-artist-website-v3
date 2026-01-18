@@ -20,7 +20,7 @@ interface GyroData {
  * @param intensity - Multiplier for gyro sensitivity (default: 1.0)
  * @returns GyroData with normalized x/y values and permission controls
  */
-export function useGyroLighting(intensity = 1.0): GyroData {
+export function useGyroLighting(intensity: number = 1.0): GyroData {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
 
@@ -50,17 +50,13 @@ export function useGyroLighting(intensity = 1.0): GyroData {
       // Optional: Update state for UI debugging (remove for pure performance)
       // setValues({ x: normX, y: normY });
     },
-    [intensity],
+    [intensity]
   );
 
   const requestAccess = async () => {
-    if (
-      typeof (DeviceOrientationEvent as any).requestPermission === "function"
-    ) {
+    if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
       try {
-        const permission = await (
-          DeviceOrientationEvent as any
-        ).requestPermission();
+        const permission = await (DeviceOrientationEvent as any).requestPermission();
         if (permission === "granted") {
           setPermissionGranted(true);
           return true;
@@ -116,3 +112,4 @@ export function useGyroLighting(intensity = 1.0): GyroData {
     requestAccess,
   };
 }
+

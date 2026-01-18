@@ -77,7 +77,7 @@ export function useStemKeyboardShortcuts({
         onDeckBStemToggle("other");
       }
     },
-    [onDeckAStemToggle, onDeckBStemToggle],
+    [onDeckAStemToggle, onDeckBStemToggle]
   );
 
   useEffect(() => {
@@ -90,3 +90,4 @@ export function useStemKeyboardShortcuts({
     };
   }, [handleKeyPress]);
 }
+

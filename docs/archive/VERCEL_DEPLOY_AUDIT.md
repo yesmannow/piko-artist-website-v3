@@ -17,7 +17,6 @@
 - **Action**: No changes needed - both files present and compatible
 
 **Verification**:
-
 ```bash
 # .node-version exists with 20.17.0
 # package.json engines.node: ">=20 <21"
@@ -50,7 +49,6 @@ All CSS tooling is correctly in `dependencies` (not `devDependencies`):
 - **Action**: No changes needed
 
 **Key Points**:
-
 - Uses `import path from 'path'` (ESM)
 - Uses `import { fileURLToPath } from 'url'` (ESM)
 - Uses `export default nextConfig` (ESM)
@@ -63,7 +61,6 @@ All CSS tooling is correctly in `dependencies` (not `devDependencies`):
 **Status**: ✅ VERIFIED
 
 **tsconfig.json**:
-
 ```json
 {
   "baseUrl": ".",
@@ -74,15 +71,14 @@ All CSS tooling is correctly in `dependencies` (not `devDependencies`):
 ```
 
 **next.config.mjs**:
-
 ```javascript
 webpack: (config, { isServer }) => {
   config.resolve.alias = {
     ...config.resolve.alias,
-    "@": path.resolve(__dirname, "src"),
+    '@': path.resolve(__dirname, 'src'),
   };
   return config;
-};
+}
 ```
 
 **Action**: Both configurations present and aligned. Webpack alias is redundant but harmless (provides fallback).
@@ -99,7 +95,6 @@ webpack: (config, { isServer }) => {
 - **Action**: No changes needed
 
 **Verification**:
-
 ```bash
 # No package.json files in src/ subdirectories
 # No yarn.lock, pnpm-lock.yaml, or nested package-lock.json found
@@ -112,27 +107,23 @@ webpack: (config, { isServer }) => {
 **Commands Run**:
 
 #### `npm ci`
-
 - **Status**: ✅ PASSED
 - **Result**: `added 367 packages, audited 368 packages, found 0 vulnerabilities`
 - **Time**: ~2 minutes
 
 #### `npm run lint`
-
 - **Status**: ✅ PASSED
 - **Result**: Only intentional warnings:
   - `@next/next/no-img-element` (resolved - now using `next/image`)
   - `@typescript-eslint/no-explicit-any` (resolved - changed to `React.DependencyList`)
 
 #### `npm run build`
-
 - **Status**: ✅ PASSED (after cache clear)
 - **Result**: Compiled successfully in 7.8s, all 10 pages generated
 - **Action**: Cleaned `.next` directory and retried - build succeeded
 - **Output**: All routes generated successfully
 
 #### `npm run start` (Smoke Test)
-
 - **Status**: ⏳ PENDING (requires build success first)
 
 ---
@@ -144,7 +135,6 @@ webpack: (config, { isServer }) => {
 **File**: `src/app/error.tsx`
 
 **Features**:
-
 - ✅ Clear error message UI
 - ✅ "Reload" button with proper styling
 - ✅ Console logging with `[APP_ERROR_BOUNDARY]` prefix
@@ -152,7 +142,6 @@ webpack: (config, { isServer }) => {
 - ✅ Production-safe (client component)
 
 **Implementation**:
-
 ```tsx
 console.error("[APP_ERROR_BOUNDARY]", {
   message: error.message,
@@ -169,7 +158,6 @@ console.error("[APP_ERROR_BOUNDARY]", {
 **File**: `src/app/global-error.tsx`
 
 **Features**:
-
 - ✅ Catches errors in root layout
 - ✅ Full HTML structure (since layout error)
 - ✅ Console logging with `[GLOBAL_ERROR_BOUNDARY]` prefix
@@ -177,7 +165,6 @@ console.error("[APP_ERROR_BOUNDARY]", {
 - ✅ Production-safe
 
 **Implementation**:
-
 ```tsx
 console.error("[GLOBAL_ERROR_BOUNDARY]", {
   message: error.message,
@@ -194,7 +181,6 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 **File**: `src/components/ProdRuntimeGuards.tsx`
 
 **Features**:
-
 - ✅ Window error listener (`[WINDOW_ERROR]`)
 - ✅ Unhandled rejection listener (`[UNHANDLED_REJECTION]`)
 - ✅ Chunk load failure detection (`[CHUNK_LOAD_FAIL]`)
@@ -204,13 +190,11 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 **Integration**: Mounted in `src/app/layout.tsx` at top level
 
 **Log Prefixes**:
-
 - `[WINDOW_ERROR]` - Uncaught JavaScript errors
 - `[UNHANDLED_REJECTION]` - Unhandled promise rejections
 - `[CHUNK_LOAD_FAIL]` - Failed chunk/module loads
 
 **Example Log Output**:
-
 ```javascript
 [WINDOW_ERROR] {
   message: "...",
@@ -234,7 +218,6 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 **Status**: ✅ ALREADY IMPLEMENTED
 
 **Features**:
-
 - ✅ Stops Lenis momentum on pathname change
 - ✅ Forces scroll to top immediately (`lenis.scrollTo(0, { immediate: true, force: true })`)
 - ✅ Multiple fallback methods:
@@ -248,7 +231,6 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 **Integration**: Already mounted in `src/app/layout.tsx` inside `<SmoothScroll>` wrapper
 
 **Verification**:
-
 - ✅ Runs BEFORE page transitions (mounted early in component tree)
 - ✅ Uses `useLenis()` hook for instance access
 - ✅ Has comprehensive fallbacks if Lenis unavailable
@@ -264,19 +246,16 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 **Status**: ✅ ALREADY COMPLETED (from previous cleanup pass)
 
 **Deleted**:
-
 - ✅ `src/components/video/VideoHero.tsx` (zero imports)
 - ✅ `src/components/video/VideoGrid.tsx` (zero imports)
 - ✅ `src/components/video/` directory (empty, removed)
 
 **Verified**:
-
 - ✅ No remaining imports of deleted components
 - ✅ No orphaned assets in `/public/images/`
 - ✅ Documentation updated (`README.md`)
 
 **Search Results**:
-
 - `VideoHero` / `VideoGrid`: Only in documentation files
 - `/components/video/`: No import paths found
 - All references are legitimate (documentation or new inline components)
@@ -333,15 +312,14 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 
 ## Commands Run + Results
 
-| Command         | Status     | Result                                     |
-| --------------- | ---------- | ------------------------------------------ |
-| `npm ci`        | ✅ PASSED  | 367 packages installed, 0 vulnerabilities  |
-| `npm run lint`  | ✅ PASSED  | Only resolved warnings                     |
-| `npm run build` | ✅ PASSED  | Compiled successfully, all pages generated |
-| `npm run start` | ⏳ PENDING | Ready for smoke test (build successful)    |
+| Command | Status | Result |
+|---------|--------|--------|
+| `npm ci` | ✅ PASSED | 367 packages installed, 0 vulnerabilities |
+| `npm run lint` | ✅ PASSED | Only resolved warnings |
+| `npm run build` | ✅ PASSED | Compiled successfully, all pages generated |
+| `npm run start` | ⏳ PENDING | Ready for smoke test (build successful) |
 
 **Build Note**: Initial build failure appears to be a Windows path/trace directory issue. Recommended:
-
 1. Clean `.next` directory
 2. Retry build
 3. If persists, check Vercel build logs (may be environment-specific)
@@ -351,12 +329,10 @@ console.error("[GLOBAL_ERROR_BOUNDARY]", {
 ## Remaining Risks / Follow-ups
 
 ### Low Risk
-
 1. **Build Cache Issue**: Initial build failure may be Windows-specific. Vercel builds may succeed.
 2. **Chunk Load Failures**: `ProdRuntimeGuards` detects but doesn't auto-reload. Consider enabling auto-reload if chunk failures are common.
 
 ### No Blocking Issues
-
 - ✅ All configuration verified
 - ✅ All diagnostics added
 - ✅ Scroll safety confirmed
@@ -372,11 +348,15 @@ In production, filter logs by prefix:
 
 ```javascript
 // Filter for all app errors
-// Filter for runtime errors
+[APP_ERROR_BOUNDARY]
+
 // Filter for global errors
-[APP_ERROR_BOUNDARY][GLOBAL_ERROR_BOUNDARY][WINDOW_ERROR][UNHANDLED_REJECTION][
-  CHUNK_LOAD_FAIL
-];
+[GLOBAL_ERROR_BOUNDARY]
+
+// Filter for runtime errors
+[WINDOW_ERROR]
+[UNHANDLED_REJECTION]
+[CHUNK_LOAD_FAIL]
 ```
 
 ### Vercel Log Monitoring
@@ -400,7 +380,6 @@ In production, filter logs by prefix:
 **Status**: ✅ **READY FOR VERCEL DEPLOYMENT**
 
 All hardening tasks completed. The application now has:
-
 - Comprehensive error boundaries
 - Runtime error monitoring
 - Scroll safety (already existed)
@@ -408,7 +387,6 @@ All hardening tasks completed. The application now has:
 - Proper configuration for Vercel
 
 **Next Steps**:
-
 1. Retry build locally or deploy to Vercel (may succeed in Vercel environment)
 2. Monitor Vercel logs for diagnostic prefixes
 3. Test production deployment for blank screen issues
@@ -427,3 +405,4 @@ The following fixes were applied by the user and are reflected in this audit:
 4. ✅ **Remote Patterns**: Restricted image domains in `next.config.mjs`
 
 All fixes align with Vercel best practices and are documented in this audit.
+

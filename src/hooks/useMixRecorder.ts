@@ -22,7 +22,7 @@ interface UseMixRecorderReturn {
  */
 export function useMixRecorder(
   audioContext: AudioContext | null | undefined,
-  masterNode: AudioNode | null | undefined,
+  masterNode: AudioNode | null | undefined
 ): UseMixRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
@@ -123,10 +123,7 @@ export function useMixRecorder(
 
       // Create MediaRecorder
       const stream = mediaDestRef.current.stream;
-      const recorder = new MediaRecorder(
-        stream,
-        mimeType ? { mimeType } : undefined,
-      );
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       recorderRef.current = recorder;
 
       // Collect chunks
@@ -172,15 +169,11 @@ export function useMixRecorder(
       // Start duration timer
       durationIntervalRef.current = setInterval(() => {
         if (startTimeRef.current) {
-          setRecordingDuration(
-            Math.floor((Date.now() - startTimeRef.current) / 1000),
-          );
+          setRecordingDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
         }
       }, 1000);
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Failed to start recording",
-      );
+      setError(error instanceof Error ? error.message : "Failed to start recording");
       setIsRecording(false);
     }
   }, [audioContext, masterNode, recordingUrl, getBestMimeType]);
@@ -254,3 +247,4 @@ export function useMixRecorder(
     error,
   };
 }
+

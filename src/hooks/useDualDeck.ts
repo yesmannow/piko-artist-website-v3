@@ -3,17 +3,12 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useAudioStore } from "@/stores/useAudioStore";
 import { useAudioGraph } from "@/hooks/useAudioGraph";
-import {
-  createConstantPowerSplitter,
-  applyConstantPowerGains,
-} from "@/utils/constantPowerSplitter";
+import { createConstantPowerSplitter, applyConstantPowerGains } from "@/utils/constantPowerSplitter";
 
 // SessionStorage keys
 const STORAGE_KEY_CROSSFADER = "piko_studio_crossfader";
 const STORAGE_KEY_DECK_A_TRACK = "piko_studio_deck_a_track";
 const STORAGE_KEY_DECK_B_TRACK = "piko_studio_deck_b_track";
-const STORAGE_KEY_DECK_A_HOT_CUES = "piko_studio_deck_a_hot_cues";
-const STORAGE_KEY_DECK_B_HOT_CUES = "piko_studio_deck_b_hot_cues";
 
 export interface DeckState {
   trackName: string | null;
@@ -53,10 +48,7 @@ export function useDualDeck() {
 
   // Deck states - Hydrate track names from sessionStorage
   const [deckA, setDeckA] = useState<DeckState>(() => {
-    const storedTrack =
-      typeof window !== "undefined"
-        ? sessionStorage.getItem(STORAGE_KEY_DECK_A_TRACK)
-        : null;
+    const storedTrack = typeof window !== "undefined" ? sessionStorage.getItem(STORAGE_KEY_DECK_A_TRACK) : null;
     return {
       trackName: storedTrack,
       audioBuffer: null,
@@ -68,10 +60,7 @@ export function useDualDeck() {
   });
 
   const [deckB, setDeckB] = useState<DeckState>(() => {
-    const storedTrack =
-      typeof window !== "undefined"
-        ? sessionStorage.getItem(STORAGE_KEY_DECK_B_TRACK)
-        : null;
+    const storedTrack = typeof window !== "undefined" ? sessionStorage.getItem(STORAGE_KEY_DECK_B_TRACK) : null;
     return {
       trackName: storedTrack,
       audioBuffer: null,
@@ -112,42 +101,6 @@ export function useDualDeck() {
   const virtualOffsetARef = useRef<number>(0);
   const virtualOffsetBRef = useRef<number>(0);
 
-  // Hot Cues state (8 cues per deck) - Hydrate from sessionStorage
-  const [deckAHotCues, setDeckAHotCues] = useState<Record<number, number>>(
-    () => {
-      if (typeof window === "undefined") return {};
-      const stored = sessionStorage.getItem(STORAGE_KEY_DECK_A_HOT_CUES);
-      return stored ? JSON.parse(stored) : {};
-    },
-  );
-
-  const [deckBHotCues, setDeckBHotCues] = useState<Record<number, number>>(
-    () => {
-      if (typeof window === "undefined") return {};
-      const stored = sessionStorage.getItem(STORAGE_KEY_DECK_B_HOT_CUES);
-      return stored ? JSON.parse(stored) : {};
-    },
-  );
-
-  // Persist hot cues to sessionStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        STORAGE_KEY_DECK_A_HOT_CUES,
-        JSON.stringify(deckAHotCues),
-      );
-    }
-  }, [deckAHotCues]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        STORAGE_KEY_DECK_B_HOT_CUES,
-        JSON.stringify(deckBHotCues),
-      );
-    }
-  }, [deckBHotCues]);
-
   // Initialize constant-power signal splitter and filter nodes
   useEffect(() => {
     if (!audioContext || !masterGainNode) {
@@ -157,7 +110,7 @@ export function useDualDeck() {
     // Create constant-power splitter with professional routing
     const { gainNodeA, gainNodeB } = createConstantPowerSplitter(
       audioContext,
-      masterGainNode,
+      masterGainNode
     );
 
     deckAGainRef.current = gainNodeA;
@@ -181,7 +134,7 @@ export function useDualDeck() {
       gainNodeA,
       gainNodeB,
       crossfaderPosition,
-      audioContext,
+      audioContext
     );
 
     return () => {
@@ -229,7 +182,7 @@ export function useDualDeck() {
         console.error("[useDualDeck] Failed to load Deck A:", error);
       }
     },
-    [audioContext, deckA.sourceNode],
+    [audioContext, deckA.sourceNode]
   );
 
   /**
@@ -252,10 +205,7 @@ export function useDualDeck() {
         const trackName = file.name
           .replace(/\.[^/.]+$/, "")
           .split(/[-_]/)
-          .map(
-            (word) =>
-              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-          )
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(" ");
 
         // Read and decode audio
@@ -282,7 +232,7 @@ export function useDualDeck() {
         return null;
       }
     },
-    [audioContext, deckB.sourceNode],
+    [audioContext, deckB.sourceNode]
   );
 
   /**
@@ -291,11 +241,6 @@ export function useDualDeck() {
   const playDeckA = useCallback(() => {
     if (!audioContext || !deckAGainRef.current || !deckA.audioBuffer) {
       return;
-    }
-
-    // Resume AudioContext if suspended (browser autoplay policy)
-    if (audioContext.state === "suspended") {
-      audioContext.resume();
     }
 
     // Stop if already playing
@@ -341,13 +286,7 @@ export function useDualDeck() {
       isPlaying: true,
       sourceNode: source,
     }));
-  }, [
-    audioContext,
-    deckA.audioBuffer,
-    deckA.playbackRate,
-    deckA.sourceNode,
-    isSlipModeA,
-  ]);
+  }, [audioContext, deckA.audioBuffer, deckA.playbackRate, deckA.sourceNode, isSlipModeA]);
 
   /**
    * Play Deck B
@@ -355,11 +294,6 @@ export function useDualDeck() {
   const playDeckB = useCallback(() => {
     if (!audioContext || !deckBGainRef.current || !deckB.audioBuffer) {
       return;
-    }
-
-    // Resume AudioContext if suspended (browser autoplay policy)
-    if (audioContext.state === "suspended") {
-      audioContext.resume();
     }
 
     // Stop if already playing
@@ -405,13 +339,7 @@ export function useDualDeck() {
       isPlaying: true,
       sourceNode: source,
     }));
-  }, [
-    audioContext,
-    deckB.audioBuffer,
-    deckB.playbackRate,
-    deckB.sourceNode,
-    isSlipModeB,
-  ]);
+  }, [audioContext, deckB.audioBuffer, deckB.playbackRate, deckB.sourceNode, isSlipModeB]);
 
   /**
    * Stop Deck A
@@ -446,22 +374,28 @@ export function useDualDeck() {
   /**
    * Set gain for Deck A
    */
-  const setDeckAGain = useCallback((gain: number) => {
-    if (deckAGainRef.current) {
-      deckAGainRef.current.gain.value = gain;
-      setDeckA((prev) => ({ ...prev, gain }));
-    }
-  }, []);
+  const setDeckAGain = useCallback(
+    (gain: number) => {
+      if (deckAGainRef.current) {
+        deckAGainRef.current.gain.value = gain;
+        setDeckA((prev) => ({ ...prev, gain }));
+      }
+    },
+    []
+  );
 
   /**
    * Set gain for Deck B
    */
-  const setDeckBGain = useCallback((gain: number) => {
-    if (deckBGainRef.current) {
-      deckBGainRef.current.gain.value = gain;
-      setDeckB((prev) => ({ ...prev, gain }));
-    }
-  }, []);
+  const setDeckBGain = useCallback(
+    (gain: number) => {
+      if (deckBGainRef.current) {
+        deckBGainRef.current.gain.value = gain;
+        setDeckB((prev) => ({ ...prev, gain }));
+      }
+    },
+    []
+  );
 
   /**
    * Clear Deck A buffer (memory cleanup)
@@ -520,7 +454,7 @@ export function useDualDeck() {
         deckAGainRef.current,
         deckBGainRef.current,
         position,
-        audioContext,
+        audioContext
       );
 
       // Apply filter sweeps in Filter Mode
@@ -531,37 +465,21 @@ export function useDualDeck() {
         // Deck A (outgoing): HPF sweeps from 20kHz (no filter) to 200Hz (full filter) as position moves to 1.0
         if (deckAHPFRef.current) {
           const hpfFreq = 20000 - position * (20000 - 200); // 20000 -> 200 Hz
-          deckAHPFRef.current.frequency.setTargetAtTime(
-            hpfFreq,
-            currentTime,
-            rampTime,
-          );
+          deckAHPFRef.current.frequency.setTargetAtTime(hpfFreq, currentTime, rampTime);
         }
 
         // Deck B (incoming): LPF sweeps from 20Hz (no filter) to 20kHz (full filter) as position moves to 1.0
         if (deckBLPFRef.current) {
           const lpfFreq = 20 + position * (20000 - 20); // 20 -> 20000 Hz
-          deckBLPFRef.current.frequency.setTargetAtTime(
-            lpfFreq,
-            currentTime,
-            rampTime,
-          );
+          deckBLPFRef.current.frequency.setTargetAtTime(lpfFreq, currentTime, rampTime);
         }
       } else {
         // Reset filters to neutral when Filter Mode is off
         if (deckAHPFRef.current) {
-          deckAHPFRef.current.frequency.setTargetAtTime(
-            20000,
-            audioContext.currentTime,
-            0.02,
-          );
+          deckAHPFRef.current.frequency.setTargetAtTime(20000, audioContext.currentTime, 0.02);
         }
         if (deckBLPFRef.current) {
-          deckBLPFRef.current.frequency.setTargetAtTime(
-            20,
-            audioContext.currentTime,
-            0.02,
-          );
+          deckBLPFRef.current.frequency.setTargetAtTime(20, audioContext.currentTime, 0.02);
         }
       }
 
@@ -570,7 +488,7 @@ export function useDualDeck() {
         sessionStorage.setItem(STORAGE_KEY_CROSSFADER, position.toString());
       }
     },
-    [audioContext, filterMode],
+    [audioContext, filterMode]
   );
 
   /**
@@ -586,45 +504,25 @@ export function useDualDeck() {
       // Update Deck A virtual playhead
       if (isSlipModeA && deckA.isPlaying && deckA.audioBuffer) {
         const elapsed = currentTime - playheadStartTimeARef.current;
-        virtualPlayheadARef.current =
-          (lastActualTimeARef.current + elapsed * deckA.playbackRate) %
-          deckA.audioBuffer.duration;
+        virtualPlayheadARef.current = (lastActualTimeARef.current + elapsed * deckA.playbackRate) % deckA.audioBuffer.duration;
       }
 
       // Update Deck B virtual playhead
       if (isSlipModeB && deckB.isPlaying && deckB.audioBuffer) {
         const elapsed = currentTime - playheadStartTimeBRef.current;
-        virtualPlayheadBRef.current =
-          (lastActualTimeBRef.current + elapsed * deckB.playbackRate) %
-          deckB.audioBuffer.duration;
+        virtualPlayheadBRef.current = (lastActualTimeBRef.current + elapsed * deckB.playbackRate) % deckB.audioBuffer.duration;
       }
     };
 
     const interval = setInterval(updatePlayheads, 16); // ~60fps updates
     return () => clearInterval(interval);
-  }, [
-    audioContext,
-    isSlipModeA,
-    isSlipModeB,
-    deckA.isPlaying,
-    deckA.audioBuffer,
-    deckA.playbackRate,
-    deckB.isPlaying,
-    deckB.audioBuffer,
-    deckB.playbackRate,
-  ]);
+  }, [audioContext, isSlipModeA, isSlipModeB, deckA.isPlaying, deckA.audioBuffer, deckA.playbackRate, deckB.isPlaying, deckB.audioBuffer, deckB.playbackRate]);
 
   /**
    * Seek to virtual playhead (called when releasing scratch/loop in Slip Mode)
    */
   const seekToVirtualPlayheadA = useCallback(() => {
-    if (
-      !audioContext ||
-      !deckA.sourceNode ||
-      !deckA.audioBuffer ||
-      !isSlipModeA
-    )
-      return;
+    if (!audioContext || !deckA.sourceNode || !deckA.audioBuffer || !isSlipModeA) return;
 
     const targetTime = virtualPlayheadARef.current;
     const currentTime = audioContext.currentTime;
@@ -661,23 +559,10 @@ export function useDualDeck() {
       ...prev,
       sourceNode: source,
     }));
-  }, [
-    audioContext,
-    deckA.sourceNode,
-    deckA.audioBuffer,
-    deckA.playbackRate,
-    isSlipModeA,
-    filterMode,
-  ]);
+  }, [audioContext, deckA.sourceNode, deckA.audioBuffer, deckA.playbackRate, isSlipModeA, filterMode]);
 
   const seekToVirtualPlayheadB = useCallback(() => {
-    if (
-      !audioContext ||
-      !deckB.sourceNode ||
-      !deckB.audioBuffer ||
-      !isSlipModeB
-    )
-      return;
+    if (!audioContext || !deckB.sourceNode || !deckB.audioBuffer || !isSlipModeB) return;
 
     const targetTime = virtualPlayheadBRef.current;
     const currentTime = audioContext.currentTime;
@@ -714,14 +599,7 @@ export function useDualDeck() {
       ...prev,
       sourceNode: source,
     }));
-  }, [
-    audioContext,
-    deckB.sourceNode,
-    deckB.audioBuffer,
-    deckB.playbackRate,
-    isSlipModeB,
-    filterMode,
-  ]);
+  }, [audioContext, deckB.sourceNode, deckB.audioBuffer, deckB.playbackRate, isSlipModeB, filterMode]);
 
   /**
    * Handle Scratch / Jog Wheel Interaction with Slip Mode support
@@ -738,8 +616,7 @@ export function useDualDeck() {
       const isSlipMode = deck === "A" ? isSlipModeA : isSlipModeB;
       const sourceNode = deck === "A" ? deckA.sourceNode : deckB.sourceNode;
       const audioBuffer = deck === "A" ? deckA.audioBuffer : deckB.audioBuffer;
-      const playbackRate =
-        deck === "A" ? deckA.playbackRate : deckB.playbackRate;
+      const playbackRate = deck === "A" ? deckA.playbackRate : deckB.playbackRate;
 
       if (!sourceNode || !audioBuffer) return;
 
@@ -760,17 +637,10 @@ export function useDualDeck() {
           // 3. SLIP MODE RELEASE:
           // Calculate where we SHOULD be
           // Current Time - Start Time = How long the track has been running theoretically
-          const virtualStartTime =
-            deck === "A"
-              ? virtualStartTimeARef.current
-              : virtualStartTimeBRef.current;
-          const virtualOffset =
-            deck === "A"
-              ? virtualOffsetARef.current
-              : virtualOffsetBRef.current;
+          const virtualStartTime = deck === "A" ? virtualStartTimeARef.current : virtualStartTimeBRef.current;
+          const virtualOffset = deck === "A" ? virtualOffsetARef.current : virtualOffsetBRef.current;
           const timeElapsed = now - virtualStartTime;
-          const targetPosition =
-            (timeElapsed * playbackRate + virtualOffset) % audioBuffer.duration;
+          const targetPosition = (timeElapsed * playbackRate + virtualOffset) % audioBuffer.duration;
 
           // Update virtual playhead refs before seeking
           if (deck === "A") {
@@ -789,62 +659,8 @@ export function useDualDeck() {
         }
       }
     },
-    [
-      audioContext,
-      isSlipModeA,
-      isSlipModeB,
-      deckA.sourceNode,
-      deckA.audioBuffer,
-      deckA.playbackRate,
-      deckB.sourceNode,
-      deckB.audioBuffer,
-      deckB.playbackRate,
-      seekToVirtualPlayheadA,
-      seekToVirtualPlayheadB,
-    ],
+    [audioContext, isSlipModeA, isSlipModeB, deckA.sourceNode, deckA.audioBuffer, deckA.playbackRate, deckB.sourceNode, deckB.audioBuffer, deckB.playbackRate, seekToVirtualPlayheadA, seekToVirtualPlayheadB]
   );
-
-  /**
-   * Set hot cue for Deck A
-   */
-  const setDeckAHotCue = useCallback((padIndex: number, time: number) => {
-    setDeckAHotCues((prev) => ({
-      ...prev,
-      [padIndex]: time,
-    }));
-  }, []);
-
-  /**
-   * Clear hot cue for Deck A
-   */
-  const clearDeckAHotCue = useCallback((padIndex: number) => {
-    setDeckAHotCues((prev) => {
-      const newCues = { ...prev };
-      delete newCues[padIndex];
-      return newCues;
-    });
-  }, []);
-
-  /**
-   * Set hot cue for Deck B
-   */
-  const setDeckBHotCue = useCallback((padIndex: number, time: number) => {
-    setDeckBHotCues((prev) => ({
-      ...prev,
-      [padIndex]: time,
-    }));
-  }, []);
-
-  /**
-   * Clear hot cue for Deck B
-   */
-  const clearDeckBHotCue = useCallback((padIndex: number) => {
-    setDeckBHotCues((prev) => {
-      const newCues = { ...prev };
-      delete newCues[padIndex];
-      return newCues;
-    });
-  }, []);
 
   return {
     deckA,
@@ -872,12 +688,6 @@ export function useDualDeck() {
     handleScratch,
     virtualPlayheadA: virtualPlayheadARef.current,
     virtualPlayheadB: virtualPlayheadBRef.current,
-    // Hot Cues (8 pads per deck)
-    deckAHotCues,
-    deckBHotCues,
-    setDeckAHotCue,
-    clearDeckAHotCue,
-    setDeckBHotCue,
-    clearDeckBHotCue,
   };
 }
+

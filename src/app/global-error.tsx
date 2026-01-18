@@ -24,9 +24,7 @@ export default function GlobalError({
       <body className="bg-background text-foreground antialiased">
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="max-w-md w-full text-center space-y-6">
-            <h1 className="text-4xl font-header text-foreground">
-              Critical Error
-            </h1>
+            <h1 className="text-4xl font-header text-foreground">Critical Error</h1>
             <p className="text-foreground/60 font-industrial">
               A critical error occurred. Please reload the page.
             </p>
@@ -50,3 +48,4 @@ export default function GlobalError({
     </html>
   );
 }
+
