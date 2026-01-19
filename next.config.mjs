@@ -73,7 +73,9 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            // Studio needs microphone for voiceover recording.
+            // Keep camera/geolocation disabled site-wide.
+            value: 'camera=(), microphone=(self), geolocation=()',
           },
           {
             key: 'Cross-Origin-Opener-Policy',

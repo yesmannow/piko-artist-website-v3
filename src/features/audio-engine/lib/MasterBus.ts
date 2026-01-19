@@ -9,13 +9,12 @@
  * This is a singleton to ensure all channels share the same master bus.
  */
 
-import { AudioContextManager } from './AudioContextManager';
-
 export class MasterBus {
   private static instance: MasterBus | null = null;
   private masterGain: GainNode | null = null;
   private compressor: DynamicsCompressorNode | null = null;
   private inputNode: GainNode | null = null; // Summing node for all channels
+  private taps = new Set<AudioNode>();
 
   private constructor() {
     // Private constructor to enforce singleton pattern
@@ -89,9 +88,52 @@ export class MasterBus {
   }
 
   /**
+   * Connect a tap node to the master output (for recording/visualization).
+   * This does NOT replace the destination connection.
+   */
+  connectTap(node: AudioNode): void {
+    const output = this.compressor ?? this.masterGain ?? null;
+    if (!output) return;
+    try {
+      output.connect(node);
+      this.taps.add(node);
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Disconnect a previously connected tap node.
+   */
+  disconnectTap(node: AudioNode): void {
+    const output = this.compressor ?? this.masterGain ?? null;
+    if (!output) return;
+    try {
+      // Disconnect only this specific node (do not disrupt destination).
+      output.disconnect(node);
+    } catch {
+      // ignore
+    }
+    this.taps.delete(node);
+  }
+
+  /**
    * Cleanup (disconnect all nodes)
    */
   disconnect(): void {
+    // Ensure taps are disconnected first
+    const output = this.compressor ?? this.masterGain ?? null;
+    if (output) {
+      for (const tap of this.taps) {
+        try {
+          output.disconnect(tap);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    this.taps.clear();
+
     if (this.inputNode) {
       this.inputNode.disconnect();
       this.inputNode = null;

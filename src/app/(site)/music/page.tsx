@@ -2,7 +2,17 @@
 
 import { useAudio } from "@/context/AudioContext";
 import { tracks, MediaItem } from "@/lib/data";
-import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack, Maximize2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  List,
+  Grid3x3,
+  LayoutList,
+  Clock,
+  SkipForward,
+  SkipBack,
+  Maximize2,
+} from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -59,9 +69,17 @@ function useTrackDuration(track: MediaItem): number {
 }
 
 // Cover Art Component
-function CoverArt({ coverArt, className }: { coverArt: string; className?: string }) {
+function CoverArt({
+  coverArt,
+  className,
+}: {
+  coverArt: string;
+  className?: string;
+}) {
   return (
-    <div className={`relative flex-shrink-0 rounded overflow-hidden bg-zinc-800 ${className || ""}`}>
+    <div
+      className={`relative flex-shrink-0 rounded overflow-hidden bg-zinc-800 ${className || ""}`}
+    >
       {isImagePath(coverArt) ? (
         <Image
           src={coverArt}
@@ -78,7 +96,14 @@ function CoverArt({ coverArt, className }: { coverArt: string; className?: strin
 }
 
 // Hero Section for Currently Playing Track
-function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
+function TrackHero({
+  track,
+  isPlaying,
+  onPlay,
+  onPause,
+  onNext,
+  onPrevious,
+}: {
   track: MediaItem | null;
   isPlaying: boolean;
   onPlay: () => void;
@@ -89,7 +114,9 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
   const { triggerHaptic } = useHaptic();
   const { setImmersiveOpen } = useAudio();
   // Always call hooks unconditionally
-  const duration = useTrackDuration(track || { type: "audio", src: "", title: "", coverArt: "", vibe: "chill" } as MediaItem);
+  const duration = useTrackDuration(
+    (track || { type: "audio", src: "", title: "", coverArt: "", vibe: "chill" }) as MediaItem
+  );
 
   if (!track) return null;
 
@@ -214,7 +241,8 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
             exit={{ opacity: 0 }}
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "radial-gradient(circle at center, rgba(255,215,0,0.1) 0%, transparent 70%)",
+              background:
+                "radial-gradient(circle at center, rgba(255,215,0,0.1) 0%, transparent 70%)",
             }}
           />
         )}
@@ -224,7 +252,12 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
 }
 
 // Table Row Item Component
-function TableRowItem({ track, index, isActive, onPlay }: {
+function TableRowItem({
+  track,
+  index,
+  isActive,
+  onPlay,
+}: {
   track: MediaItem;
   index: number;
   isActive: boolean;
@@ -310,7 +343,12 @@ function TableRowItem({ track, index, isActive, onPlay }: {
       </div>
 
       {/* Col 3: Artist */}
-      <div className={["flex items-center", isActive ? "text-toxic-lime/80" : "text-foreground/80"].join(" ")}>
+      <div
+        className={[
+          "flex items-center",
+          isActive ? "text-toxic-lime/80" : "text-foreground/80",
+        ].join(" ")}
+      >
         <span className="truncate text-sm font-medium">{track.artist}</span>
       </div>
 
@@ -327,7 +365,12 @@ function TableRowItem({ track, index, isActive, onPlay }: {
       </div>
 
       {/* Col 5: Duration */}
-      <div className={["flex items-center justify-end text-sm font-mono", isActive ? "text-toxic-lime/80" : "text-foreground/70"].join(" ")}>
+      <div
+        className={[
+          "flex items-center justify-end text-sm font-mono",
+          isActive ? "text-toxic-lime/80" : "text-foreground/70",
+        ].join(" ")}
+      >
         {duration > 0 ? formatDuration(duration) : "0:00"}
       </div>
     </motion.button>
@@ -335,7 +378,12 @@ function TableRowItem({ track, index, isActive, onPlay }: {
 }
 
 // Table List View (matching Latest Drops style)
-function TableListView({ tracks, currentTrack, isPlaying, onPlay }: {
+function TableListView({
+  tracks,
+  currentTrack,
+  isPlaying,
+  onPlay,
+}: {
   tracks: MediaItem[];
   currentTrack: MediaItem | null;
   isPlaying: boolean;
@@ -376,7 +424,17 @@ function TableListView({ tracks, currentTrack, isPlaying, onPlay }: {
 }
 
 // Card View Component (Grid)
-function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; index: number; isActive: boolean; onPlay: () => void }) {
+function CardViewItem({
+  track,
+  index,
+  isActive,
+  onPlay,
+}: {
+  track: MediaItem;
+  index: number;
+  isActive: boolean;
+  onPlay: () => void;
+}) {
   const duration = useTrackDuration(track);
 
   return (
@@ -475,7 +533,15 @@ function CardViewItem({ track, index, isActive, onPlay }: { track: MediaItem; in
 }
 
 // Card View Component (Grid)
-function CardView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; currentTrack: MediaItem | null; onPlay: (track: MediaItem) => void }) {
+function CardView({
+  tracks,
+  currentTrack,
+  onPlay,
+}: {
+  tracks: MediaItem[];
+  currentTrack: MediaItem | null;
+  onPlay: (track: MediaItem) => void;
+}) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
       {tracks.map((track, index) => {
@@ -495,7 +561,17 @@ function CardView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; curre
 }
 
 // Compact View Track Item
-function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem; index: number; isActive: boolean; onPlay: () => void }) {
+function CompactViewItem({
+  track,
+  index,
+  isActive,
+  onPlay,
+}: {
+  track: MediaItem;
+  index: number;
+  isActive: boolean;
+  onPlay: () => void;
+}) {
   const duration = useTrackDuration(track);
 
   return (
@@ -567,7 +643,15 @@ function CompactViewItem({ track, index, isActive, onPlay }: { track: MediaItem;
 }
 
 // Compact View Component (Minimal list)
-function CompactView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; currentTrack: MediaItem | null; onPlay: (track: MediaItem) => void }) {
+function CompactView({
+  tracks,
+  currentTrack,
+  onPlay,
+}: {
+  tracks: MediaItem[];
+  currentTrack: MediaItem | null;
+  onPlay: (track: MediaItem) => void;
+}) {
   return (
     <div className="space-y-1">
       {tracks.map((track, index) => {
@@ -587,7 +671,8 @@ function CompactView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; cu
 }
 
 export default function MusicPage() {
-  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious, setImmersiveOpen } = useAudio();
+  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious, setImmersiveOpen } =
+    useAudio();
   const { triggerHaptic } = useHaptic();
   const [viewType, setViewType] = useState<ViewType>("list");
 
@@ -718,3 +803,4 @@ export default function MusicPage() {
     </div>
   );
 }
+

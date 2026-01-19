@@ -9,7 +9,15 @@ import { X, Play } from "lucide-react";
 import { getYouTubeThumbnailProxyAlt } from "@/lib/utils/youtubeImageProxy";
 
 // Thumbnail component with fallback strategy
-function VideoThumbnail({ videoId, title, className }: { videoId: string; title: string; className?: string }) {
+function VideoThumbnail({
+  videoId,
+  title,
+  className,
+}: {
+  videoId: string;
+  title: string;
+  className?: string;
+}) {
   // Get fallback images from public/images/tracks directory
   const trackImages = [
     "/images/tracks/abstract-1846847_1280.jpg",
@@ -35,18 +43,23 @@ function VideoThumbnail({ videoId, title, className }: { videoId: string; title:
   ];
 
   // Use videoId to deterministically select a fallback image
-  const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
+  const fallbackIndex =
+    videoId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
   const fallbackImage = trackImages[fallbackIndex];
 
   // Use proxied YouTube images for COEP compatibility
-  const [imgSrc, setImgSrc] = useState(getYouTubeThumbnailProxyAlt(videoId, 'maxresdefault'));
+  const [imgSrc, setImgSrc] = useState(
+    getYouTubeThumbnailProxyAlt(videoId, "maxresdefault")
+  );
   const [errorCount, setErrorCount] = useState(0);
 
   const handleError = () => {
     if (errorCount === 0) {
       // First fallback: try hqdefault (proxied)
       setErrorCount(1);
-      setImgSrc(getYouTubeThumbnailProxyAlt(videoId, 'hqdefault'));
+      setImgSrc(getYouTubeThumbnailProxyAlt(videoId, "hqdefault"));
     } else if (errorCount === 1) {
       // Second fallback: use track image
       setErrorCount(2);
@@ -62,24 +75,30 @@ function VideoThumbnail({ videoId, title, className }: { videoId: string; title:
       className={className}
       onError={handleError}
       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      unoptimized={imgSrc.startsWith('/api/image-proxy')} // Proxied images are already optimized
+      unoptimized={imgSrc.startsWith("/api/image-proxy")} // Proxied images are already optimized
     />
   );
 }
 
 // Video Card Component
-function VideoCard({ video, onPlay }: { video: MediaItem; onPlay: (id: string) => void }) {
+function VideoCard({
+  video,
+  onPlay,
+}: {
+  video: MediaItem;
+  onPlay: (id: string) => void;
+}) {
   if (!video?.id) return null;
 
   return (
     <div
       key={video.id}
       className="group relative aspect-video bg-zinc-900 rounded-lg overflow-hidden cursor-pointer border-2 border-zinc-800 hover:border-toxic-lime transition-all shadow-lg hover:shadow-xl"
-      onClick={() => onPlay(video.id)}
+      onClick={() => onPlay(video.id!)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onPlay(video.id);
+          onPlay(video.id!);
         }
       }}
       role="button"
@@ -88,7 +107,7 @@ function VideoCard({ video, onPlay }: { video: MediaItem; onPlay: (id: string) =
     >
       <div className="relative w-full h-full">
         <VideoThumbnail
-          videoId={video.id}
+          videoId={video.id!}
           title={video.title}
           className="object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100"
         />
@@ -104,24 +123,32 @@ function VideoCard({ video, onPlay }: { video: MediaItem; onPlay: (id: string) =
       {/* Info Overlay */}
       <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
         <h3 className="text-white font-bold truncate">{video.title}</h3>
-        <p className="text-[#FFD700] text-xs font-mono uppercase tracking-wider mt-1">{video.vibe}</p>
+        <p className="text-[#FFD700] text-xs font-mono uppercase tracking-wider mt-1">
+          {video.vibe}
+        </p>
       </div>
     </div>
   );
 }
 
 // Featured Video Hero Component
-function FeaturedVideoHero({ video, onPlay }: { video: MediaItem; onPlay: (id: string) => void }) {
+function FeaturedVideoHero({
+  video,
+  onPlay,
+}: {
+  video: MediaItem;
+  onPlay: (id: string) => void;
+}) {
   if (!video?.id) return null;
 
   return (
     <div
       className="relative w-full h-[60vh] md:h-[70vh] mb-8 md:mb-12 rounded-lg overflow-hidden border-2 border-zinc-800 shadow-2xl group cursor-pointer focus-within:ring-2 focus-within:ring-toxic-lime focus-within:ring-offset-2"
-      onClick={() => onPlay(video.id)}
+      onClick={() => onPlay(video.id!)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onPlay(video.id);
+          onPlay(video.id!);
         }
       }}
       role="button"
@@ -131,11 +158,7 @@ function FeaturedVideoHero({ video, onPlay }: { video: MediaItem; onPlay: (id: s
       {/* Background Image */}
       <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-105">
         <div className="relative w-full h-full">
-          <VideoThumbnail
-            videoId={video.id}
-            title={video.title}
-            className="object-cover"
-          />
+          <VideoThumbnail videoId={video.id!} title={video.title} className="object-cover" />
         </div>
       </div>
 
@@ -184,13 +207,13 @@ function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () 
     if (!videoId) return;
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose();
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, [videoId, onClose]);
 
   if (!videoId) return null;
@@ -216,7 +239,9 @@ function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () 
 
       <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-zinc-800">
         <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }`}
           className="w-full h-full"
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
@@ -231,13 +256,15 @@ function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () 
 
 export default function VideosPage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC">(
+    "ALL"
+  );
   const pathname = usePathname();
   const lenis = useLenis();
 
   // Derived data - defensive checks
   const videos = useMemo(() => {
-    return tracks.filter((t): t is MediaItem => t.type === 'video' && !!t.id);
+    return tracks.filter((t): t is MediaItem => t.type === "video" && !!t.id);
   }, []);
 
   const featuredVideo = useMemo(() => {
@@ -246,17 +273,21 @@ export default function VideosPage() {
 
   const gridVideos = useMemo(() => {
     if (!featuredVideo) return videos;
-    return videos.filter(v => v.id !== featuredVideo.id);
+    return videos.filter((v) => v.id !== featuredVideo.id);
   }, [videos, featuredVideo]);
 
   const availableFilters = useMemo(() => {
-    const vibes = new Set(videos.map(v => v.vibe?.toUpperCase()).filter(Boolean) as string[]);
-    return ["ALL", ...Array.from(vibes).sort()] as Array<"ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC">;
+    const vibes = new Set(
+      videos.map((v) => v.vibe?.toUpperCase()).filter(Boolean) as string[]
+    );
+    return ["ALL", ...Array.from(vibes).sort()] as Array<
+      "ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC"
+    >;
   }, [videos]);
 
   const filteredVideos = useMemo(() => {
     if (filter === "ALL") return gridVideos;
-    return gridVideos.filter(v => v.vibe?.toUpperCase() === filter);
+    return gridVideos.filter((v) => v.vibe?.toUpperCase() === filter);
   }, [gridVideos, filter]);
 
   // Close modal on route change
@@ -277,17 +308,17 @@ export default function VideosPage() {
         lenis.start();
       } catch {
         // Fallback if Lenis fails
-        if (typeof window !== 'undefined') {
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
         }
       }
-    } else if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    } else if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
 
     // Cleanup on unmount
     return () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.scrollTo(0, 0);
       }
     };
@@ -305,11 +336,11 @@ export default function VideosPage() {
                 ARCHIVE
               </span>
             </h1>
-            <p className="text-zinc-400 font-mono">
-              Exploring the visual landscape of sound.
-            </p>
+            <p className="text-zinc-400 font-mono">Exploring the visual landscape of sound.</p>
           </div>
-          <div className="text-center text-foreground/60 py-12 font-industrial">No videos available.</div>
+          <div className="text-center text-foreground/60 py-12 font-industrial">
+            No videos available.
+          </div>
         </div>
       </div>
     );
@@ -331,17 +362,12 @@ export default function VideosPage() {
         </div>
 
         {/* Featured Video Hero */}
-        {featuredVideo && (
-          <FeaturedVideoHero
-            video={featuredVideo}
-            onPlay={setSelectedVideoId}
-          />
-        )}
+        {featuredVideo && <FeaturedVideoHero video={featuredVideo} onPlay={setSelectedVideoId} />}
 
         {/* Filter Bar */}
         {availableFilters.length > 1 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            {availableFilters.map(cat => (
+            {availableFilters.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setFilter(cat)}
@@ -363,11 +389,7 @@ export default function VideosPage() {
         {filteredVideos.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredVideos.map((video) => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                onPlay={setSelectedVideoId}
-              />
+              <VideoCard key={video.id} video={video} onPlay={setSelectedVideoId} />
             ))}
           </div>
         ) : (
@@ -377,11 +399,9 @@ export default function VideosPage() {
         )}
 
         {/* Video Modal */}
-        <VideoModal
-          videoId={selectedVideoId}
-          onClose={() => setSelectedVideoId(null)}
-        />
+        <VideoModal videoId={selectedVideoId} onClose={() => setSelectedVideoId(null)} />
       </div>
     </div>
   );
 }
+

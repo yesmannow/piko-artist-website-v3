@@ -35,10 +35,30 @@ const INQUIRY_BENTO: {
   subtitle: string;
   hint: string;
 }[] = [
-  { type: "booking", title: "Booking", subtitle: "Live / DJ / Showcase", hint: "Date • city • capacity • budget" },
-  { type: "collab", title: "Collab", subtitle: "Features / production", hint: "Links • deadline • deliverables" },
-  { type: "press", title: "Press", subtitle: "Interviews / blogs", hint: "Outlet • angle • publish date" },
-  { type: "licensing", title: "Licensing", subtitle: "Sync / brand use", hint: "Usage • territory • term" },
+  {
+    type: "booking",
+    title: "Booking",
+    subtitle: "Live / DJ / Showcase",
+    hint: "Date • city • capacity • budget",
+  },
+  {
+    type: "collab",
+    title: "Collab",
+    subtitle: "Features / production",
+    hint: "Links • deadline • deliverables",
+  },
+  {
+    type: "press",
+    title: "Press",
+    subtitle: "Interviews / blogs",
+    hint: "Outlet • angle • publish date",
+  },
+  {
+    type: "licensing",
+    title: "Licensing",
+    subtitle: "Sync / brand use",
+    hint: "Usage • territory • term",
+  },
 ];
 
 function clamp(n: number, min: number, max: number) {
@@ -426,7 +446,9 @@ export default function ContactPage() {
                       href={`#${s.id}`}
                       className={[
                         "block px-3 py-2 border-2 font-mono text-[11px] uppercase tracking-[0.25em]",
-                        active ? "border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]" : "border-white/10 hover:border-white/20 text-white/70",
+                        active
+                          ? "border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]"
+                          : "border-white/10 hover:border-white/20 text-white/70",
                       ].join(" ")}
                     >
                       {s.label}
@@ -446,7 +468,9 @@ export default function ContactPage() {
             <div className="border-2 border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
               <div className="p-4 border-b border-white/10 flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs font-mono uppercase tracking-[0.25em] text-white/60">INQUIRY_ROUTER</div>
+                  <div className="text-xs font-mono uppercase tracking-[0.25em] text-white/60">
+                    INQUIRY_ROUTER
+                  </div>
                   <div className="text-2xl font-black italic uppercase">Pick your lane</div>
                   <div className="text-sm text-white/70">
                     Bento grid for clear pathways (Booking / Press / Collab / Licensing).
@@ -466,12 +490,16 @@ export default function ContactPage() {
                     className={[
                       "text-left p-4 border-2 transition-all",
                       "bg-black/30 hover:bg-white/5",
-                      form.inquiryType === i.type ? "border-[#FFD700]" : "border-white/10 hover:border-white/20",
+                      form.inquiryType === i.type
+                        ? "border-[#FFD700]"
+                        : "border-white/10 hover:border-white/20",
                     ].join(" ")}
                     style={{ boxShadow: "6px 6px 0px rgba(0,0,0,1)" }}
                     aria-label={`Select ${i.title} inquiry`}
                   >
-                    <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/60">{i.subtitle}</div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/60">
+                      {i.subtitle}
+                    </div>
                     <div className="mt-1 text-xl font-black italic uppercase">{i.title}</div>
                     <div className="mt-2 text-sm text-white/70">{i.hint}</div>
                   </button>
@@ -545,7 +573,8 @@ export default function ContactPage() {
                 <div className="border border-white/10 bg-black/20 p-4">
                   <div className="text-xs font-mono uppercase tracking-[0.25em] text-white/60">Fast Track</div>
                   <div className="mt-2 text-sm text-white/75">
-                    To get a faster response, include: <span className="text-[#FFD700] font-mono">date</span>,{" "}
+                    To get a faster response, include:{" "}
+                    <span className="text-[#FFD700] font-mono">date</span>,{" "}
                     <span className="text-[#FFD700] font-mono">city</span>,{" "}
                     <span className="text-[#FFD700] font-mono">budget</span>, and{" "}
                     <span className="text-[#FFD700] font-mono">capacity</span>.
@@ -565,9 +594,7 @@ export default function ContactPage() {
               <div className="p-4 md:p-5 border-b border-white/10">
                 <div className="text-xs font-mono uppercase tracking-[0.25em] text-white/60">SOCIAL_PROOF</div>
                 <div className="text-2xl font-black italic uppercase">Recent Drops / Live Sessions</div>
-                <div className="text-sm text-white/70">
-                  Quick preview for promoters and collaborators.
-                </div>
+                <div className="text-sm text-white/70">Quick preview for promoters and collaborators.</div>
               </div>
 
               {/* Social proof ticker (real counts) */}
@@ -664,7 +691,11 @@ export default function ContactPage() {
           </div>
 
           {/* RIGHT: FORM */}
-          <div id="form" ref={formRef} className="border-2 border-white/10 bg-white/5 backdrop-blur-xl h-fit min-w-0">
+          <div
+            id="form"
+            ref={formRef}
+            className="border-2 border-white/10 bg-white/5 backdrop-blur-xl h-fit min-w-0"
+          >
             <div className="p-4 md:p-5 border-b border-white/10">
               <div className="text-xs font-mono uppercase tracking-[0.25em] text-white/60">
                 INQUIRY_FORM // PRE-QUAL
@@ -873,7 +904,9 @@ export default function ContactPage() {
                   </label>
                   <select
                     value={form.preferredContact}
-                    onChange={(e) => setForm((p) => ({ ...p, preferredContact: e.target.value as PreferredContact }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, preferredContact: e.target.value as PreferredContact }))
+                    }
                     className="w-full px-4 py-3 bg-gray-300 text-black font-mono font-bold uppercase tracking-wider border-2 border-black"
                   >
                     <option value="email">Email</option>
