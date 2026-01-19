@@ -15,7 +15,7 @@ export function SectionHeader({ title, subtitle, className = "" }: SectionHeader
     { href: "/music", label: "Music" },
     { href: "/videos", label: "Videos" },
     { href: "/#bio", label: "About" },
-    { href: "/#contact", label: "Contact" },
+    { href: "/contact", label: "Contact" },
   ];
 
   return (

@@ -15,7 +15,6 @@ import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ScrollRestorationManager } from "@/components/ScrollRestorationManager";
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
-import { LogoIntro } from "@/components/branding/LogoIntro";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 // 1. Graffiti Font (Accents & Logos)
@@ -114,7 +113,6 @@ export default function RootLayout({
       >
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />
-        <LogoIntro />
         <AudioProvider>
           <VideoProvider>
             <Navbar />

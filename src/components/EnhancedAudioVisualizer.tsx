@@ -13,9 +13,8 @@ interface EnhancedAudioVisualizerProps {
  */
 export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
-  const { audioRef, isPlaying, currentTrack } = useAudio();
+  const { isPlaying, currentTrack, analyserNode, ensureAnalyser } = useAudio();
   const [colors, setColors] = useState<{ primary: string; secondary: string }>({
     primary: "#FFD700",
     secondary: "#E0E0E0",
@@ -37,44 +36,37 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
 
   // Setup audio analyser
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !canvasRef.current) return;
+    if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Create audio context and analyser
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256; // More bars
-    analyser.smoothingTimeConstant = 0.8;
-
-    const source = audioContext.createMediaElementSource(audio);
-    source.connect(analyser);
-    analyser.connect(audioContext.destination);
-
-    analyserRef.current = analyser;
+    // Ensure a single analyser graph (owned by AudioProvider)
+    const analyser = analyserNode ?? ensureAnalyser();
+    if (!analyser) return;
 
     // Set canvas size
     const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = height * dpr;
+      // Reset transform so repeated resizes don't compound scaling
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
     // Animation loop
     const draw = () => {
-      if (!analyserRef.current || !isPlaying) {
+      if (!analyser || !isPlaying) {
         animationFrameRef.current = requestAnimationFrame(draw);
         return;
       }
 
-      const bufferLength = analyserRef.current.frequencyBinCount;
+      const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
-      analyserRef.current.getByteFrequencyData(dataArray);
+      analyser.getByteFrequencyData(dataArray);
 
       // Clear canvas
       ctx.fillStyle = "rgba(10, 10, 10, 0.1)";
@@ -145,11 +137,8 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      source.disconnect();
-      analyser.disconnect();
-      audioContext.close();
     };
-  }, [audioRef, isPlaying, colors, height]);
+  }, [analyserNode, ensureAnalyser, isPlaying, colors, height]);
 
   if (!currentTrack || !isPlaying) {
     return null;

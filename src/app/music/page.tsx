@@ -2,11 +2,12 @@
 
 import { useAudio } from "@/context/AudioContext";
 import { tracks, MediaItem } from "@/lib/data";
-import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack } from "lucide-react";
+import { Play, Pause, List, Grid3x3, LayoutList, Clock, SkipForward, SkipBack, Maximize2 } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useState, useEffect, useMemo } from "react";
+import { ImmersivePlayerOverlay } from "@/components/ImmersivePlayerOverlay";
 
 // Helper to check if coverArt is an image path
 const isImagePath = (coverArt: string): boolean => {
@@ -85,6 +86,8 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
   onNext: () => void;
   onPrevious: () => void;
 }) {
+  const { triggerHaptic } = useHaptic();
+  const { setImmersiveOpen } = useAudio();
   // Always call hooks unconditionally
   const duration = useTrackDuration(track || { type: "audio", src: "", title: "", coverArt: "", vibe: "chill" } as MediaItem);
 
@@ -157,7 +160,7 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
           </div>
 
           {/* Playback Controls */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={onPrevious}
               className="p-3 rounded-full border-2 border-zinc-700 hover:border-toxic-lime transition-colors"
@@ -182,6 +185,21 @@ function TrackHero({ track, isPlaying, onPlay, onPause, onNext, onPrevious }: {
               aria-label="Next track"
             >
               <SkipForward className="w-5 h-5 text-foreground" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic();
+                setImmersiveOpen(true);
+              }}
+              className="ml-0 sm:ml-2 inline-flex items-center gap-2 px-4 py-3 border-2 border-zinc-700 hover:border-toxic-lime transition-colors bg-black/30"
+              aria-label="Open immersive playback"
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span className="text-xs font-mono uppercase tracking-widest text-foreground/80">
+                Immersive
+              </span>
             </button>
           </div>
         </div>
@@ -569,7 +587,7 @@ function CompactView({ tracks, currentTrack, onPlay }: { tracks: MediaItem[]; cu
 }
 
 export default function MusicPage() {
-  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious } = useAudio();
+  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious, setImmersiveOpen } = useAudio();
   const { triggerHaptic } = useHaptic();
   const [viewType, setViewType] = useState<ViewType>("list");
 
@@ -652,6 +670,31 @@ export default function MusicPage() {
             }}
           />
 
+          {/* CTA bar */}
+          <div className="mb-6 md:mb-8 border-2 border-white/10 bg-black/30 px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div className="text-xs font-mono uppercase tracking-[0.25em] text-white/60">
+                NEW_MODE
+              </div>
+              <div className="text-lg font-black italic uppercase">
+                Enter Immersive Playback
+              </div>
+              <div className="text-sm text-white/70 font-industrial">
+                Fullscreen visuals, swipe controls, lean-back mode.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic();
+                setImmersiveOpen(true);
+              }}
+              className="px-6 py-3 border-2 border-black bg-[#FFD700] text-black font-mono font-bold uppercase tracking-[0.2em] hover:bg-[#E0E0E0]"
+            >
+              Launch
+            </button>
+          </div>
+
           {/* Track Views */}
           {viewType === "list" && (
             <TableListView
@@ -669,6 +712,9 @@ export default function MusicPage() {
           )}
         </div>
       </section>
+
+      {/* Fullscreen immersive playback overlay */}
+      <ImmersivePlayerOverlay />
     </div>
   );
 }

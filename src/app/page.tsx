@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { VaultVisuals } from "@/components/VaultVisuals";
-import { Contact } from "@/components/Contact";
 import { TrackList } from "@/components/TrackList";
 import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
 import { FluidVaporBackground } from "@/components/FluidVaporBackground";
+import { HomeBookingTerminal } from "@/components/HomeBookingTerminal";
 
 export default function Home() {
   const scrollToMusic = () => {
@@ -58,40 +58,24 @@ export default function Home() {
         </h1>
 
         <div className="relative z-20 flex flex-col items-center gap-6 md:gap-8 text-center px-4 md:px-6">
-          <motion.img
-            src="/images/branding/piko-logo.png"
-            alt="Piko FG logo"
-            className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] cursor-pointer"
-            style={{
-              filter: "grayscale(1) brightness(1.5)",
-            }}
-            initial={{ opacity: 0, scale: 1.2, filter: "blur(10px)" }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              filter: "blur(0px) grayscale(1) brightness(1.5)",
-              y: [0, -10, 0],
-            }}
-            whileHover={{
-              scale: 1.05,
-              filter: "blur(0px) grayscale(0.8) brightness(1.6)",
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 200,
-              damping: 20,
-              opacity: { duration: 0.6 },
-              scale: { duration: 0.6 },
-              filter: { duration: 0.6 },
-              y: {
-                duration: 7,
-                repeat: Infinity,
-                repeatType: "mirror",
-                ease: "easeInOut",
-                delay: 0.6,
-              },
-            }}
-          />
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="cursor-pointer"
+          >
+            <Image
+              src="/images/branding/piko-logo.png"
+              alt="Piko FG logo"
+              width={320}
+              height={128}
+              priority
+              className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
+              style={{
+                filter: "grayscale(1) brightness(1.5)",
+              }}
+            />
+          </motion.div>
 
           <motion.button
             onClick={scrollToMusic}
@@ -280,7 +264,7 @@ export default function Home() {
                     width={600}
                     height={800}
                     priority
-                    quality={100}
+                    quality={90}
                     className="w-full h-auto border-2 border-[#E0E0E0]/20 object-cover transition-all duration-300 group-hover:scale-105"
                     style={{
                       filter: "grayscale(1) contrast(1.1) brightness(0.9)",
@@ -302,8 +286,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <Contact />
+      {/* Booking Terminal Teaser (links to /contact hub) */}
+      <HomeBookingTerminal />
     </div>
   );
 }

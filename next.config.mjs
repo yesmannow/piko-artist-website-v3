@@ -8,6 +8,8 @@ const __dirname = path.dirname(__filename);
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
+  // Serwist does not support Turbopack in dev yet; disable outside production.
+  disable: process.env.NODE_ENV !== 'production',
 });
 
 /** @type {import('next').NextConfig} */

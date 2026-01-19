@@ -1,10 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { tracks } from "@/lib/data";
 import { useVideo } from "@/context/VideoContext";
+
+function LiveCameraTimestamp() {
+  // SSR-safe: render a deterministic placeholder first, then update after mount.
+  const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState("--:--:--");
+
+  useEffect(() => {
+    setMounted(true);
+
+    const update = () => {
+      setTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
+    };
+
+    update();
+    const id = window.setInterval(update, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return <span suppressHydrationWarning>{mounted ? time : "--:--:--"}</span>;
+}
 
 /**
  * VaultVisuals - CCTV Monitor Wall for Videos Section
@@ -78,7 +98,7 @@ export function VaultVisuals() {
                   <span className="text-[10px] font-mono text-white/70 uppercase">REC: {video.title}</span>
                 </div>
                 <div className="absolute bottom-4 right-4 z-20 text-[10px] font-mono text-white/40">
-                  {new Date().toLocaleTimeString("en-US", { hour12: false })} {/* CAM_{String(index + 1).padStart(2, "0")} */}
+                  <LiveCameraTimestamp /> {/* CAM_{String(index + 1).padStart(2, "0")} */}
                 </div>
 
                 {/* Video Thumbnail with Urban Filter - Grayscale by default, color on hover */}

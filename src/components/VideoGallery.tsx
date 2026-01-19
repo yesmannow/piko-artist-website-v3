@@ -17,12 +17,12 @@ function VideoThumbnailWithFallback({
   videoId,
   title,
   className,
-  onLoadingComplete
+  onLoad
 }: {
   videoId: string;
   title: string;
   className?: string;
-  onLoadingComplete?: () => void;
+  onLoad?: () => void;
 }) {
   // Get fallback images from public/images/tracks directory
   const trackImages = [
@@ -74,7 +74,7 @@ function VideoThumbnailWithFallback({
       fill
       className={className}
       onError={handleError}
-      onLoadingComplete={onLoadingComplete}
+      onLoad={onLoad}
       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
       unoptimized={imgSrc.includes('i.ytimg.com') || imgSrc.includes('img.youtube.com')}
     />
@@ -120,7 +120,7 @@ function FeaturedVideoThumbnail({ video, index, onPlay }: FeaturedVideoThumbnail
               videoId={video.id}
               title={video.title}
               className="object-cover transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 grayscale contrast-125"
-              onLoadingComplete={() => setIsLoaded(true)}
+              onLoad={() => setIsLoaded(true)}
             />
             {!isLoaded && (
               <Skeleton className="absolute inset-0" />
@@ -267,7 +267,7 @@ function VideoCard({ video, index, onPlay }: VideoCardProps) {
                 videoId={video.id}
                 title={video.title}
                 className="object-cover transition-transform duration-300"
-                onLoadingComplete={() => setIsLoaded(true)}
+                onLoad={() => setIsLoaded(true)}
               />
               {!isLoaded && (
                 <Skeleton className="absolute inset-0" />

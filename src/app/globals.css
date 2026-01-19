@@ -9,6 +9,16 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /*
+    Next.js injects a <nextjs-portal> element for dev tooling overlays.
+    In-browser edits removed `top/left: 0px`; CSS can't "delete" properties,
+    so we override them back to their initial value (auto) via `unset`.
+  */
+  nextjs-portal {
+    top: unset !important;
+    left: unset !important;
+  }
+
   :root {
     /* Base Color Palette - Dark Theme */
     --background: 240 5% 8%;

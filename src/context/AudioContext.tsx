@@ -3,10 +3,13 @@
 import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
 import { MediaItem, tracks } from "@/lib/data";
 
+type WebkitWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+
 interface AudioContextType {
   currentTrack: MediaItem | null;
   isPlaying: boolean;
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  currentTime: number;
   togglePlay: () => void;
   playTrack: (track: MediaItem) => void;
   skipNext: () => void;
@@ -20,6 +23,10 @@ interface AudioContextType {
   seek: (time: number) => void;
   duration: number;
   stop: () => void;
+  analyserNode: AnalyserNode | null;
+  ensureAnalyser: () => AnalyserNode | null;
+  immersiveOpen: boolean;
+  setImmersiveOpen: (open: boolean) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -31,8 +38,46 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [immersiveOpen, setImmersiveOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
+  const webAudioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const analyserNodeRef = useRef<AnalyserNode | null>(null);
+
+  const ensureAnalyser = useCallback(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return null;
+
+    // Create or reuse singleton AudioContext + analyser graph
+    if (!webAudioContextRef.current) {
+      const AudioCtx = window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
+      if (!AudioCtx) return null;
+      webAudioContextRef.current = new AudioCtx();
+    }
+    const audioCtx = webAudioContextRef.current;
+
+    if (!analyserNodeRef.current) {
+      analyserNodeRef.current = audioCtx.createAnalyser();
+      analyserNodeRef.current.fftSize = 256;
+      analyserNodeRef.current.smoothingTimeConstant = 0.8;
+    }
+
+    // MediaElementSourceNode can only be created once per <audio> element
+    if (!sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current = audioCtx.createMediaElementSource(audioEl);
+        sourceNodeRef.current.connect(analyserNodeRef.current);
+        analyserNodeRef.current.connect(audioCtx.destination);
+      } catch {
+        // If the browser throws (e.g. already connected), fail gracefully
+        return analyserNodeRef.current;
+      }
+    }
+
+    return analyserNodeRef.current;
+  }, []);
 
   const togglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
@@ -40,9 +85,15 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(() => {
+        setIsPlaying(false);
+      });
+      // Visualizer graph (requires user gesture for iOS)
+      const analyser = ensureAnalyser();
+      if (webAudioContextRef.current && analyser) {
+        webAudioContextRef.current.resume().catch(() => {});
+      }
     }
-    setIsPlaying(!isPlaying);
   };
 
   const playTrack = useCallback((track: MediaItem) => {
@@ -61,13 +112,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           }
           setIsPlaying(false);
         });
+        // Visualizer graph (requires user gesture for iOS)
+        const analyser = ensureAnalyser();
+        if (webAudioContextRef.current && analyser) {
+          webAudioContextRef.current.resume().catch(() => {});
+        }
       } else {
         // For video tracks, we might need different handling
         // For now, just set the track
         setIsPlaying(false);
       }
     }
-  }, []);
+  }, [ensureAnalyser]);
 
   const skipNext = useCallback(() => {
     if (!currentTrack) return;
@@ -101,6 +157,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setIsPlaying(false);
     setCurrentTrack(null);
     setProgress(0);
+    setCurrentTime(0);
   }, []);
 
   // Helper to check if coverArt is an image path
@@ -189,6 +246,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         currentTrack,
         isPlaying,
         audioRef,
+        currentTime,
         togglePlay,
         playTrack,
         skipNext,
@@ -202,6 +260,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         seek,
         duration,
         stop,
+        analyserNode: analyserNodeRef.current,
+        ensureAnalyser,
+        immersiveOpen,
+        setImmersiveOpen,
       }}
     >
       {children}
@@ -216,6 +278,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           if (audio.duration) {
             setProgress((audio.currentTime / audio.duration) * 100);
             setDuration(audio.duration);
+            setCurrentTime(audio.currentTime);
           }
         }}
         onLoadedMetadata={(e) => {

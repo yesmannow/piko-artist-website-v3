@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Music, Video, Calendar, Settings } from "lucide-react";
+import Image from "next/image";
+import { Home, Mail, Music, Video, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -18,6 +19,7 @@ export function TacticalBar() {
     { href: "/", icon: Home, label: "HOME" },
     { href: "/music", icon: Music, label: "MUSIC" },
     { href: "/videos", icon: Video, label: "VIDEOS" },
+    { href: "/contact", icon: Mail, label: "CONTACT" },
     { href: "/studio", icon: Settings, label: "STUDIO" },
   ];
 
@@ -25,7 +27,7 @@ export function TacticalBar() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       {/* Background with brutalist styling */}
       <div className="bg-[#050505] border-t-4 border-[#E0E0E0]">
-        <div className="flex items-center justify-around px-2 py-3">
+        <div className="flex items-center justify-around px-1 py-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -44,9 +46,11 @@ export function TacticalBar() {
                     animate={{ opacity: 1, y: 0 }}
                     className="absolute -top-1 left-1/2 -translate-x-1/2"
                   >
-                    <img
+                    <Image
                       src="/images/branding/spray-drip-accent.svg"
                       alt=""
+                      width={12}
+                      height={20}
                       className="w-3 h-5"
                     />
                   </motion.div>

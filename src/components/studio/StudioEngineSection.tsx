@@ -1,9 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Zap, Cpu, Radio } from "lucide-react";
+
+function mulberry32(seed: number) {
+  // Deterministic PRNG for SSR-safe animations.
+  let a = seed >>> 0;
+  return function rand() {
+    a |= 0;
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 export function StudioEngineSection() {
   const [isHovered, setIsHovered] = useState(false);
@@ -11,6 +24,24 @@ export function StudioEngineSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+
+  const waveformBars = useMemo(() => {
+    const BASE_SEED = 0xA11CE; // Fixed seed so SSR + client match exactly.
+    return Array.from({ length: 40 }, (_, i) => {
+      const rand = mulberry32(BASE_SEED ^ (i * 0x9E3779B9));
+
+      const h1 = 10 + rand() * 20;
+      const h2 = 30 + rand() * 40;
+      const h3 = 10 + rand() * 20;
+      const duration = 0.5 + rand() * 0.5;
+
+      return {
+        // Use a mutable array for Framer Motion keyframes (avoids readonly tuple type error)
+        heights: [`${h1.toFixed(4)}px`, `${h2.toFixed(4)}px`, `${h3.toFixed(4)}px`],
+        duration,
+      };
+    });
+  }, []);
 
   // Smooth spring animations for mouse tracking
   const springConfig = { damping: 50, stiffness: 100 };
@@ -226,36 +257,149 @@ export function StudioEngineSection() {
                 transformStyle: "preserve-3d",
               }}
             >
-              {/* Geometric Shapes - Abstract 3D Mixer */}
+              {/* DJ Monitor - Animated GIF "deck cam" */}
               <div className="absolute inset-0 flex items-center justify-center">
-                {/* Main Console Shape */}
                 <motion.div
-                  className="relative w-64 h-64 md:w-80 md:h-80 border-2 border-[#FFD700]/30"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, transparent 100%)",
-                    transform: "rotateX(45deg) rotateY(-45deg)",
-                    transformStyle: "preserve-3d",
-                  }}
-                  animate={{
-                    rotateZ: [0, 360],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
+                  className="relative w-[260px] h-[260px] md:w-[340px] md:h-[340px] lg:w-[420px] lg:h-[420px]"
+                  animate={
+                    isHovered
+                      ? { y: [-2, 2, -2], rotateZ: [-0.5, 0.5, -0.5] }
+                      : { y: [0, -6, 0], rotateZ: [0, 0.6, 0] }
+                  }
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  {/* Inner Grid */}
+                  {/* Glow bed */}
                   <div
-                    className="absolute inset-0"
+                    className="absolute -inset-10 opacity-60"
                     style={{
-                      backgroundImage: `
-                        linear-gradient(rgba(255, 215, 0, 0.1) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255, 215, 0, 0.1) 1px, transparent 1px)
-                      `,
-                      backgroundSize: "20px 20px",
+                      background: `radial-gradient(circle at center, rgba(255, 215, 0, ${0.14 + audioPulse * 0.22}) 0%, transparent 65%)`,
+                      filter: "blur(40px)",
                     }}
                   />
+
+                  {/* Frame */}
+                  <motion.div
+                    className="relative w-full h-full overflow-hidden border-2 border-[#FFD700]/25 bg-[#050505]/60"
+                    style={{
+                      transform: "rotateX(14deg) rotateY(-18deg)",
+                      boxShadow:
+                        "0 30px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(224,224,224,0.08) inset",
+                    }}
+                    animate={{
+                      filter: isHovered
+                        ? [
+                            "contrast(1.08) saturate(1.05) brightness(0.95)",
+                            "contrast(1.2) saturate(1.18) brightness(1.06)",
+                            "contrast(1.08) saturate(1.05) brightness(0.95)",
+                          ]
+                        : [
+                            "contrast(1.06) saturate(1.02) brightness(0.92)",
+                            "contrast(1.12) saturate(1.12) brightness(0.98)",
+                            "contrast(1.06) saturate(1.02) brightness(0.92)",
+                          ],
+                    }}
+                    transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    {/* Deck cam GIF */}
+                    <Image
+                      src="/images/sudio-mixer/Digital-DJ-Tips-GIF-downsized_large.gif"
+                      alt="DJ deck cam"
+                      fill
+                      unoptimized
+                      sizes="(min-width: 1024px) 420px, (min-width: 768px) 340px, 260px"
+                      className="object-cover"
+                      style={{
+                        filter: "grayscale(0.05) contrast(1.05) saturate(1.15)",
+                        transform: "scale(1.04)",
+                        opacity: 0.78,
+                      }}
+                    />
+
+                    {/* Vignette + grime */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background:
+                          "radial-gradient(circle at 50% 40%, rgba(255,215,0,0.06) 0%, rgba(5,5,5,0.75) 70%)",
+                        mixBlendMode: "overlay",
+                      }}
+                    />
+
+                    {/* Scanlines */}
+                    <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-overlay bg-[linear-gradient(transparent_50%,rgba(255,215,0,0.08)_50%)] bg-[length:100%_4px]" />
+
+                    {/* Golden grid */}
+                    <div
+                      className="absolute inset-0 pointer-events-none opacity-35"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(rgba(255, 215, 0, 0.08) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255, 215, 0, 0.08) 1px, transparent 1px)
+                        `,
+                        backgroundSize: "20px 20px",
+                      }}
+                    />
+
+                    {/* Subtle particle dotfield */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none opacity-25 mix-blend-screen"
+                      style={{
+                        backgroundImage: "radial-gradient(rgba(255,215,0,0.35) 1px, transparent 1px)",
+                        backgroundSize: "18px 18px",
+                      }}
+                      animate={{ x: [0, -14, 0], y: [0, 10, 0] }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                    />
+
+                    {/* Glitch sweep */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none opacity-35"
+                      style={{
+                        background:
+                          "linear-gradient(110deg, transparent 35%, rgba(255,215,0,0.12) 48%, transparent 60%)",
+                        mixBlendMode: "screen",
+                      }}
+                      initial={{ x: "-120%" }}
+                      animate={{ x: ["-120%", "120%"] }}
+                      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 2.4 }}
+                    />
+
+                    {/* Micro-noise */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none opacity-14"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E")`,
+                      mixBlendMode: "overlay",
+                    }}
+                    animate={{ opacity: [0.10, 0.16, 0.10] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                    />
+
+                    {/* Corner brackets */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute left-3 top-3 w-5 h-5 border-l-2 border-t-2 border-[#FFD700]/60" />
+                      <div className="absolute right-3 top-3 w-5 h-5 border-r-2 border-t-2 border-[#FFD700]/60" />
+                      <div className="absolute left-3 bottom-3 w-5 h-5 border-l-2 border-b-2 border-[#FFD700]/60" />
+                      <div className="absolute right-3 bottom-3 w-5 h-5 border-r-2 border-b-2 border-[#FFD700]/60" />
+                    </div>
+
+                    {/* HUD label */}
+                    <div className="absolute left-4 bottom-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-[#E0E0E0]/90">
+                      <motion.span
+                        className="inline-block w-2 h-2 rounded-full bg-[#FFD700]"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                      />
+                      DECK_CAM // LIVE
+                    </div>
+
+                    {/* Auto-dim when not hovered */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none bg-[#050505]"
+                      animate={{ opacity: isHovered ? 0 : 0.45 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                    />
+                  </motion.div>
                 </motion.div>
 
                 {/* Floating Elements */}
@@ -284,20 +428,16 @@ export function StudioEngineSection() {
 
                 {/* Audio Waveform Visualization */}
                 <div className="absolute bottom-0 left-0 right-0 h-32 flex items-end justify-center gap-1 px-8">
-                  {Array.from({ length: 40 }).map((_, i) => (
+                  {waveformBars.map((bar, i) => (
                     <motion.div
                       key={i}
                       className="w-1 bg-[#FFD700]"
                       animate={{
-                        height: [
-                          `${10 + Math.random() * 20}px`,
-                          `${30 + Math.random() * 40}px`,
-                          `${10 + Math.random() * 20}px`,
-                        ],
+                        height: bar.heights,
                         opacity: [0.3, 0.8, 0.3],
                       }}
                       transition={{
-                        duration: 0.5 + Math.random() * 0.5,
+                        duration: bar.duration,
                         repeat: Infinity,
                         delay: i * 0.05,
                         ease: "easeInOut",

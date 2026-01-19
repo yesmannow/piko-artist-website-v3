@@ -17,7 +17,7 @@ const navItems = [
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
   { name: "Studio", path: "/studio", anchor: null },
-  { name: "Contact", path: "/", anchor: "contact" },
+  { name: "Contact", path: "/contact", anchor: null },
 ];
 
 // Animated Logo Component - Urban/Hip-Hop Style
@@ -53,47 +53,9 @@ const AnimatedLogo = ({
     >
       <motion.div
         className="relative"
-        animate={
-          reducedMotion
-            ? { scale: isScrolled ? 0.85 : 1 }
-            : {
-                rotate: [0, 3, -3, 0],
-                scale: isScrolled ? 0.85 : 1,
-              }
-        }
-        transition={
-          reducedMotion
-            ? { duration: 0.3 }
-            : {
-                rotate: {
-                  duration: 0.5,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  repeatDelay: 2,
-                },
-                scale: {
-                  duration: 0.3,
-                },
-              }
-        }
+        animate={{ scale: isScrolled ? 0.85 : 1 }}
+        transition={{ duration: 0.3 }}
       >
-        {!reducedMotion && (
-          <motion.div
-            className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{
-              background: "radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)",
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0, 0.4, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        )}
         <Link
           href="/"
           className="relative z-10 block"
@@ -521,7 +483,7 @@ export function Navbar() {
                             triggerHaptic();
                             handleNavClick(e, item);
                           }}
-                          className={`block text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-transparent ${
+                          className={`text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter py-5 min-h-[64px] flex items-center justify-center touch-manipulation rounded-xl transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-transparent ${
                             active
                               ? "text-[#FFD700] bg-[#FFD700]/15 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
                               : "text-zinc-400 hover:text-white hover:bg-white/10"

@@ -11,6 +11,23 @@ interface WaveformProps {
   height?: number;
 }
 
+function isAbortError(err: unknown) {
+  if (!err) return false;
+  // DOMException in browsers
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  // Some libs throw plain Error
+  if (err instanceof Error && err.name === "AbortError") return true;
+  // Or they throw a plain object
+  if (typeof err === "object" && err !== null && "name" in err && (err as { name?: unknown }).name === "AbortError") {
+    return true;
+  }
+  const msg =
+    typeof err === "object" && err !== null && "message" in err
+      ? (err as { message?: unknown }).message
+      : undefined;
+  return typeof msg === "string" && msg.toLowerCase().includes("aborted");
+}
+
 export function Waveform({
   audioUrl,
   progress,
@@ -22,10 +39,13 @@ export function Waveform({
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isSeekingRef = useRef(false);
+  const seekTimeoutRef = useRef<number | null>(null);
 
   // Initialize WaveSurfer
   useEffect(() => {
     if (!containerRef.current) return;
+
+    let isUnmounting = false;
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -39,18 +59,37 @@ export function Waveform({
       normalize: true,
       interact: true,
       dragToSeek: true,
-      backend: "WebAudio",
+      // MediaElement backend is more abort-tolerant during unmount / StrictMode double-invoke
+      backend: "MediaElement",
       mediaControls: false,
     });
 
     wavesurferRef.current = wavesurfer;
 
     // Load audio
-    wavesurfer.load(audioUrl);
+    try {
+      wavesurfer.load(audioUrl);
+    } catch (err) {
+      // If unmount happens mid-load in dev strict mode, ignore abort-like errors
+      if (!isAbortError(err) && process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Waveform load error:", err);
+      }
+    }
 
     // Handle ready state
     wavesurfer.on("ready", () => {
       setIsReady(true);
+    });
+
+    // Handle internal load errors (AbortError is expected on fast unmount)
+    wavesurfer.on("error", (err) => {
+      if (isUnmounting && isAbortError(err)) return;
+      if (isAbortError(err)) return;
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Waveform error:", err);
+      }
     });
 
     // Handle seek - sync with audio element
@@ -67,14 +106,28 @@ export function Waveform({
       }
 
       // Reset flag after a short delay
-      setTimeout(() => {
+      if (seekTimeoutRef.current) window.clearTimeout(seekTimeoutRef.current);
+      seekTimeoutRef.current = window.setTimeout(() => {
         isSeekingRef.current = false;
       }, 200);
     });
 
     // Cleanup
     return () => {
-      wavesurfer.destroy();
+      isUnmounting = true;
+      if (seekTimeoutRef.current) {
+        window.clearTimeout(seekTimeoutRef.current);
+        seekTimeoutRef.current = null;
+      }
+      try {
+        wavesurfer.destroy();
+      } catch (err) {
+        // WaveSurfer may abort an in-flight request during destroy() → ignore AbortError
+        if (!isAbortError(err) && process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.error("Waveform destroy error:", err);
+        }
+      }
     };
   }, [audioUrl, onSeek, height]);
 
