@@ -6,6 +6,7 @@ import { useLenis } from "lenis/react";
 import Image from "next/image";
 import { tracks, MediaItem } from "@/lib/data";
 import { X, Play } from "lucide-react";
+import { getYouTubeThumbnailProxyAlt } from "@/lib/utils/youtubeImageProxy";
 
 // Thumbnail component with fallback strategy
 function VideoThumbnail({ videoId, title, className }: { videoId: string; title: string; className?: string }) {
@@ -37,14 +38,15 @@ function VideoThumbnail({ videoId, title, className }: { videoId: string; title:
   const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
   const fallbackImage = trackImages[fallbackIndex];
 
-  const [imgSrc, setImgSrc] = useState(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
+  // Use proxied YouTube images for COEP compatibility
+  const [imgSrc, setImgSrc] = useState(getYouTubeThumbnailProxyAlt(videoId, 'maxresdefault'));
   const [errorCount, setErrorCount] = useState(0);
 
   const handleError = () => {
     if (errorCount === 0) {
-      // First fallback: try hqdefault
+      // First fallback: try hqdefault (proxied)
       setErrorCount(1);
-      setImgSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
+      setImgSrc(getYouTubeThumbnailProxyAlt(videoId, 'hqdefault'));
     } else if (errorCount === 1) {
       // Second fallback: use track image
       setErrorCount(2);
@@ -60,7 +62,7 @@ function VideoThumbnail({ videoId, title, className }: { videoId: string; title:
       className={className}
       onError={handleError}
       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      unoptimized={imgSrc.includes('i.ytimg.com')} // YouTube images are already optimized
+      unoptimized={imgSrc.startsWith('/api/image-proxy')} // Proxied images are already optimized
     />
   );
 }

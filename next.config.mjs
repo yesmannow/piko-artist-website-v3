@@ -86,13 +86,9 @@ const nextConfig = {
         ],
       },
     ];
-    // WARNING: COOP/COEP headers will block external resources (images, scripts)
-    // that do not have Cross-Origin Resource Policy (CORP) headers.
-    // Ensure all external assets support CORP or use a proxy/self-hosted assets.
-    //
-    // Image Proxy Usage:
-    // For external images that don't support CORP, use: /api/image-proxy?url=<encoded-url>
-    // Example: /api/image-proxy?url=https%3A%2F%2Fexample.com%2Fimage.jpg
+    // NOTE: COOP/COEP headers require all external resources to have CORP headers.
+    // YouTube images are automatically proxied through /api/image-proxy for compatibility.
+    // All components using YouTube thumbnails have been updated to use the proxy utility.
   },
   experimental: {
     // Vercel deployment configuration

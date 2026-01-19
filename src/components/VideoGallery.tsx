@@ -7,6 +7,7 @@ import { tracks } from "@/lib/data";
 import { useVideo } from "@/context/VideoContext";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { getYouTubeThumbnailProxy } from "@/lib/utils/youtubeImageProxy";
 
 interface VideoGalleryProps {
   featuredOnly?: boolean;
@@ -52,16 +53,17 @@ function VideoThumbnailWithFallback({
   const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
   const fallbackImage = trackImages[fallbackIndex];
 
-  const [imgSrc, setImgSrc] = useState(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+  // Use proxied YouTube images for COEP compatibility
+  const [imgSrc, setImgSrc] = useState(getYouTubeThumbnailProxy(videoId, 'hqdefault'));
   const [errorCount, setErrorCount] = useState(0);
 
   const handleError = () => {
     if (errorCount === 0) {
-      // First fallback: try maxresdefault
+      // First fallback: try maxresdefault (proxied)
       setErrorCount(1);
-      setImgSrc(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
+      setImgSrc(getYouTubeThumbnailProxy(videoId, 'maxresdefault'));
     } else if (errorCount === 1) {
-      // Second fallback: use track image
+      // Second fallback: use track image (local, no proxy needed)
       setErrorCount(2);
       setImgSrc(fallbackImage);
     }
@@ -76,7 +78,7 @@ function VideoThumbnailWithFallback({
       onError={handleError}
       onLoad={onLoad}
       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      unoptimized={imgSrc.includes('i.ytimg.com') || imgSrc.includes('img.youtube.com')}
+      unoptimized={imgSrc.startsWith('/api/image-proxy')}
     />
   );
 }

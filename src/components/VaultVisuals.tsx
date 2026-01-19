@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { tracks } from "@/lib/data";
 import { useVideo } from "@/context/VideoContext";
+import { getYouTubeThumbnailProxy } from "@/lib/utils/youtubeImageProxy";
 
 function LiveCameraTimestamp() {
   // SSR-safe: render a deterministic placeholder first, then update after mount.
@@ -81,8 +82,9 @@ export function VaultVisuals() {
                 ? video.src.split("youtu.be/")[1]?.split("?")[0]
                 : null;
 
+              // Use proxied YouTube images for COEP compatibility
               const thumbnailUrl = youtubeId
-                ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
+                ? getYouTubeThumbnailProxy(youtubeId, 'maxresdefault')
                 : cctvBackground;
 
             return (
