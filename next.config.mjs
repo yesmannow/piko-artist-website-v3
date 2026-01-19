@@ -15,9 +15,13 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Ignore ESLint warnings during build (warnings are non-blocking)
+  // Exclude scripts directory from Next.js compilation
+  pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  // TypeScript will handle exclusions via tsconfig.json
+  // ESLint configuration - allow warnings but catch errors
   eslint: {
-    ignoreDuringBuilds: false, // Keep false to catch real errors, but warnings won't block
+    ignoreDuringBuilds: false, // Keep false to catch real errors
+    // Warnings won't block build, only errors will
   },
   // Ignore TypeScript errors during build (should be false for production)
   typescript: {
@@ -75,13 +79,28 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
+          },
         ],
       },
     ];
+    // WARNING: COOP/COEP headers will block external resources (images, scripts)
+    // that do not have Cross-Origin Resource Policy (CORP) headers.
+    // Ensure all external assets support CORP or use a proxy/self-hosted assets.
+    //
+    // Image Proxy Usage:
+    // For external images that don't support CORP, use: /api/image-proxy?url=<encoded-url>
+    // Example: /api/image-proxy?url=https%3A%2F%2Fexample.com%2Fimage.jpg
   },
   experimental: {
     // Vercel deployment configuration
   },
+  // External packages that should not be bundled (for Node.js sidecar scripts)
+  serverExternalPackages: ['prolink-connect'],
+  // Transpile Tailwind v4 packages and ONNX Runtime for Turbopack compatibility
+  transpilePackages: ['@tailwindcss/postcss', '@tailwindcss/node', 'onnxruntime-web'],
   outputFileTracingRoot: __dirname,
   webpack: (config, { isServer }) => {
     // Resolve path aliases

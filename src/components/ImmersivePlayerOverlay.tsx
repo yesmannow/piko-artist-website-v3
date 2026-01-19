@@ -17,7 +17,6 @@ import {
   VolumeX,
 } from "lucide-react";
 import { EnhancedAudioVisualizer } from "@/components/EnhancedAudioVisualizer";
-import { Waveform } from "@/components/dj-ui/Waveform";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -662,21 +661,7 @@ export function ImmersivePlayerOverlay() {
                       </div>
                     </div>
 
-                    {/* Waveform (desktop-ish only) */}
-                    {active?.src && (
-                      <div className="hidden md:block border-2 border-white/10 bg-black/30" data-no-gesture="true">
-                        <Waveform
-                          audioUrl={active.src}
-                          progress={progress}
-                          isPlaying={isPlaying}
-                          onSeek={(t) => {
-                            triggerHaptic();
-                            seek(t);
-                          }}
-                          height={56}
-                        />
-                      </div>
-                    )}
+                    {/* Waveform removed - will be rebuilt in Phase 1 */}
                   </motion.div>
                 </div>
               </div>

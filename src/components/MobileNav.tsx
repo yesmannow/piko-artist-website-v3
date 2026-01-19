@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, User, Video, MoreVertical, Music, Wrench, Mail, X, Instagram, Youtube, ExternalLink } from "lucide-react";
+import { Home, User, Video, MoreVertical, Music, Wrench, Mail, X, Instagram, Youtube, ExternalLink, Radio } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useState, useEffect, useRef } from "react";
 import Logo from "@/components/branding/Logo";
@@ -19,7 +19,7 @@ const navItems = [
 
 const moreItems = [
   { href: "/music", label: "Music", icon: Music },
-  { href: "/studio", label: "Studio", icon: Wrench },
+  { href: "/studio", label: "Studio", icon: Radio },
   { href: "/contact", label: "Contact", icon: Mail },
 ];
 

@@ -1,0 +1,21 @@
+{
+  "name": "piko-prolink-bridge",
+  "version": "1.0.0",
+  "description": "Node.js sidecar for Prolink-connect hardware bridge",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "prolink-connect": "^1.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.3"
+  }
+}

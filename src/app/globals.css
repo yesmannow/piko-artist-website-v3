@@ -1,6 +1,27 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4 Theme Configuration */
+@theme {
+  --color-glass-surface: oklch(20% 0.05 260 / 0.1);
+  --color-neon-primary: oklch(60% 0.2 300);
+  --blur-glass-md: 12px;
+  --color-brushed-gold: oklch(80% 0.2 90);
+  --font-family-industrial: var(--font-barlow), system-ui, sans-serif;
+}
+
+/* Glassmorphism Utilities */
+@utility glass-panel-high {
+  backdrop-filter: blur(24px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@utility glass-panel-low {
+  backdrop-filter: blur(8px);
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 
 @layer base {
   html,
@@ -50,6 +71,10 @@
     --deep-onyx: 0 0% 2%;
     --charcoal-slate: 0 0% 10%;
     --radius: 0px; /* Brutalist: sharp corners */
+
+    /* Glassmorphism theme for V3 Studio */
+    --color-glass-surface: oklch(20% 0.05 260 / 0.7);
+    --color-neon-accent: oklch(60% 0.2 300);
   }
 
   body {
@@ -182,7 +207,7 @@
   }
 
   p, span, div {
-    @apply font-industrial;
+    font-family: var(--font-barlow), system-ui, sans-serif;
   }
 
   /* Interactive Elements */
@@ -221,7 +246,10 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    @apply outline-none ring-2 ring-brushed-gold ring-offset-2 ring-offset-background;
+    outline: none;
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px var(--color-brushed-gold);
   }
 
   /* Torn Paper Effect for Cards */

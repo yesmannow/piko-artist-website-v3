@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { VaultVisuals } from "@/components/VaultVisuals";
 import { TrackList } from "@/components/TrackList";
-import { StudioEngineSection } from "@/components/studio/StudioEngineSection";
 import { FluidVaporBackground } from "@/components/FluidVaporBackground";
 import { HomeBookingTerminal } from "@/components/HomeBookingTerminal";
 
@@ -127,9 +126,6 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-
-      {/* Studio Engine Section */}
-      <StudioEngineSection />
 
       {/* Section 2: VAULT VISUALS (CCTV Monitor Wall) */}
       <VaultVisuals />

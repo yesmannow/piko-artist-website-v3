@@ -5,7 +5,6 @@ import { Maximize2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X } fr
 import { useEffect, useState } from "react";
 import { useHaptic } from "@/hooks/useHaptic";
 import Image from "next/image";
-import { Waveform } from "@/components/dj-ui/Waveform";
 import { EnhancedAudioVisualizer } from "@/components/EnhancedAudioVisualizer";
 
 export function PersistentPlayer() {
@@ -191,17 +190,7 @@ export function PersistentPlayer() {
               >
                 {/* Frequency Bars */}
                 <EnhancedAudioVisualizer height={40} />
-                {/* Waveform */}
-                <Waveform
-                  audioUrl={currentTrack.src}
-                  progress={progress}
-                  isPlaying={isPlaying}
-                  onSeek={(time) => {
-                    triggerHaptic();
-                    seek(time);
-                  }}
-                  height={40}
-                />
+                {/* Waveform removed - will be rebuilt in Phase 1 */}
               </div>
             )}
 
