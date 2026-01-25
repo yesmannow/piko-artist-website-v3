@@ -125,27 +125,37 @@ export const useAudioEngine = (): AudioEngineControls => {
     // components can observe directly.
     const loop = () => {
       if (masterMeter.current) {
-        const level = masterMeter.current.getValue();
+        const _level = masterMeter.current.getValue();
         // Future: Update transient store for VU meter
-        // transientStore.getState().setMeterLevel(level);
+        // transientStore.getState().setMeterLevel(_level);
         
         // Example of what NOT to do (would cause 60 re-renders/sec):
-        // useStore.setState({ meterLevel: level }); // ❌ BAD
+        // useStore.setState({ meterLevel: _level }); // ❌ BAD
       }
       
       // Update playhead positions for both decks
       (['A', 'B'] as const).forEach(deck => {
         const player = players.current[deck];
         if (player && player.loaded && player.state === 'started') {
-          const position = player.toSeconds(player.position);
+          const _position = player.toSeconds(player.position);
           // Future: Update transient store for waveform playhead
-          // transientStore.getState().setDeckPosition(deck, position);
+          // transientStore.getState().setDeckPosition(deck, _position);
         }
       });
       
       animationFrameId.current = requestAnimationFrame(loop);
     };
     loop();
+
+    // Copy refs to variables for cleanup
+    const playersRef = players.current;
+    const channelsRef = channels.current;
+    const eqsRef = eqs.current;
+    const filtersRef = filters.current;
+    const crossFadeRef = crossFade.current;
+    const masterCompressorRef = masterCompressor.current;
+    const masterLimiterRef = masterLimiter.current;
+    const masterMeterRef = masterMeter.current;
 
     // Cleanup
     return () => {
@@ -158,15 +168,15 @@ export const useAudioEngine = (): AudioEngineControls => {
       // to allow hot-reload, but for production correctness:
       if (!isInitialized.current) {
         (['A', 'B'] as const).forEach(deck => {
-          players.current[deck]?.dispose();
-          channels.current[deck]?.dispose();
-          eqs.current[deck]?.dispose();
-          filters.current[deck]?.dispose();
+          playersRef[deck]?.dispose();
+          channelsRef[deck]?.dispose();
+          eqsRef[deck]?.dispose();
+          filtersRef[deck]?.dispose();
         });
-        crossFade.current?.dispose();
-        masterCompressor.current?.dispose();
-        masterLimiter.current?.dispose();
-        masterMeter.current?.dispose();
+        crossFadeRef?.dispose();
+        masterCompressorRef?.dispose();
+        masterLimiterRef?.dispose();
+        masterMeterRef?.dispose();
       }
     };
   }, []); // Empty deps - run once
@@ -205,7 +215,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         player.playbackRate = newRate;
       }
     });
-  }, [masterBpm, deckA.trackData, deckB.trackData]);
+  }, [masterBpm, deckA, deckB]);
 
   // Update Deck Volumes
   useEffect(() => {
@@ -340,7 +350,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       player.playbackRate = newRate;
       console.log(`[AudioEngine] Synced Deck ${deck} to ${masterBpm} BPM, rate: ${newRate}`);
     }
-  }, [masterBpm, deckA.trackData, deckB.trackData]);
+  }, [masterBpm, deckA, deckB]);
 
   return {
     initAudio,
