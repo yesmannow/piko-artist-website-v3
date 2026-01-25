@@ -19,9 +19,12 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
   // Lock body scroll when modal is open
   useBodyScrollLock(isOpen);
 
-  // Handle ESC key to close
+  // Scroll to top and handle ESC key when modal opens
   useEffect(() => {
     if (!isOpen) return;
+
+    // Scroll to top of page when modal opens to ensure video is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
