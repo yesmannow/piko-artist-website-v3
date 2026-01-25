@@ -12,7 +12,7 @@ export default function Studio() {
       className="h-dvh w-full overflow-hidden text-white studio-grain"
       style={{
         background: '#050505',
-        backgroundImage: 'radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%)',
+        backgroundImage: 'var(--background-image-liquid-mesh)',
         backgroundSize: '200% 200%',
         animation: 'liquid-move 18s ease-in-out infinite'
       }}
