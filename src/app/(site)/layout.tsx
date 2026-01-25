@@ -1,11 +1,11 @@
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { AudioProvider } from "@/context/AudioContext";
 import { VideoProvider } from "@/context/VideoContext";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
-import { MobileNav } from "@/components/MobileNav";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { TacticalBar } from "@/components/navigation/TacticalBar";
 import { InstallApp } from "@/components/InstallApp";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";

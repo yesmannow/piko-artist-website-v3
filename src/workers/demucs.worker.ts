@@ -13,10 +13,26 @@
 import * as ort from 'onnxruntime-web';
 
 // Worker message types
-interface WorkerMessage {
-  type: 'load' | 'separate' | 'cancel';
-  data?: any;
+interface LoadMessage {
+  type: 'load';
+  data: {
+    modelUrl: string;
+  };
 }
+
+interface SeparateMessage {
+  type: 'separate';
+  data: {
+    audioData: Float32Array;
+  };
+}
+
+interface CancelMessage {
+  type: 'cancel';
+  data?: never;
+}
+
+type WorkerMessage = LoadMessage | SeparateMessage | CancelMessage;
 
 interface ProgressMessage {
   type: 'progress';

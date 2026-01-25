@@ -43,11 +43,12 @@ function LatestDrop({ video }: { video: { id: string; title: string } }) {
   return (
     <section className="mb-12 md:mb-16">
       <div className="relative w-full aspect-video bg-[#0A0A0A] border border-[#2A2A2A] overflow-hidden shadow-lg">
-        <YouTubeEmbed
-          videoid={video.id}
-          height={400}
-          style={{ width: '100%', height: '100%' }}
-        />
+        <div className="w-full h-full">
+          <YouTubeEmbed
+            videoid={video.id}
+            height={400}
+          />
+        </div>
       </div>
       <h2 className="mt-4 text-white text-lg md:text-xl font-bold uppercase tracking-tight line-clamp-2">
         {video.title}
@@ -69,11 +70,12 @@ function VideoArchive({ videos }: VideoGridProps) {
             key={video.id}
             className="group relative aspect-video bg-[#0A0A0A] border border-[#2A2A2A] overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:border-[#FFD400] shadow-lg"
           >
-            <YouTubeEmbed
-              videoid={video.id}
-              height={400}
-              style={{ width: '100%', height: '100%' }}
-            />
+            <div className="w-full h-full">
+              <YouTubeEmbed
+                videoid={video.id}
+                height={400}
+              />
+            </div>
             <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
               <h3 className="text-white text-sm md:text-base font-bold uppercase tracking-tight line-clamp-2">
                 {video.title}
