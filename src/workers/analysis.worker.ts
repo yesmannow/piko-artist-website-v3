@@ -29,6 +29,13 @@ export interface AnalysisMessage {
   sampleRate: number;
 }
 
+export interface WorkerMessage {
+  type: string;
+  audioData?: Float32Array;
+  sampleRate?: number;
+  [key: string]: unknown;
+}
+
 // Initialize Essentia instance
 let essentia: EssentiaWASM | null = null;
 
@@ -104,10 +111,18 @@ function analyzeAudio(audioData: Float32Array, sampleRate: number): AnalysisResu
 /**
  * Worker message handler
  */
-self.onmessage = async (event: MessageEvent<AnalysisMessage>) => {
+self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
   const { type, audioData, sampleRate } = event.data;
 
   if (type === 'analyze') {
+    if (!audioData || !sampleRate) {
+      self.postMessage({
+        type: 'error',
+        error: 'Missing audioData or sampleRate in analyze message',
+      });
+      return;
+    }
+
     try {
       // Initialize Essentia if not already done
       await initEssentia();

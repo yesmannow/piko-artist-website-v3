@@ -339,25 +339,17 @@ export const useAudioEngine = (): AudioEngineControls => {
     if (!stemDecks.current[deck]) {
       const destination = deck === 'A' ? crossFade.current!.a : crossFade.current!.b;
       
-      // Disconnect the regular player from the crossfader
+      // Mute the regular player but keep it in the graph
       const player = players.current[deck];
-      const channel = channels.current[deck];
-      if (player && channel) {
-        channel.disconnect();
+      if (player) {
+        player.volume.value = -Infinity;
       }
       
-      // Create new StemDeck
+      // Create new StemDeck connected directly to the crossfader input
+      // The StemDeck has its own internal channel
       stemDecks.current[deck] = new StemDeck(deck, destination);
       
-      // Connect EQ and Filter to StemDeck channel
-      const stemDeck = stemDecks.current[deck]!;
-      const eq = eqs.current[deck];
-      const filter = filters.current[deck];
-      
-      if (eq && filter) {
-        stemDeck.getChannel().disconnect();
-        stemDeck.getChannel().chain(eq, filter, destination);
-      }
+      console.log(`[AudioEngine] Created StemDeck for Deck ${deck}`);
     }
     
     const stemDeck = stemDecks.current[deck];
@@ -385,8 +377,15 @@ export const useAudioEngine = (): AudioEngineControls => {
     const stemDeck = stemDecks.current[deck];
     const player = players.current[deck];
     
+    // Start Transport if not already running (global state management)
+    if (Tone.Transport.state !== 'started') {
+      Tone.Transport.start();
+      console.log('[AudioEngine] Transport started');
+    }
+    
     // Prioritize StemDeck if available (Phase VI)
     if (stemDeck && stemDeck.isLoaded()) {
+      stemDeck.unmute(); // Unmute the stems for playback
       stemDeck.play();
       console.log(`[AudioEngine] Playing Deck ${deck} (Stems)`);
     } else if (player && player.loaded && player.state !== 'started') {
@@ -402,11 +401,24 @@ export const useAudioEngine = (): AudioEngineControls => {
     
     // Prioritize StemDeck if available (Phase VI)
     if (stemDeck && stemDeck.isLoaded()) {
-      stemDeck.pause();
+      stemDeck.pause(); // Mute the deck without stopping Transport
       console.log(`[AudioEngine] Paused Deck ${deck} (Stems)`);
     } else if (player && player.state === 'started') {
       player.stop();
       console.log(`[AudioEngine] Paused Deck ${deck}`);
+    }
+    
+    // Stop Transport only if both decks are paused/stopped
+    const otherDeck = deck === 'A' ? 'B' : 'A';
+    const otherStemDeck = stemDecks.current[otherDeck];
+    const otherPlayer = players.current[otherDeck];
+    
+    const isOtherDeckPlaying = (otherStemDeck && otherStemDeck.isLoaded()) 
+      || (otherPlayer && otherPlayer.state === 'started');
+    
+    if (!isOtherDeckPlaying && Tone.Transport.state === 'started') {
+      Tone.Transport.pause();
+      console.log('[AudioEngine] Transport paused (all decks stopped)');
     }
   }, []);
 
@@ -418,11 +430,26 @@ export const useAudioEngine = (): AudioEngineControls => {
     // Prioritize StemDeck if available (Phase VI)
     if (stemDeck && stemDeck.isLoaded()) {
       stemDeck.stop();
+      stemDeck.seek(0);
       console.log(`[AudioEngine] Stopped Deck ${deck} (Stems)`);
     } else if (player) {
       player.stop();
       player.seek(0);
       console.log(`[AudioEngine] Stopped Deck ${deck}`);
+    }
+    
+    // Stop Transport only if both decks are stopped
+    const otherDeck = deck === 'A' ? 'B' : 'A';
+    const otherStemDeck = stemDecks.current[otherDeck];
+    const otherPlayer = players.current[otherDeck];
+    
+    const isOtherDeckPlaying = (otherStemDeck && otherStemDeck.isLoaded()) 
+      || (otherPlayer && otherPlayer.state === 'started');
+    
+    if (!isOtherDeckPlaying) {
+      Tone.Transport.stop();
+      Tone.Transport.seconds = 0;
+      console.log('[AudioEngine] Transport stopped (all decks stopped)');
     }
   }, []);
 

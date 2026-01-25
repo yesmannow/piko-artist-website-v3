@@ -11,7 +11,7 @@
  * - Error handling and cleanup
  */
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import type { AnalysisResult } from '../workers/analysis.worker';
 
 export interface UseTrackAnalysisReturn {
@@ -27,8 +27,8 @@ export interface UseTrackAnalysisReturn {
  */
 export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
   const workerRef = useRef<Worker | null>(null);
-  const isAnalyzingRef = useRef(false);
-  const errorRef = useRef<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   /**
    * Initialize the Web Worker
@@ -113,12 +113,12 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
    * @returns Analysis results (BPM, Key, Energy)
    */
   const analyze = useCallback(async (url: string): Promise<AnalysisResult> => {
-    if (isAnalyzingRef.current) {
+    if (isAnalyzing) {
       throw new Error('Analysis already in progress');
     }
 
-    isAnalyzingRef.current = true;
-    errorRef.current = null;
+    setIsAnalyzing(true);
+    setError(null);
 
     try {
       console.log('[useTrackAnalysis] Starting analysis for:', url);
@@ -144,19 +144,19 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
       return new Promise<AnalysisResult>((resolve, reject) => {
         // Set up message handler for worker response
         const handleMessage = (event: MessageEvent) => {
-          const { type, result, error } = event.data;
+          const { type, result, error: workerError } = event.data;
 
           if (type === 'result') {
             console.log('[useTrackAnalysis] Analysis complete:', result);
             worker.removeEventListener('message', handleMessage);
-            isAnalyzingRef.current = false;
+            setIsAnalyzing(false);
             resolve(result);
           } else if (type === 'error') {
-            console.error('[useTrackAnalysis] Analysis error:', error);
+            console.error('[useTrackAnalysis] Analysis error:', workerError);
             worker.removeEventListener('message', handleMessage);
-            isAnalyzingRef.current = false;
-            errorRef.current = error;
-            reject(new Error(error));
+            setIsAnalyzing(false);
+            setError(workerError);
+            reject(new Error(workerError));
           }
         };
 
@@ -175,13 +175,13 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
         );
       });
     } catch (error) {
-      isAnalyzingRef.current = false;
+      setIsAnalyzing(false);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      errorRef.current = errorMessage;
+      setError(errorMessage);
       console.error('[useTrackAnalysis] Error during analysis:', error);
       throw error;
     }
-  }, [initWorker, decodeAudioFile, convertToMono]);
+  }, [isAnalyzing, initWorker, decodeAudioFile, convertToMono]);
 
   /**
    * Cleanup worker on unmount
@@ -194,7 +194,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
 
   return {
     analyze,
-    isAnalyzing: isAnalyzingRef.current,
-    error: errorRef.current,
+    isAnalyzing,
+    error,
   };
 };

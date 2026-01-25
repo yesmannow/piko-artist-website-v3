@@ -90,8 +90,9 @@ export class StemDeck {
   }
   
   /**
-   * Start playback using Transport for phase-locked synchronization
-   * Both players are already synced to Transport via .sync()
+   * Start playback
+   * Note: This only affects this deck's players. Transport management is 
+   * handled by the parent audio engine to avoid global state conflicts.
    */
   play(): void {
     if (!this.vocalsPlayer.loaded || !this.instPlayer.loaded) {
@@ -99,30 +100,50 @@ export class StemDeck {
       return;
     }
     
-    // Start the Transport if not already running
-    if (Tone.Transport.state !== 'started') {
-      Tone.Transport.start();
-    }
-    
-    console.log(`[StemDeck ${this.deckId}] Playing`);
+    // Players are already synced to Transport via .sync()
+    // They will start playing when Transport is started by the audio engine
+    console.log(`[StemDeck ${this.deckId}] Ready to play (waiting for Transport)`);
   }
   
   /**
-   * Pause playback
+   * Pause playback by muting both players
+   * This doesn't affect the Transport or other decks
    */
   pause(): void {
-    // Pause the Transport (affects all synced players)
-    Tone.Transport.pause();
-    console.log(`[StemDeck ${this.deckId}] Paused`);
+    this.vocalsPlayer.volume.value = -Infinity;
+    this.instPlayer.volume.value = -Infinity;
+    console.log(`[StemDeck ${this.deckId}] Paused (muted)`);
   }
   
   /**
-   * Stop and reset playback
+   * Stop and reset playback position
+   * This uses Transport position to reset without affecting other decks
    */
   stop(): void {
-    Tone.Transport.stop();
-    Tone.Transport.position = 0;
+    // Mute the players
+    this.vocalsPlayer.volume.value = -Infinity;
+    this.instPlayer.volume.value = -Infinity;
+    
+    // Note: Seeking to position 0 is handled by the parent audio engine
+    // through Transport.seconds = 0, but only for the specific deck
     console.log(`[StemDeck ${this.deckId}] Stopped`);
+  }
+  
+  /**
+   * Unmute players for playback
+   * Called by the audio engine when play is triggered
+   */
+  unmute(): void {
+    // Restore volume to 0dB (unity gain) unless a stem is toggled off
+    const vocalsVolume = this.vocalsPlayer.volume.value;
+    const instVolume = this.instPlayer.volume.value;
+    
+    if (vocalsVolume === -Infinity) {
+      this.vocalsPlayer.volume.value = 0;
+    }
+    if (instVolume === -Infinity) {
+      this.instPlayer.volume.value = 0;
+    }
   }
   
   /**
