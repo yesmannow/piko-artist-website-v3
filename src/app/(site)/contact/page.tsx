@@ -134,8 +134,6 @@ export default function ContactPage() {
   const { triggerHaptic } = useHaptic();
   const { playTrack } = useAudio();
   const searchParams = useSearchParams();
-  // In Next.js 15, useSearchParams() returns ReadonlyURLSearchParams directly
-  // Access it synchronously (the warnings are dev-mode only)
   const inquiryParam = searchParams.get("inquiry");
 
   const CALENDAR_URL = process.env.NEXT_PUBLIC_BOOKING_CALENDAR_URL || "";
@@ -526,7 +524,7 @@ export default function ContactPage() {
                 {PRESS_PHOTOS.map((p) => (
                   <div key={p.src} className="border border-white/10 bg-black/20">
                     <div className="relative aspect-[4/5]">
-                      <Image src={p.src} alt={p.label} fill className="object-cover" />
+                      <Image src={p.src} alt={p.label} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
                     </div>
                     <div className="p-3 border-t border-white/10 flex items-center justify-between gap-2">
                       <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/70 truncate">

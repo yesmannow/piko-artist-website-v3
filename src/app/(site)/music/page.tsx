@@ -699,7 +699,7 @@ export default function MusicPage() {
   const featuredTrack = currentTrack || audioTracks[0];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#050505] text-[#E0E0E0]">
       <section className="relative py-12 md:py-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}

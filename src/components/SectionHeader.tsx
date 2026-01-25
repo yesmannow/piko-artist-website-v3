@@ -38,6 +38,7 @@ export function SectionHeader({ title, subtitle, className = "" }: SectionHeader
           width={200}
           height={80}
           className="relative z-10 transition-all duration-300 group-hover:drop-shadow-[0_0_10px_hsl(var(--neon-pink)),0_0_20px_hsl(var(--neon-pink)),0_0_30px_hsl(var(--neon-green)),0_0_40px_hsl(var(--neon-green))]"
+          style={{ width: 'auto', height: 'auto' }}
         />
       </motion.div>
 

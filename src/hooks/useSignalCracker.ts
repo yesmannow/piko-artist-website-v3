@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 
 export type { SeparatedStems };
-import { useStudioMonitor } from "@/components/ui/StudioMonitor";
+import { useStudioMonitor } from "@/components/studio/ui/StudioMonitor";
 
 interface SeparatedStems {
   vocals: AudioBuffer;

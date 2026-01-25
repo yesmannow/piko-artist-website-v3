@@ -1,9 +1,9 @@
 /**
  * AnalysisWorker.ts - Web Worker for Essentia
- * 
+ *
  * Handles audio analysis using Essentia.js for BPM, Key detection, and Energy levels.
  * Runs in a separate thread to avoid blocking the main UI.
- * 
+ *
  * Phase II: Core Architecture
  */
 

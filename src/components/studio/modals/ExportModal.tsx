@@ -1,145 +1,207 @@
-// src/components/studio/modals/ExportModal.tsx
-import React, { useState } from 'react';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+"use client";
+
+/**
+ * ExportModal Component
+ * 
+ * Framer Motion spring-loaded modal for exporting mixes
+ * - Progress bar during rendering
+ * - "Share to TikTok" button (simulated deep link)
+ * - Haptic feedback on completion
+ */
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Download, Share2, Loader2 } from 'lucide-react';
 import { useExporter } from '@/hooks/useExporter';
-import { Loader2, Download, Share2, Disc } from 'lucide-react';
+import * as Tone from 'tone';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  masterBus?: Tone.ToneAudioNode;
+  recordingBlob?: Blob | null;
+  onRecordingConsumed?: () => void;
+  onTranscode?: (blob: Blob) => Promise<void> | void;
 }
 
-export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
-  const { startRecording, stopRecording, isRecording } = useAudioEngine();
-  const { transcode, isTranscoding, progress, error } = useExporter();
-  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+export function ExportModal({
+  isOpen,
+  onClose,
+  masterBus,
+  recordingBlob,
+  onRecordingConsumed,
+  onTranscode,
+}: ExportModalProps) {
+  const { transcode, recordMasterBus, isTranscoding, progress, error } = useExporter();
+  const [isRecording, setIsRecording] = useState(false);
+  const [exportComplete, setExportComplete] = useState(false);
 
-  if (!isOpen) return null;
-
-  const handleToggleRecord = async () => {
-    if (isRecording) {
-      const blob = await stopRecording();
-      setRecordedBlob(blob);
-    } else {
-      startRecording();
+  // Haptic feedback
+  const triggerHaptic = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([10, 30, 10]);
     }
   };
 
-  const handleExport = () => {
-    if (recordedBlob) {
-      transcode(recordedBlob, `PikoFG-Remix-${Date.now()}`);
-    }
-  };
-
-  const handleNativeShare = async () => {
-    if (navigator.share) {
+  const handleExport = async () => {
+    if (recordingBlob) {
       try {
-        await navigator.share({
-          title: 'My Piko FG Remix',
-          text: 'Check out this mix I made on Piko Studio V3!',
-          url: window.location.href
-        });
-      } catch (err) {
-        console.error('Share failed', err);
+        await (onTranscode ? onTranscode(recordingBlob) : transcode(recordingBlob, 'Piko-Studio-Remix'));
+        setExportComplete(true);
+        triggerHaptic();
+        onRecordingConsumed?.();
+      } catch (error) {
+        console.error('[ExportModal] Export failed:', error);
+        alert('Export failed. Please try again.');
       }
+      return;
+    }
+
+    if (!masterBus) {
+      alert('Master bus not available');
+      return;
+    }
+
+    setIsRecording(true);
+    try {
+      // Record for 30 seconds (or until manually stopped)
+      const blob = await recordMasterBus(masterBus, 30);
+      
+      if (blob) {
+        // Transcode to MP3
+        await transcode(blob, 'Piko-Studio-Remix');
+        setExportComplete(true);
+        triggerHaptic();
+      }
+    } catch (error) {
+      console.error('[ExportModal] Export failed:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setIsRecording(false);
     }
   };
+
+  const handleShareToTikTok = () => {
+    // Simulated TikTok deep link
+    // In production, this would use TikTok's Share Kit or generate a video
+    const tiktokUrl = `https://www.tiktok.com/upload?audio_url=${encodeURIComponent(window.location.href)}`;
+    window.open(tiktokUrl, '_blank');
+    triggerHaptic();
+  };
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setExportComplete(false);
+      setIsRecording(false);
+    }
+  }, [isOpen]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
-      <div className="w-full max-w-md p-8 bg-zinc-900/80 border border-zinc-700 rounded-3xl shadow-2xl relative overflow-hidden">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Export Session</h2>
-          <p className="text-zinc-400 text-sm font-mono mt-2">Studio V3 // High Fidelity Output</p>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+          />
 
-        {/* State Machine UI */}
-        <div className="flex flex-col gap-6">
-          
-          {/* State 1: Capture */}
-          {!recordedBlob && (
-            <div className="relative group">
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md glass-panel p-6 rounded-lg border border-white/10 z-50"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black uppercase text-white">Export Mix</h2>
               <button
-                onClick={handleToggleRecord}
-                className={`w-full h-24 rounded-2xl flex items-center justify-center gap-4 transition-all duration-300 ${
-                  isRecording 
-                    ? 'bg-red-500/20 border-2 border-red-500 text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)]' 
-                    : 'bg-white text-black hover:scale-[1.02]'
-                }`}
+                onClick={onClose}
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                aria-label="Close modal"
               >
-                {isRecording ? (
+                <X className="w-5 h-5 text-white/80" />
+              </button>
+            </div>
+
+            {/* Progress Bar */}
+            {(isRecording || isTranscoding) && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-white/60">
+                    {isRecording ? 'Recording...' : 'Processing...'}
+                  </span>
+                  <span className="text-sm font-mono text-white">{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-studio-cyan to-studio-purple"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                <p className="text-sm text-red-200">{error}</p>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {exportComplete && (
+              <div className="mb-6 p-4 bg-studio-cyan/20 border border-studio-cyan/50 rounded-lg">
+                <p className="text-sm text-studio-cyan font-bold">✓ Export Complete!</p>
+                <p className="text-xs text-white/60 mt-1">Your mix has been downloaded.</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3">
+              <motion.button
+                onClick={handleExport}
+                disabled={isRecording || isTranscoding || (!recordingBlob && !masterBus)}
+                className="w-full px-6 py-3 bg-studio-cyan text-black font-black uppercase rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={!isRecording && !isTranscoding ? { scale: 1.02 } : {}}
+                whileTap={!isRecording && !isTranscoding ? { scale: 0.98 } : {}}
+              >
+                {(isRecording || isTranscoding) ? (
                   <>
-                    <div className="w-4 h-4 bg-red-500 rounded-sm animate-pulse" />
-                    <span className="font-bold tracking-widest">STOP & SAVE</span>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {isRecording ? 'Recording...' : 'Processing...'}
                   </>
                 ) : (
                   <>
-                    <div className="w-4 h-4 bg-red-500 rounded-full" />
-                    <span className="font-bold tracking-widest">REC MASTER</span>
+                    <Download className="w-5 h-5" />
+                    {recordingBlob ? 'Export Recording' : 'Export to MP3'}
                   </>
                 )}
-              </button>
-            </div>
-          )}
+              </motion.button>
 
-          {/* State 2: Processing & Action */}
-          {recordedBlob && (
-            <div className="space-y-4">
-              <div className="p-4 bg-zinc-800/50 rounded-xl flex justify-between items-center border border-white/5">
-                <div className="flex items-center gap-3">
-                  <Disc className="text-indigo-500 animate-spin-slow" />
-                  <div className="text-left">
-                    <p className="text-white text-sm font-bold">Session Captured</p>
-                    <p className="text-zinc-500 text-xs">{(recordedBlob.size / 1024 / 1024).toFixed(2)} MB • WebM</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setRecordedBlob(null)} 
-                  className="text-xs text-red-400 hover:text-red-300 underline"
+              {exportComplete && (
+                <motion.button
+                  onClick={handleShareToTikTok}
+                  className="w-full px-6 py-3 bg-white/5 border border-white/10 text-white font-black uppercase rounded-lg flex items-center justify-center gap-2 hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  Discard
-                </button>
-              </div>
-
-              {isTranscoding ? (
-                <div className="h-14 bg-zinc-800 rounded-xl flex items-center justify-between px-6 border border-white/5">
-                  <span className="text-zinc-400 text-sm animate-pulse">Encoding MP3 320k...</span>
-                  <span className="text-indigo-400 font-mono">{progress}%</span>
-                </div>
-              ) : (
-                <button
-                  onClick={handleExport}
-                  className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)]"
-                >
-                  <Download size={18} />
-                  {error ? 'DOWNLOAD RAW (Fallback)' : 'DOWNLOAD MP3'}
-                </button>
-              )}
-
-              {/* Social Sharing */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button className="py-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-white transition-colors text-sm font-medium">
+                  <Share2 className="w-5 h-5" />
                   Share to TikTok
-                </button>
-                <button 
-                  onClick={handleNativeShare}
-                  className="py-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-2"
-                >
-                  <Share2 size={16} /> Native Share
-                </button>
-              </div>
+                </motion.button>
+              )}
             </div>
-          )}
-        </div>
-
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
-        >
-          CLOSE
-        </button>
-      </div>
-    </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
-};
+}

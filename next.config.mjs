@@ -40,6 +40,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.youtube.com',
       },
+      // Cloudflare R2 domains (pub-*.r2.dev)
+      {
+        protocol: 'https',
+        hostname: 'pub-*.r2.dev',
+      },
       // Local development
       {
         protocol: 'http',

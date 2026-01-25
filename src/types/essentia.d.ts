@@ -5,6 +5,32 @@
  * https://mtg.github.io/essentia.js/
  */
 
+declare module 'essentia.js/dist/essentia-wasm.web.js' {
+  export function EssentiaWASM(): Promise<any>;
+}
+
+declare module 'essentia.js/dist/essentia.js-core.es.js' {
+  export default class Essentia {
+    constructor(wasm: any);
+    arrayToVector(array: Float32Array | number[]): any;
+    RhythmExtractor2013(signal: any, sampleRate: number): {
+      bpm: number;
+      confidence?: number;
+      beats?: number[];
+      bpmIntervals?: number[];
+      danceability?: number;
+    };
+    KeyExtractor(signal: any, sampleRate: number): {
+      key: string;
+      scale: string;
+      strength?: number;
+    };
+    RMS(signal: any): number;
+    delete(object: any): void;
+    shutdown(): void;
+  }
+}
+
 declare module 'essentia.js' {
   export class EssentiaWASM {
     constructor();

@@ -31,7 +31,7 @@
     "bpm": 105.0,
     "energy": 0.6,
     "key": "Dm",
-    "artUrl": "/images/art_placeholder_2.jpg",
+    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
     "stems": {
       "full": "Amores Perdidos.mp3",
       "vocals": "Amores Perdidos_vocals.mp3",
@@ -81,7 +81,7 @@
     "bpm": 98.0,
     "energy": 0.4,
     "key": "Cm",
-    "artUrl": "/images/art_placeholder_4.jpg",
+    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
     "stems": {
       "full": "Corazon Y Mente.mp3",
       "vocals": "Corazon Y Mente_vocals.mp3",
@@ -131,7 +131,7 @@
     "bpm": 100.0,
     "energy": 0.5,
     "key": "Am",
-    "artUrl": "/images/art_placeholder_6.jpg",
+    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
     "stems": {
       "full": "Dejate Llevar.mp3",
       "vocals": "Dejate Llevar_vocals.mp3",

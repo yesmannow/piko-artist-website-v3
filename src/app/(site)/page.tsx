@@ -71,6 +71,8 @@ export default function Home() {
               priority
               className="w-56 sm:w-64 md:w-72 lg:w-80 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
               style={{
+                width: 'auto',
+                height: 'auto',
                 filter: "grayscale(1) brightness(1.5)",
               }}
             />

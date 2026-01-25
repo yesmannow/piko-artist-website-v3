@@ -47,7 +47,7 @@ function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
       aria-label={`Play ${video.title}`}
     >
       {/* Thumbnail Wrapper */}
-      <div className="aspect-video w-full overflow-hidden">
+      <div className="relative aspect-video w-full overflow-hidden">
         <Image
           src={thumbnailUrl}
           alt={video.title}

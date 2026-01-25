@@ -68,6 +68,7 @@ const AnimatedLogo = ({
             width={48}
             height={48}
             className="w-12 h-12 md:w-14 md:h-14 transition-all duration-300 drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]"
+            style={{ width: 'auto', height: 'auto' }}
             priority
           />
         </Link>
