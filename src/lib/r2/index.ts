@@ -20,28 +20,42 @@ import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
  * - R2_SECRET_ACCESS_KEY
  * - R2_BUCKET_NAME
  */
-if (!process.env.R2_ACCOUNT_ID ||
-    !process.env.R2_ACCESS_KEY_ID ||
-    !process.env.R2_SECRET_ACCESS_KEY ||
-    !process.env.R2_BUCKET_NAME) {
-  throw new Error("Missing Cloudflare R2 Environment Variables");
+let r2Singleton: S3Client | null = null;
+
+function getR2Env() {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucketName = process.env.R2_BUCKET_NAME;
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
+    // Important: do NOT throw at module-load time, otherwise `next build` can fail while
+    // evaluating route modules ("Collecting page data"). Fail only when actually used.
+    throw new Error('Missing Cloudflare R2 Environment Variables');
+  }
+
+  return { accountId, accessKeyId, secretAccessKey, bucketName };
 }
 
-export const r2 = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-});
+export function getR2Client(): S3Client {
+  if (r2Singleton) return r2Singleton;
+
+  const { accountId, accessKeyId, secretAccessKey } = getR2Env();
+  r2Singleton = new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId, secretAccessKey },
+  });
+
+  return r2Singleton;
+}
 
 /**
  * @deprecated Use the singleton `r2` export instead
  * Kept for backward compatibility
  */
 export function createR2Client() {
-  return r2;
+  return getR2Client();
 }
 
 /**
@@ -52,18 +66,14 @@ export async function getPresignedDownloadUrl(
   key: string,
   expiresIn = 3600
 ): Promise<string> {
-  const bucket = process.env.R2_BUCKET_NAME;
-
-  if (!bucket) {
-    throw new Error('R2_BUCKET_NAME not configured');
-  }
+  const { bucketName } = getR2Env();
 
   const command = new GetObjectCommand({
-    Bucket: bucket,
+    Bucket: bucketName,
     Key: key,
   });
 
-  return getSignedUrl(r2, command, { expiresIn });
+  return getSignedUrl(getR2Client(), command, { expiresIn });
 }
 
 /**
@@ -74,17 +84,13 @@ export async function getPresignedUploadUrl(
   contentType: string,
   expiresIn = 3600
 ): Promise<string> {
-  const bucket = process.env.R2_BUCKET_NAME;
-
-  if (!bucket) {
-    throw new Error('R2_BUCKET_NAME not configured');
-  }
+  const { bucketName } = getR2Env();
 
   const command = new PutObjectCommand({
-    Bucket: bucket,
+    Bucket: bucketName,
     Key: key,
     ContentType: contentType,
   });
 
-  return getSignedUrl(r2, command, { expiresIn });
+  return getSignedUrl(getR2Client(), command, { expiresIn });
 }

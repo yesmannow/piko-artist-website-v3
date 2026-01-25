@@ -59,7 +59,11 @@ export const useExporter = () => {
       ]);
 
       const data = await ffmpeg.readFile('output.mp3');
-      const mp3Blob = new Blob([data], { type: 'audio/mpeg' });
+      // `@ffmpeg/util` types allow SharedArrayBuffer-backed views; BlobPart is stricter in TS.
+      // Copy into a fresh Uint8Array so the underlying buffer is a plain ArrayBuffer.
+      const bytes =
+        typeof data === 'string' ? new TextEncoder().encode(data) : new Uint8Array(data);
+      const mp3Blob = new Blob([bytes], { type: 'audio/mpeg' });
       downloadBlob(mp3Blob, `${filename}.mp3`);
       
       // Cleanup MEMFS

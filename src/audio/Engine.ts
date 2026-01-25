@@ -15,7 +15,7 @@ import * as Tone from 'tone';
  */
 class AudioEngine {
   private static instance: AudioEngine;
-  private context: Tone.Context | null = null;
+  private context: ReturnType<typeof Tone.getContext> | null = null;
   private initialized = false;
 
   private constructor() {
@@ -56,7 +56,7 @@ class AudioEngine {
   /**
    * Get the Tone.js context
    */
-  public getContext(): Tone.Context {
+  public getContext(): ReturnType<typeof Tone.getContext> {
     if (!this.context) {
       throw new Error('AudioEngine not initialized. Call init() first.');
     }
