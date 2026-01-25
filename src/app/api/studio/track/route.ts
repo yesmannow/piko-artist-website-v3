@@ -4,6 +4,9 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import pikoTracks from "@/data/piko-tracks.json";
 
+// Create a Set of valid track IDs for O(1) lookup performance
+const validTrackIds = new Set(pikoTracks.map(track => track.trackId));
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -17,8 +20,7 @@ export async function GET(request: Request) {
     }
 
     // Validate trackId against the manifest to prevent unauthorized file access
-    const isValidTrack = pikoTracks.some(track => track.trackId === trackId);
-    if (!isValidTrack) {
+    if (!validTrackIds.has(trackId)) {
       return NextResponse.json(
         { error: "Invalid track ID" },
         { status: 404 }

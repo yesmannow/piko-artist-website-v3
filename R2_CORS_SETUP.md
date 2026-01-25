@@ -15,7 +15,7 @@ To allow the Piko Studio frontend to read audio bytes for waveform generation an
   {
     "AllowedOrigins": [
       "http://localhost:3000",
-      "https://your-production-domain.com"
+      "https://your-app-name.vercel.app"
     ],
     "AllowedMethods": [
       "GET",
@@ -30,6 +30,8 @@ To allow the Piko Studio frontend to read audio bytes for waveform generation an
   }
 ]
 ```
+
+**Note:** Replace `https://your-app-name.vercel.app` with your actual Vercel deployment URL. You can find this in your Vercel dashboard or use the `VERCEL_URL` environment variable pattern: `https://${VERCEL_URL}`.
 
 ## Critical Headers Explained
 
