@@ -6,7 +6,7 @@ import * as Tone from 'tone';
 import * as THREE from 'three';
 
 const ReactiveOrb = () => {
-  const materialRef = useRef<any>(null);
+  const materialRef = useRef<THREE.Material | null>(null);
   
   // Create Meter node for analysis (smoothing 0.8 for organic feel)
   const meter = useMemo(() => new Tone.Meter({ smoothing: 0.8 }), []);

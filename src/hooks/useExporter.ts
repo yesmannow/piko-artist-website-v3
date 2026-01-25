@@ -31,7 +31,7 @@ export const useExporter = () => {
     }
   };
 
-  const transcode = async (blob: Blob, filename = 'PikoFG_Mix') => {
+  const transcode = async (blob: Blob, filename = 'PikoFG-Mix') => {
     if (!loaded && !error) await load();
     
     // Fallback: If FFmpeg failed to load, download raw WebM
