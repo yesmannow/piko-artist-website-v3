@@ -131,7 +131,7 @@ async function separateStems(audioData: Float32Array) {
   if (isCancelled) return;
 
   // Run inference
-  const outputs = await session.run({ input: inputTensor });
+  await session.run({ input: inputTensor });
 
   self.postMessage({ type: 'progress', value: 0.8 } as ProgressMessage);
 
@@ -147,7 +147,7 @@ async function separateStems(audioData: Float32Array) {
 
   // For now, we'll create placeholder stems
   // In production, you'd extract from the actual model output
-  outputNames.forEach((name, index) => {
+  outputNames.forEach((name) => {
     // This is a simplified example - actual implementation would
     // extract the correct tensor from the model output
     stems.set(name, new Float32Array(audioData.length));

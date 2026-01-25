@@ -356,7 +356,8 @@ export function MixerGraph({ children }: { children: React.ReactNode }) {
         B: { channel: graphRef.current.deck.B.channel },
       },
     };
-  }, [audioContext, graphReady]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioContext]);
 
   // Always render the provider, even if graph isn't ready yet
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, memo, useEffect } from "react";
+import { useState, useMemo, memo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useMixerStore, MixerTrackItem } from "../stores/useMixerStore";

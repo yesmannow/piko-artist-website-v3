@@ -147,10 +147,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           }
         };
         
-        const handleError = (e?: Event) => {
+        const handleError = (_e?: Event) => {
           hasAttemptedPlay = true;
           if (audioRef.current) {
-            audioRef.current.removeEventListener("loadeddata", handleLoadedData);
             audioRef.current.removeEventListener("canplay", handleCanPlay);
             audioRef.current.removeEventListener("error", handleError);
           }
@@ -166,7 +165,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         audioRef.current.addEventListener("error", handleError, { once: true });
         
         // Fallback: if canplay doesn't fire within reasonable time, try playing anyway
-        const fallbackTimeout = setTimeout(() => {
+        setTimeout(() => {
           if (audioRef.current && !hasAttemptedPlay) {
             hasAttemptedPlay = true;
             audioRef.current.removeEventListener("canplay", handleCanPlay);
@@ -179,9 +178,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             }
           }
         }, 1000);
-        
-        // Store timeout ID for cleanup (though in practice this callback doesn't return cleanup)
-        // The timeout will complete or be cleared by the event handlers
       } else {
         // For video tracks, we might need different handling
         // For now, just set the track

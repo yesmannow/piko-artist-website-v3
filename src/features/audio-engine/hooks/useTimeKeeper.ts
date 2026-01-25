@@ -73,6 +73,8 @@ export function useTimeKeeper(bpm: number = 120) {
         workletNodeRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // bpm is intentionally excluded - initial value is set here, updates handled in separate effect below
   }, []);
 
   // Update BPM when it changes

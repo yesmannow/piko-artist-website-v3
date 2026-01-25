@@ -14,6 +14,7 @@
     "check:case": "node scripts/check-import-case.mjs"
   },
   "dependencies": {
+    "@next/third-parties": "^16.1.4",
     "@react-spring/three": "^10.0.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
@@ -40,6 +41,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-globe.gl": "^2.37.0",
+    "rss-parser": "^3.13.0",
     "serwist": "^9.4.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^4.0.0",

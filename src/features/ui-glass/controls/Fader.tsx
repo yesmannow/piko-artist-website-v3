@@ -31,7 +31,7 @@ export function Fader({
   orientation = 'vertical',
   min = 0,
   max = 1,
-  step = 0.01,
+  step: _step = 0.01,
   label,
   className,
 }: FaderProps) {
@@ -92,7 +92,7 @@ export function Fader({
   const positionPercent = normalizedValue * 100;
 
   // Extract only DOM-compatible props from gestures (exclude getVelocity)
-  const { getVelocity, ...gestureProps } = gestures;
+  const { getVelocity: _getVelocity, ...gestureProps } = gestures;
 
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>

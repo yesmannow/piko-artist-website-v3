@@ -84,8 +84,8 @@ export function MixerDrawer({ children, trigger }: MixerDrawerProps) {
                 const startHeight = window.innerHeight * 0.9;
                 const handleMove = (moveEvent: PointerEvent) => {
                   const deltaY = moveEvent.clientY - startY;
-                  const newHeight = Math.max(200, Math.min(window.innerHeight * 0.9, startHeight - deltaY));
                   // Could implement dynamic height here if needed
+                  // const newHeight = Math.max(200, Math.min(window.innerHeight * 0.9, startHeight - deltaY));
                 };
                 const handleUp = () => {
                   document.removeEventListener('pointermove', handleMove);

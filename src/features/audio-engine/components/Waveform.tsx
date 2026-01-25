@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { AudioContextManager } from '../lib/AudioContextManager';
 
 /**
  * Waveform Props
@@ -169,7 +168,7 @@ export function Waveform({
         wavesurferRef.current = null;
       }
     };
-  }, [audioBuffer, stems, height, isMobile, onSeek]);
+  }, [audioBuffer, stems, height, isMobile, onSeek, audioBufferToBlobUrl]);
 
   // Update progress
   useEffect(() => {

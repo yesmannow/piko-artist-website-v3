@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEvent, PointerEvent, WheelEvent } from "react";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStudioClock } from "../hooks/useStudioClock";
 import { useStudioStore, StudioTimelineClip, StudioTimelineTrack } from "../stores/useStudioStore";
 import { StudioEngine } from "../lib/StudioEngine";
