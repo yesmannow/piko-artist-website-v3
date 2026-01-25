@@ -15,7 +15,8 @@ To allow the Piko Studio frontend to read audio bytes for waveform generation an
   {
     "AllowedOrigins": [
       "http://localhost:3000",
-      "https://your-app-name.vercel.app"
+      "https://your-production-domain.com",
+      "https://*.vercel.app"
     ],
     "AllowedMethods": [
       "GET",
@@ -24,21 +25,23 @@ To allow the Piko Studio frontend to read audio bytes for waveform generation an
     "AllowedHeaders": ["*"],
     "ExposeHeaders": [
       "Content-Length",
-      "Content-Range"
+      "Content-Range",
+      "Cross-Origin-Resource-Policy"
     ],
-    "MaxAgeSeconds": 3000
+    "MaxAgeSeconds": 3600
   }
 ]
 ```
 
-**Note:** Replace `https://your-app-name.vercel.app` with your actual Vercel deployment URL. You can find this in your Vercel dashboard or use the `VERCEL_URL` environment variable pattern: `https://${VERCEL_URL}`.
+**Note:** Replace `https://your-production-domain.com` with your actual production domain. The wildcard pattern `https://*.vercel.app` allows all Vercel preview deployments to access the R2 bucket during development and testing.
 
 ## Critical Headers Explained
 
 ### AllowedOrigins
 - **Development**: `http://localhost:3000` - For local Next.js development
-- **Production**: Replace `https://your-production-domain.com` with your actual Vercel deployment URL
-- **Security Note**: Do NOT use wildcards (`*`) in production
+- **Production**: `https://your-production-domain.com` - Replace with your actual production domain
+- **Preview Deployments**: `https://*.vercel.app` - Allows all Vercel preview deployments for testing
+- **Security Note**: While wildcards are generally discouraged, `https://*.vercel.app` is acceptable for Vercel-hosted applications as it's scoped to Vercel's controlled subdomain
 
 ### AllowedMethods
 - **GET**: Required for streaming audio files to the browser
@@ -57,9 +60,15 @@ These headers are critical for the Web Audio API and waveform visualization:
   - Make partial content requests (HTTP Range Requests)
   - Enable instant response when users click different parts of the timeline
 
+- **Cross-Origin-Resource-Policy**: This is the explicit permission key for the COEP (Cross-Origin-Embedder-Policy) check. Without this header:
+  - The browser will block loading of audio files due to the `COEP: require-corp` header set in next.config.mjs
+  - SharedArrayBuffer (required for WebAssembly threading) will fail to load resources
+  - The "Trusted Chain" requirement for cross-origin isolation cannot be established
+
 ### MaxAgeSeconds
-- Caches the CORS preflight response for 3000 seconds (50 minutes)
+- Caches the CORS preflight response for 3600 seconds (1 hour)
 - Reduces overhead for subsequent requests from the same origin
+- Improves performance for streaming applications with multiple audio stems
 
 ## Testing CORS Configuration
 
@@ -73,6 +82,7 @@ fetch('https://[YOUR-ACCOUNT-ID].r2.cloudflarestorage.com/piko-media/test-file.m
 .then(response => {
   console.log('Content-Length exposed:', response.headers.has('content-length'));
   console.log('Content-Range exposed:', response.headers.has('content-range'));
+  console.log('Cross-Origin-Resource-Policy exposed:', response.headers.has('cross-origin-resource-policy'));
 })
 .catch(error => console.error('CORS Error:', error));
 ```
