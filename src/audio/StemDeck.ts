@@ -48,7 +48,6 @@ export class StemDeck {
         console.error(`[StemDeck ${deckId}] Vocals load error:`, error);
       }
     });
-    this.vocalsPlayer.crossOrigin = 'anonymous';
     this.vocalsPlayer.sync().start(0); // Sync to Transport, start at time 0
     
     // Create player for instrumental stem
@@ -60,7 +59,6 @@ export class StemDeck {
         console.error(`[StemDeck ${deckId}] Instrumental load error:`, error);
       }
     });
-    this.instPlayer.crossOrigin = 'anonymous';
     this.instPlayer.sync().start(0); // Sync to Transport, start at time 0
     
     // Connect both players to the channel (they mix together)

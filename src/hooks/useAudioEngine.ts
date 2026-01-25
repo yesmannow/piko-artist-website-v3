@@ -73,9 +73,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         }
       });
       
-      // CRITICAL: Allow CORS for R2 Audio
-      // This enables analyzer nodes and waveform visualization
-      player.crossOrigin = "anonymous";
+      // CORS handling is done through R2 bucket configuration
       
       // Channel Strip (Gain/Pan/Solo)
       const channel = new Tone.Channel({
@@ -137,14 +135,15 @@ export const useAudioEngine = (): AudioEngineControls => {
       }
       
       // Update playhead positions for both decks
-      (['A', 'B'] as const).forEach(deck => {
-        const player = players.current[deck];
-        if (player && player.loaded && player.state === 'started') {
-          const _position = player.toSeconds(player.position);
-          // Future: Update transient store for waveform playhead
-          // transientStore.getState().setDeckPosition(deck, _position);
-        }
-      });
+      // Note: Position tracking will be implemented in Phase VII for visualizations
+      // (['A', 'B'] as const).forEach(deck => {
+      //   const player = players.current[deck];
+      //   if (player && player.loaded && player.state === 'started') {
+      //     const _position = player.immediate();
+      //     // Future: Update transient store for waveform playhead
+      //     // transientStore.getState().setDeckPosition(deck, _position);
+      //   }
+      // });
       
       animationFrameId.current = requestAnimationFrame(loop);
     };
