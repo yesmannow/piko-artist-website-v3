@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { tracks } from "@/lib/data";
 import { useAudio } from "@/context/AudioContext";
@@ -134,6 +134,9 @@ export default function ContactPage() {
   const { triggerHaptic } = useHaptic();
   const { playTrack } = useAudio();
   const searchParams = useSearchParams();
+  // In Next.js 15, useSearchParams() returns ReadonlyURLSearchParams directly
+  // Access it synchronously (the warnings are dev-mode only)
+  const inquiryParam = searchParams.get("inquiry");
 
   const CALENDAR_URL = process.env.NEXT_PUBLIC_BOOKING_CALENDAR_URL || "";
 
@@ -182,11 +185,11 @@ export default function ContactPage() {
 
   // Allow /contact?inquiry=booking|collab|press|licensing to preselect the router (used by home teaser links)
   useEffect(() => {
-    const q = (searchParams.get("inquiry") || "").toLowerCase();
+    const q = (inquiryParam || "").toLowerCase();
     if (q === "booking" || q === "collab" || q === "press" || q === "licensing" || q === "other") {
       setForm((p) => ({ ...p, inquiryType: q as InquiryType }));
     }
-  }, [searchParams]);
+  }, [inquiryParam]);
 
   const completeness = scoreInquiry({
     inquiryType: form.inquiryType,
@@ -345,54 +348,49 @@ export default function ContactPage() {
               </div>
               {/* Mobile-first: grid layout (no horizontal scroll needed) */}
               <div className="p-4">
-                {PRESS_PHOTOS.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {PRESS_PHOTOS.map((p, idx) => (
-                      <motion.div
-                        key={p.src}
-                        initial={{ opacity: 0, y: 12 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.35, delay: Math.min(idx * 0.06, 0.3) }}
-                        className="relative border-2 border-black bg-black/30 min-w-0"
-                        style={{
-                          boxShadow: "6px 6px 0px rgba(0,0,0,1)",
-                          transform: `rotate(${idx % 2 === 0 ? -1.0 : 0.9}deg)`,
-                        }}
-                      >
-                        <div className="relative w-full h-[200px] sm:h-[220px] bg-black/50">
-                          <Image
-                            src={p.src}
-                            alt={p.label}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 640px) 50vw, 25vw"
-                            style={{ filter: "contrast(1.15) grayscale(0.15) brightness(0.92)" }}
-                            priority={idx < 2}
-                          />
-                          <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                              mixBlendMode: "overlay",
-                              opacity: 0.22,
-                              background:
-                                "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22) 0%, rgba(0,0,0,0) 55%)",
-                            }}
-                          />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {PRESS_PHOTOS.map((p, idx) => (
+                    <motion.div
+                      key={p.src}
+                      initial={{ opacity: 0, y: 12 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.35, delay: Math.min(idx * 0.06, 0.3) }}
+                      className="relative border-2 border-black bg-black/30 min-w-0"
+                      style={{
+                        boxShadow: "6px 6px 0px rgba(0,0,0,1)",
+                        transform: `rotate(${idx % 2 === 0 ? -1.0 : 0.9}deg)`,
+                      }}
+                    >
+                      <div className="relative w-full h-[200px] sm:h-[220px] bg-black/50">
+                        <Image
+                          src={p.src}
+                          alt={p.label}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 50vw, 25vw"
+                          style={{ filter: "contrast(1.15) grayscale(0.15) brightness(0.92)" }}
+                          priority={idx < 2}
+                          unoptimized={false}
+                        />
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            mixBlendMode: "overlay",
+                            opacity: 0.22,
+                            background:
+                              "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22) 0%, rgba(0,0,0,0) 55%)",
+                          }}
+                        />
+                      </div>
+                      <div className="px-3 py-2 border-t border-black/60 bg-[#E0E0E0] text-black">
+                        <div className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] truncate">
+                          {p.label}
                         </div>
-                        <div className="px-3 py-2 border-t border-black/60 bg-[#E0E0E0] text-black">
-                          <div className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] truncate">
-                            {p.label}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-white/60 py-8 font-mono text-xs uppercase">
-                    No press photos available
-                  </div>
-                )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1020,4 +1018,3 @@ export default function ContactPage() {
     </div>
   );
 }
-

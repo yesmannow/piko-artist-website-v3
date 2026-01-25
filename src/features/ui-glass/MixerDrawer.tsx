@@ -39,7 +39,22 @@ export function MixerDrawer({ children, trigger }: MixerDrawerProps) {
   return (
     <>
       {/* Trigger Button */}
-      {trigger || defaultTrigger}
+      {trigger ? (
+        <span
+          onClick={() => setIsOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") setIsOpen(true);
+          }}
+          role="button"
+          tabIndex={0}
+          className="contents"
+          aria-label="Open mixer"
+        >
+          {trigger}
+        </span>
+      ) : (
+        defaultTrigger
+      )}
 
       {/* Drawer Overlay & Content */}
       <AnimatePresence>
@@ -60,20 +75,38 @@ export function MixerDrawer({ children, trigger }: MixerDrawerProps) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 z-[101] bg-[#050505] border-t-2 border-[#FFD700] rounded-t-2xl max-h-[85vh] flex flex-col"
+              className="fixed bottom-0 left-0 right-0 z-[101] bg-[#050505] border-t-2 border-[#FFD700] rounded-t-2xl max-h-[90vh] flex flex-col shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Handle */}
-              <div className="w-12 h-1.5 bg-[#E0E0E0] rounded-full mx-auto mt-3 mb-4" />
+              {/* Handle - draggable indicator */}
+              <div className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing touch-none" onPointerDown={(e) => {
+                const startY = e.clientY;
+                const startHeight = window.innerHeight * 0.9;
+                const handleMove = (moveEvent: PointerEvent) => {
+                  const deltaY = moveEvent.clientY - startY;
+                  const newHeight = Math.max(200, Math.min(window.innerHeight * 0.9, startHeight - deltaY));
+                  // Could implement dynamic height here if needed
+                };
+                const handleUp = () => {
+                  document.removeEventListener('pointermove', handleMove);
+                  document.removeEventListener('pointerup', handleUp);
+                };
+                document.addEventListener('pointermove', handleMove);
+                document.addEventListener('pointerup', handleUp);
+              }}>
+                <div className="w-12 h-1.5 bg-[#E0E0E0] rounded-full" />
+                <p className="text-[10px] text-white/40 font-mono uppercase tracking-wider mt-1">Drag to resize</p>
+              </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto px-4 pb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-[#FFD700] uppercase">
-                    Mixer
+              <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-thin scrollbar-thumb-[#FFD700]/30 scrollbar-track-transparent">
+                <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#050505] z-10 pb-2 border-b border-white/10">
+                  <h2 className="text-xl md:text-2xl font-bold text-[#FFD700] uppercase tracking-wider">
+                    Mixer Controls
                   </h2>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="text-white/60 hover:text-white touch-manipulation"
+                    className="text-white/60 hover:text-white touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
                     aria-label="Close mixer"
                   >
                     <svg
@@ -88,7 +121,9 @@ export function MixerDrawer({ children, trigger }: MixerDrawerProps) {
                     </svg>
                   </button>
                 </div>
-                {children}
+                <div className="space-y-4">
+                  {children}
+                </div>
               </div>
             </motion.div>
           </>

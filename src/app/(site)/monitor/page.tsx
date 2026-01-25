@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ProlinkProvider, useProlinkContext } from "@/features/hardware-bridge/context/ProlinkContext";
+
+type WakeLockNavigator = Navigator & {
+  wakeLock?: {
+    request: (type: "screen") => Promise<WakeLockSentinel>;
+  };
+};
 
 /**
  * Monitor Content - Inner component that uses the context
  */
 function MonitorContent() {
   const { latestStatus, isConnected } = useProlinkContext();
-  const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
 
   // Request wake lock to prevent screen dimming
   useEffect(() => {
@@ -16,10 +21,15 @@ function MonitorContent() {
       return;
     }
 
+    const wakeLockNavigator = navigator as WakeLockNavigator;
+    let wakeLockSentinel: WakeLockSentinel | null = null;
+
     const requestWakeLock = async () => {
       try {
-        const lock = await (navigator as any).wakeLock.request("screen");
-        setWakeLock(lock);
+        const lock = await wakeLockNavigator.wakeLock?.request("screen");
+        if (lock) {
+          wakeLockSentinel = lock;
+        }
       } catch (error) {
         console.warn("[Monitor] Failed to request wake lock:", error);
       }
@@ -27,10 +37,9 @@ function MonitorContent() {
 
     requestWakeLock();
 
-    // Release on unmount
     return () => {
-      if (wakeLock) {
-        wakeLock.release().catch(() => {});
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
       }
     };
   }, []);
@@ -97,4 +106,3 @@ export default function MonitorPage() {
     </ProlinkProvider>
   );
 }
-

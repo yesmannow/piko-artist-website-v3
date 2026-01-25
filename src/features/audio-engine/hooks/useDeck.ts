@@ -260,6 +260,9 @@ export function useDeck(
 
   return {
     state,
+    // Expose the current decoded buffer for UI components (e.g. waveform).
+    // Note: this is a ref value; it updates when the hook rerenders (e.g. when duration is set).
+    audioBuffer: audioBufferRef.current,
     play,
     pause,
     seek,

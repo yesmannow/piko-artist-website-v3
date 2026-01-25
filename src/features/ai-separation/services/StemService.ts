@@ -38,7 +38,7 @@ export class StemService {
 
     // Handle worker messages
     this.worker.onmessage = (e) => {
-      const { type, value, stems, error } = e.data;
+      const { type, value, error } = e.data;
 
       if (type === 'progress') {
         this.onProgressCallback?.({

@@ -27,6 +27,8 @@ interface AudioContextType {
   ensureAnalyser: () => AnalyserNode | null;
   immersiveOpen: boolean;
   setImmersiveOpen: (open: boolean) => void;
+  playbackError: string | null;
+  clearPlaybackError: () => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [immersiveOpen, setImmersiveOpen] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
   const webAudioContextRef = useRef<AudioContext | null>(null);
@@ -98,25 +101,87 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const playTrack = useCallback((track: MediaItem) => {
     setCurrentTrack(track);
-    setIsPlaying(true);
 
     // Load and play the track
     if (audioRef.current) {
       if (track.type === "audio") {
+        // Pause and reset before loading new track to prevent AbortError
+        // This handles the case where a new track is loaded while another is playing
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        
+        // Set source and load
         audioRef.current.src = track.src;
         audioRef.current.load();
-        audioRef.current.play().catch((error) => {
-          if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
-            console.error("Error playing audio:", error);
+        
+        // Track if we've attempted to play to avoid duplicate attempts
+        let hasAttemptedPlay = false;
+        
+        // Wait for audio to be ready before playing
+        const handleCanPlay = () => {
+          if (audioRef.current && !hasAttemptedPlay) {
+            hasAttemptedPlay = true;
+            audioRef.current.removeEventListener("canplay", handleCanPlay);
+            audioRef.current.removeEventListener("error", handleError);
+            
+            // Play the track
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  setIsPlaying(true);
+                  // Visualizer graph (requires user gesture for iOS)
+                  const analyser = ensureAnalyser();
+                  if (webAudioContextRef.current && analyser) {
+                    webAudioContextRef.current.resume().catch(() => {});
+                  }
+                })
+                .catch((error) => {
+                  if (process.env.NODE_ENV === "development") {
+                    // eslint-disable-next-line no-console
+                    console.error("Error playing audio:", error);
+                  }
+                  setIsPlaying(false);
+                });
+            }
           }
+        };
+        
+        const handleError = (e?: Event) => {
+          hasAttemptedPlay = true;
+          if (audioRef.current) {
+            audioRef.current.removeEventListener("loadeddata", handleLoadedData);
+            audioRef.current.removeEventListener("canplay", handleCanPlay);
+            audioRef.current.removeEventListener("error", handleError);
+          }
+          const errorMsg = audioRef.current?.error 
+            ? `Audio error (code ${audioRef.current.error.code})`
+            : "Failed to load audio file";
+          setPlaybackError(`Unable to play "${track.title}". ${errorMsg}`);
           setIsPlaying(false);
-        });
-        // Visualizer graph (requires user gesture for iOS)
-        const analyser = ensureAnalyser();
-        if (webAudioContextRef.current && analyser) {
-          webAudioContextRef.current.resume().catch(() => {});
-        }
+        };
+        
+        // Add event listeners
+        audioRef.current.addEventListener("canplay", handleCanPlay, { once: true });
+        audioRef.current.addEventListener("error", handleError, { once: true });
+        
+        // Fallback: if canplay doesn't fire within reasonable time, try playing anyway
+        const fallbackTimeout = setTimeout(() => {
+          if (audioRef.current && !hasAttemptedPlay) {
+            hasAttemptedPlay = true;
+            audioRef.current.removeEventListener("canplay", handleCanPlay);
+            audioRef.current.removeEventListener("error", handleError);
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => setIsPlaying(true))
+                .catch(() => setIsPlaying(false));
+            }
+          }
+        }, 1000);
+        
+        // Store timeout ID for cleanup (though in practice this callback doesn't return cleanup)
+        // The timeout will complete or be cleared by the event handlers
       } else {
         // For video tracks, we might need different handling
         // For now, just set the track
@@ -264,6 +329,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         ensureAnalyser,
         immersiveOpen,
         setImmersiveOpen,
+        playbackError,
+        clearPlaybackError: () => setPlaybackError(null),
       }}
     >
       {children}

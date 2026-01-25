@@ -49,6 +49,18 @@ const nextConfig = {
         hostname: '127.0.0.1',
       },
     ],
+    // Configure local image paths for Next.js 15+ compatibility
+    // When localPatterns is defined, all local image paths must be explicitly allowed
+    localPatterns: [
+      {
+        pathname: '/api/image-proxy',
+        // Allow query strings (e.g., ?url=...)
+      },
+      {
+        pathname: '/images/**',
+        // Allow all images in the public/images directory (matches /images/anything)
+      },
+    ],
   },
   async headers() {
     return [

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
 import Image from "next/image";
 import { tracks, MediaItem } from "@/lib/data";
-import { X, Play } from "lucide-react";
+import { X, Play, AlertTriangle } from "lucide-react";
 import { getYouTubeThumbnailProxyAlt } from "@/lib/utils/youtubeImageProxy";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Thumbnail component with fallback strategy
 function VideoThumbnail({
@@ -193,6 +195,9 @@ function FeaturedVideoHero({
 // Video Modal Component
 function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () => void }) {
   const pathname = usePathname();
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   // Close modal on route change
   useEffect(() => {
@@ -216,9 +221,30 @@ function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () 
     return () => window.removeEventListener("keydown", handleEscape);
   }, [videoId, onClose]);
 
+  // Reset loading state when videoId changes
+  useEffect(() => {
+    if (videoId) {
+      setIsLoading(true);
+    }
+  }, [videoId]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const container = document.createElement("div");
+    container.setAttribute("id", "video-modal-portal");
+    document.body.appendChild(container);
+    setPortalContainer(container);
+
+    return () => {
+      document.body.removeChild(container);
+    };
+  }, []);
+
   if (!videoId) return null;
 
-  return (
+  if (!portalContainer) return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
       data-modal-open="true"
@@ -237,20 +263,72 @@ function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () 
         <X className="w-6 h-6" />
       </button>
 
-      <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-zinc-800">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${
-            typeof window !== "undefined" ? window.location.origin : ""
-          }`}
-          className="w-full h-full"
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Video player"
-          loading="lazy"
-        />
+      <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 relative">
+        {isLoading && !hasError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
+              <p className="text-white/80 font-mono text-sm uppercase tracking-wider">Loading video...</p>
+            </div>
+          </div>
+        )}
+        {hasError ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+            <div className="text-center space-y-4 p-6">
+              <AlertTriangle className="w-12 h-12 text-red-500 mx-auto" />
+              <h3 className="text-lg font-header text-white">Failed to load video</h3>
+              <p className="text-sm text-white/60 font-industrial">
+                The video could not be loaded. Please try again.
+              </p>
+              <button
+                onClick={() => {
+                  setHasError(false);
+                  setIsLoading(true);
+                }}
+                className="px-4 py-2 bg-toxic-lime text-black font-bold rounded hover:bg-toxic-lime/80 transition-colors min-h-[44px]"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ErrorBoundary
+            fallback={
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+                <div className="text-center space-y-4 p-6">
+                  <AlertTriangle className="w-12 h-12 text-red-500 mx-auto" />
+                  <h3 className="text-lg font-header text-white">Video Error</h3>
+                  <p className="text-sm text-white/60 font-industrial">
+                    An error occurred while loading the video.
+                  </p>
+                </div>
+              </div>
+            }
+          >
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${
+                typeof window !== "undefined" ? window.location.origin : ""
+              }`}
+              className="w-full h-full"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Video player"
+              loading="lazy"
+              onLoad={() => {
+                setIsLoading(false);
+                setHasError(false);
+              }}
+              onError={() => {
+                setIsLoading(false);
+                setHasError(true);
+              }}
+            />
+          </ErrorBoundary>
+        )}
       </div>
-    </div>
+    </div>,
+    portalContainer
   );
 }
 
@@ -404,4 +482,3 @@ export default function VideosPage() {
     </div>
   );
 }
-

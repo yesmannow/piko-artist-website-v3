@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Mail, Music, Video, Settings, Radio } from "lucide-react";
+import { Home, Mail, Music, Video, Radio } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -97,4 +97,3 @@ export function TacticalBar() {
     </nav>
   );
 }
-

@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig, RuntimeCaching } from "serwist";
-import { Serwist, CacheFirst, NetworkOnly, StaleWhileRevalidate, ExpirationPlugin, RangeRequestsPlugin } from "serwist";
+import { Serwist, CacheFirst, NetworkOnly, ExpirationPlugin, RangeRequestsPlugin } from "serwist";
 
 // This declares the value of `injectionPoint` to TypeScript.
 // `injectionPoint` is the string that will be replaced by the
@@ -130,14 +130,16 @@ async function cleanupOldCaches() {
           // Remove oldest 25% of entries if cache is getting large
           if (count > 20) {
             const toDelete = keys.slice(0, Math.floor(count * 0.25));
-            await Promise.all(toDelete.map((key) => {
-              try {
-                return cache.delete(key);
-              } catch (error) {
-                // Ignore individual delete errors
-                return Promise.resolve();
-              }
-            }));
+            await Promise.all(
+              toDelete.map((key) => {
+                try {
+                  return cache.delete(key);
+                } catch {
+                  // Ignore individual delete errors
+                  return Promise.resolve();
+                }
+              })
+            );
             console.log(`[SW] Cleaned ${toDelete.length} entries from ${name}`);
           }
         } catch (error) {
@@ -190,4 +192,3 @@ self.addEventListener("activate", async (event: Event) => {
     })()
   );
 });
-

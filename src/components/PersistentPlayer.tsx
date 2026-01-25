@@ -21,7 +21,6 @@ export function PersistentPlayer() {
     toggleMute,
     audioRef,
     progress,
-    seek,
     stop,
     immersiveOpen,
     setImmersiveOpen,
@@ -270,4 +269,3 @@ export function PersistentPlayer() {
     </div>
   );
 }
-

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+type NavigatorWithDeviceMemory = Navigator & { deviceMemory?: number };
+
 /**
  * Device Capabilities
  */
@@ -39,7 +41,7 @@ export function useDeviceCapabilities(): DeviceCapabilities {
 
     // Get hardware info
     const hardwareConcurrency = navigator.hardwareConcurrency || 4;
-    const deviceMemory = (navigator as any).deviceMemory; // Optional API
+    const deviceMemory = (navigator as NavigatorWithDeviceMemory).deviceMemory;
 
     // Check for WebGPU
     const hasWebGPU = 'gpu' in navigator;

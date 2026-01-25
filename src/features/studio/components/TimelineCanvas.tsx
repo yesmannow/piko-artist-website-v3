@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEvent, PointerEvent, WheelEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useStudioClock } from "../hooks/useStudioClock";
 import { useStudioStore, StudioTimelineClip, StudioTimelineTrack } from "../stores/useStudioStore";
 import { StudioEngine } from "../lib/StudioEngine";
@@ -109,12 +109,25 @@ export function TimelineCanvas({ tracks }: { tracks: StudioTimelineTrack[] }) {
   } | null>(null);
 
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const trackHeight = 72;
+  // Detect mobile on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsMobile(window.innerWidth < 768);
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
+  // Responsive track height - larger on mobile for better touch targets
+  const trackHeight = isMobile ? 96 : 72;
   const headerHeight = 26;
   const clipTopPad = 22;
   const clipBottomPad = 8;
-  const handleWidth = 10;
+  // Larger handle width on mobile for easier trimming
+  const handleWidth = typeof window !== "undefined" && window.innerWidth < 768 ? 16 : 10;
   const minClipSeconds = 0.05;
 
   const clipEditRef = useRef<{
@@ -143,12 +156,30 @@ export function TimelineCanvas({ tracks }: { tracks: StudioTimelineTrack[] }) {
     trackId: string | null;
   }>({ isDrawing: false, pointerId: null, trackId: null });
 
+  // Throttle drawing to improve performance
+  let lastDrawTime = 0;
+  const drawThrottle = 16; // ~60fps max
+
   const requestDraw = () => {
     if (rafDrawRef.current !== null) return;
-    rafDrawRef.current = requestAnimationFrame(() => {
-      rafDrawRef.current = null;
-      draw();
-    });
+    const now = performance.now();
+    const timeSinceLastDraw = now - lastDrawTime;
+    
+    if (timeSinceLastDraw < drawThrottle) {
+      // Schedule draw for next frame
+      rafDrawRef.current = requestAnimationFrame(() => {
+        rafDrawRef.current = null;
+        lastDrawTime = performance.now();
+        draw();
+      });
+    } else {
+      // Draw immediately if enough time has passed
+      rafDrawRef.current = requestAnimationFrame(() => {
+        rafDrawRef.current = null;
+        lastDrawTime = performance.now();
+        draw();
+      });
+    }
   };
 
   const getCanvasMetrics = () => {
@@ -261,7 +292,8 @@ export function TimelineCanvas({ tracks }: { tracks: StudioTimelineTrack[] }) {
       for (const clip of track.clips) {
         const x0 = (clip.startSeconds - centerTimeSeconds) * pxPerSecond + centerX;
         const w = clip.durationSeconds * pxPerSecond;
-        if (x0 + w < -100 || x0 > width + 100) continue;
+        // Canvas culling: skip clips that are far off-screen
+        if (x0 + w < -200 || x0 > width + 200) continue;
 
         const clipY = y + clipTopPad;
         const clipH = trackHeight - (clipTopPad + clipBottomPad);

@@ -12,6 +12,7 @@ import {
   SkipForward,
   SkipBack,
   Maximize2,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -671,7 +672,7 @@ function CompactView({
 }
 
 export default function MusicPage() {
-  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious, setImmersiveOpen } =
+  const { currentTrack, isPlaying, playTrack, togglePlay, skipNext, skipPrevious, setImmersiveOpen, playbackError, clearPlaybackError } =
     useAudio();
   const { triggerHaptic } = useHaptic();
   const [viewType, setViewType] = useState<ViewType>("list");

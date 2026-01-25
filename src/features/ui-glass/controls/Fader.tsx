@@ -91,6 +91,9 @@ export function Fader({
   const isVertical = orientation === 'vertical';
   const positionPercent = normalizedValue * 100;
 
+  // Extract only DOM-compatible props from gestures (exclude getVelocity)
+  const { getVelocity, ...gestureProps } = gestures;
+
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>
       {label && (
@@ -108,7 +111,7 @@ export function Fader({
         style={{
           writingMode: isVertical ? 'vertical-lr' : 'horizontal-tb',
         }}
-        {...gestures}
+        {...gestureProps}
       >
         {/* Track */}
         <div
