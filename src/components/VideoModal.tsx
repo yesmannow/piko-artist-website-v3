@@ -37,6 +37,8 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
   useEffect(() => {
     if (isOpen && iframeRef.current) {
       setIsLoading(true);
+      // Set credentialless attribute for COEP compatibility
+      iframeRef.current.setAttribute('credentialless', 'true');
       // Set iframe src to trigger loading
       iframeRef.current.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
       
@@ -54,7 +56,7 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
     setIsLoading(false);
   };
 
-  // Auto-cleanup: Remove iframe src when modal closes to stop audio/network
+  // Auto-cleanup: Completely unmount iframe when modal closes to stop audio/network
   useEffect(() => {
     if (!isOpen && iframeRef.current) {
       // Remove src to stop playback and network activity
@@ -120,30 +122,36 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
               </div>
             )}
 
-            {/* Loading Skeleton */}
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#0A0A0A]">
-                <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                  <div className="w-16 h-16 border-4 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                  <p className="text-white/60 text-sm uppercase tracking-wider">Loading video...</p>
-                </div>
+            {/* Loading Skeleton with fade-out animation */}
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: isLoading ? 1 : 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute inset-0 flex items-center justify-center bg-[#0A0A0A] pointer-events-none"
+              style={{ display: isLoading ? "flex" : "none" }}
+            >
+              <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                <div className="w-16 h-16 border-4 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                <p className="text-white/60 text-sm uppercase tracking-wider">Loading video...</p>
               </div>
-            )}
+            </motion.div>
 
-            {/* YouTube iframe with nocookie domain */}
-            <iframe
-              key={videoId}
-              ref={iframeRef}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              onLoad={handleIframeLoad}
-              style={{ 
-                opacity: isLoading ? 0 : 1,
-                visibility: isLoading ? "hidden" : "visible",
-                transition: "opacity 0.3s ease-in-out"
-              }}
-            />
+            {/* YouTube iframe with nocookie domain and credentialless for COEP compatibility */}
+            {isOpen && (
+              <iframe
+                key={videoId}
+                ref={iframeRef}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={handleIframeLoad}
+                style={{ 
+                  opacity: isLoading ? 0 : 1,
+                  visibility: isLoading ? "hidden" : "visible",
+                  transition: "opacity 0.3s ease-in-out"
+                }}
+              />
+            )}
           </motion.div>
         </motion.div>
       )}

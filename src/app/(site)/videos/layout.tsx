@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import videosData from "@/lib/data/videos.json";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const videos = videosData as Array<{ id: string; title: string; thumbnail: string }>;
+  const videos = (videosData || []) as Array<{ id: string; title: string; thumbnail: string }>;
   const latestVideo = videos[0];
 
   const title = "Piko FG // The Vault";

@@ -4,7 +4,6 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { VideoModal } from "@/components/VideoModal";
-import { getYouTubeThumbnailProxy } from "@/lib/utils/youtubeImageProxy";
 import videosData from "@/lib/data/videos.json";
 
 // Video data type
@@ -12,6 +11,7 @@ interface Video {
   id: string;
   title: string;
   thumbnail: string;
+  embedUrl?: string;
 }
 
 // Loading Skeleton Component
@@ -35,58 +35,36 @@ function VideoGridSkeleton() {
   );
 }
 
-// Video Card Component with Glassmorphism
+// Video Card Component with Massive Glassmorphism
 function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
-  // Try maxresdefault first, fallback to hqdefault, then mqdefault
-  const [thumbnailError, setThumbnailError] = useState(false);
-  const [thumbnailQuality, setThumbnailQuality] = useState<"maxresdefault" | "hqdefault" | "mqdefault">("maxresdefault");
-  
-  const thumbnailUrl = getYouTubeThumbnailProxy(video.id, thumbnailQuality);
-
-  const handleImageError = () => {
-    if (thumbnailQuality === "maxresdefault") {
-      setThumbnailQuality("hqdefault");
-    } else if (thumbnailQuality === "hqdefault") {
-      setThumbnailQuality("mqdefault");
-    } else {
-      setThumbnailError(true);
-    }
-  };
+  // Use image-proxy API to wrap the YouTube thumbnail URL
+  const thumbnailUrl = `/api/image-proxy?url=${encodeURIComponent(video.thumbnail)}`;
 
   return (
     <button
       onClick={onClick}
-      className="group relative aspect-video bg-white/5 border border-white/20 rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:border-[#FFD400]/50 hover:shadow-lg hover:shadow-[#FFD400]/20"
+      className="group relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 transition-all duration-500 hover:scale-[1.02] hover:bg-white/10 hover:border-white/20 hover:shadow-[0_0_50px_rgba(255,255,255,0.1)]"
       aria-label={`Play ${video.title}`}
     >
-      {/* Thumbnail Image */}
-      <div className="absolute inset-0">
-        {!thumbnailError ? (
-          <Image
-            src={thumbnailUrl}
-            alt={video.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-110"
-            unoptimized
-            onError={handleImageError}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#FFD400]/20 to-[#FFD400]/5 flex items-center justify-center">
-            <svg className="w-16 h-16 text-white/40" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        )}
+      {/* Thumbnail Wrapper */}
+      <div className="aspect-video w-full overflow-hidden">
+        <Image
+          src={thumbnailUrl}
+          alt={video.title}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          unoptimized
+          sizes="(max-width: 768px) 100vw, 50vw"
+        />
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
       </div>
 
       {/* Play Icon Overlay */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <div className="w-16 h-16 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
+        <div className="w-20 h-20 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
           <svg
-            className="w-8 h-8 text-white ml-1"
+            className="w-10 h-10 text-white ml-1"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -96,8 +74,8 @@ function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
       </div>
 
       {/* Title Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
-        <h3 className="text-white text-sm md:text-base font-bold uppercase tracking-tight line-clamp-2 text-left">
+      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 bg-gradient-to-t from-black/95 via-black/80 to-transparent">
+        <h3 className="text-white text-2xl md:text-3xl font-black uppercase tracking-tighter line-clamp-2 text-left">
           {video.title}
         </h3>
       </div>
@@ -122,7 +100,7 @@ function VideoGrid({ videos }: { videos: Video[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {videos.map((video) => (
           <VideoCard key={video.id} video={video} onClick={() => handleVideoClick(video)} />
         ))}
@@ -143,7 +121,7 @@ function VideoGrid({ videos }: { videos: Video[] }) {
 
 // Main Videos Page Component
 export default function VideosPage() {
-  const videos = videosData as Video[];
+  const videos = (videosData || []) as Video[];
 
   if (videos.length === 0) {
     return (
