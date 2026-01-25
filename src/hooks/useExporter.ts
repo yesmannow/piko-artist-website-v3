@@ -59,7 +59,7 @@ export const useExporter = () => {
       ]);
 
       const data = await ffmpeg.readFile('output.mp3');
-      const mp3Blob = new Blob([data], { type: 'audio/mp3' });
+      const mp3Blob = new Blob([data], { type: 'audio/mpeg' });
       downloadBlob(mp3Blob, `${filename}.mp3`);
       
       // Cleanup MEMFS

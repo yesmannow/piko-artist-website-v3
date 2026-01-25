@@ -66,7 +66,7 @@ export const useAudioEngine = (): AudioEngineControls => {
 
     // Recorder captures the final mix including Master Limiter/Compressor effects
     recorder.current = new Tone.Recorder();
-    Tone.getDestination().connect(recorder.current);
+    masterLimiter.current.connect(recorder.current);
 
     // 2. Initialize Crossfader
     // Tone.CrossFade uses Equal Power fading by default
