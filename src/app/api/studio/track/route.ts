@@ -2,6 +2,7 @@ import { r2 } from "@/lib/r2";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
+import pikoTracks from "@/data/piko-tracks.json";
 
 export async function GET(request: Request) {
   try {
@@ -15,8 +16,26 @@ export async function GET(request: Request) {
       );
     }
 
+    // Validate trackId against the manifest to prevent unauthorized file access
+    const isValidTrack = pikoTracks.some(track => track.trackId === trackId);
+    if (!isValidTrack) {
+      return NextResponse.json(
+        { error: "Invalid track ID" },
+        { status: 404 }
+      );
+    }
+
+    // Validate bucket configuration
+    const bucket = process.env.R2_BUCKET_NAME;
+    if (!bucket) {
+      return NextResponse.json(
+        { error: "Storage configuration error" },
+        { status: 500 }
+      );
+    }
+
     const command = new GetObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
+      Bucket: bucket,
       Key: trackId,
     });
 
