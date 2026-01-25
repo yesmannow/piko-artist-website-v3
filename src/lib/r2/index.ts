@@ -4,7 +4,7 @@
  * S3-compatible client for Cloudflare R2 storage.
  * Used for storing and retrieving audio stems and metadata.
  * 
- * Phase II: Core Architecture
+ * Phase V: Singleton pattern for optimal TCP connection reuse
  */
 
 import { S3Client } from '@aws-sdk/client-s3';
@@ -12,30 +12,35 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 /**
- * Initialize R2 client
+ * Singleton R2 Client Instance
+ * Reuses TCP connections across serverless function invocations
  * Environment variables required:
  * - R2_ACCOUNT_ID
  * - R2_ACCESS_KEY_ID
  * - R2_SECRET_ACCESS_KEY
  * - R2_BUCKET_NAME
  */
+if (!process.env.R2_ACCOUNT_ID ||
+    !process.env.R2_ACCESS_KEY_ID ||
+    !process.env.R2_SECRET_ACCESS_KEY) {
+  throw new Error("Missing Cloudflare R2 Environment Variables");
+}
+
+export const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+});
+
+/**
+ * @deprecated Use the singleton `r2` export instead
+ * Kept for backward compatibility
+ */
 export function createR2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-
-  if (!accountId || !accessKeyId || !secretAccessKey) {
-    throw new Error('R2 credentials not configured');
-  }
-
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId,
-      secretAccessKey,
-    },
-  });
+  return r2;
 }
 
 /**
@@ -46,7 +51,6 @@ export async function getPresignedDownloadUrl(
   key: string,
   expiresIn = 3600
 ): Promise<string> {
-  const client = createR2Client();
   const bucket = process.env.R2_BUCKET_NAME;
 
   if (!bucket) {
@@ -58,7 +62,7 @@ export async function getPresignedDownloadUrl(
     Key: key,
   });
 
-  return getSignedUrl(client, command, { expiresIn });
+  return getSignedUrl(r2, command, { expiresIn });
 }
 
 /**
@@ -69,7 +73,6 @@ export async function getPresignedUploadUrl(
   contentType: string,
   expiresIn = 3600
 ): Promise<string> {
-  const client = createR2Client();
   const bucket = process.env.R2_BUCKET_NAME;
 
   if (!bucket) {
@@ -82,5 +85,5 @@ export async function getPresignedUploadUrl(
     ContentType: contentType,
   });
 
-  return getSignedUrl(client, command, { expiresIn });
+  return getSignedUrl(r2, command, { expiresIn });
 }
