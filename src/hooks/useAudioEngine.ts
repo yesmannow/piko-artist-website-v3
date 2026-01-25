@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import * as Tone from 'tone';
 import { useStore } from '../store/useStore';
 import { StemDeck, StemUrls } from '../audio/StemDeck';
@@ -12,6 +12,9 @@ interface AudioEngineControls {
   pause: (deck: 'A' | 'B') => void;
   stop: (deck: 'A' | 'B') => void;
   syncToBpm: (deck: 'A' | 'B') => void;
+  startRecording: () => Promise<void>;
+  stopRecording: () => Promise<Blob | null>;
+  isRecording: boolean;
   isReady: boolean;
 }
 
@@ -29,6 +32,10 @@ export const useAudioEngine = (): AudioEngineControls => {
   const masterLimiter = useRef<Tone.Limiter | null>(null);
   const masterMeter = useRef<Tone.Meter | null>(null);
   const animationFrameId = useRef<number | null>(null);
+  const recorder = useRef<Tone.Recorder | null>(null);
+
+  // --- STATE ---
+  const [isRecording, setIsRecording] = useState(false);
 
   // Zustand subscriptions for reactive audio updates
   const { masterBpm, crossfader, deckA, deckB, setAudioReady } = useStore();
@@ -56,6 +63,10 @@ export const useAudioEngine = (): AudioEngineControls => {
     // Meter provides data for the visualizer
     masterMeter.current = new Tone.Meter(); 
     masterLimiter.current.connect(masterMeter.current);
+
+    // Recorder captures the final mix including Master Limiter/Compressor effects
+    recorder.current = new Tone.Recorder();
+    masterLimiter.current.connect(recorder.current);
 
     // 2. Initialize Crossfader
     // Tone.CrossFade uses Equal Power fading by default
@@ -159,6 +170,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     const masterCompressorRef = masterCompressor.current;
     const masterLimiterRef = masterLimiter.current;
     const masterMeterRef = masterMeter.current;
+    const recorderRef = recorder.current;
 
     // Cleanup
     return () => {
@@ -181,6 +193,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         masterCompressorRef?.dispose();
         masterLimiterRef?.dispose();
         masterMeterRef?.dispose();
+        recorderRef?.dispose();
       }
     };
   }, []); // Empty deps - run once
@@ -473,6 +486,31 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [masterBpm, deckA, deckB]);
 
+  // Start Recording
+  const startRecording = useCallback(async () => {
+    // Mobile Safari protection: Ensure context is running
+    if (Tone.context.state !== 'running') {
+      await Tone.start();
+    }
+
+    if (recorder.current && recorder.current.state !== 'started') {
+      recorder.current.start();
+      setIsRecording(true);
+      console.log('🎙️ Studio Recording Started');
+    }
+  }, []);
+
+  // Stop Recording
+  const stopRecording = useCallback(async (): Promise<Blob | null> => {
+    if (recorder.current && recorder.current.state === 'started') {
+      const blob = await recorder.current.stop();
+      setIsRecording(false);
+      console.log(`💾 Capture Complete: ${blob.type}, Size: ${blob.size}`);
+      return blob;
+    }
+    return null;
+  }, []);
+
   return {
     initAudio,
     loadTrack,
@@ -481,6 +519,9 @@ export const useAudioEngine = (): AudioEngineControls => {
     pause,
     stop,
     syncToBpm,
+    startRecording,
+    stopRecording,
+    isRecording,
     isReady: isInitialized.current
   };
 };
