@@ -54,8 +54,10 @@ export function useGyroLighting(intensity: number = 1.0): GyroData {
   );
 
   const requestAccess = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const permission = await (DeviceOrientationEvent as any).requestPermission();
         if (permission === "granted") {
           setPermissionGranted(true);

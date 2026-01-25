@@ -38,6 +38,7 @@ export function useGPUTier(): GPUCapabilities {
 
     // Heuristics for GPU tier
     const hardwareConcurrency = navigator.hardwareConcurrency || 4;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const deviceMemory = (navigator as any).deviceMemory || 4; // GB
     const isMobile = window.innerWidth < 768 ||
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
