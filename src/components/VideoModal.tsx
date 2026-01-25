@@ -24,7 +24,10 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
     if (!isOpen) return;
 
     // Scroll to top of page when modal opens to ensure video is visible
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Only scroll if not already near the top to avoid unnecessary animation
+    if (window.scrollY > 100) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
