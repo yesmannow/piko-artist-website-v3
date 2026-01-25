@@ -1,112 +1,33 @@
-import { Suspense } from 'react';
-import type { Metadata } from 'next';
-import { YouTubeEmbed } from '@next/third-parties/google';
-import { fetchYouTubeVideos } from '@/lib/utils/youtubeRss';
-import Link from 'next/link';
+"use client";
 
-// Enable stale-while-revalidate: serve cached content instantly, recheck every hour
-export const revalidate = 3600;
+import { useState, Suspense } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { VideoModal } from "@/components/VideoModal";
+import { getYouTubeThumbnailProxy } from "@/lib/utils/youtubeImageProxy";
+import videosData from "@/lib/data/videos.json";
 
-// SEO Metadata
-export async function generateMetadata(): Promise<Metadata> {
-  const videos = await fetchYouTubeVideos();
-  const latestVideo = videos[0];
-
-  const title = 'Piko FG // The Vault';
-  const description = latestVideo
-    ? `Latest video: ${latestVideo.title}. Watch Piko FG's official video archive.`
-    : 'Piko FG // The Vault - Official video archive';
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-    },
-    ...(latestVideo && {
-      other: {
-        'video:url': latestVideo.link,
-        'video:title': latestVideo.title,
-      },
-    }),
-  };
+// Video data type
+interface Video {
+  id: string;
+  title: string;
+  thumbnail: string;
 }
 
-interface VideoGridProps {
-  videos: Array<{ id: string; title: string; link: string; publishedAt: string }>;
-}
-
-// Latest Drop - Featured Video Section
-function LatestDrop({ video }: { video: { id: string; title: string } }) {
-  return (
-    <section className="mb-12 md:mb-16">
-      <div className="relative w-full aspect-video bg-[#0A0A0A] border border-[#2A2A2A] overflow-hidden shadow-lg">
-        <div className="w-full h-full">
-          <YouTubeEmbed
-            videoid={video.id}
-            height={400}
-          />
-        </div>
-      </div>
-      <h2 className="mt-4 text-white text-lg md:text-xl font-bold uppercase tracking-tight line-clamp-2">
-        {video.title}
-      </h2>
-    </section>
-  );
-}
-
-// Video Archives Grid - Responsive Layout
-function VideoArchive({ videos }: VideoGridProps) {
-  return (
-    <section>
-      <h2 className="text-white text-xl md:text-2xl font-bold uppercase tracking-tight mb-6 md:mb-8">
-        Video Archives
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {videos.map((video) => (
-          <div
-            key={video.id}
-            className="group relative aspect-video bg-[#0A0A0A] border border-[#2A2A2A] overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:border-[#FFD400] shadow-lg"
-          >
-            <div className="w-full h-full">
-              <YouTubeEmbed
-                videoid={video.id}
-                height={400}
-              />
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
-              <h3 className="text-white text-sm md:text-base font-bold uppercase tracking-tight line-clamp-2">
-                {video.title}
-              </h3>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// Loading Skeleton - Brand-Aligned
-function LoadingFallback() {
+// Loading Skeleton Component
+function VideoGridSkeleton() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header skeleton */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 md:mb-12 pb-6 border-b border-[#2A2A2A]">
-          <div className="h-12 w-64 bg-[#2A2A2A] mb-4 md:mb-0" />
-          <div className="h-11 w-40 bg-[#2A2A2A]" />
+          <div className="h-12 w-64 bg-[#2A2A2A] mb-4 md:mb-0 animate-pulse" />
+          <div className="h-11 w-40 bg-[#2A2A2A] animate-pulse" />
         </header>
-        {/* Latest drop skeleton */}
-        <div className="mb-12 md:mb-16">
-          <div className="w-full aspect-video bg-[#2A2A2A] border border-[#2A2A2A] mb-4" />
-          <div className="h-6 w-3/4 bg-[#2A2A2A]" />
-        </div>
-        {/* Archive grid skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {[...Array(14)].map((_, i) => (
-            <div key={i} className="aspect-video bg-[#2A2A2A] border border-[#2A2A2A]" />
+        {/* Grid skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {[...Array(16)].map((_, i) => (
+            <div key={i} className="aspect-video bg-[#2A2A2A] border border-[#2A2A2A] rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -114,9 +35,115 @@ function LoadingFallback() {
   );
 }
 
-// Main Content Component
-async function VideosContent() {
-  const videos = await fetchYouTubeVideos();
+// Video Card Component with Glassmorphism
+function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
+  // Try maxresdefault first, fallback to hqdefault, then mqdefault
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const [thumbnailQuality, setThumbnailQuality] = useState<"maxresdefault" | "hqdefault" | "mqdefault">("maxresdefault");
+  
+  const thumbnailUrl = getYouTubeThumbnailProxy(video.id, thumbnailQuality);
+
+  const handleImageError = () => {
+    if (thumbnailQuality === "maxresdefault") {
+      setThumbnailQuality("hqdefault");
+    } else if (thumbnailQuality === "hqdefault") {
+      setThumbnailQuality("mqdefault");
+    } else {
+      setThumbnailError(true);
+    }
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className="group relative aspect-video bg-white/5 border border-white/20 rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:border-[#FFD400]/50 hover:shadow-lg hover:shadow-[#FFD400]/20"
+      aria-label={`Play ${video.title}`}
+    >
+      {/* Thumbnail Image */}
+      <div className="absolute inset-0">
+        {!thumbnailError ? (
+          <Image
+            src={thumbnailUrl}
+            alt={video.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-110"
+            unoptimized
+            onError={handleImageError}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#FFD400]/20 to-[#FFD400]/5 flex items-center justify-center">
+            <svg className="w-16 h-16 text-white/40" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        )}
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+      </div>
+
+      {/* Play Icon Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="w-16 h-16 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
+          <svg
+            className="w-8 h-8 text-white ml-1"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Title Overlay */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
+        <h3 className="text-white text-sm md:text-base font-bold uppercase tracking-tight line-clamp-2 text-left">
+          {video.title}
+        </h3>
+      </div>
+    </button>
+  );
+}
+
+// Video Grid Component
+function VideoGrid({ videos }: { videos: Video[] }) {
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [selectedVideoTitle, setSelectedVideoTitle] = useState<string | undefined>(undefined);
+
+  const handleVideoClick = (video: Video) => {
+    setSelectedVideoId(video.id);
+    setSelectedVideoTitle(video.title);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedVideoId(null);
+    setSelectedVideoTitle(undefined);
+  };
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        {videos.map((video) => (
+          <VideoCard key={video.id} video={video} onClick={() => handleVideoClick(video)} />
+        ))}
+      </div>
+
+      {/* Video Modal */}
+      {selectedVideoId && (
+        <VideoModal
+          isOpen={!!selectedVideoId}
+          onClose={handleCloseModal}
+          videoId={selectedVideoId}
+          videoTitle={selectedVideoTitle}
+        />
+      )}
+    </>
+  );
+}
+
+// Main Videos Page Component
+export default function VideosPage() {
+  const videos = videosData as Video[];
 
   if (videos.length === 0) {
     return (
@@ -143,10 +170,6 @@ async function VideosContent() {
     );
   }
 
-  // Latest video (featured) + next 14 videos for archive (total 15)
-  const latestVideo = videos[0];
-  const archiveVideos = videos.slice(1, 15); // Next 14 videos
-
   return (
     <div className="min-h-screen bg-[#0A0A0A] pt-20 md:pt-24 pb-12 md:pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
@@ -165,21 +188,11 @@ async function VideosContent() {
           </Link>
         </header>
 
-        {/* Latest Drop - Featured Video */}
-        <LatestDrop video={latestVideo} />
-
-        {/* Video Archives - Grid of remaining videos */}
-        {archiveVideos.length > 0 && <VideoArchive videos={archiveVideos} />}
+        {/* Video Grid */}
+        <Suspense fallback={<VideoGridSkeleton />}>
+          <VideoGrid videos={videos} />
+        </Suspense>
       </div>
     </div>
-  );
-}
-
-// Page Component with Suspense
-export default function VideosPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <VideosContent />
-    </Suspense>
   );
 }
