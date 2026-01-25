@@ -14,7 +14,8 @@ const withSerwist = withSerwistInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  // Disable Strict Mode to prevent double-initialization of AudioContext and WebGL Canvases
+  reactStrictMode: false,
   // Exclude scripts directory from Next.js compilation
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   // TypeScript will handle exclusions via tsconfig.json
@@ -113,6 +114,29 @@ const nextConfig = {
   transpilePackages: ['@tailwindcss/postcss', '@tailwindcss/node', 'onnxruntime-web'],
   outputFileTracingRoot: __dirname,
   webpack: (config, { isServer }) => {
+    // Enable async WebAssembly
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+      layers: true, // Required for some WASM builds
+    };
+
+    // Rule to handle .wasm files as assets if not automatically handled
+    config.module.rules.push({
+      test: /\.wasm$/,
+      type: "asset/resource",
+    });
+
+    // Fix for Essentia.js "fs" module resolution in browser
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+
     // Resolve path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
