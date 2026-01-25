@@ -6,7 +6,7 @@ import * as Tone from 'tone';
 import * as THREE from 'three';
 
 const ReactiveOrb = () => {
-  const materialRef = useRef<THREE.Material | null>(null);
+  const materialRef = useRef<any>(null);
   
   // Create Meter node for analysis (smoothing 0.8 for organic feel)
   const meter = useMemo(() => new Tone.Meter({ smoothing: 0.8 }), []);
@@ -38,13 +38,17 @@ const ReactiveOrb = () => {
     const targetSpeed = 1.5 + (energy * 4.0);
 
     // 4. Lerp for fluid motion (The "Liquid" feel)
+    // Initialize properties if they don't exist yet
+    const currentDistort = materialRef.current.distort ?? 0.3;
+    const currentSpeed = materialRef.current.speed ?? 1.5;
+    
     materialRef.current.distort = THREE.MathUtils.lerp(
-      materialRef.current.distort, 
+      currentDistort, 
       targetDistort, 
       0.1
     );
     materialRef.current.speed = THREE.MathUtils.lerp(
-      materialRef.current.speed, 
+      currentSpeed, 
       targetSpeed, 
       0.05
     );
