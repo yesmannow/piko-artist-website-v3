@@ -14,6 +14,7 @@ export interface DeckState {
   playbackRate: number; // 1.0 is normal speed
   eq: { low: number; mid: number; high: number }; // Gains in dB
   filter: number; // Filter frequency or dry/wet mix
+  stems: { vocals: boolean; inst: boolean }; // Phase VI: Stem toggle state
 }
 
 // Define the global Mixer state
@@ -34,6 +35,7 @@ export interface MixerState {
   setDeckEQ: (deck: 'A' | 'B', eq: DeckState['eq']) => void;
   setDeckFilter: (deck: 'A' | 'B', filter: number) => void;
   togglePlay: (deck: 'A' | 'B') => void;
+  toggleStem: (deck: 'A' | 'B', stem: 'vocals' | 'inst') => void;
 }
 
 const initialDeckState: DeckState = {
@@ -44,6 +46,7 @@ const initialDeckState: DeckState = {
   playbackRate: 1,
   eq: { low: 0, mid: 0, high: 0 },
   filter: 0,
+  stems: { vocals: true, inst: true }, // Both stems enabled by default
 };
 
 export const useStore = create<MixerState>((set) => ({
@@ -121,6 +124,20 @@ export const useStore = create<MixerState>((set) => ({
       [deckKey]: {
         ...currentDeck,
         isPlaying: !currentDeck.isPlaying
+      }
+    };
+  }),
+
+  toggleStem: (deck, stem) => set((state) => {
+    const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+    const currentDeck = state[deckKey];
+    return {
+      [deckKey]: {
+        ...currentDeck,
+        stems: {
+          ...currentDeck.stems,
+          [stem]: !currentDeck.stems[stem]
+        }
       }
     };
   }),

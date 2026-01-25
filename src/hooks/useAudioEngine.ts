@@ -1,11 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react';
 import * as Tone from 'tone';
 import { useStore } from '../store/useStore';
+import { StemDeck, StemUrls } from '../audio/StemDeck';
 
 // Interface for the hook's return value
 interface AudioEngineControls {
   initAudio: () => Promise<void>;
   loadTrack: (deck: 'A' | 'B', url: string, bpm: number) => Promise<void>;
+  loadStems: (deck: 'A' | 'B', urls: StemUrls, bpm: number) => Promise<void>;
   play: (deck: 'A' | 'B') => void;
   pause: (deck: 'A' | 'B') => void;
   stop: (deck: 'A' | 'B') => void;
@@ -17,6 +19,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   // --- REFS: Persistent Audio Graph Storage ---
   // Using refs ensures the audio graph persists across re-renders without dependency loops.
   const isInitialized = useRef(false);
+  const stemDecks = useRef<{ A: StemDeck | null; B: StemDeck | null }>({ A: null, B: null });
   const players = useRef<{ A: Tone.Player | null; B: Tone.Player | null }>({ A: null, B: null });
   const channels = useRef<{ A: Tone.Channel | null; B: Tone.Channel | null }>({ A: null, B: null });
   const eqs = useRef<{ A: Tone.EQ3 | null; B: Tone.EQ3 | null }>({ A: null, B: null });
@@ -149,6 +152,7 @@ export const useAudioEngine = (): AudioEngineControls => {
 
     // Copy refs to variables for cleanup
     const playersRef = players.current;
+    const stemDecksRef = stemDecks.current;
     const channelsRef = channels.current;
     const eqsRef = eqs.current;
     const filtersRef = filters.current;
@@ -168,6 +172,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       // to allow hot-reload, but for production correctness:
       if (!isInitialized.current) {
         (['A', 'B'] as const).forEach(deck => {
+          stemDecksRef[deck]?.dispose();
           playersRef[deck]?.dispose();
           channelsRef[deck]?.dispose();
           eqsRef[deck]?.dispose();
@@ -275,6 +280,23 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [deckB.filter]);
 
+  // Update Stem Muting (Phase VI)
+  useEffect(() => {
+    const stemDeck = stemDecks.current.A;
+    if (stemDeck) {
+      stemDeck.toggleStem('vocals', deckA.stems.vocals);
+      stemDeck.toggleStem('inst', deckA.stems.inst);
+    }
+  }, [deckA.stems]);
+
+  useEffect(() => {
+    const stemDeck = stemDecks.current.B;
+    if (stemDeck) {
+      stemDeck.toggleStem('vocals', deckB.stems.vocals);
+      stemDeck.toggleStem('inst', deckB.stems.inst);
+    }
+  }, [deckB.stems]);
+
 
   // --- CONTROLS EXPOSED TO UI ---
 
@@ -312,10 +334,63 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [masterBpm]);
 
+  // Load Stems from R2 (Phase VI)
+  const loadStems = useCallback(async (deck: 'A' | 'B', urls: StemUrls, bpm: number) => {
+    // Initialize StemDeck if not already created
+    if (!stemDecks.current[deck]) {
+      const destination = deck === 'A' ? crossFade.current!.a : crossFade.current!.b;
+      
+      // Disconnect the regular player from the crossfader
+      const player = players.current[deck];
+      const channel = channels.current[deck];
+      if (player && channel) {
+        channel.disconnect();
+      }
+      
+      // Create new StemDeck
+      stemDecks.current[deck] = new StemDeck(deck, destination);
+      
+      // Connect EQ and Filter to StemDeck channel
+      const stemDeck = stemDecks.current[deck]!;
+      const eq = eqs.current[deck];
+      const filter = filters.current[deck];
+      
+      if (eq && filter) {
+        stemDeck.getChannel().disconnect();
+        stemDeck.getChannel().chain(eq, filter, destination);
+      }
+    }
+    
+    const stemDeck = stemDecks.current[deck];
+    if (!stemDeck) {
+      console.error(`[AudioEngine] StemDeck for deck ${deck} not initialized`);
+      return;
+    }
+
+    try {
+      console.log(`[AudioEngine] Loading stems on Deck ${deck}:`, urls);
+      await stemDeck.load(urls);
+      
+      // Calculate and apply initial sync rate
+      const syncRate = masterBpm / bpm;
+      stemDeck.setPlaybackRate(syncRate);
+      
+      console.log(`[AudioEngine] Stems loaded successfully on Deck ${deck}, sync rate: ${syncRate}`);
+    } catch (error) {
+      console.error(`[AudioEngine] Failed to load stems on Deck ${deck}:`, error);
+    }
+  }, [masterBpm]);
+
   // Play a deck
   const play = useCallback((deck: 'A' | 'B') => {
+    const stemDeck = stemDecks.current[deck];
     const player = players.current[deck];
-    if (player && player.loaded && player.state !== 'started') {
+    
+    // Prioritize StemDeck if available (Phase VI)
+    if (stemDeck && stemDeck.isLoaded()) {
+      stemDeck.play();
+      console.log(`[AudioEngine] Playing Deck ${deck} (Stems)`);
+    } else if (player && player.loaded && player.state !== 'started') {
       player.start();
       console.log(`[AudioEngine] Playing Deck ${deck}`);
     }
@@ -323,8 +398,14 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Pause a deck
   const pause = useCallback((deck: 'A' | 'B') => {
+    const stemDeck = stemDecks.current[deck];
     const player = players.current[deck];
-    if (player && player.state === 'started') {
+    
+    // Prioritize StemDeck if available (Phase VI)
+    if (stemDeck && stemDeck.isLoaded()) {
+      stemDeck.pause();
+      console.log(`[AudioEngine] Paused Deck ${deck} (Stems)`);
+    } else if (player && player.state === 'started') {
       player.stop();
       console.log(`[AudioEngine] Paused Deck ${deck}`);
     }
@@ -332,8 +413,14 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Stop and reset a deck
   const stop = useCallback((deck: 'A' | 'B') => {
+    const stemDeck = stemDecks.current[deck];
     const player = players.current[deck];
-    if (player) {
+    
+    // Prioritize StemDeck if available (Phase VI)
+    if (stemDeck && stemDeck.isLoaded()) {
+      stemDeck.stop();
+      console.log(`[AudioEngine] Stopped Deck ${deck} (Stems)`);
+    } else if (player) {
       player.stop();
       player.seek(0);
       console.log(`[AudioEngine] Stopped Deck ${deck}`);
@@ -342,11 +429,19 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Sync a deck to the master BPM
   const syncToBpm = useCallback((deck: 'A' | 'B') => {
+    const stemDeck = stemDecks.current[deck];
     const player = players.current[deck];
     const deckState = deck === 'A' ? deckA : deckB;
     
-    if (player && deckState.trackData && player.loaded) {
-      const newRate = masterBpm / deckState.trackData.bpm;
+    if (!deckState.trackData) return;
+    
+    const newRate = masterBpm / deckState.trackData.bpm;
+    
+    // Prioritize StemDeck if available (Phase VI)
+    if (stemDeck && stemDeck.isLoaded()) {
+      stemDeck.setPlaybackRate(newRate);
+      console.log(`[AudioEngine] Synced Deck ${deck} (Stems) to ${masterBpm} BPM, rate: ${newRate}`);
+    } else if (player && player.loaded) {
       player.playbackRate = newRate;
       console.log(`[AudioEngine] Synced Deck ${deck} to ${masterBpm} BPM, rate: ${newRate}`);
     }
@@ -355,6 +450,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   return {
     initAudio,
     loadTrack,
+    loadStems,
     play,
     pause,
     stop,
