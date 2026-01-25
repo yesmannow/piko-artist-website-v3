@@ -50,6 +50,8 @@ export const r2 = new S3Client({
 }
 ```
 
+**Design Note:** This simplified schema is intentionally distinct from the full `TrackMetadata` interface in `src/types/studio.d.ts`. The Phase V manifest (`piko-tracks.json`) serves as the **source data layer** with minimal fields required for the R2 integration and basic UI. When the full Studio V3 loads, this data can be enriched/transformed into the complete `TrackMetadata` structure (which includes fields like `duration`, `key`, `cuePoints`, `stems`, etc.) through AI analysis or manual annotation.
+
 **Track Inventory:**
 1. Amor Sincero - 90 BPM, 0.5 energy
 2. Amores Perdidos - 105 BPM, 0.6 energy
