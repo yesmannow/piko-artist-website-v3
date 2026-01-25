@@ -16,7 +16,8 @@ const navItems = [
   { name: "About", path: "/", anchor: "rap-sheet" },
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
-  { name: "Studio", path: "/studio", anchor: null },
+  // TODO: REBUILD_LINK - Studio feature under reconstruction
+  // { name: "Studio", path: "/studio", anchor: null },
   { name: "Contact", path: "/contact", anchor: null },
 ];
 
