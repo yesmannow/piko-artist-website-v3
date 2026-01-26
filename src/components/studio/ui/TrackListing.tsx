@@ -4,7 +4,7 @@
  * TrackListing Component
  * 
  * Displays track metadata (Title, BPM, Energy) with "Load A" and "Load B" buttons
- * Shows visual loader (pulsing waveform) during R2 fetch
+ * Shows visual loader (pulsing waveform) during local load
  */
 
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useStore } from '@/store/useStore';
+import { useStudioStore } from '@/store/useStudioStore';
 import { Loader2 } from 'lucide-react';
 
 export interface Track {
@@ -21,6 +22,8 @@ export interface Track {
   bpm: number;
   energy: number;
   key?: string;
+  genre?: string;
+  mood?: string;
   artUrl?: string;
   src?: string;
   stems?: {
@@ -34,12 +37,16 @@ export interface Track {
 interface TrackListingProps {
   track: Track;
   onTrackLoaded?: (deck: 'A' | 'B') => void;
+  stemsReady?: boolean;
+  onAnalyze?: (track: Track) => void;
 }
 
-export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
+export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnalyze }: TrackListingProps) {
   const [loadingDeck, setLoadingDeck] = useState<'A' | 'B' | null>(null);
   const { loadTrack } = useAudioEngine();
   const { setDeckTrack, deckA, deckB } = useStore();
+  const setStems = useStudioStore((state) => state.setStems);
+  const markStemsReady = useStudioStore((state) => state.markStemsReady);
 
   const normalizeFileName = (value: string) => {
     const trimmed = value.replace(/\\/g, '/').split('/').pop() || '';
@@ -48,7 +55,7 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
   };
 
   const getLocalUrl = () => {
-    const candidate = track.src || track.stems?.full || track.trackId;
+    const candidate = track.src || track.trackId;
     const safeFile = normalizeFileName(candidate || '');
     if (!safeFile) {
       throw new Error('Missing track filename');
@@ -61,12 +68,14 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
     
     try {
       const url = getLocalUrl();
+      const emptyStems = { vocals: null, drums: null, bass: null, other: null };
 
       // Load track into audio engine
       await loadTrack(deck, url, track.bpm);
 
       // Update store with track data
       setDeckTrack(deck, {
+        trackId: track.trackId,
         url,
         bpm: track.bpm,
         title: track.title,
@@ -80,6 +89,8 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
           secondary: '#06b6d4',
         },
       });
+      setStems(deck, emptyStems);
+      markStemsReady(track.trackId, false);
 
       console.log(`[TrackListing] Loaded ${track.title} on Deck ${deck}`);
       
@@ -99,7 +110,7 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
   const isLoadedB = deckB.trackData?.title === track.title;
 
   return (
-    <div className="glass-panel p-4 rounded-lg border border-white/10">
+    <div className="glass-panel p-4 rounded-lg border border-white/10" data-track-id={track.trackId}>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-white truncate">{track.title}</h3>
@@ -142,6 +153,11 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
             <span className="font-mono text-white">{track.key}</span>
           </div>
         )}
+        {stemsReady && (
+          <div className="ml-auto px-2 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border border-white/10 bg-white/5 text-white/70">
+            Stems Ready
+          </div>
+        )}
       </div>
 
       {/* Visual Loader - Pulsing Waveform */}
@@ -170,6 +186,18 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
 
       {/* Load Buttons */}
       <div className="flex gap-2">
+        {onAnalyze && (
+          <motion.button
+            onClick={() => onAnalyze(track)}
+            disabled={loadingDeck !== null}
+            className="px-4 py-2 rounded-lg font-mono text-xs uppercase border border-white/10 text-white/60 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={loadingDeck === null ? { scale: 1.02 } : {}}
+            whileTap={loadingDeck === null ? { scale: 0.98 } : {}}
+            data-testid="analyze-track"
+          >
+            Analyze
+          </motion.button>
+        )}
         <motion.button
           onClick={() => handleLoadTrack('A')}
           disabled={loadingDeck !== null}

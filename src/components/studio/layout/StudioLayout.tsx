@@ -8,76 +8,97 @@
  * Audio persists across all view changes
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as Tone from 'tone';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useStore } from '@/store/useStore';
-import { DeckGrid } from '@/components/studio/ui/DeckGrid';
-import { TrackLibrary } from '@/components/studio/ui/TrackLibrary';
-import { StudioNavMenu } from '@/components/studio/navigation/StudioNavMenu';
-import { FXRackSheet } from '@/components/studio/ui/FXRackSheet';
-import { Scene3D } from '@/components/studio/visuals/Scene3D';
-import { Library, Music, Pause, Play } from 'lucide-react';
+import { useStudioStore } from '@/store/useStudioStore';
+import { StudioShell } from '@/components/studio/layout/StudioShell';
 import { motion } from 'framer-motion';
-import { useMidiBridge } from '@/hooks/useMidiBridge';
+import type { PikoTestHelpers } from '@/utils/testHelpers';
 
-type ViewMode = 'mixer' | 'library';
+type PikoWindow = Window & {
+  __PIKO_TEST_HELPERS__?: PikoTestHelpers;
+  __PIKO_STORE__?: typeof useStudioStore;
+  studio?: { seek: (value: number) => void };
+};
 
 export function StudioLayout() {
   const [audioInitialized, setAudioInitialized] = useState(false);
-  const [activeView, setActiveView] = useState<ViewMode>('mixer');
+  const initInFlight = useRef(false);
   const [masterBusNodes, setMasterBusNodes] = useState<{ bus: Tone.Gain | null; postFx: Tone.Gain | null }>({
     bus: null,
     postFx: null,
   });
-  const { init, getMasterBus, play, pause, getDeckDuration, getTransportSeconds, loadTrack } = useAudioEngine();
-  const masterBpm = useStore((state) => state.masterBpm);
-  const setMasterBpm = useStore((state) => state.setMasterBpm);
+  const { init, getMasterBus, getDeckDuration, getTransportSeconds, loadTrack, seekTo } = useAudioEngine();
   const setAudioStarted = useStore((state) => state.setAudioStarted);
   const isAudioStarted = useStore((state) => state.isAudioStarted);
   const isAppActive = useStore((state) => state.isAppActive);
   const setAppActive = useStore((state) => state.setAppActive);
-  const deckAState = useStore((state) => state.deckA);
-  const deckBState = useStore((state) => state.deckB);
-  const deckAPlaying = useStore((state) => state.deckA.isPlaying);
-  const deckBPlaying = useStore((state) => state.deckB.isPlaying);
-  const setDeckPlaying = useStore((state) => state.setDeckPlaying);
-  const {
-    isSupported: midiSupported,
-    isActive: midiActive,
-    error: midiError,
-    toggle: toggleMidiLearn,
-  } = useMidiBridge();
-
-  const isPlaying = deckAPlaying || deckBPlaying;
-  const [bpmInput, setBpmInput] = useState(String(masterBpm));
   const [masterProgress, setMasterProgress] = useState(0);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const setLibraryOpen = useStudioStore((state) => state.setLibraryOpen);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const win = window as PikoWindow;
+    const shouldInstallHelpers =
+      process.env.NODE_ENV === 'test' ||
+      process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true';
+
+    if (!shouldInstallHelpers) return;
+
+    win.__PIKO_STORE__ = useStudioStore;
+
+    import('@/utils/testHelpers')
+      .then((mod) => mod.installTestHelpers())
+      .catch((err) => console.warn('[TestHelpers] Failed to install', err));
+
+    return () => {
+      delete win.__PIKO_TEST_HELPERS__;
+      delete win.__PIKO_STORE__;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const win = window as PikoWindow;
+    win.studio = {
+      seek: (value: number) => {
+        useStudioStore.getState().seek(value);
+      },
+    };
+
+    return () => {
+      delete win.studio;
+    };
+  }, []);
+
+  useEffect(() => {
+    return useStudioStore.subscribe(
+      (state) => state.seekRequest,
+      (request) => {
+        if (!request) return;
+        const normalized = Math.max(0, Math.min(1, request.value));
+        const duration = Math.max(getDeckDuration('A'), getDeckDuration('B'));
+        if (duration <= 0) return;
+        const target = normalized * duration;
+        seekTo('A', target);
+        seekTo('B', target);
+      }
+    );
+  }, [getDeckDuration, seekTo]);
 
   useEffect(() => {
     const handleOpenLibrary = () => {
       if (!isAudioStarted) return;
-      setActiveView('library');
+      setLibraryOpen(true);
     };
 
     window.addEventListener('studio:open-library', handleOpenLibrary);
     return () => {
       window.removeEventListener('studio:open-library', handleOpenLibrary);
     };
-  }, [isAudioStarted]);
-
-  useEffect(() => {
-    setBpmInput(String(masterBpm));
-  }, [masterBpm]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hasVisited = window.localStorage.getItem('hasVisitedStudio');
-    if (!hasVisited) {
-      setShowOnboarding(true);
-      window.localStorage.setItem('hasVisitedStudio', 'true');
-    }
-  }, []);
+  }, [isAudioStarted, setLibraryOpen]);
 
   useEffect(() => {
     let frameId: number;
@@ -110,7 +131,8 @@ export function StudioLayout() {
   }, [setAppActive]);
 
   const handleEnterStudio = async () => {
-    if (audioInitialized) return;
+    if (audioInitialized || initInFlight.current) return;
+    initInFlight.current = true;
     try {
       await Tone.start();
       await init();
@@ -120,7 +142,8 @@ export function StudioLayout() {
       console.log('[StudioLayout] Audio initialized');
 
       // Recover any persisted tracks after audio is ready
-      const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckAState) => {
+      const { deckA, deckB } = useStore.getState();
+      const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckA) => {
         const data = deckState.trackData;
         if (data && data.url && data.bpm) {
           try {
@@ -131,56 +154,30 @@ export function StudioLayout() {
         }
       };
 
-      await recoverDeck('A', deckAState);
-      await recoverDeck('B', deckBState);
+      await recoverDeck('A', deckA);
+      await recoverDeck('B', deckB);
     } catch (error) {
       console.error('[StudioLayout] Failed to initialize audio:', error);
       alert('Failed to initialize audio. Please try again.');
+    } finally {
+      initInFlight.current = false;
     }
-  };
-
-  const handleTrackLoaded = (_deck: 'A' | 'B') => {
-    // Auto-switch to decks view when track is loaded
-    setActiveView('mixer');
-  };
-
-  const handleTogglePlay = () => {
-    if (isPlaying) {
-      pause('A');
-      pause('B');
-      setDeckPlaying('A', false);
-      setDeckPlaying('B', false);
-      return;
-    }
-
-    play('A');
-    play('B');
-    setDeckPlaying('A', true);
-    setDeckPlaying('B', true);
   };
 
   // Show enter screen if audio not initialized
   if (!audioInitialized) {
     return (
-      <main 
-        className="h-dvh w-full overflow-hidden text-white studio-grain flex items-center justify-center"
-        style={{
-          backgroundColor: '#050505',
-          backgroundImage: 'var(--background-image-liquid-mesh)',
-          backgroundSize: '200% 200%',
-          animation: 'liquid-move 18s ease-in-out infinite'
-        }}
-      >
+      <main className="studio-entry">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          className="studio-entry-card"
         >
-          <h1 className="text-4xl font-black uppercase mb-4">Studio V3</h1>
-          <p className="text-white/60 mb-8">High-Performance DJ Mixer</p>
+          <h1>Piko Studio</h1>
+          <p>High-performance DJ mixer. Local stems. Zero lag.</p>
           <motion.button
             onClick={handleEnterStudio}
-            className="px-8 py-4 bg-studio-cyan text-black font-black uppercase rounded-lg hover:bg-studio-cyan/90 transition-colors"
+            className="btn btn-primary"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -192,154 +189,10 @@ export function StudioLayout() {
   }
 
   return (
-    <main className="h-dvh w-screen flex flex-col bg-obsidian-900 overflow-hidden relative selection:bg-studio-cyan/30 text-white studio-grain">
-      <div className="absolute inset-0 z-0">
-        <Scene3D className="w-full h-full" isActive={activeView === 'mixer' && isAppActive} />
-      </div>
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="h-0.5 w-full bg-white/10">
-          <div className="h-full bg-studio-cyan" style={{ width: `${masterProgress * 100}%` }} />
-        </div>
-        {/* 1. TOP BAR (Fixed Height, Never Shrinks) */}
-        <header className="h-16 md:h-20 flex-none z-50 glass-panel border-b border-white/10 relative">
-          <div className="h-full flex items-center justify-between px-4">
-            <div className="flex items-center gap-4">
-              <StudioNavMenu />
-              <h1 className="text-2xl font-black uppercase">DJ Studio</h1>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Global Transport */}
-              <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                <button
-                  onClick={handleTogglePlay}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
-                  aria-label={isPlaying ? 'Pause all decks' : 'Play all decks'}
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-                <div className="text-xs font-mono uppercase text-white/60">BPM</div>
-                <input
-                  type="number"
-                  min={1}
-                  max={300}
-                  value={bpmInput}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
-                    setBpmInput(nextValue);
-                    const parsed = Number(nextValue);
-                    if (!Number.isNaN(parsed)) {
-                      const clamped = Math.max(1, Math.min(300, parsed));
-                      setMasterBpm(clamped);
-                    }
-                  }}
-                  className="w-16 bg-transparent text-sm font-mono text-white focus:outline-none"
-                  aria-label="Master BPM"
-                />
-              </div>
-
-              <motion.button
-                onClick={toggleMidiLearn}
-                disabled={!midiSupported}
-                className={`px-4 py-2 rounded-full border text-xs font-mono uppercase tracking-[0.24em] transition-all ${
-                  midiActive
-                    ? 'bg-studio-cyan text-black border-studio-cyan shadow-[0_0_16px_rgba(0,242,255,0.6)]'
-                    : 'bg-white/5 text-white/70 border-white/12 hover:border-white/40'
-                } ${!midiSupported ? 'opacity-40 cursor-not-allowed' : ''}`}
-                whileHover={midiSupported ? { scale: 1.03 } : undefined}
-                whileTap={midiSupported ? { scale: 0.97 } : undefined}
-                aria-pressed={midiActive}
-                title={midiError ?? (midiSupported ? 'Toggle MIDI Learn' : 'Web MIDI not available')}
-              >
-                MIDI Learn
-              </motion.button>
-
-              {/* View Switcher */}
-              <div className="flex items-center gap-1 rounded-full bg-white/5 border border-white/10 p-1">
-                <button
-                  onClick={() => setActiveView('mixer')}
-                  disabled={!isAudioStarted}
-                  className={`px-4 py-1.5 rounded-full font-mono text-xs uppercase transition-colors flex items-center gap-2 ${
-                    activeView === 'mixer'
-                      ? 'bg-studio-cyan/20 border border-studio-cyan text-studio-cyan'
-                      : 'text-white/70 hover:bg-white/10'
-                  }`}
-                >
-                  <Library className="w-4 h-4" />
-                  <span>Mixer</span>
-                </button>
-                <button
-                  onClick={() => setActiveView('library')}
-                  disabled={!isAudioStarted}
-                  className={`px-4 py-1.5 rounded-full font-mono text-xs uppercase transition-colors flex items-center gap-2 ${
-                    activeView === 'library'
-                      ? 'bg-studio-cyan/20 border border-studio-cyan text-studio-cyan'
-                      : 'text-white/70 hover:bg-white/10'
-                  }`}
-                >
-                  <Music className="w-4 h-4" />
-                  <span>Library</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* 2. MAIN WORKSPACE (Takes ALL remaining space, allows scrolling inside) */}
-        <div className="flex-1 relative min-h-0 w-full">
-          {/* MIXER VIEW */}
-          <div
-            style={{ display: activeView === 'mixer' ? 'flex' : 'none' }}
-            className="absolute inset-0 flex flex-col pb-[3.5rem]"
-          >
-            {/* Force DeckGrid to fill available space */}
-            <div className="flex-1 min-h-0 w-full p-2 md:p-4">
-              <DeckGrid />
-            </div>
-          </div>
-
-          {/* LIBRARY VIEW */}
-          <div
-            style={{ display: activeView === 'library' ? 'flex' : 'none' }}
-            className="absolute inset-0 flex flex-col z-40 bg-obsidian-900/95"
-          >
-            <TrackLibrary
-              isOpen={true}
-              onClose={() => setActiveView('mixer')}
-              onTrackLoaded={handleTrackLoaded}
-              inline={true}
-            />
-          </div>
-        </div>
-
-        {/* 3. FX RACK FOOTER (Fixed, High Z-Index) */}
-        <FXRackSheet masterBus={masterBusNodes.bus || undefined} masterPostFx={masterBusNodes.postFx || undefined} />
-      </div>
-      {showOnboarding && activeView === 'mixer' && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute left-6 top-40 max-w-xs border border-white/10 bg-obsidian-900/90 backdrop-blur-[20px] rounded-lg p-4 text-xs font-mono">
-              <div className="text-studio-cyan font-semibold mb-2">Load Track</div>
-              Tap the deck platter to open the Vault and load a track.
-            </div>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 max-w-xs border border-white/10 bg-obsidian-900/90 backdrop-blur-[20px] rounded-lg p-4 text-xs font-mono">
-              <div className="text-studio-purple font-semibold mb-2">Isolate Vocals</div>
-              Use the STEM buttons to mute or isolate vocals, drums, and bass.
-            </div>
-            <div className="absolute right-6 bottom-28 max-w-xs border border-white/10 bg-obsidian-900/90 backdrop-blur-[20px] rounded-lg p-4 text-xs font-mono">
-              <div className="text-red-400 font-semibold mb-2">Record Mix</div>
-              Hit REC in the center mixer to capture and export your set.
-            </div>
-          </div>
-          <button
-            className="absolute right-6 top-6 px-4 py-2 rounded-full bg-white/10 text-xs font-mono uppercase tracking-widest"
-            onClick={() => setShowOnboarding(false)}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-    </main>
+    <StudioShell
+      masterProgress={masterProgress}
+      masterBus={masterBusNodes.bus}
+      masterPostFx={masterBusNodes.postFx}
+    />
   );
 }

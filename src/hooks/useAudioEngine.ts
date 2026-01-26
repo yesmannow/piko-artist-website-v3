@@ -9,10 +9,12 @@
  * Equal Power crossfade logic prevents volume dips during transitions
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
 import { useStore } from '@/store/useStore';
+import { useStudioStore } from '@/store/useStudioStore';
 import { useEssentiaAnalysis } from './useEssentiaAnalysis';
+import { calculateNewBpm } from '@/lib/utils/audioMath';
 
 type PlaybackRateParam = Tone.Param<"number"> & {
   value?: number;
@@ -22,11 +24,19 @@ type PlaybackRateParam = Tone.Param<"number"> & {
   rampTo?: (value: number, time: number) => void;
 };
 
+type StemSource = string | AudioBuffer;
+type StemSourceMap = {
+  vocals: StemSource | null;
+  drums: StemSource | null;
+  bass: StemSource | null;
+  other: StemSource | null;
+};
+
 export interface AudioEngineControls {
   init: () => Promise<void>;
   isReady: boolean;
   loadTrack: (deck: 'A' | 'B', url: string, bpm: number, skipAnalysis?: boolean) => Promise<void>;
-  loadStems: (deck: 'A' | 'B', stems: { vocals: string; drums: string; bass: string; other: string }) => Promise<void>;
+  loadStems: (deck: 'A' | 'B', stems: StemSourceMap) => Promise<void>;
   play: (deck: 'A' | 'B') => void;
   pause: (deck: 'A' | 'B') => void;
   stop: (deck: 'A' | 'B') => void;
@@ -51,48 +61,207 @@ export interface AudioEngineControls {
   getTransportSeconds: () => number;
 }
 
-export const useAudioEngine = (): AudioEngineControls => {
-  const { masterBpm, crossfadeValue, deckA, deckB, setAudioReady, setDeckTrack, setDeckRate, updateDeck } = useStore();
-  const { analyzeTrack } = useEssentiaAnalysis();
-  
-  // Audio nodes - persisted across renders
-  const players = useRef<{ A: Tone.Player | null; B: Tone.Player | null }>({ A: null, B: null });
-  const stemPlayers = useRef<{
-    A: { vocals: Tone.Player | null; drums: Tone.Player | null; bass: Tone.Player | null; other: Tone.Player | null };
-    B: { vocals: Tone.Player | null; drums: Tone.Player | null; bass: Tone.Player | null; other: Tone.Player | null };
-  }>({
+type EngineState = {
+  players: { current: { A: Tone.Player | null; B: Tone.Player | null } };
+  stemPlayers: {
+    current: {
+      A: { vocals: Tone.Player | null; drums: Tone.Player | null; bass: Tone.Player | null; other: Tone.Player | null };
+      B: { vocals: Tone.Player | null; drums: Tone.Player | null; bass: Tone.Player | null; other: Tone.Player | null };
+    };
+  };
+  stemMutes: {
+    current: {
+      A: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
+      B: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
+    };
+  };
+  channels: { current: { A: Tone.Channel | null; B: Tone.Channel | null } };
+  eqs: { current: { A: Tone.EQ3 | null; B: Tone.EQ3 | null } };
+  filters: { current: { A: Tone.Filter | null; B: Tone.Filter | null } };
+  pitchShift: { current: { A: Tone.PitchShift | null; B: Tone.PitchShift | null } };
+  crossFade: { current: Tone.CrossFade | null };
+  masterBus: { current: Tone.Gain | null };
+  postFxBus: { current: Tone.Gain | null };
+  fxMerge: { current: Tone.Gain | null };
+  dryFxGain: { current: Tone.Gain | null };
+  delayNode: { current: Tone.FeedbackDelay | null };
+  delaySend: { current: Tone.Gain | null };
+  delayFeedbackRef: { current: number };
+  reverbNode: { current: Tone.Reverb | null };
+  reverbSend: { current: Tone.Gain | null };
+  reverbDecayRef: { current: number };
+  compressor: { current: Tone.Compressor | null };
+  limiter: { current: Tone.Limiter | null };
+  recorderStream: { current: MediaStream | null };
+  isInitialized: { current: boolean };
+  isInitializing: { current: boolean };
+  isReady: { current: boolean };
+  failedTracks: { current: Set<string> };
+};
+
+const createEngineState = (): EngineState => ({
+  players: { current: { A: null, B: null } },
+  stemPlayers: {
+    current: {
+      A: { vocals: null, drums: null, bass: null, other: null },
+      B: { vocals: null, drums: null, bass: null, other: null },
+    },
+  },
+  stemMutes: {
+    current: {
+      A: { vocals: false, drums: false, bass: false, other: false },
+      B: { vocals: false, drums: false, bass: false, other: false },
+    },
+  },
+  channels: { current: { A: null, B: null } },
+  eqs: { current: { A: null, B: null } },
+  filters: { current: { A: null, B: null } },
+  pitchShift: { current: { A: null, B: null } },
+  crossFade: { current: null },
+  masterBus: { current: null },
+  postFxBus: { current: null },
+  fxMerge: { current: null },
+  dryFxGain: { current: null },
+  delayNode: { current: null },
+  delaySend: { current: null },
+  delayFeedbackRef: { current: 0.35 },
+  reverbNode: { current: null },
+  reverbSend: { current: null },
+  reverbDecayRef: { current: 2.8 },
+  compressor: { current: null },
+  limiter: { current: null },
+  recorderStream: { current: null },
+  isInitialized: { current: false },
+  isInitializing: { current: false },
+  isReady: { current: false },
+  failedTracks: { current: new Set() },
+});
+
+const engineSingletonRef: { current: EngineState | null } = { current: null };
+const engineRefCount = { current: 0 };
+
+const disposeEngine = (engine: EngineState) => {
+  const playersToDispose = { ...engine.players.current };
+  const channelsToDispose = { ...engine.channels.current };
+  const eqsToDispose = { ...engine.eqs.current };
+  const filtersToDispose = { ...engine.filters.current };
+  const pitchShiftToDispose = { ...engine.pitchShift.current };
+  const crossFadeToDispose = engine.crossFade.current;
+  const masterBusToDispose = engine.masterBus.current;
+  const postFxBusToDispose = engine.postFxBus.current;
+  const fxMergeToDispose = engine.fxMerge.current;
+  const dryFxGainToDispose = engine.dryFxGain.current;
+  const delayNodeToDispose = engine.delayNode.current;
+  const delaySendToDispose = engine.delaySend.current;
+  const reverbNodeToDispose = engine.reverbNode.current;
+  const reverbSendToDispose = engine.reverbSend.current;
+  const compressorToDispose = engine.compressor.current;
+  const limiterToDispose = engine.limiter.current;
+  const stemPlayersToDispose = engine.stemPlayers.current;
+
+  playersToDispose.A?.dispose();
+  playersToDispose.B?.dispose();
+  channelsToDispose.A?.dispose();
+  channelsToDispose.B?.dispose();
+  eqsToDispose.A?.dispose();
+  eqsToDispose.B?.dispose();
+  filtersToDispose.A?.dispose();
+  filtersToDispose.B?.dispose();
+  pitchShiftToDispose.A?.dispose();
+  pitchShiftToDispose.B?.dispose();
+  crossFadeToDispose?.dispose();
+  masterBusToDispose?.dispose();
+  postFxBusToDispose?.dispose();
+  fxMergeToDispose?.dispose();
+  dryFxGainToDispose?.dispose();
+  delayNodeToDispose?.dispose();
+  delaySendToDispose?.dispose();
+  reverbNodeToDispose?.dispose();
+  reverbSendToDispose?.dispose();
+  compressorToDispose?.dispose();
+  limiterToDispose?.dispose();
+  Object.values(stemPlayersToDispose.A).forEach((player) => player?.dispose());
+  Object.values(stemPlayersToDispose.B).forEach((player) => player?.dispose());
+
+  engine.players.current = { A: null, B: null };
+  engine.stemPlayers.current = {
     A: { vocals: null, drums: null, bass: null, other: null },
     B: { vocals: null, drums: null, bass: null, other: null },
-  });
-  const stemMutes = useRef<{
-    A: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
-    B: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
-  }>({
+  };
+  engine.stemMutes.current = {
     A: { vocals: false, drums: false, bass: false, other: false },
     B: { vocals: false, drums: false, bass: false, other: false },
-  });
-  const channels = useRef<{ A: Tone.Channel | null; B: Tone.Channel | null }>({ A: null, B: null });
-  const eqs = useRef<{ A: Tone.EQ3 | null; B: Tone.EQ3 | null }>({ A: null, B: null });
-  const filters = useRef<{ A: Tone.Filter | null; B: Tone.Filter | null }>({ A: null, B: null });
-  const pitchShift = useRef<{ A: Tone.PitchShift | null; B: Tone.PitchShift | null }>({ A: null, B: null });
-  const crossFade = useRef<Tone.CrossFade | null>(null);
-  const masterBus = useRef<Tone.Gain | null>(null);
-  const postFxBus = useRef<Tone.Gain | null>(null);
-  const fxMerge = useRef<Tone.Gain | null>(null);
-  const dryFxGain = useRef<Tone.Gain | null>(null);
-  const delayNode = useRef<Tone.FeedbackDelay | null>(null);
-  const delaySend = useRef<Tone.Gain | null>(null);
-  const delayFeedbackRef = useRef(0.35);
-  const reverbNode = useRef<Tone.Reverb | null>(null);
-  const reverbSend = useRef<Tone.Gain | null>(null);
-  const reverbDecayRef = useRef(2.8);
-  const compressor = useRef<Tone.Compressor | null>(null);
-  const limiter = useRef<Tone.Limiter | null>(null);
-  const recorderStream = useRef<MediaStream | null>(null);
+  };
+  engine.channels.current = { A: null, B: null };
+  engine.eqs.current = { A: null, B: null };
+  engine.filters.current = { A: null, B: null };
+  engine.pitchShift.current = { A: null, B: null };
+  engine.crossFade.current = null;
+  engine.masterBus.current = null;
+  engine.postFxBus.current = null;
+  engine.fxMerge.current = null;
+  engine.dryFxGain.current = null;
+  engine.delayNode.current = null;
+  engine.delaySend.current = null;
+  engine.reverbNode.current = null;
+  engine.reverbSend.current = null;
+  engine.compressor.current = null;
+  engine.limiter.current = null;
+  engine.recorderStream.current = null;
+  engine.isInitialized.current = false;
+  engine.isInitializing.current = false;
+  engine.isReady.current = false;
+  engine.failedTracks.current.clear();
+};
 
-  const isInitialized = useRef(false);
-  const isInitializing = useRef(false);
-  const [isReady, setIsReady] = useState(false);
+export const useAudioEngine = (): AudioEngineControls => {
+  const { masterBpm, deckA, deckB, setAudioReady, setDeckTrack, setDeckRate, updateDeck } = useStore();
+  const { analyzeTrack } = useEssentiaAnalysis();
+
+  const engineRef = useRef<EngineState | null>(engineSingletonRef.current);
+  if (!engineRef.current) {
+    engineRef.current = engineSingletonRef.current ?? createEngineState();
+    engineSingletonRef.current = engineRef.current;
+  }
+  const engine = engineRef.current!;
+  
+  // Audio nodes - singleton shared across hook instances
+  const players = engine.players;
+  const stemPlayers = engine.stemPlayers;
+  const stemMutes = engine.stemMutes;
+  const channels = engine.channels;
+  const eqs = engine.eqs;
+  const filters = engine.filters;
+  const pitchShift = engine.pitchShift;
+  const crossFade = engine.crossFade;
+  const masterBus = engine.masterBus;
+  const postFxBus = engine.postFxBus;
+  const fxMerge = engine.fxMerge;
+  const dryFxGain = engine.dryFxGain;
+  const delayNode = engine.delayNode;
+  const delaySend = engine.delaySend;
+  const delayFeedbackRef = engine.delayFeedbackRef;
+  const reverbNode = engine.reverbNode;
+  const reverbSend = engine.reverbSend;
+  const reverbDecayRef = engine.reverbDecayRef;
+  const compressor = engine.compressor;
+  const limiter = engine.limiter;
+  const recorderStream = engine.recorderStream;
+
+  const isInitialized = engine.isInitialized;
+  const isInitializing = engine.isInitializing;
+  const failedTracksRef = engine.failedTracks;
+  const isReady = engine.isReady.current;
+
+  useEffect(() => {
+    engineRefCount.current += 1;
+    return () => {
+      engineRefCount.current -= 1;
+      if (engineRefCount.current === 0) {
+        disposeEngine(engine);
+      }
+    };
+  }, [engine]);
 
   // Initialize audio context and master bus
   const init = useCallback(async () => {
@@ -116,13 +285,15 @@ export const useAudioEngine = (): AudioEngineControls => {
 
       // Create Master Bus chain
       const crossfade = new Tone.CrossFade(0.5);
+      const initialCrossfaderPos = useStudioStore.getState().crossfaderPos;
+      crossfade.fade.value = Math.max(0, Math.min(1, initialCrossfaderPos));
       const comp = new Tone.Compressor({
         threshold: -24,
         ratio: 4,
         attack: 0.003,
         release: 0.25,
       });
-      const lim = new Tone.Limiter(-0.1);
+      const lim = new Tone.Limiter(-1);
       const recorderTap = new Tone.Gain(1);
       const master = new Tone.Gain(1);
       const postFx = new Tone.Gain(1);
@@ -205,7 +376,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       pitchShift.current = { A: pitchA, B: pitchB };
 
       isInitialized.current = true;
-      setIsReady(true);
+      engine.isReady.current = true;
       setAudioReady(true);
 
       console.log('[AudioEngine] Initialized successfully');
@@ -215,30 +386,47 @@ export const useAudioEngine = (): AudioEngineControls => {
     } finally {
       isInitializing.current = false;
     }
-  }, [setAudioReady]);
+  }, [
+    setAudioReady,
+    channels,
+    compressor,
+    crossFade,
+    delayFeedbackRef,
+    delayNode,
+    delaySend,
+    dryFxGain,
+    engine,
+    eqs,
+    filters,
+    fxMerge,
+    isInitialized,
+    isInitializing,
+    limiter,
+    masterBus,
+    pitchShift,
+    postFxBus,
+    recorderStream,
+    reverbDecayRef,
+    reverbNode,
+    reverbSend,
+  ]);
 
-  // Equal Power Crossfade: prevents volume dips
-  // Uses cosine/sine curves for smooth transitions
+  // Equal Power Crossfade: Tone.CrossFade uses cosine/sine curves for smooth transitions
   const updateCrossfade = useCallback((value: number) => {
     if (!crossFade.current) return;
-    
-    // Normalize -1 to 1 range to 0 to 1 for crossfade
-    const normalized = (value + 1) / 2; // -1 -> 0, 0 -> 0.5, 1 -> 1
-    
-    // Equal power: use cosine/sine curves
-    // Note: aGain and bGain are calculated but not used directly
-    // The crossfade.fade value handles the mixing
-    
-    // Update crossfade mix (0 = A only, 1 = B only)
+    const clamped = Math.max(-1, Math.min(1, value));
+    const normalized = (clamped + 1) / 2;
     crossFade.current.fade.rampTo(normalized, 0.05);
-  }, []);
+  }, [crossFade]);
 
-  // Update crossfade when value changes
   useEffect(() => {
-    if (isInitialized.current) {
-      updateCrossfade(crossfadeValue);
-    }
-  }, [crossfadeValue, updateCrossfade]);
+    return useStudioStore.subscribe(
+      (state) => state.crossfaderPos,
+      (pos) => {
+        updateCrossfade(pos * 2 - 1);
+      }
+    );
+  }, [updateCrossfade]);
 
   const updateKeyLockComp = useCallback(
     (deck: 'A' | 'B', rate: number) => {
@@ -254,7 +442,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         console.warn(`[AudioEngine] Key lock update failed on Deck ${deck}:`, error);
       }
     },
-    [deckA.isKeyLockActive, deckB.isKeyLockActive]
+    [deckA.isKeyLockActive, deckB.isKeyLockActive, pitchShift]
   );
 
   // Load track on deck
@@ -263,8 +451,18 @@ export const useAudioEngine = (): AudioEngineControls => {
       await init();
     }
 
+    if (failedTracksRef.current.has(url)) {
+      throw new Error(`Track previously failed to load: ${url}`);
+    }
+
     try {
       console.log(`[AudioEngine] Loading track to Deck ${deck}: ${url}`);
+      Object.values(stemPlayers.current[deck]).forEach((player) => {
+        player?.dispose();
+      });
+      stemPlayers.current[deck] = { vocals: null, drums: null, bass: null, other: null };
+      stemMutes.current[deck] = { vocals: false, drums: false, bass: false, other: false };
+
       const player = new Tone.Player({
         url,
         autostart: false,
@@ -273,6 +471,7 @@ export const useAudioEngine = (): AudioEngineControls => {
           updateDeck(deck, { isLoaded: true });
         },
         onerror: (error) => {
+          failedTracksRef.current.add(url);
           console.error(`[AudioEngine] Error loading track on Deck ${deck}:`, error);
         },
       } as Tone.PlayerOptions);
@@ -361,23 +560,55 @@ export const useAudioEngine = (): AudioEngineControls => {
       console.error(`[AudioEngine] Failed to load track on Deck ${deck}:`, error);
       throw error;
     }
-  }, [masterBpm, setDeckTrack, analyzeTrack, deckA, deckB, updateDeck, init, updateKeyLockComp]);
+  }, [
+    masterBpm,
+    setDeckTrack,
+    analyzeTrack,
+    deckA,
+    deckB,
+    updateDeck,
+    init,
+    updateKeyLockComp,
+    isInitialized,
+    failedTracksRef,
+    channels,
+    eqs,
+    filters,
+    pitchShift,
+    stemPlayers,
+    stemMutes,
+    players,
+  ]);
 
   // Seek to position
   const seekTo = useCallback((deck: 'A' | 'B', timeInSeconds: number) => {
+    const stemSet = stemPlayers.current[deck];
+    const hasStems = Object.values(stemSet).some((player) => player !== null);
+    if (hasStems) {
+      Object.values(stemSet).forEach((player) => {
+        if (player && player.loaded) {
+          player.seek(timeInSeconds);
+        }
+      });
+      console.log(`[AudioEngine] Deck ${deck} seeked to ${timeInSeconds}s (stems)`);
+      return;
+    }
+
     const player = players.current[deck];
     if (player && player.loaded) {
       player.seek(timeInSeconds);
       console.log(`[AudioEngine] Deck ${deck} seeked to ${timeInSeconds}s`);
     }
-  }, []);
+  }, [players, stemPlayers]);
 
   const syncToBpm = useCallback((deck: 'A' | 'B') => {
     const currentDeck = deck === 'A' ? deckA : deckB;
     const deckBpm = currentDeck.trackData?.bpm;
     if (!deckBpm || deckBpm <= 0) return;
 
-    const syncRate = masterBpm / deckBpm;
+    const pitchDelta = masterBpm / deckBpm - 1;
+    const targetBpm = calculateNewBpm(deckBpm, pitchDelta);
+    const syncRate = targetBpm / deckBpm;
     const rampPlaybackRate = (player: Tone.Player | null) => {
       if (!player) return;
       const param = player.playbackRate as unknown as Tone.Param<"number">;
@@ -408,8 +639,8 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
 
     setDeckRate(deck, syncRate);
-    console.log(`[AudioEngine] Deck ${deck} synced to BPM ${masterBpm} (rate ${syncRate.toFixed(2)})`);
-  }, [deckA, deckB, masterBpm, setDeckRate]);
+    console.log(`[AudioEngine] Deck ${deck} synced to BPM ${targetBpm.toFixed(2)} (rate ${syncRate.toFixed(2)})`);
+  }, [deckA, deckB, masterBpm, setDeckRate, players, stemPlayers]);
 
   // Smoothly apply playbackRate changes coming from UI/store
   const applyPlaybackRate = useCallback((deck: 'A' | 'B', rate: number) => {
@@ -450,10 +681,16 @@ export const useAudioEngine = (): AudioEngineControls => {
       rampPlayer(players.current[deck]);
     }
     updateKeyLockComp(deck, normalized);
-  }, [updateKeyLockComp]);
+  }, [updateKeyLockComp, players, stemPlayers]);
 
   // Get playback position
   const getPlaybackPosition = useCallback((deck: 'A' | 'B'): number => {
+    const stemSet = stemPlayers.current[deck];
+    const hasStems = Object.values(stemSet).some((player) => player !== null);
+    if (hasStems) {
+      return Tone.Transport.seconds || 0;
+    }
+
     const player = players.current[deck];
     if (player && player.loaded) {
       const rawPosition = (player as { position?: number | string }).position ?? 0;
@@ -463,7 +700,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       return typeof player.toSeconds === 'function' ? player.toSeconds(rawPosition) : 0;
     }
     return 0;
-  }, []);
+  }, [players, stemPlayers]);
 
   const getDeckDuration = useCallback((deck: 'A' | 'B'): number => {
     const stemSet = stemPlayers.current[deck];
@@ -475,7 +712,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     const playerDuration = player?.buffer?.duration ?? 0;
 
     return Math.max(stemMax, playerDuration);
-  }, []);
+  }, [players, stemPlayers]);
 
   const getTransportSeconds = useCallback(() => {
     return Tone.Transport.seconds || 0;
@@ -486,7 +723,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     if (!master) return;
     const clamped = Math.max(0, Math.min(1, value));
     master.gain.rampTo(clamped, 0.05);
-  }, []);
+  }, [masterBus]);
 
   // Set deck volume
   const setDeckVolume = useCallback((deck: 'A' | 'B', volume: number) => {
@@ -495,7 +732,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       const volumeDb = volume > 0 ? 20 * Math.log10(volume) : -Infinity;
       channel.volume.rampTo(volumeDb, 0.05);
     }
-  }, []);
+  }, [channels]);
 
   // Set deck EQ
   const setDeckEQ = useCallback((deck: 'A' | 'B', eq: { low: number; mid: number; high: number }) => {
@@ -505,7 +742,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       eqNode.mid.rampTo(eq.mid, 0.05);
       eqNode.high.rampTo(eq.high, 0.05);
     }
-  }, []);
+  }, [eqs]);
 
   // Set deck filter
   const setDeckFilter = useCallback((deck: 'A' | 'B', position: number) => {
@@ -535,7 +772,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       filter.Q.value = 1;
       filter.frequency.rampTo(Math.max(20, Math.min(20000, frequency)), 0.05);
     }
-  }, []);
+  }, [filters]);
 
   // FX Rack: Delay/Reverb controls
   const setDelayWetMix = useCallback((amount: number) => {
@@ -552,7 +789,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     } else {
       delay.feedback.value = targetFeedback;
     }
-  }, []);
+  }, [delayNode, delaySend, delayFeedbackRef]);
 
   const setDelayFeedbackAmount = useCallback((amount: number) => {
     const delay = delayNode.current;
@@ -568,7 +805,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     } else {
       delay.feedback.value = clamped;
     }
-  }, []);
+  }, [delayNode, delaySend, delayFeedbackRef]);
 
   const setReverbWetMix = useCallback((amount: number) => {
     const send = reverbSend.current;
@@ -578,7 +815,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     const active = clamped > 0.001;
     send.gain.rampTo(active ? clamped : 0, 0.05);
     reverb.wet.rampTo(active ? clamped : 0, 0.05);
-  }, []);
+  }, [reverbNode, reverbSend]);
 
   const setReverbDecayTime = useCallback((seconds: number) => {
     const reverb = reverbNode.current;
@@ -586,15 +823,51 @@ export const useAudioEngine = (): AudioEngineControls => {
     const clamped = Math.max(0.4, Math.min(12, seconds));
     reverbDecayRef.current = clamped;
     reverb.decay = clamped;
-  }, []);
+  }, [reverbDecayRef, reverbNode]);
+
+  const applyStemMix = useCallback((deck: 'A' | 'B') => {
+    const { mutedStems, soloStem } = useStudioStore.getState();
+    const deckMutes = mutedStems[deck];
+    const deckSolo = soloStem[deck];
+    (['vocals', 'drums', 'bass', 'other'] as const).forEach((stemType) => {
+      const player = stemPlayers.current[deck][stemType];
+      const shouldMute = deckSolo ? stemType !== deckSolo : deckMutes[stemType];
+      stemMutes.current[deck][stemType] = shouldMute;
+      if (player) {
+        player.mute = shouldMute;
+      }
+    });
+  }, [stemMutes, stemPlayers]);
+
+  useEffect(() => {
+    const unsubscribeMutes = useStudioStore.subscribe(
+      (state) => state.mutedStems,
+      () => {
+        applyStemMix('A');
+        applyStemMix('B');
+      }
+    );
+    const unsubscribeSolo = useStudioStore.subscribe(
+      (state) => state.soloStem,
+      () => {
+        applyStemMix('A');
+        applyStemMix('B');
+      }
+    );
+
+    return () => {
+      unsubscribeMutes();
+      unsubscribeSolo();
+    };
+  }, [applyStemMix]);
 
   // Load stems (real stem separation)
   const loadStems = useCallback(async (
     deck: 'A' | 'B',
-    stems: { vocals: string; drums: string; bass: string; other: string }
+    stems: StemSourceMap
   ) => {
     if (!isInitialized.current) {
-      throw new Error('[AudioEngine] init() must be called before loading stems');
+      await init();
     }
 
     try {
@@ -611,19 +884,21 @@ export const useAudioEngine = (): AudioEngineControls => {
       Object.values(stemPlayers.current[deck]).forEach(player => {
         player?.dispose();
       });
+      stemPlayers.current[deck] = { vocals: null, drums: null, bass: null, other: null };
+      stemMutes.current[deck] = { vocals: false, drums: false, bass: false, other: false };
 
       // Create players for each stem
       const stemTypes = ['vocals', 'drums', 'bass', 'other'] as const;
-      const stemUrls = [stems.vocals, stems.drums, stems.bass, stems.other];
+      const stemSources: (StemSource | null)[] = [stems.vocals, stems.drums, stems.bass, stems.other];
 
       for (let i = 0; i < stemTypes.length; i++) {
         const stemType = stemTypes[i];
-        const url = stemUrls[i];
+        const source = stemSources[i];
 
-        if (!url) continue;
+        if (!source) continue;
 
         const player = new Tone.Player({
-          url,
+          url: source,
           autostart: false,
           onload: () => {
             console.log(`[AudioEngine] Stem ${stemType} loaded on Deck ${deck}`);
@@ -648,164 +923,115 @@ export const useAudioEngine = (): AudioEngineControls => {
         stemMutes.current[deck][stemType] = false; // All stems enabled by default
       }
 
+      const hasLoadedStems = Object.values(stemPlayers.current[deck]).some((player) => player !== null);
+      if (!hasLoadedStems) {
+        console.warn(`[AudioEngine] No stems loaded for Deck ${deck}`);
+        return;
+      }
+
       // Dispose main player if exists (stems replace it)
       if (players.current[deck]) {
         players.current[deck]?.dispose();
         players.current[deck] = null;
       }
 
+      applyStemMix(deck);
       console.log(`[AudioEngine] Stems loaded on Deck ${deck}`);
     } catch (error) {
       console.error(`[AudioEngine] Failed to load stems on Deck ${deck}:`, error);
       throw error;
     }
-  }, [deckA.playbackRate, deckB.playbackRate]);
+  }, [
+    deckA.playbackRate,
+    deckB.playbackRate,
+    isInitialized,
+    init,
+    channels,
+    eqs,
+    filters,
+    pitchShift,
+    stemPlayers,
+    stemMutes,
+    players,
+    applyStemMix,
+  ]);
 
   // Toggle stem mute/solo (real stems)
   const toggleStem = useCallback((deck: 'A' | 'B', stem: 'vocals' | 'drums' | 'bass' | 'other') => {
-    const player = stemPlayers.current[deck][stem];
-    if (!player) {
-      // Fallback to EQ-based approximation if stems not loaded
-      const eq = eqs.current[deck];
-      const filter = filters.current[deck];
-      if (!eq || !filter) return;
-
-      if (stem === 'vocals') {
-        const isMuted = stemMutes.current[deck].vocals;
-        eq.mid.rampTo(isMuted ? 0 : -12, 0.05);
-        eq.high.rampTo(isMuted ? 0 : -6, 0.05);
-        stemMutes.current[deck].vocals = !isMuted;
-        console.log(`[AudioEngine] Deck ${deck}: Vocals ${isMuted ? 'enabled' : 'killed'} (EQ-based)`);
-      } else if (stem === 'drums') {
-        const isMuted = stemMutes.current[deck].drums;
-        filter.type = isMuted ? 'lowpass' : 'highpass';
-        filter.frequency.rampTo(isMuted ? 20000 : 150, 0.05);
-        stemMutes.current[deck].drums = !isMuted;
-        console.log(`[AudioEngine] Deck ${deck}: Drums ${isMuted ? 'enabled' : 'killed'} (EQ-based)`);
-      }
+    const { mutedStems, setMutedStem, soloStem, setSoloStem } = useStudioStore.getState();
+    if (soloStem[deck] === stem) {
+      setSoloStem(deck, null);
       return;
     }
-
-    // Toggle mute for real stem
-    const isMuted = stemMutes.current[deck][stem];
-    stemMutes.current[deck][stem] = !isMuted;
-
-    // Set volume to 0 if muted, 1 if unmuted
-    const targetVolume = isMuted ? 1 : 0; // Inverted: if currently muted, unmute (set to 1)
-    player.volume.rampTo(targetVolume, 0.05);
-
-    console.log(`[AudioEngine] Deck ${deck}: ${stem} ${isMuted ? 'unmuted' : 'muted'}`);
+    const isMuted = mutedStems[deck][stem];
+    setMutedStem(deck, stem, !isMuted);
   }, []);
 
   // Get stem mute state
   const getStemMuteState = useCallback((deck: 'A' | 'B') => {
-    return { ...stemMutes.current[deck] };
+    return { ...useStudioStore.getState().mutedStems[deck] };
   }, []);
 
   const getMasterBus = useCallback(() => ({
     bus: masterBus.current,
     postFx: postFxBus.current,
-  }), []);
+  }), [masterBus, postFxBus]);
 
-  const getRecorderStream = useCallback(() => recorderStream.current, []);
+  const getRecorderStream = useCallback(() => recorderStream.current, [recorderStream]);
 
   // Update deck volumes when store changes
   useEffect(() => {
     if (!isInitialized.current) return;
     setDeckVolume('A', deckA.volume);
-  }, [deckA.volume, setDeckVolume]);
+  }, [deckA.volume, isInitialized, setDeckVolume]);
 
   useEffect(() => {
     if (!isInitialized.current) return;
     setDeckVolume('B', deckB.volume);
-  }, [deckB.volume, setDeckVolume]);
+  }, [deckB.volume, isInitialized, setDeckVolume]);
 
   // Update deck EQs when store changes
   useEffect(() => {
     if (!isInitialized.current) return;
     setDeckEQ('A', deckA.eq);
-  }, [deckA.eq, setDeckEQ]);
+  }, [deckA.eq, isInitialized, setDeckEQ]);
 
   useEffect(() => {
     if (!isInitialized.current) return;
     setDeckEQ('B', deckB.eq);
-  }, [deckB.eq, setDeckEQ]);
+  }, [deckB.eq, isInitialized, setDeckEQ]);
 
   // Update deck filters when store changes
   useEffect(() => {
     if (!isInitialized.current) return;
     setDeckFilter('A', deckA.filter ?? 0.5);
-  }, [deckA.filter, setDeckFilter]);
+  }, [deckA.filter, isInitialized, setDeckFilter]);
 
   useEffect(() => {
     if (!isInitialized.current) return;
     setDeckFilter('B', deckB.filter ?? 0.5);
-  }, [deckB.filter, setDeckFilter]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    const playersToDispose = { ...players.current };
-    const channelsToDispose = { ...channels.current };
-    const eqsToDispose = { ...eqs.current };
-    const filtersToDispose = { ...filters.current };
-    const pitchShiftToDispose = { ...pitchShift.current };
-    const crossFadeToDispose = crossFade.current;
-    const masterBusToDispose = masterBus.current;
-    const postFxBusToDispose = postFxBus.current;
-    const fxMergeToDispose = fxMerge.current;
-    const dryFxGainToDispose = dryFxGain.current;
-    const delayNodeToDispose = delayNode.current;
-    const delaySendToDispose = delaySend.current;
-    const reverbNodeToDispose = reverbNode.current;
-    const reverbSendToDispose = reverbSend.current;
-    const compressorToDispose = compressor.current;
-    const limiterToDispose = limiter.current;
-    
-    return () => {
-      playersToDispose.A?.dispose();
-      playersToDispose.B?.dispose();
-      channelsToDispose.A?.dispose();
-      channelsToDispose.B?.dispose();
-      eqsToDispose.A?.dispose();
-      eqsToDispose.B?.dispose();
-      filtersToDispose.A?.dispose();
-      filtersToDispose.B?.dispose();
-      pitchShiftToDispose.A?.dispose();
-      pitchShiftToDispose.B?.dispose();
-      crossFadeToDispose?.dispose();
-      masterBusToDispose?.dispose();
-      postFxBusToDispose?.dispose();
-      fxMergeToDispose?.dispose();
-      dryFxGainToDispose?.dispose();
-      delayNodeToDispose?.dispose();
-      delaySendToDispose?.dispose();
-      reverbNodeToDispose?.dispose();
-      reverbSendToDispose?.dispose();
-      compressorToDispose?.dispose();
-      limiterToDispose?.dispose();
-    };
-  }, []);
+  }, [deckB.filter, isInitialized, setDeckFilter]);
 
   // React to pitch fader / playbackRate changes from store
   useEffect(() => {
     if (!isInitialized.current) return;
     applyPlaybackRate('A', deckA.playbackRate || 1);
-  }, [applyPlaybackRate, deckA.playbackRate]);
+  }, [applyPlaybackRate, deckA.playbackRate, isInitialized]);
 
   useEffect(() => {
     if (!isInitialized.current) return;
     applyPlaybackRate('B', deckB.playbackRate || 1);
-  }, [applyPlaybackRate, deckB.playbackRate]);
+  }, [applyPlaybackRate, deckB.playbackRate, isInitialized]);
 
   useEffect(() => {
     if (!isInitialized.current) return;
     updateKeyLockComp('A', deckA.playbackRate || 1);
-  }, [deckA.isKeyLockActive, deckA.playbackRate, updateKeyLockComp]);
+  }, [deckA.isKeyLockActive, deckA.playbackRate, isInitialized, updateKeyLockComp]);
 
   useEffect(() => {
     if (!isInitialized.current) return;
     updateKeyLockComp('B', deckB.playbackRate || 1);
-  }, [deckB.isKeyLockActive, deckB.playbackRate, updateKeyLockComp]);
+  }, [deckB.isKeyLockActive, deckB.playbackRate, isInitialized, updateKeyLockComp]);
 
   // Tape Stop: exponential glide to near-zero then stop
   const triggerTapeStop = useCallback((deck: 'A' | 'B') => {
@@ -858,7 +1084,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         updateDeck(deck, { isPlaying: false });
       }, 1300);
     }
-  }, [applyPlaybackRate, deckA, deckB, updateDeck]);
+  }, [applyPlaybackRate, deckA, deckB, updateDeck, players, stemPlayers]);
 
   // Play deck (handles both regular tracks and stems)
   const play = useCallback((deck: 'A' | 'B') => {
@@ -903,7 +1129,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         console.warn(`[AudioEngine] Cannot play Deck ${deck} - track not loaded`);
       }
     }
-  }, [deckA, deckB, masterBpm]);
+  }, [deckA, deckB, masterBpm, players, stemPlayers, stemMutes]);
 
   // Pause deck (handles both regular tracks and stems)
   const pause = useCallback((deck: 'A' | 'B') => {
@@ -926,7 +1152,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         console.log(`[AudioEngine] Deck ${deck} paused`);
       }
     }
-  }, []);
+  }, [players, stemPlayers]);
 
   // Stop deck (handles both regular tracks and stems)
   const stop = useCallback((deck: 'A' | 'B') => {
@@ -951,7 +1177,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         console.log(`[AudioEngine] Deck ${deck} stopped`);
       }
     }
-  }, []);
+  }, [players, stemPlayers]);
 
   return {
     init,

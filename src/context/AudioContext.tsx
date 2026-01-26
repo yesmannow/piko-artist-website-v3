@@ -32,6 +32,7 @@ interface AudioContextType {
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
+const audioContextSingletonRef: { current: globalThis.AudioContext | null } = { current: null };
 
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<MediaItem | null>(null);
@@ -54,10 +55,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (!audioEl) return null;
 
     // Create or reuse singleton AudioContext + analyser graph
-    if (!webAudioContextRef.current) {
+    if (!audioContextSingletonRef.current) {
       const AudioCtx = window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
       if (!AudioCtx) return null;
-      webAudioContextRef.current = new AudioCtx();
+      audioContextSingletonRef.current = new AudioCtx();
+    }
+    if (!webAudioContextRef.current) {
+      webAudioContextRef.current = audioContextSingletonRef.current;
     }
     const audioCtx = webAudioContextRef.current;
 
@@ -365,4 +369,3 @@ export function useAudio() {
   }
   return context;
 }
-

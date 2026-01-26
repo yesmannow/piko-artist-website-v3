@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGestures } from "@/hooks/useGestures";
 
 interface WaveformMiniProps {
   url: string;
@@ -78,8 +79,13 @@ export function WaveformMini({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const transferredRef = useRef(false);
+  const teardownTimerRef = useRef<number | null>(null);
+  const supportsOffscreenRef = useRef<boolean | null>(null);
+  const initialColorRef = useRef(color);
   const [isLoading, setIsLoading] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   const resolvedDuration = useMemo(
     () => (durationSeconds && durationSeconds > 0 ? durationSeconds : duration),
@@ -91,30 +97,41 @@ export function WaveformMini({
     const canvasEl = canvasRef.current;
     const containerEl = containerRef.current;
     if (!canvasEl || !containerEl) return;
+    if (teardownTimerRef.current !== null) {
+      window.clearTimeout(teardownTimerRef.current);
+      teardownTimerRef.current = null;
+    }
     if (!("transferControlToOffscreen" in canvasEl)) {
+      supportsOffscreenRef.current = false;
       console.warn("[WaveformMini] OffscreenCanvas not supported in this browser.");
       setIsLoading(false);
       return;
     }
 
-    let cancelled = false;
-    const offscreen = canvasEl.transferControlToOffscreen();
-    const worker = new Worker(new URL("../../../workers/waveform.worker.ts", import.meta.url), { type: "module" });
-    workerRef.current = worker;
+    supportsOffscreenRef.current = true;
 
-    const dpr = window.devicePixelRatio || 1;
-    worker.postMessage(
-      { type: "init", canvas: offscreen, color, dpr } satisfies WaveformWorkerMessage,
-      [offscreen]
-    );
+    if (!transferredRef.current) {
+      const offscreen = canvasEl.transferControlToOffscreen();
+      const worker = new Worker(new URL("../../../workers/waveform.worker.ts", import.meta.url), { type: "module" });
+      workerRef.current = worker;
+      transferredRef.current = true;
+
+      const dpr = window.devicePixelRatio || 1;
+      worker.postMessage(
+        { type: "init", canvas: offscreen, color: initialColorRef.current, dpr } satisfies WaveformWorkerMessage,
+        [offscreen]
+      );
+    }
 
     const resize = () => {
+      const worker = workerRef.current;
+      if (!worker) return;
       const rect = containerEl.getBoundingClientRect();
       worker.postMessage({
         type: "resize",
         width: Math.max(1, Math.floor(rect.width)),
         height: CANVAS_HEIGHT,
-        dpr,
+        dpr: window.devicePixelRatio || 1,
       } satisfies WaveformWorkerMessage);
     };
 
@@ -122,6 +139,26 @@ export function WaveformMini({
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(containerEl);
 
+    return () => {
+      resizeObserver.disconnect();
+      if (workerRef.current) {
+        teardownTimerRef.current = window.setTimeout(() => {
+          workerRef.current?.terminate();
+          workerRef.current = null;
+          transferredRef.current = false;
+          teardownTimerRef.current = null;
+        }, 100);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (supportsOffscreenRef.current === false) return;
+    const worker = workerRef.current;
+    if (!worker) return;
+
+    let cancelled = false;
     setIsLoading(true);
     setDuration(0);
 
@@ -248,9 +285,6 @@ export function WaveformMini({
 
     return () => {
       cancelled = true;
-      resizeObserver.disconnect();
-      workerRef.current?.terminate();
-      workerRef.current = null;
     };
   }, [url, color, beatGrid]);
 
@@ -261,24 +295,76 @@ export function WaveformMini({
     worker.postMessage({ type: "playhead", progress: normalized } satisfies WaveformWorkerMessage);
   }, [playhead, resolvedDuration]);
 
-  const handleSeek = (event: React.PointerEvent<HTMLDivElement>) => {
+  const seekFromClientX = useCallback(
+    (clientX: number) => {
+      if (!onSeek || resolvedDuration <= 0) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      onSeek(pct * resolvedDuration);
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: "playhead", progress: pct } satisfies WaveformWorkerMessage);
+      }
+    },
+    [onSeek, resolvedDuration]
+  );
+
+  const gestureHandlers = useGestures({
+    onDragStart: (event) => {
+      if (!onSeek || resolvedDuration <= 0) return;
+      setIsScrubbing(true);
+      seekFromClientX(event.clientX);
+    },
+    onDrag: (_deltaX, _deltaY, event) => {
+      if (!onSeek || resolvedDuration <= 0) return;
+      seekFromClientX(event.clientX);
+    },
+    onDragEnd: () => {
+      setIsScrubbing(false);
+    },
+    onVelocity: undefined,
+  });
+
+  const formatTime = (value: number) => {
+    if (!Number.isFinite(value)) return "0:00";
+    const minutes = Math.floor(value / 60);
+    const seconds = Math.floor(value % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!onSeek || resolvedDuration <= 0) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    onSeek(pct * resolvedDuration);
-
-    if (workerRef.current) {
-      workerRef.current.postMessage({ type: "playhead", progress: pct } satisfies WaveformWorkerMessage);
+    const step = Math.max(1, resolvedDuration * 0.02);
+    if (event.key === "ArrowRight") {
+      onSeek(Math.min(resolvedDuration, playhead + step));
+      event.preventDefault();
+    } else if (event.key === "ArrowLeft") {
+      onSeek(Math.max(0, playhead - step));
+      event.preventDefault();
+    } else if (event.key === "Home") {
+      onSeek(0);
+      event.preventDefault();
+    } else if (event.key === "End") {
+      onSeek(resolvedDuration);
+      event.preventDefault();
     }
   };
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden rounded-md border border-white/10 bg-black/40 backdrop-blur-md"
-      onPointerDown={handleSeek}
+      className={`relative w-full overflow-hidden rounded-md border border-white/10 bg-black/40 backdrop-blur-md waveform-scrubber ${isScrubbing ? "is-scrubbing" : ""}`}
+      {...gestureHandlers}
+      onKeyDown={handleKeyDown}
+      role="slider"
+      tabIndex={0}
+      aria-label="Waveform scrubber"
+      aria-valuemin={0}
+      aria-valuemax={Math.max(1, Math.floor(resolvedDuration))}
+      aria-valuenow={Math.max(0, Math.floor(playhead))}
+      aria-valuetext={formatTime(playhead)}
+      aria-disabled={resolvedDuration <= 0}
+      data-no-swipe="true"
     >
       <canvas ref={canvasRef} className="block w-full h-[76px]" />
       {isLoading && (

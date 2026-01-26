@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
+import { beatsToSeconds } from "@/lib/utils/audioMath";
 
 interface JogWheelProps {
   artworkUrl?: string;
@@ -50,6 +51,7 @@ export function JogWheel({
   const glowIntensity = Math.min(1, Math.max(0, energy));
   const glowColor = accent;
   const bpmText = typeof bpm === "number" ? bpm.toFixed(2) : "--.--";
+  const rotationSeconds = bpm && bpm > 0 ? beatsToSeconds(4, bpm) : 7;
 
   return (
     <div
@@ -60,6 +62,7 @@ export function JogWheel({
       onPointerCancel={disabled ? undefined : onPointerCancel}
       onPointerLeave={disabled ? undefined : onPointerCancel}
       onClick={disabled ? undefined : onClick}
+      data-no-swipe="true"
     >
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#050507] via-[#0b0c11] to-[#050507] border border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]" />
       <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-b from-[#0f1016] via-[#090a0f] to-[#0f1016] shadow-[inset_0_12px_32px_rgba(0,0,0,0.55)]" />
@@ -109,7 +112,7 @@ export function JogWheel({
             animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
             transition={
               isPlaying
-                ? { repeat: Infinity, ease: "linear", duration: 7 }
+                ? { repeat: Infinity, ease: "linear", duration: rotationSeconds }
                 : { ease: "easeOut", duration: 0.4 }
             }
             style={{ originX: "50%", originY: "50%" }}

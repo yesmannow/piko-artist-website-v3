@@ -7,12 +7,10 @@
 
 import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.web.js';
 import Essentia from 'essentia.js/dist/essentia.js-core.es.js';
-import wasmAssetUrl from 'essentia.js/dist/essentia-wasm.web.wasm?url';
 
 let essentiaInstance: Essentia | null = null;
 const wasmCandidates = [
   typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_ESSENTIA_WASM_URL : undefined,
-  wasmAssetUrl,
   typeof self !== 'undefined' ? `${self.location.origin}/wasm/essentia-wasm.web.wasm` : undefined,
 ].filter(Boolean) as string[];
 

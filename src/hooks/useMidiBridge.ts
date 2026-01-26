@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "@/store/useStore";
+import { useStudioStore } from "@/store/useStudioStore";
 
 interface MidiBridgeState {
   isSupported: boolean;
@@ -13,12 +14,11 @@ interface MidiBridgeState {
 const normalize = (value: number) => Math.max(0, Math.min(1, value / 127));
 
 export function useMidiBridge(): MidiBridgeState {
-  const { setCrossfade, setDeckVolume } = useStore((state) => ({
-    setCrossfade: state.setCrossfade,
-    setDeckVolume: state.setDeckVolume,
-  }));
+  const setDeckVolume = useStore((state) => state.setDeckVolume);
+  const setCrossfader = useStudioStore((state) => state.setCrossfader);
 
   const midiAccessRef = useRef<MIDIAccess | null>(null);
+  const isInitializedRef = useRef(false);
   const [isSupported, setIsSupported] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,17 +33,22 @@ export function useMidiBridge(): MidiBridgeState {
       if (command !== 0xb0) return; // Only handle Control Change events
 
       if (cc === 1) {
-        const cross = normalize(value) * 2 - 1; // map 0..1 to -1..1
-        setCrossfade(cross);
+        setCrossfader(normalize(value));
         return;
       }
 
       if (cc === 7) {
         const volume = normalize(value);
         setDeckVolume("A", volume);
+        return;
+      }
+
+      if (cc === 8) {
+        const volume = normalize(value);
+        setDeckVolume("B", volume);
       }
     },
-    [setCrossfade, setDeckVolume]
+    [setCrossfader, setDeckVolume]
   );
 
   const attachInputs = useCallback(() => {
@@ -56,13 +61,18 @@ export function useMidiBridge(): MidiBridgeState {
   }, [handleMidiMessage]);
 
   const start = useCallback(async () => {
-    if (!isSupported || !navigator.requestMIDIAccess) return;
+    if (!isSupported || !navigator.requestMIDIAccess) {
+      setIsActive(false);
+      return;
+    }
     try {
-      const midiAccess = await navigator.requestMIDIAccess();
-      midiAccessRef.current = midiAccess;
+      if (!isInitializedRef.current || !midiAccessRef.current) {
+        const midiAccess = await navigator.requestMIDIAccess();
+        midiAccessRef.current = midiAccess;
+        isInitializedRef.current = true;
+      }
       attachInputs();
-      midiAccess.addEventListener("statechange", attachInputs);
-      setIsActive(true);
+      midiAccessRef.current?.addEventListener("statechange", attachInputs);
       setError(null);
     } catch (err) {
       console.error("[MIDI] Failed to start bridge:", err);
@@ -77,24 +87,26 @@ export function useMidiBridge(): MidiBridgeState {
       input.removeEventListener("midimessage", handleMidiMessage);
     });
     access?.removeEventListener("statechange", attachInputs);
-    midiAccessRef.current = null;
-    setIsActive(false);
   }, [attachInputs, handleMidiMessage]);
 
   const toggle = useCallback(() => {
-    if (isActive) {
-      stop();
-    } else {
-      void start();
-    }
-  }, [isActive, start, stop]);
+    setIsActive((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     setIsSupported(typeof navigator !== "undefined" && "requestMIDIAccess" in navigator);
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) {
+      stop();
+      return;
+    }
+    void start();
     return () => {
       stop();
     };
-  }, [stop]);
+  }, [isActive, start, stop]);
 
   return {
     isSupported,

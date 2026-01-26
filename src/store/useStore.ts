@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export interface DeckState {
   trackId: string | null;
   trackData: {
+    trackId?: string;
     url: string;
     bpm: number;
     title: string;
@@ -139,7 +140,7 @@ export const useStore = create<MixerState>()(
             [deckKey]: {
               ...currentDeck,
               trackData: trackData,
-              trackId: trackData?.url || null, // Using URL as ID for simplicity
+              trackId: trackData?.trackId ?? trackData?.url ?? null,
               playbackRate: trackData && trackData.bpm ? state.masterBpm / trackData.bpm : 1, // Auto-calc initial sync rate
               isLoaded: false,
             },

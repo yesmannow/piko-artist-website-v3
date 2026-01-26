@@ -41,11 +41,6 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.youtube.com',
       },
-      // Cloudflare R2 domains (pub-*.r2.dev)
-      {
-        protocol: 'https',
-        hostname: 'pub-*.r2.dev',
-      },
       // Local development
       {
         protocol: 'http',
@@ -106,7 +101,7 @@ const nextConfig = {
           },
           {
             key: 'Cross-Origin-Resource-Policy',
-            value: 'cross-origin',
+            value: 'same-origin',
           },
         ],
       },
@@ -123,7 +118,10 @@ const nextConfig = {
   // Transpile Tailwind v4 packages and ONNX Runtime for Turbopack compatibility
   transpilePackages: ['@tailwindcss/postcss', '@tailwindcss/node', 'onnxruntime-web'],
   outputFileTracingRoot: __dirname,
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    if (!dev && process.env.VERCEL_ENV === 'production' && process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true') {
+      throw new Error('Test helpers must not be enabled in production builds. Unset NEXT_PUBLIC_ENABLE_TEST_HELPERS.');
+    }
     // Enable async WebAssembly
     config.experiments = {
       ...config.experiments,
@@ -168,6 +166,9 @@ const nextConfig = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'src'),
     };
+    if (!dev && !process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS) {
+      config.resolve.alias['@/utils/testHelpers'] = false;
+    }
     return config;
   },
 };

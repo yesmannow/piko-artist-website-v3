@@ -1,4 +1,5 @@
 import { EssentiaWASM } from 'essentia.js';
+import { freqToMidi } from '@/lib/utils/audioMath';
 
 export interface AnalysisResult {
   bpm: number;
@@ -7,6 +8,8 @@ export interface AnalysisResult {
   energy: number;
   danceability: number;
   beatGrid: number[];
+  keyNoteNumber?: number;
+  keyFrequencyHz?: number;
 }
 
 type EssentiaModule = {
@@ -37,6 +40,35 @@ type EssentiaInstance = {
 };
 
 let essentia: EssentiaInstance | null = null;
+
+const SEMITONE_FROM_A: Record<string, number> = {
+  C: -9,
+  'C#': -8,
+  Db: -8,
+  D: -7,
+  'D#': -6,
+  Eb: -6,
+  E: -5,
+  F: -4,
+  'F#': -3,
+  Gb: -3,
+  G: -2,
+  'G#': -1,
+  Ab: -1,
+  A: 0,
+  'A#': 1,
+  Bb: 1,
+  B: 2,
+};
+
+const keyToFrequency = (key: string) => {
+  const match = key.trim().match(/^([A-G])([#b]?)/i);
+  if (!match) return null;
+  const note = `${match[1].toUpperCase()}${match[2] || ''}`;
+  const semitone = SEMITONE_FROM_A[note];
+  if (semitone === undefined) return null;
+  return 440 * Math.pow(2, semitone / 12);
+};
 
 const initEssentia = async (): Promise<void> => {
   if (essentia) return;
@@ -70,6 +102,11 @@ self.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32Array 
 
     // 2. Key & Scale
     const keyData = essentia.KeyExtractor(vectorAudio);
+    const keyFrequencyHz = keyToFrequency(keyData.key);
+    const keyNoteNumber =
+      keyFrequencyHz && keyFrequencyHz > 0
+        ? Math.round(freqToMidi(keyFrequencyHz))
+        : undefined;
 
     // 3. Vibe Analysis (Energy/Danceability)
     const danceability = essentia.Danceability(vectorAudio).danceability;
@@ -94,6 +131,8 @@ self.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32Array 
         scale: keyData.scale,
         energy,
         danceability,
+        keyFrequencyHz: keyFrequencyHz ?? undefined,
+        keyNoteNumber,
       } satisfies AnalysisResult,
     });
   } catch (error) {

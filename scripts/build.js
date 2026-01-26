@@ -6,5 +6,5 @@ delete process.env.NEXT_DEPLOYMENT_ID;
 
 // Import and run Next.js build
 import { execSync } from 'child_process';
+execSync('node scripts/validate-tracks.js', { stdio: 'inherit' });
 execSync('next build', { stdio: 'inherit' });
-

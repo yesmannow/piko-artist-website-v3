@@ -16,11 +16,30 @@ import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useExporter } from '@/hooks/useExporter';
 import { ExportModal } from '@/components/studio/modals/ExportModal';
 import { GlassPanel } from '@/components/ui/GlassPanel';
+import { dbToLinear } from '@/lib/utils/audioMath';
 
 type DeckId = 'A' | 'B';
 
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
+}
+
+const MIN_VOLUME_DB = -60;
+
+function linearToDb(linear: number) {
+  if (linear <= 0) return MIN_VOLUME_DB;
+  return 20 * Math.log10(linear);
+}
+
+function faderToLinear(value: number) {
+  const clamped = clamp01(value);
+  const db = MIN_VOLUME_DB + clamped * (0 - MIN_VOLUME_DB);
+  return dbToLinear(db);
+}
+
+function linearToFader(linear: number) {
+  const db = linearToDb(linear);
+  return clamp01((db - MIN_VOLUME_DB) / (0 - MIN_VOLUME_DB));
 }
 
 function ChannelStrip({ deckId }: { deckId: DeckId }) {
@@ -33,6 +52,7 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
   const stripLabel = deckId === 'A' ? 'Strip A' : 'Strip B';
   const accentText = deckId === 'A' ? 'text-studio-cyan/80' : 'text-studio-purple/80';
   const accentBg = deckId === 'A' ? 'bg-studio-cyan/30 border-studio-cyan text-studio-cyan' : 'bg-studio-purple/30 border-studio-purple text-studio-purple';
+  const volumeFader = useMemo(() => linearToFader(deck.volume), [deck.volume]);
 
   const eqValues = useMemo(() => {
     const normalize = (value: number) => (value + 12) / 24;
@@ -80,8 +100,8 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
       </div>
       <Knob
         label="GAIN"
-        value={clamp01(deck.volume)}
-        onChange={(value) => setDeckVolume(deckId, value)}
+        value={volumeFader}
+        onChange={(value) => setDeckVolume(deckId, faderToLinear(value))}
         size={56}
         color="#06b6d4"
       />
@@ -146,8 +166,8 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
       </div>
       <Fader
         label="VOLUME"
-        value={clamp01(deck.volume)}
-        onChange={(value) => setDeckVolume(deckId, value)}
+        value={volumeFader}
+        onChange={(value) => setDeckVolume(deckId, faderToLinear(value))}
         height={192}
       />
     </GlassPanel>

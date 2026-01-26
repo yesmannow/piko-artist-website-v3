@@ -1,0 +1,83 @@
+"use client";
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Activity, ArrowLeft, Cpu, Music2 } from "lucide-react";
+import { useMidiBridge } from "@/hooks/useMidiBridge";
+import { useStudioStore } from "@/store/useStudioStore";
+import { useStore } from "@/store/useStore";
+
+type StudioHeaderProps = {
+  masterProgress: number;
+};
+
+export function StudioHeader({ masterProgress }: StudioHeaderProps) {
+  const { isSupported, isActive, error, toggle } = useMidiBridge();
+  const performanceMode = useStudioStore((state) => state.performanceMode);
+  const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
+  const masterBpm = useStore((state) => state.masterBpm);
+  const setMasterBpm = useStore((state) => state.setMasterBpm);
+
+  return (
+    <header className="studio-header">
+      <div className="studio-header-bar">
+        <div className="studio-brand">
+          <Link href="/" className="studio-back-link" aria-label="Back to site">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="studio-logo">
+            <Music2 className="h-4 w-4 text-[var(--color-accent)]" />
+            <span>Piko Studio</span>
+          </div>
+          <div className="studio-status">
+            <span className={`studio-chip ${stemModeEnabled ? "is-active" : ""}`}>Stem Mode</span>
+            <span className="studio-chip">{performanceMode}</span>
+          </div>
+        </div>
+
+        <div className="studio-header-controls">
+          <div className="studio-bpm">
+            <span>BPM</span>
+            <input
+              type="number"
+              min={60}
+              max={220}
+              value={masterBpm}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (!Number.isNaN(next)) {
+                  setMasterBpm(Math.max(60, Math.min(220, next)));
+                }
+              }}
+              aria-label="Master BPM"
+            />
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={toggle}
+            disabled={!isSupported}
+            className={`studio-chip studio-chip-button ${isActive ? "is-active" : ""}`}
+            whileHover={isSupported ? { scale: 1.02 } : undefined}
+            whileTap={isSupported ? { scale: 0.98 } : undefined}
+            title={error ?? (isSupported ? "Toggle MIDI" : "MIDI not supported")}
+            aria-pressed={isActive}
+            aria-label="Toggle MIDI"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            MIDI
+          </motion.button>
+
+          <div className="studio-chip">
+            <Cpu className="h-3.5 w-3.5" />
+            {performanceMode}
+          </div>
+        </div>
+      </div>
+
+      <div className="studio-progress">
+        <div className="studio-progress-fill" style={{ width: `${masterProgress * 100}%` }} />
+      </div>
+    </header>
+  );
+}

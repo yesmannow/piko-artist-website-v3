@@ -5,6 +5,29 @@ const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
+const decodeTargetUrl = (value: string) => {
+  let decoded = value;
+  for (let i = 0; i < 2; i += 1) {
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    } catch {
+      break;
+    }
+  }
+  return decoded;
+};
+
+const getYouTubeFallback = (target: URL) => {
+  const host = target.hostname;
+  if (host !== 'img.youtube.com' && host !== 'i.ytimg.com') return null;
+  if (!target.pathname.endsWith('/maxresdefault.jpg')) return null;
+  const fallback = new URL(target.toString());
+  fallback.pathname = fallback.pathname.replace('/maxresdefault.jpg', '/hqdefault.jpg');
+  return fallback;
+};
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
@@ -15,7 +38,8 @@ export async function GET(request: Request) {
 
   let targetUrl: URL;
   try {
-    targetUrl = new URL(url);
+    const decoded = decodeTargetUrl(url);
+    targetUrl = new URL(decoded);
   } catch {
     return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
   }
@@ -25,11 +49,22 @@ export async function GET(request: Request) {
   }
 
   try {
-    const upstream = await fetch(targetUrl.toString(), {
+    let upstream = await fetch(targetUrl.toString(), {
       method: 'GET',
       cache: 'no-store',
       headers: { 'User-Agent': 'piko-image-proxy' },
     });
+
+    if (!upstream.ok) {
+      const fallback = getYouTubeFallback(targetUrl);
+      if (fallback) {
+        upstream = await fetch(fallback.toString(), {
+          method: 'GET',
+          cache: 'no-store',
+          headers: { 'User-Agent': 'piko-image-proxy' },
+        });
+      }
+    }
 
     const contentType = upstream.headers.get('content-type') ?? 'application/octet-stream';
 
@@ -48,6 +83,7 @@ export async function GET(request: Request) {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
         'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
       },
     });
   } catch (error) {

@@ -46,9 +46,24 @@ const customRuntimeCaching: RuntimeCaching[] = [
     matcher: /\/audio\/stems\/.*\.(?:mp3|wav|ogg|m4a)$/i,
     handler: new NetworkOnly(), // Never cache stems - they're too large (prevents quota errors)
   },
+  // MP3 tracks - cache with strict limits + range support for scrubbing
+  {
+    matcher: /\/audio\/tracks\/.*\.mp3$/i,
+    handler: new CacheFirst({
+      cacheName: "audio-tracks-mp3",
+      plugins: [
+        new RangeRequestsPlugin(),
+        new ExpirationPlugin({
+          maxEntries: 15, // Strict limit to prevent QuotaExceededError
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+          maxAgeFrom: "last-used",
+        }),
+      ],
+    }),
+  },
   // Regular audio files - strict limit to prevent quota errors
   {
-    matcher: /\/audio\/tracks\/.*\.(?:mp3|wav|ogg|m4a)$/i,
+    matcher: /\/audio\/tracks\/.*\.(?:wav|ogg|m4a)$/i,
     handler: new CacheFirst({
       cacheName: "audio-tracks",
       plugins: [
@@ -57,13 +72,17 @@ const customRuntimeCaching: RuntimeCaching[] = [
           maxAgeSeconds: 86400, // 24 hours (optimal for social sharing)
           maxAgeFrom: "last-used",
         }),
-        new RangeRequestsPlugin(), // Support audio seeking
       ],
     }),
   },
+  // Exclude mp3 samples from caching to avoid range/quota loops
+  {
+    matcher: /\/audio\/samples\/.*\.mp3$/i,
+    handler: new NetworkOnly(),
+  },
   // Audio samples - even stricter limit
   {
-    matcher: /\/audio\/samples\/.*\.(?:mp3|wav|ogg|m4a)$/i,
+    matcher: /\/audio\/samples\/.*\.(?:wav|ogg|m4a)$/i,
     handler: new CacheFirst({
       cacheName: "audio-samples",
       plugins: [
@@ -72,7 +91,6 @@ const customRuntimeCaching: RuntimeCaching[] = [
           maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
           maxAgeFrom: "last-used",
         }),
-        new RangeRequestsPlugin(),
       ],
     }),
   },
@@ -85,6 +103,20 @@ const customRuntimeCaching: RuntimeCaching[] = [
         new ExpirationPlugin({
           maxEntries: 4, // CRITICAL: Only cache 4 GLB files max
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          maxAgeFrom: "last-used",
+        }),
+      ],
+    }),
+  },
+  // ONNX models - cache with strict limits
+  {
+    matcher: /\/models\/.*\.onnx$/i,
+    handler: new CacheFirst({
+      cacheName: "onnx-models",
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 2,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
           maxAgeFrom: "last-used",
         }),
       ],

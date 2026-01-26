@@ -6,6 +6,7 @@ import { useCallback, useRef } from 'react';
  * Gesture Event Handlers
  */
 export interface GestureCallbacks {
+  shouldStart?: (event: PointerEvent) => boolean;
   onDrag?: (deltaX: number, deltaY: number, event: PointerEvent) => void;
   onDragStart?: (event: PointerEvent) => void;
   onDragEnd?: (event: PointerEvent) => void;
@@ -29,6 +30,9 @@ export function useGestures(callbacks: GestureCallbacks) {
   const pointerIdRef = useRef<number | null>(null);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (callbacks.shouldStart && !callbacks.shouldStart(e.nativeEvent)) {
+      return;
+    }
     isDraggingRef.current = true;
     lastPositionRef.current = { x: e.clientX, y: e.clientY };
     lastTimeRef.current = Date.now();

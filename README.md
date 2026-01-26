@@ -114,6 +114,148 @@ supabase/
 
 For deeper deployment troubleshooting, see `VERCEL_DEPLOYMENT_AUDIT_GUIDE.md`.
 
+## Piko Artist Studio — Architecture Overview
+
+The Piko Artist Studio is a fully client-side modular audio environment built on top of:
+
+- Web Audio API
+- OffscreenCanvas waveform rendering
+- Dedicated audio workers
+- Next.js App Router
+- Local MP3 assets
+- Service Worker range-request caching
+
+### Audio Engine
+
+Located in:
+
+```
+src/audio/
+src/lib/audio-engine.ts
+src/hooks/useAudioEngine.ts
+```
+
+The engine manages:
+
+- Track decoding
+- Playback scheduling
+- Crossfader routing
+- FX chains
+- Master bus processing
+- Real-time waveform analysis
+
+Workers:
+
+```
+src/workers/analysis.worker.ts
+src/workers/essentia.worker.ts
+src/workers/waveform.worker.ts
+```
+
+### Studio UI System
+
+Located in:
+
+```
+src/components/studio/
+```
+
+Key components:
+
+- Deck.tsx — playback, progress, jog wheel
+- WaveformMini.tsx — OffscreenCanvas waveform renderer
+- TrackLibrary.tsx — local track browser
+- StudioMonitor.tsx — real-time meters
+- FXRackSheet.tsx — effects UI
+- Crossfader.tsx — deck blending
+
+State is managed via:
+
+```
+src/store/useStudioStore.ts
+```
+
+### 3D & Visual Layer
+
+```
+src/components/studio/visuals/Scene3D.tsx
+```
+
+Handles:
+
+- WebGL visualizers
+- Reactive lighting
+- GPU tier detection
+
+### Local Audio Assets
+
+All tracks live in:
+
+```
+public/audio/tracks/*.mp3
+```
+
+Track metadata lives in:
+
+```
+src/data/piko-tracks.json
+src/data/musician_tracks.json
+```
+
+A build-time validator ensures:
+
+- No missing files
+- No orphaned JSON entries
+
+### Service Worker
+
+```
+src/app/sw.ts
+```
+
+Provides:
+
+- Byte-range support for MP3 scrubbing
+- Cache limits to prevent quota errors
+- Offline waveform rendering
+
+### Regression Testing
+
+Playwright test:
+
+```
+tests/studio.spec.ts
+```
+
+Validates:
+
+- Studio loads
+- Track loads
+- Seeking works
+- No worker crashes
+
+### Deployment Safety
+
+Vercel deploy validator:
+
+```
+scripts/validate-vercel-deploy.js
+```
+
+Ensures:
+
+- Required env vars exist
+- Studio loads without errors
+- No worker crashes in production
+
+## Studio UX documentation
+
+The Studio design system and UX guidelines live in the app docs:
+
+- `/docs/design-system` for foundations and patterns
+- `/docs/components` for component specs
+- `/docs/motion` for motion choreography
+
 ## License
 
 MIT (see `LICENSE`)

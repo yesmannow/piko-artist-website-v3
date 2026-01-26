@@ -97,5 +97,140 @@
     "energy": 0.55,
     "key": "Bm",
     "src": "/audio/tracks/falle.mp3"
+  },
+  {
+    "trackId": "entre-humos.mp3",
+    "title": "Entre Humos",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/entre-humos.mp3"
+  },
+  {
+    "trackId": "gunster.mp3",
+    "title": "Gunster",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/gunster.mp3"
+  },
+  {
+    "trackId": "im-sorry.mp3",
+    "title": "Im Sorry",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/im-sorry.mp3"
+  },
+  {
+    "trackId": "jardin-de-rosas.mp3",
+    "title": "Jardin De Rosas",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/jardin-de-rosas.mp3"
+  },
+  {
+    "trackId": "los-5.mp3",
+    "title": "Los 5",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/los-5.mp3"
+  },
+  {
+    "trackId": "me-cuentan.mp3",
+    "title": "Me Cuentan",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/me-cuentan.mp3"
+  },
+  {
+    "trackId": "noches-enteras.mp3",
+    "title": "Noches Enteras",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/noches-enteras.mp3"
+  },
+  {
+    "trackId": "party.mp3",
+    "title": "Party",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/party.mp3"
+  },
+  {
+    "trackId": "quejas.mp3",
+    "title": "Quejas",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/quejas.mp3"
+  },
+  {
+    "trackId": "sentimientos.mp3",
+    "title": "Sentimientos",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/sentimientos.mp3"
+  },
+  {
+    "trackId": "sin-rencores.mp3",
+    "title": "Sin Rencores",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/sin-rencores.mp3"
+  },
+  {
+    "trackId": "te-perdi.mp3",
+    "title": "Te Perdi",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/te-perdi.mp3"
+  },
+  {
+    "trackId": "te-prometo.mp3",
+    "title": "Te Prometo",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/te-prometo.mp3"
+  },
+  {
+    "trackId": "tortas-de-jamon.mp3",
+    "title": "Tortas De Jamon",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/tortas-de-jamon.mp3"
+  },
+  {
+    "trackId": "un-dia-mas.mp3",
+    "title": "Un Dia Mas",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.5,
+    "key": "Am",
+    "src": "/audio/tracks/un-dia-mas.mp3"
   }
 ]

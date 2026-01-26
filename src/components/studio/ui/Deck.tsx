@@ -2,15 +2,15 @@
 
 /**
  * Deck Component
- * 
+ *
  * Displays track information, transport controls, and deck status
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useStore, type DeckState } from '@/store/useStore';
 import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyaniteRecommendations';
-import { useStemGenerator } from '@/hooks/useStemGenerator';
+import { useStemWorker } from '@/hooks/useStemWorker';
 import { Play, Pause, Square, SkipBack, SkipForward, Wand2, Loader2, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RecommendationsPopover } from './RecommendationsPopover';
@@ -18,12 +18,29 @@ import { StemControls } from './StemControls';
 import { JogWheel } from './JogWheel';
 import { WaveformMini } from './WaveformMini';
 import { GlassPanel } from '@/components/ui/GlassPanel';
+import { calculateNewBpm } from '@/lib/utils/audioMath';
+import { useStudioStore } from '@/store/useStudioStore';
+import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
+import type { PikoTestHelpers } from '@/utils/testHelpers';
 
 interface DeckProps {
   deckId: 'A' | 'B';
+  showMiniWaveform?: boolean;
 }
 
-export function Deck({ deckId }: DeckProps) {
+const UI_UPDATE_INTERVAL_MS = 50;
+const STORE_UPDATE_INTERVAL_MS = 33;
+const PROGRESS_EPSILON = 0.005;
+
+type StemKey = 'vocals' | 'drums' | 'bass' | 'other';
+type StemBufferMap = Record<StemKey, AudioBuffer | null>;
+
+type DeckWindow = Window & {
+  __PIKO_TEST_HELPERS__?: PikoTestHelpers;
+};
+
+
+export function Deck({ deckId, showMiniWaveform = true }: DeckProps) {
   const { play, pause, stop, seekTo, getPlaybackPosition, getDeckDuration, loadStems, syncToBpm, triggerTapeStop } = useAudioEngine();
   const deckKey: 'deckA' | 'deckB' = deckId === 'A' ? 'deckA' : 'deckB';
   const deck = useStore((state) => state[deckKey]) as DeckState;
@@ -31,14 +48,40 @@ export function Deck({ deckId }: DeckProps) {
   const masterBpm = useStore((state) => state.masterBpm);
   const setDeckPlaying = useStore((state) => state.setDeckPlaying);
   const setKeyLock = useStore((state) => state.setKeyLock);
+  const updateDeckTime = useStudioStore((state) => state.updateDeckTime);
+  const setDeckDurationStore = useStudioStore((state) => state.setDeckDuration);
+  const stemsForDeck = useStudioStore((state) => state.stems[deckId]);
+  const setStems = useStudioStore((state) => state.setStems);
+  const markStemsReady = useStudioStore((state) => state.markStemsReady);
+  const focusedDeckId = useStudioStore((state) => state.focusedDeckId);
+  const setFocusedDeckId = useStudioStore((state) => state.setFocusedDeckId);
+  const stemGenerationRequest = useStudioStore((state) => state.stemGenerationRequest);
+  const autoStem = useStudioStore((state) => state.autoStem);
+  const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
   const { getRecommendations, loading: recommendationsLoading } = useCyaniteRecommendations();
-  const { generateStems, isProcessing: isGeneratingStems, progress: stemProgress, error: stemError, isConfigured: audioShakeConfigured } = useStemGenerator();
-  
+  const stemModelUrl = process.env.NEXT_PUBLIC_STEM_MODEL_URL ?? '/models/stems.onnx';
+  const {
+    init: initStemWorker,
+    initializing: stemInitializing,
+    error: stemWorkerError,
+    separate: separateStems,
+  } = useStemWorker(stemModelUrl);
+
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [hasStems, setHasStems] = useState(false);
+  const [isGeneratingStems, setIsGeneratingStems] = useState(false);
+  const [stemError, setStemError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [deckDuration, setDeckDuration] = useState(0);
+  const [deckReady, setDeckReady] = useState(false);
+  const lastUiUpdateRef = useRef(0);
+  const lastStoreUpdateRef = useRef(0);
+  const progressRef = useRef(0);
+  const durationRef = useRef(0);
+  const decodeContextRef = useRef<AudioContext | null>(null);
+  const autoStemRef = useRef(false);
+  const deckRef = useRef<HTMLDivElement | null>(null);
+  const deckReadyRef = useRef(false);
   const scratchState = useRef<{
     centerX: number;
     centerY: number;
@@ -51,7 +94,8 @@ export function Deck({ deckId }: DeckProps) {
   const jogAccent = deckId === 'A' ? '#22d3ee' : '#a855f7';
   const deckLabel = `DECK ${deckId}`;
   const trackData = deck.trackData as DeckState['trackData'] | null;
-  const currentBpm = trackData ? trackData.bpm * (deck.playbackRate || 1) : null;
+  const pitchDelta = (deck.playbackRate || 1) - 1;
+  const currentBpm = trackData ? calculateNewBpm(trackData.bpm, pitchDelta) : null;
   const isSynced =
     currentBpm !== null && Math.abs(currentBpm - masterBpm) < 0.5;
   const isKeyLockActive = deck.isKeyLockActive;
@@ -59,6 +103,49 @@ export function Deck({ deckId }: DeckProps) {
   const energyLevel = Math.min(1, Math.max(0, energy / 1.2));
   const isLoaded = deck.isLoaded;
   const fallbackBpm = trackData ? trackData.bpm : undefined;
+  const hasStems = Object.values(stemsForDeck).some(Boolean);
+  const canGenerateStems = Boolean(trackData?.url) && !isGeneratingStems && !hasStems && !stemInitializing;
+  const isFocused = focusedDeckId === deckId;
+  const showInlineStemControls = hasStems && !stemModeEnabled;
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return;
+    const el = deckRef.current;
+    if (!el) return;
+
+    const updateReady = (ready: boolean, width?: number, height?: number) => {
+      if (deckReadyRef.current === ready) return;
+      if (ready) {
+        console.info(`[Deck:${deckId}] ready (w:${width ?? 'n/a'}, h:${height ?? 'n/a'})`);
+      } else {
+        console.warn(`[Deck:${deckId}] became not-ready (w:${width ?? 'n/a'}, h:${height ?? 'n/a'})`);
+      }
+      deckReadyRef.current = ready;
+      setDeckReady(ready);
+      el.setAttribute('data-deck-ready', ready ? 'true' : 'false');
+    };
+
+    const testHelpers = (window as DeckWindow).__PIKO_TEST_HELPERS__;
+    if (testHelpers?.forceDeckLayout) {
+      testHelpers.forceDeckLayout(deckId);
+    }
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        updateReady(width > 8 && height > 8, width, height);
+      }
+    });
+
+    ro.observe(el);
+
+    const rect = el.getBoundingClientRect();
+    updateReady(rect.width > 8 && rect.height > 8, rect.width, rect.height);
+
+    return () => {
+      ro.disconnect();
+    };
+  }, [deckId]);
 
   const handleMagicWand = async () => {
     if (!trackData) return;
@@ -79,21 +166,94 @@ export function Deck({ deckId }: DeckProps) {
     // TODO: Map Cyanite recommendation to actual track URL and load it
   };
 
-  const handleSplitStems = async () => {
+  const handleSplitStems = useCallback(async () => {
     if (!trackData?.url) return;
+    setStemError(null);
+    setIsGeneratingStems(true);
 
     try {
-      const stems = await generateStems(trackData.url, trackData.title);
-      if (stems) {
-        setHasStems(true);
-        // Load stems into audio engine
-        await loadStems(deckId, stems);
+      await initStemWorker();
+
+      const response = await fetch(trackData.url);
+      const arrayBuffer = await response.arrayBuffer();
+      const AudioContextCtor =
+        window.AudioContext ??
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) {
+        throw new Error('AudioContext is not supported in this browser');
+      }
+      const decodeContext = decodeContextRef.current ?? new AudioContextCtor();
+      decodeContextRef.current = decodeContext;
+      const decoded = await decodeContext.decodeAudioData(arrayBuffer.slice(0));
+
+      const channels = Math.min(decoded.numberOfChannels, 2);
+      const length = decoded.length;
+      const mono = new Float32Array(new ArrayBuffer(length * Float32Array.BYTES_PER_ELEMENT));
+      for (let ch = 0; ch < channels; ch++) {
+        const data = decoded.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+          mono[i] += data[i] / channels;
+        }
+      }
+
+      const stemJobId = deck.trackId ?? trackData.url;
+      const stems = await separateStems(stemJobId, mono.buffer, 1);
+      if (!stems || Object.keys(stems).length === 0) {
+        throw new Error('Stem separation returned no data');
+      }
+
+      const decodedBuffers = decodeStemsToAudioBuffers(stems, decodeContext);
+      const stemBuffers: StemBufferMap = {
+        vocals: decodedBuffers.vocals ?? null,
+        drums: decodedBuffers.drums ?? null,
+        bass: decodedBuffers.bass ?? null,
+        other: decodedBuffers.other ?? null,
+      };
+
+      if (!stemBuffers || Object.keys(stemBuffers).length === 0 || !Object.values(stemBuffers).some(Boolean)) {
+        console.warn('[Deck] No stem buffers available, skipping loadStems');
+      } else {
+        await loadStems(deckId, stemBuffers);
+        setStems(deckId, stemBuffers);
+        if (trackData?.trackId) {
+          markStemsReady(trackData.trackId, true);
+        }
         console.log('[Deck] Stems loaded into audio engine');
       }
     } catch (error) {
       console.error('[Deck] Failed to generate stems:', error);
+      setStemError(error instanceof Error ? error.message : 'Stem generation failed');
+    } finally {
+      setIsGeneratingStems(false);
     }
-  };
+  }, [
+    deck.trackId,
+    deckId,
+    initStemWorker,
+    loadStems,
+    markStemsReady,
+    separateStems,
+    setStems,
+    trackData?.trackId,
+    trackData?.url,
+  ]);
+
+  useEffect(() => {
+    if (!stemGenerationRequest || stemGenerationRequest.deck !== deckId) return;
+    if (canGenerateStems) {
+      handleSplitStems();
+    }
+  }, [canGenerateStems, deckId, handleSplitStems, stemGenerationRequest]);
+
+  useEffect(() => {
+    if (!autoStem || !trackData?.url || !deck.isLoaded) {
+      autoStemRef.current = false;
+      return;
+    }
+    if (autoStemRef.current || hasStems || !canGenerateStems) return;
+    autoStemRef.current = true;
+    handleSplitStems();
+  }, [autoStem, canGenerateStems, deck.isLoaded, handleSplitStems, hasStems, trackData?.url]);
 
   const handlePlay = () => {
     play(deckId);
@@ -174,7 +334,8 @@ export function Deck({ deckId }: DeckProps) {
 
   useEffect(() => {
     let frameId: number;
-    const tick = () => {
+    const studioDeckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    const tick = (time: number) => {
       if (!isAppActive) {
         frameId = window.requestAnimationFrame(tick);
         return;
@@ -182,23 +343,56 @@ export function Deck({ deckId }: DeckProps) {
       const duration = getDeckDuration(deckId);
       const position = getPlaybackPosition(deckId);
       const nextProgress = duration > 0 ? Math.min(1, position / duration) : 0;
-      setProgress(nextProgress);
-      setDeckDuration(duration);
+
+      if (time - lastStoreUpdateRef.current >= STORE_UPDATE_INTERVAL_MS) {
+        updateDeckTime(studioDeckKey, position);
+        if (Math.abs(duration - durationRef.current) > 0.1) {
+          setDeckDurationStore(studioDeckKey, duration);
+        }
+        lastStoreUpdateRef.current = time;
+      }
+
+      const progressDelta = Math.abs(nextProgress - progressRef.current);
+      const durationDelta = Math.abs(duration - durationRef.current);
+      if (
+        time - lastUiUpdateRef.current >= UI_UPDATE_INTERVAL_MS ||
+        progressDelta >= PROGRESS_EPSILON ||
+        durationDelta >= 0.1
+      ) {
+        progressRef.current = nextProgress;
+        durationRef.current = duration;
+        setProgress(nextProgress);
+        setDeckDuration(duration);
+        lastUiUpdateRef.current = time;
+      }
+
       frameId = window.requestAnimationFrame(tick);
     };
     frameId = window.requestAnimationFrame(tick);
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [deckId, getDeckDuration, getPlaybackPosition, isAppActive]);
+  }, [deckId, getDeckDuration, getPlaybackPosition, isAppActive, setDeckDurationStore, updateDeckTime]);
 
   return (
-    <GlassPanel
-      depth="deck"
-      intensity="high"
-      accentColor={deckId === 'A' ? '#22d3ee' : '#a855f7'}
-      className="h-full flex flex-col bg-obsidian-900/80 rounded-lg p-6"
+    <div
+      ref={deckRef}
+      className={`deck deck-full h-full ${isFocused ? 'deck-focused' : ''}`}
+      data-stems-ready={hasStems ? 'true' : 'false'}
+      data-deck-id={deckId}
+      data-deck-ready={deckReady ? 'true' : 'false'}
+      onClick={() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+          setFocusedDeckId(isFocused ? null : deckId);
+        }
+      }}
     >
+      <GlassPanel
+        depth="deck"
+        intensity="high"
+        accentColor={deckId === 'A' ? '#22d3ee' : '#a855f7'}
+        className="h-full flex flex-col bg-obsidian-900/80 rounded-lg p-6"
+      >
       {/* Deck Header */}
           <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -308,45 +502,46 @@ export function Deck({ deckId }: DeckProps) {
                     <Wand2 className="w-4 h-4 text-studio-cyan" />
                   )}
                 </motion.button>
-                <motion.button
-                  onClick={handleSplitStems}
-                  disabled={isGeneratingStems || hasStems || !audioShakeConfigured}
-                  className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
-                  whileHover={audioShakeConfigured ? { scale: 1.05 } : {}}
-                  whileTap={audioShakeConfigured ? { scale: 0.95 } : {}}
-                  title={audioShakeConfigured ? "Split track into stems" : "AudioShake API key not configured"}
-                >
-                  {isGeneratingStems ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-studio-purple" />
-                  ) : (
-                    <Scissors className={`w-4 h-4 ${audioShakeConfigured ? 'text-studio-purple' : 'text-white/30'}`} />
-                  )}
-                </motion.button>
+                {!stemModeEnabled && (
+                  <motion.button
+                    onClick={handleSplitStems}
+                    disabled={!canGenerateStems}
+                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
+                    whileHover={canGenerateStems ? { scale: 1.05 } : {}}
+                    whileTap={canGenerateStems ? { scale: 0.95 } : {}}
+                    title={
+                      stemWorkerError
+                        ? `Stem worker error: ${stemWorkerError}`
+                        : stemInitializing
+                          ? "Loading stem model..."
+                          : "Split track into stems"
+                    }
+                    data-testid="generate-stems"
+                  >
+                    {isGeneratingStems ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-studio-purple" />
+                    ) : (
+                      <Scissors className={`w-4 h-4 ${canGenerateStems ? 'text-studio-purple' : 'text-white/30'}`} />
+                    )}
+                  </motion.button>
+                )}
               </div>
             </div>
 
             {isGeneratingStems && (
-              <div className="mb-2">
-                <div className="flex items-center justify-between text-xs text-white/60 mb-1">
-                  <span>Generating stems...</span>
-                  <span className="font-mono">{Math.round(stemProgress)}%</span>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-studio-purple transition-all"
-                    style={{ width: `${stemProgress}%` }}
-                  />
-                </div>
+              <div className="mb-2 flex items-center gap-2 text-xs text-white/60">
+                <Loader2 className="h-3 w-3 animate-spin text-studio-purple" />
+                <span>Generating stems...</span>
               </div>
             )}
 
-            {stemError && (
+            {(stemError || stemWorkerError) && (
               <div className="mb-2 text-xs text-red-400">
-                {stemError}
+                {stemError ?? stemWorkerError}
               </div>
             )}
 
-            {hasStems && <StemControls deckId={deckId} />}
+            {showInlineStemControls && <StemControls deckId={deckId} />}
 
             <div className="flex items-center justify-center gap-3 mt-auto flex-wrap">
               <motion.button
@@ -435,7 +630,7 @@ export function Deck({ deckId }: DeckProps) {
             </div>
 
             {/* Mini Timeline */}
-            {trackData?.url && (
+            {showMiniWaveform && trackData?.url && (
               <div className="mt-4">
               <WaveformMini
                 url={trackData.url}
@@ -472,6 +667,7 @@ export function Deck({ deckId }: DeckProps) {
         onClose={() => setShowRecommendations(false)}
         onLoadTrack={handleLoadRecommendation}
       />
-    </GlassPanel>
+      </GlassPanel>
+    </div>
   );
 }

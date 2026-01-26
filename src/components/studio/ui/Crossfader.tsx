@@ -9,25 +9,30 @@
 
 import { useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { useStore } from '@/store/useStore';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useStudioStore } from '@/store/useStudioStore';
 
 export function Crossfader() {
-  const { crossfadeValue, setCrossfade } = useStore();
-  const { setCrossfade: setAudioCrossfade } = useAudioEngine();
-  
-  // Map crossfade value (-1 to 1) to pixel position
-  const x = useMotionValue((crossfadeValue + 1) * 100); // -1 -> 0px, 0 -> 100px, 1 -> 200px
+  const setCrossfader = useStudioStore((state) => state.setCrossfader);
+
+  // Map crossfader position (0 to 1) to pixel position
+  const initialPos = useStudioStore.getState().crossfaderPos;
+  const x = useMotionValue(initialPos * 200); // 0 -> 0px, 0.5 -> 100px, 1 -> 200px
   const balance = useTransform(x, [0, 200], [-1, 1]);
 
   useEffect(() => {
-    x.set((crossfadeValue + 1) * 100);
-  }, [crossfadeValue, x]);
+    return useStudioStore.subscribe(
+      (state) => state.crossfaderPos,
+      (pos) => {
+        x.set(pos * 200);
+      }
+    );
+  }, [x]);
 
   const handleDrag = () => {
-    const value = balance.get();
-    setCrossfade(value);
-    setAudioCrossfade(value);
+    const rawValue = balance.get();
+    const clamped = Math.max(-1, Math.min(1, rawValue));
+    const position = (clamped + 1) / 2;
+    setCrossfader(position);
     
     // Haptic feedback
     if ('vibrate' in navigator) {

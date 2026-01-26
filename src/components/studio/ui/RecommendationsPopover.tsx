@@ -10,6 +10,37 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Music } from 'lucide-react';
+import { freqToMidi } from '@/lib/utils/audioMath';
+
+const SEMITONE_FROM_A: Record<string, number> = {
+  C: -9,
+  'C#': -8,
+  Db: -8,
+  D: -7,
+  'D#': -6,
+  Eb: -6,
+  E: -5,
+  F: -4,
+  'F#': -3,
+  Gb: -3,
+  G: -2,
+  'G#': -1,
+  Ab: -1,
+  A: 0,
+  'A#': 1,
+  Bb: 1,
+  B: 2,
+};
+
+const keyToMidiNote = (key: string) => {
+  const match = key.trim().match(/^([A-G])([#b]?)/i);
+  if (!match) return null;
+  const note = `${match[1].toUpperCase()}${match[2] || ''}`;
+  const semitone = SEMITONE_FROM_A[note];
+  if (semitone === undefined) return null;
+  const frequency = 440 * Math.pow(2, semitone / 12);
+  return Math.round(freqToMidi(frequency));
+};
 
 interface Recommendation {
   id: string;
@@ -80,11 +111,13 @@ export function RecommendationsPopover({
                   <p>No recommendations found</p>
                 </div>
               ) : (
-                recommendations.map((rec) => (
-                  <div
-                    key={rec.id}
-                    className="glass-panel p-4 rounded-lg border border-white/10"
-                  >
+                recommendations.map((rec) => {
+                  const keyMidi = rec.key ? keyToMidiNote(rec.key) : null;
+                  return (
+                    <div
+                      key={rec.id}
+                      className="glass-panel p-4 rounded-lg border border-white/10"
+                    >
                     <div className="flex items-start justify-between gap-4 mb-3">
                       <div className="flex-1 min-w-0">
                         <h4 className="text-base font-bold text-white truncate">{rec.title}</h4>
@@ -100,7 +133,12 @@ export function RecommendationsPopover({
                       {rec.key && (
                         <div className="flex items-center gap-2">
                           <span className="text-white/60">Key:</span>
-                          <span className="font-mono text-white">{rec.key}</span>
+                          <span className="font-mono text-white">
+                            {rec.key}
+                            {keyMidi !== null && (
+                              <span className="text-white/40"> (MIDI {keyMidi})</span>
+                            )}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -131,7 +169,8 @@ export function RecommendationsPopover({
                       </motion.button>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           </motion.div>
