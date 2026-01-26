@@ -43,6 +43,7 @@ export interface DeckState {
 // Define the global Mixer state
 export interface MixerState {
   isAudioReady: boolean;
+  isAudioStarted: boolean;
   masterBpm: number;
   crossfadeValue: number; // Range: -1 (A) to 1 (B)
   crossfaderMode: 'normal' | 'stem-balance'; // Crossfader mode
@@ -52,6 +53,7 @@ export interface MixerState {
 
   // Actions
   setAudioReady: (status: boolean) => void;
+  setAudioStarted: (status: boolean) => void;
   setMasterBpm: (bpm: number) => void;
   setCrossfade: (value: number) => void; // -1 to 1
   setCrossfaderMode: (mode: 'normal' | 'stem-balance') => void;
@@ -81,6 +83,7 @@ const initialDeckState: DeckState = {
 
 export const useStore = create<MixerState>((set) => ({
   isAudioReady: false,
+  isAudioStarted: false,
   masterBpm: 128, // Default Master BPM
   crossfadeValue: 0, // Center (-1 = A, 0 = center, 1 = B)
   crossfaderMode: 'normal', // Default to normal crossfade
@@ -89,6 +92,7 @@ export const useStore = create<MixerState>((set) => ({
   deckB: { ...initialDeckState },
 
   setAudioReady: (status) => set({ isAudioReady: status }),
+  setAudioStarted: (status) => set({ isAudioStarted: status }),
   setMasterBpm: (bpm) => set({ masterBpm: bpm }),
   setCrossfade: (value) => set({ crossfadeValue: Math.max(-1, Math.min(1, value)) }),
   setCrossfaderMode: (mode) => set({ crossfaderMode: mode }),

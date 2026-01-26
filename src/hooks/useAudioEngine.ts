@@ -168,7 +168,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   // Load track on deck
   const loadTrack = useCallback(async (deck: 'A' | 'B', url: string, bpm: number, skipAnalysis = false) => {
     if (!isInitialized.current) {
-      throw new Error('[AudioEngine] init() must be called before loading tracks');
+      await init();
     }
 
     try {
@@ -265,7 +265,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       console.error(`[AudioEngine] Failed to load track on Deck ${deck}:`, error);
       throw error;
     }
-  }, [masterBpm, setDeckTrack, analyzeTrack, deckA, deckB, updateDeck]);
+  }, [masterBpm, setDeckTrack, analyzeTrack, deckA, deckB, updateDeck, init]);
 
   // Seek to position
   const seekTo = useCallback((deck: 'A' | 'B', timeInSeconds: number) => {

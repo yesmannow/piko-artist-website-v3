@@ -29,9 +29,13 @@ export function StudioLayout() {
     bus: null,
     postFx: null,
   });
-  const { init, getMasterBus, play, pause, getDeckDuration, getTransportSeconds } = useAudioEngine();
+  const { init, getMasterBus, play, pause, getDeckDuration, getTransportSeconds, loadTrack } = useAudioEngine();
   const masterBpm = useStore((state) => state.masterBpm);
   const setMasterBpm = useStore((state) => state.setMasterBpm);
+  const setAudioStarted = useStore((state) => state.setAudioStarted);
+  const isAudioStarted = useStore((state) => state.isAudioStarted);
+  const deckAState = useStore((state) => state.deckA);
+  const deckBState = useStore((state) => state.deckB);
   const deckAPlaying = useStore((state) => state.deckA.isPlaying);
   const deckBPlaying = useStore((state) => state.deckB.isPlaying);
   const setDeckPlaying = useStore((state) => state.setDeckPlaying);
@@ -43,6 +47,7 @@ export function StudioLayout() {
 
   useEffect(() => {
     const handleOpenLibrary = () => {
+      if (!isAudioStarted) return;
       setActiveView('library');
     };
 
@@ -50,7 +55,7 @@ export function StudioLayout() {
     return () => {
       window.removeEventListener('studio:open-library', handleOpenLibrary);
     };
-  }, []);
+  }, [isAudioStarted]);
 
   useEffect(() => {
     setBpmInput(String(masterBpm));
@@ -86,8 +91,24 @@ export function StudioLayout() {
       await Tone.start();
       await init();
       setAudioInitialized(true);
+      setAudioStarted(true);
       setMasterBusNodes(getMasterBus());
       console.log('[StudioLayout] Audio initialized');
+
+      // Recover any persisted tracks after audio is ready
+      const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckAState) => {
+        const data = deckState.trackData;
+        if (data && data.url && data.bpm) {
+          try {
+            await loadTrack(deckId, data.url, data.bpm, true);
+          } catch (err) {
+            console.warn(`[StudioLayout] Failed to recover Deck ${deckId}:`, err);
+          }
+        }
+      };
+
+      await recoverDeck('A', deckAState);
+      await recoverDeck('B', deckBState);
     } catch (error) {
       console.error('[StudioLayout] Failed to initialize audio:', error);
       alert('Failed to initialize audio. Please try again.');
@@ -197,6 +218,7 @@ export function StudioLayout() {
               <div className="flex items-center gap-1 rounded-full bg-white/5 border border-white/10 p-1">
                 <button
                   onClick={() => setActiveView('mixer')}
+                  disabled={!isAudioStarted}
                   className={`px-4 py-1.5 rounded-full font-mono text-xs uppercase transition-colors flex items-center gap-2 ${
                     activeView === 'mixer'
                       ? 'bg-studio-cyan/20 border border-studio-cyan text-studio-cyan'
@@ -208,6 +230,7 @@ export function StudioLayout() {
                 </button>
                 <button
                   onClick={() => setActiveView('library')}
+                  disabled={!isAudioStarted}
                   className={`px-4 py-1.5 rounded-full font-mono text-xs uppercase transition-colors flex items-center gap-2 ${
                     activeView === 'library'
                       ? 'bg-studio-cyan/20 border border-studio-cyan text-studio-cyan'
