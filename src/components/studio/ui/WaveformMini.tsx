@@ -85,6 +85,8 @@ export function WaveformMini({
   const initialColorRef = useRef(color);
   const [isLoading, setIsLoading] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [isScrubbing, setIsScrubbing] = useState(false);
 
   const resolvedDuration = useMemo(
@@ -340,6 +342,12 @@ export function WaveformMini({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuPosition({ x: e.clientX, y: e.clientY });
+    setShowMenu(true);
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!onSeek || resolvedDuration <= 0) return;
     const step = Math.max(1, resolvedDuration * 0.02);
@@ -359,27 +367,42 @@ export function WaveformMini({
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative w-full overflow-hidden rounded-md border border-white/10 bg-black/40 backdrop-blur-md waveform-scrubber ${isScrubbing ? "is-scrubbing" : ""}`}
-      {...domGestureHandlers}
-      onKeyDown={handleKeyDown}
-      role="slider"
-      tabIndex={0}
-      aria-label="Waveform scrubber"
-      aria-valuemin={0}
-      aria-valuemax={Math.max(1, Math.floor(resolvedDuration))}
-      aria-valuenow={Math.max(0, Math.floor(playhead))}
-      aria-valuetext={formatTime(playhead)}
-      aria-disabled={resolvedDuration <= 0}
-      data-no-swipe="true"
-    >
-      <canvas ref={canvasRef} className="block w-full h-[76px]" />
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/5 animate-pulse" aria-hidden="true">
-          <div className="absolute inset-y-3 left-4 right-4 rounded-full bg-white/10 blur-sm" />
+    <>
+      <div
+        ref={containerRef}
+        className={`relative w-full overflow-hidden rounded-md border border-white/10 bg-black/40 backdrop-blur-md waveform-scrubber ${isScrubbing ? "is-scrubbing" : ""}`}
+        {...domGestureHandlers}
+        onContextMenu={handleContextMenu}
+        onKeyDown={handleKeyDown}
+        role="slider"
+        tabIndex={0}
+        aria-label="Waveform scrubber"
+        aria-valuemin={0}
+        aria-valuemax={Math.max(1, Math.floor(resolvedDuration))}
+        aria-valuenow={Math.max(0, Math.floor(playhead))}
+        aria-valuetext={formatTime(playhead)}
+        aria-disabled={resolvedDuration <= 0}
+        data-no-swipe="true"
+      >
+        <canvas ref={canvasRef} className="block w-full h-[76px]" />
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/5 animate-pulse" aria-hidden="true">
+            <div className="absolute inset-y-3 left-4 right-4 rounded-full bg-white/10 blur-sm" />
+          </div>
+        )}
+      </div>
+      {showMenu && (
+        <div
+          className="fixed z-50 bg-black/80 border border-white/20 rounded-md p-2 shadow-lg"
+          style={{ left: menuPosition.x, top: menuPosition.y }}
+          onClick={() => setShowMenu(false)}
+        >
+          <button className="block w-full text-left px-2 py-1 hover:bg-white/10 rounded">Set Loop In</button>
+          <button className="block w-full text-left px-2 py-1 hover:bg-white/10 rounded">Set Loop Out</button>
+          <button className="block w-full text-left px-2 py-1 hover:bg-white/10 rounded">Add Cue</button>
+          <button className="block w-full text-left px-2 py-1 hover:bg-white/10 rounded">Analyze Energy</button>
         </div>
       )}
-    </div>
+    </>
   );
 }
