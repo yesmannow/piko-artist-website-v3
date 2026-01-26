@@ -44,5 +44,12 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
       },
     },
+    {
+      name: "low-end-device",
+      use: {
+        viewport: { width: 390, height: 844 },
+        userAgent: "mobile",
+      },
+    },
   ],
 });

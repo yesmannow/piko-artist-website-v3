@@ -87,6 +87,7 @@ test.describe("Piko Studio UX", () => {
     try {
       await deckB.click({ force: true });
       await expect(deckB).toHaveClass(/deck-focused/);
+      await expect(page).toHaveScreenshot('deck-focused.png');
     } catch (error) {
       await dumpDeckDiagnostics(page);
       throw error;
