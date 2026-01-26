@@ -20,6 +20,7 @@ export function StudioControlBar() {
       )}
 
       <div className="toggles" role="group" aria-label="Mode toggles">
+        <button aria-pressed="false" aria-label="One-Click Mix" className="btn-toggle" />
         <button aria-pressed="false" aria-label="Stem Mode" className="btn-toggle" />
         <button aria-pressed="false" aria-label="FX" className="btn-toggle" />
         <button aria-pressed="false" aria-label="Library" className="btn-toggle" />
