@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/touch-affordances.css";
+@import "../styles/high-contrast.css";
 
 /* Tailwind v4 Theme Configuration */
 @theme {
@@ -571,6 +573,14 @@
   --ease-overshoot: cubic-bezier(0.16, 1, 0.3, 1);
   --transition-fast: var(--motion-fast) var(--ease-smooth);
   --transition-med: var(--motion-med) var(--ease-smooth);
+
+  /* Additional design tokens for responsive deck system */
+  --bg: #050510;
+  --panel-bg: rgba(15, 15, 40, 0.9);
+  --accent-2: #a855f7;
+  --control-bar-height: 72px;
+  --touch-target: 44px;
+  --gap: 16px;
 }
 
 .studio-shell {
@@ -1391,4 +1401,58 @@
   [data-deck-ready="false"] {
     opacity: 0.98;
   }
+
+  /* Mobile responsive layout */
+  .studio-main {
+    display: block;
+    padding-bottom: calc(var(--control-bar-height) + env(safe-area-inset-bottom));
+  }
+  .deck-full {
+    min-height: 160px;
+  }
+}
+
+/* Responsive grid layouts for studio */
+@media (min-width: 1024px) {
+  .studio-main {
+    display: grid;
+    grid-template-columns: 280px 1fr 360px;
+    gap: var(--gap);
+    height: calc(100vh - var(--control-bar-height));
+  }
+  .decks-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .studio-main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+  }
+  .decks-area {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+  }
+}
+
+/* Touch target enforcement */
+button,
+.pad,
+.pad-lg,
+.pad-sm {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+}
+
+/* Deck full styling */
+.deck-full {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  box-sizing: border-box;
 }

@@ -1,11 +1,11 @@
-import type { PlaywrightTestConfig } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
-
-const config: PlaywrightTestConfig = {
-  testDir: "tests",
+export default defineConfig({
+  timeout: 60_000,
+  testDir: "tests/playwright",
+  retries: process.env.CI ? 1 : 0,
   use: {
-    baseURL: BASE_URL,
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -24,6 +24,25 @@ const config: PlaywrightTestConfig = {
       NEXT_PUBLIC_ENABLE_TEST_HELPERS: "true",
     },
   },
-};
-
-export default config;
+  projects: [
+    {
+      name: "mobile",
+      use: {
+        viewport: { width: 390, height: 844 },
+        userAgent: "mobile",
+      },
+    },
+    {
+      name: "tablet",
+      use: {
+        viewport: { width: 820, height: 1180 },
+      },
+    },
+    {
+      name: "desktop",
+      use: {
+        viewport: { width: 1440, height: 900 },
+      },
+    },
+  ],
+});

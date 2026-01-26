@@ -58,9 +58,17 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
     )
   );
 
+  // Extract only DOM-compatible props from gestureHandlers
+  const domGestureHandlers = {
+    onPointerDown: gestureHandlers.onPointerDown,
+    onPointerMove: gestureHandlers.onPointerMove,
+    onPointerUp: gestureHandlers.onPointerUp,
+    onPointerCancel: gestureHandlers.onPointerCancel,
+  };
+
   return (
     <div className="studio-panels">
-      <section className={`studio-decks ${isFocusActive ? "is-focus" : ""}`} {...gestureHandlers}>
+      <section className={`studio-decks ${isFocusActive ? "is-focus" : ""}`} {...domGestureHandlers}>
         <div className={`studio-deck-column ${focusedDeckId === "B" ? "is-hidden" : ""}`}>
           <MainWaveform
             deckId="A"

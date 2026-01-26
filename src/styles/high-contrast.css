@@ -1,0 +1,26 @@
+/* high-contrast.css - High contrast theme for accessibility */
+[data-theme="high-contrast"] {
+  --color-text-primary: #ffffff;
+  --color-text-muted: #e0e0e0;
+  --color-bg: #000000;
+  --color-bg-elevated: #1a1a1a;
+  --color-border-subtle: rgba(255, 255, 255, 0.3);
+  --color-accent: #00ffff;
+  --color-accent-2: #ff00ff;
+}
+
+[data-theme="high-contrast"] * {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="high-contrast"] button,
+[data-theme="high-contrast"] .pad,
+[data-theme="high-contrast"] .btn {
+  border-width: 2px !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="high-contrast"] :focus-visible {
+  outline: 4px solid #00ffff !important;
+  outline-offset: 3px !important;
+}

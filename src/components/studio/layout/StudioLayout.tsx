@@ -14,7 +14,6 @@ import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 import { StudioShell } from '@/components/studio/layout/StudioShell';
-import { motion } from 'framer-motion';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
 
 type PikoWindow = Window & {
@@ -130,60 +129,54 @@ export function StudioLayout() {
     };
   }, [setAppActive]);
 
-  const handleEnterStudio = async () => {
-    if (audioInitialized || initInFlight.current) return;
-    initInFlight.current = true;
-    try {
-      await Tone.start();
-      await init();
-      setAudioInitialized(true);
-      setAudioStarted(true);
-      setMasterBusNodes(getMasterBus());
-      console.log('[StudioLayout] Audio initialized');
+  // Auto-initialize audio on mount
+  useEffect(() => {
+    const initializeAudio = async () => {
+      if (audioInitialized || initInFlight.current) return;
+      initInFlight.current = true;
+      try {
+        await Tone.start();
+        await init();
+        setAudioInitialized(true);
+        setAudioStarted(true);
+        setMasterBusNodes(getMasterBus());
+        console.log('[StudioLayout] Audio initialized');
 
-      // Recover any persisted tracks after audio is ready
-      const { deckA, deckB } = useStore.getState();
-      const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckA) => {
-        const data = deckState.trackData;
-        if (data && data.url && data.bpm) {
-          try {
-            await loadTrack(deckId, data.url, data.bpm, true);
-          } catch (err) {
-            console.warn(`[StudioLayout] Failed to recover Deck ${deckId}:`, err);
+        // Recover any persisted tracks after audio is ready
+        const { deckA, deckB } = useStore.getState();
+        const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckA) => {
+          const data = deckState.trackData;
+          if (data && data.url && data.bpm) {
+            try {
+              await loadTrack(deckId, data.url, data.bpm, true);
+            } catch (err) {
+              console.warn(`[StudioLayout] Failed to recover Deck ${deckId}:`, err);
+            }
           }
-        }
-      };
+        };
 
-      await recoverDeck('A', deckA);
-      await recoverDeck('B', deckB);
-    } catch (error) {
-      console.error('[StudioLayout] Failed to initialize audio:', error);
-      alert('Failed to initialize audio. Please try again.');
-    } finally {
-      initInFlight.current = false;
-    }
-  };
+        await recoverDeck('A', deckA);
+        await recoverDeck('B', deckB);
+      } catch (error) {
+        console.error('[StudioLayout] Failed to initialize audio:', error);
+        // Don't show alert - just log the error
+      } finally {
+        initInFlight.current = false;
+      }
+    };
 
-  // Show enter screen if audio not initialized
+    initializeAudio();
+  }, [audioInitialized, init, getMasterBus, loadTrack, setAudioStarted]);
+
+  // Show loading state while initializing
   if (!audioInitialized) {
     return (
-      <main className="studio-entry">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="studio-entry-card"
-        >
-          <h1>Piko Studio</h1>
-          <p>High-performance DJ mixer. Local stems. Zero lag.</p>
-          <motion.button
-            onClick={handleEnterStudio}
-            className="btn btn-primary"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Enter Studio
-          </motion.button>
-        </motion.div>
+      <main className="studio-shell">
+        <div className="studio-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            <p>Initializing audio engine...</p>
+          </div>
+        </div>
       </main>
     );
   }

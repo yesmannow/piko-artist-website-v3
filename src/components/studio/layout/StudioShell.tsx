@@ -11,6 +11,11 @@ import { Scene3D } from "@/components/studio/visuals/Scene3D";
 import { useEffect, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
+import { ComplexityModeProvider } from "@/contexts/ComplexityModeContext";
+import { ShortcutsOverlay } from "@/components/ui/ShortcutsOverlay";
+import { DiagnosticsPanel } from "@/components/ui/DiagnosticsPanel";
+import { SmartSuggestions } from "@/components/ui/SmartSuggestions";
+import { usePerformanceHeuristics } from "@/hooks/usePerformanceHeuristics";
 
 type StudioShellProps = {
   masterProgress: number;
@@ -25,6 +30,9 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
   const isAppActive = useStore((state) => state.isAppActive);
   const perfSampledRef = useRef(false);
   const show3DEffective = show3D && performanceMode !== "low";
+  
+  // Monitor performance and auto-adjust
+  usePerformanceHeuristics();
 
   useEffect(() => {
     if (perfSampledRef.current || performanceMode !== "balanced") return;
@@ -52,23 +60,28 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
   }, [performanceMode, setPerformanceMode]);
 
   return (
-    <main className="studio-shell" data-performance={performanceMode}>
-      <div className="studio-shell-bg" aria-hidden="true">
-        {show3DEffective && <Scene3D className="w-full h-full" isActive={isAppActive} />}
-      </div>
+    <ComplexityModeProvider>
+      <main className="studio-shell" data-performance={performanceMode}>
+        <div className="studio-shell-bg" aria-hidden="true">
+          {show3DEffective && <Scene3D className="w-full h-full" isActive={isAppActive} />}
+        </div>
 
-      <StudioHeader masterProgress={masterProgress} />
+        <StudioHeader masterProgress={masterProgress} />
 
-      <div className="studio-main">
-        <LibraryDrawer />
-        <StudioPanels masterBus={masterBus} masterPostFx={masterPostFx} />
-      </div>
+        <div className="studio-main">
+          <LibraryDrawer />
+          <StudioPanels masterBus={masterBus} masterPostFx={masterPostFx} />
+        </div>
 
-      <StudioControlBar />
+        <StudioControlBar />
 
-      <StudioSettingsPanel />
-      <StudioOnboarding />
-
-    </main>
+        <StudioSettingsPanel />
+        <StudioOnboarding />
+        
+        <ShortcutsOverlay />
+        <DiagnosticsPanel />
+        <SmartSuggestions />
+      </main>
+    </ComplexityModeProvider>
   );
 }

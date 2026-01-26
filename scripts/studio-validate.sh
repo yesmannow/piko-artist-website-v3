@@ -16,7 +16,10 @@ npm run validate:tracks
 echo "🏗️ Building project..."
 npm run build
 
-echo "🧪 Running Playwright tests..."
+echo "🧪 Running unit tests..."
+npm run test:unit
+
+echo "🎭 Running Playwright tests..."
 npm run test:e2e
 
 echo "🎚️ Running stem performance benchmark..."

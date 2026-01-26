@@ -23,7 +23,10 @@ test("Studio loads and plays tracks without worker errors", async ({ page }) => 
 
   await page.goto(`${BASE_URL}/studio`);
 
-  await page.getByRole("button", { name: /enter studio/i }).click();
+  // Wait for studio to initialize (audio engine auto-starts)
+  await page.locator(".studio-main").waitFor({ state: "attached", timeout: 15000 });
+  await page.waitForTimeout(1000); // Give audio time to initialize
+  
   await dismissOnboarding(page);
   await page.getByRole("button", { name: /library/i }).click();
   const firstTrack = page.locator("[data-track-id]").first();

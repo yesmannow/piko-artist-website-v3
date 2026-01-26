@@ -1,0 +1,64 @@
+/* touch-affordances.css - mobile hit targets, haptics hooks, press animations */
+:root {
+  --touch-target: 48px;
+  --pad-press-scale: 0.96;
+  --pad-shadow: 0 8px 20px rgba(0,0,0,0.45);
+  --jog-press-scale: 0.985;
+  --transition-fast: 120ms;
+}
+
+/* Ensure minimum hit target on mobile */
+@media (max-width: 767px) {
+  button, .pad, .pad-lg, .pad-sm, .btn-transport {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    padding: 8px;
+    touch-action: manipulation;
+  }
+}
+
+/* Pad press animation and tactile shadow */
+.pad, .pad-lg, .pad-sm {
+  transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease, opacity var(--transition-fast);
+  will-change: transform, box-shadow;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+}
+.pad:active, .pad--pressed {
+  transform: scale(var(--pad-press-scale));
+  box-shadow: var(--pad-shadow);
+}
+
+/* Jog wheel tactile press */
+.jog-wheel, .touch-jog {
+  transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+  will-change: transform, box-shadow;
+  border-radius: 50%;
+}
+.jog-wheel:active, .touch-jog--pressed {
+  transform: scale(var(--jog-press-scale));
+  box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+}
+
+/* Haptic hook classes (no-op in CSS, used by JS to trigger navigator.vibrate) */
+.haptic-weak { /* marker */ }
+.haptic-medium { /* marker */ }
+.haptic-strong { /* marker */ }
+
+/* Focus ring for keyboard accessibility */
+:focus-visible {
+  outline: 3px solid rgba(74,242,197,0.9);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* State badge styles */
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  min-width: 64px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}

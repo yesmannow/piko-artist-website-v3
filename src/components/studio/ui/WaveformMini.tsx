@@ -325,6 +325,14 @@ export function WaveformMini({
     onVelocity: undefined,
   });
 
+  // Extract only DOM-compatible props from gestureHandlers
+  const domGestureHandlers = {
+    onPointerDown: gestureHandlers.onPointerDown,
+    onPointerMove: gestureHandlers.onPointerMove,
+    onPointerUp: gestureHandlers.onPointerUp,
+    onPointerCancel: gestureHandlers.onPointerCancel,
+  };
+
   const formatTime = (value: number) => {
     if (!Number.isFinite(value)) return "0:00";
     const minutes = Math.floor(value / 60);
@@ -354,7 +362,7 @@ export function WaveformMini({
     <div
       ref={containerRef}
       className={`relative w-full overflow-hidden rounded-md border border-white/10 bg-black/40 backdrop-blur-md waveform-scrubber ${isScrubbing ? "is-scrubbing" : ""}`}
-      {...gestureHandlers}
+      {...domGestureHandlers}
       onKeyDown={handleKeyDown}
       role="slider"
       tabIndex={0}
