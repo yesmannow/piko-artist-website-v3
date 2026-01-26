@@ -94,6 +94,16 @@ test.describe("Piko Studio UX", () => {
     }
   });
 
+  test("FX panel toggle shows FX rack", async ({ page }) => {
+    await page.goto("/studio");
+    await page.getByRole("button", { name: /enter studio/i }).click();
+    await dismissOnboarding(page);
+    const toggle = page.getByTestId("fx-toggle");
+    await toggle.click();
+    await expect(page.getByTestId("fx-rack")).toBeVisible();
+    await expect(page).toHaveScreenshot('fx-open.png');
+  });
+
   test("library search filters results", async ({ page }) => {
     await page.goto("/studio");
     await page.getByRole("button", { name: /enter studio/i }).click();

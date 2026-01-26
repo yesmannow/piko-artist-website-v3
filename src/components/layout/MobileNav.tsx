@@ -186,12 +186,12 @@ export function MobileNav() {
 
       {/* Main Tray Nav */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gradient-to-t from-zinc-950 via-zinc-900 to-zinc-950 border-t border-toxic-lime/20 shadow-[0_-4px_20px_rgba(0,0,0,0.8)] pb-[env(safe-area-inset-bottom)]"
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-linear-to-t from-zinc-950 via-zinc-900 to-zinc-950 border-t border-toxic-lime/20 shadow-[0_-4px_20px_rgba(0,0,0,0.8)] pb-[env(safe-area-inset-bottom)]"
         style={grainStyle}
       >
         <div className="flex items-center h-16 px-2 min-h-[44px] gap-2">
           {/* Logo - Left side with long press */}
-          <div id="nav-logo-anchor" className="flex-shrink-0">
+          <div id="nav-logo-anchor" className="shrink-0">
             <div
               ref={logoRef}
               onTouchStart={handleLogoPressStart}
@@ -332,7 +332,7 @@ export function MobileNav() {
                             mass: 0.8,
                           }
                     }
-                    className="fixed bottom-0 left-0 right-0 z-modal md:hidden bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 border-t-2 border-toxic-lime rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)] max-h-[85vh] flex flex-col"
+                    className="fixed bottom-0 left-0 right-0 z-modal md:hidden bg-linear-to-b from-zinc-950 via-zinc-900 to-zinc-950 border-t-2 border-toxic-lime rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)] max-h-[85vh] flex flex-col"
                     style={grainStyle}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -373,7 +373,7 @@ export function MobileNav() {
                                   : "bg-zinc-800/50 text-white border-zinc-700 hover:bg-zinc-700/50 hover:border-toxic-lime/30 active:scale-[0.98]"
                               }`}
                             >
-                              <Icon className="w-5 h-5 flex-shrink-0" />
+                              <Icon className="w-5 h-5 shrink-0" />
                               <span className="font-bold uppercase tracking-wider">
                                 {item.label}
                               </span>
@@ -458,7 +458,7 @@ export function MobileNav() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-[60] md:hidden"
+              className="fixed inset-0 bg-black/60 z-60 md:hidden"
               onClick={() => setIsAboutOpen(false)}
             />
             <motion.div
@@ -467,7 +467,7 @@ export function MobileNav() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[61] md:hidden bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 border-t-2 border-toxic-lime rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)]"
+              className="fixed bottom-0 left-0 right-0 z-61 md:hidden bg-linear-to-b from-zinc-950 via-zinc-900 to-zinc-950 border-t-2 border-toxic-lime rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)]"
               style={grainStyle}
             >
               <div className="px-6 pt-4 pb-6">

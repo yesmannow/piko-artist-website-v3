@@ -289,7 +289,7 @@ export function Navbar() {
     <>
       <motion.nav
         ref={navRef}
-        className="hidden md:flex fixed top-0 left-0 right-0 z-[100] justify-between md:justify-center items-center px-4 md:px-8 py-3 md:py-4 pointer-events-none transition-all duration-300"
+        className="hidden md:flex fixed top-0 left-0 right-0 z-100 justify-between md:justify-center items-center px-4 md:px-8 py-3 md:py-4 pointer-events-none transition-all duration-300"
         initial={false}
         animate={{
           backgroundColor:
@@ -329,7 +329,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8 pointer-events-auto relative">
           {/* Navigation Links - Chrome Bar */}
           <ul
-            className="flex items-center bg-[#050505]/90 backdrop-blur-xl border-2 border-[#E0E0E0]/30 px-6 py-2 skew-x-[-12deg]"
+            className="flex items-center bg-obsidian-950/90 backdrop-blur-xl border-2 border-[#E0E0E0]/30 px-6 py-2 -skew-x-12"
             style={{
               boxShadow: "10px 10px 0px #000",
             }}
@@ -338,7 +338,7 @@ export function Navbar() {
           {navItems.map((item) => {
             const active = isActive(item);
             return (
-              <li key={`${item.path}-${item.anchor || ""}`} className="relative group skew-x-[12deg]" role="none">
+              <li key={`${item.path}-${item.anchor || ""}`} className="relative group skew-x-12" role="none">
                 <Link
                   href={item.anchor ? `${item.path}#${item.anchor}` : item.path}
                   onClick={(e) => handleNavClick(e, item)}
@@ -357,7 +357,7 @@ export function Navbar() {
                 {/* Hover gradient underline effect */}
                 {!reducedMotion && (
                   <motion.div
-                    className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 w-full"
+                    className="absolute bottom-0 left-0 h-[2px] bg-linear-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 w-full"
                     transition={{ duration: 0.3 }}
                     initial={false}
                   />
@@ -368,8 +368,8 @@ export function Navbar() {
         </ul>
 
         {/* System Status - Desktop Only */}
-        <div className="hidden lg:block ml-4 border-l border-white/10 pl-4 font-mono text-[9px] text-white/30 skew-x-[-12deg]">
-          <div className="skew-x-[12deg]">
+        <div className="hidden lg:block ml-4 border-l border-white/10 pl-4 font-mono text-[9px] text-white/30 -skew-x-12">
+          <div className="skew-x-12">
             SYS_OP: ACTIVE<br />
             LOC: SYNDICATE_VAULT
           </div>
@@ -388,7 +388,7 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 z-[98] bg-black/80 backdrop-blur-xl"
+              className="fixed inset-0 z-98 bg-black/80 backdrop-blur-xl"
               onClick={handleMenuToggle}
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
@@ -415,7 +415,7 @@ export function Navbar() {
                       mass: 0.8,
                     }
               }
-              className="fixed inset-0 z-[99] bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center overflow-y-auto backdrop-blur-2xl"
+              className="fixed inset-0 z-99 bg-linear-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center overflow-y-auto backdrop-blur-2xl"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
               }}
@@ -521,7 +521,7 @@ export function Navbar() {
                           {/* Hover effect */}
                           {!reducedMotion && (
                             <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                              className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent"
                               initial={{ x: "-100%" }}
                               whileHover={{ x: "100%" }}
                               transition={{ duration: 0.6 }}

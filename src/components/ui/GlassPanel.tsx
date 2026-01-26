@@ -77,7 +77,7 @@ export function GlassPanel({
   return (
     <motion.div
       className={cn(
-        'rounded-2xl shadow-lg bg-gradient-to-br from-white/10 via-white/5 to-white/0',
+        'rounded-2xl shadow-lg bg-linear-to-br from-white/10 via-white/5 to-white/0',
         intensityClasses[effectiveIntensity],
         depthBase[depthValue],
         className

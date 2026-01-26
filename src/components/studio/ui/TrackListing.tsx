@@ -25,6 +25,7 @@ export interface Track {
   genre?: string;
   mood?: string;
   artUrl?: string;
+  cover?: string;
   src?: string;
   stems?: {
     full?: string;
@@ -81,6 +82,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
         title: track.title,
         artist: track.artist,
         artUrl: track.artUrl,
+        cover: track.cover,
         key: track.key,
         energy: track.energy,
         stems: track.stems,
@@ -117,7 +119,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
           <p className="text-sm text-white/60">{track.artist}</p>
         </div>
         {track.artUrl && (
-          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
+          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10 shrink-0">
             <Image
               src={track.artUrl}
               alt={track.title}

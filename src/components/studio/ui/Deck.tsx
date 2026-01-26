@@ -22,6 +22,7 @@ import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';
 import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
+import { StateBadge } from '@/components/ui/StateBadge';
 
 import { useComplexityMode } from '@/contexts/ComplexityModeContext';
 
@@ -401,6 +402,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${deckColor}`} />
           <h2 className="text-lg font-black uppercase font-mono">{deckLabel}</h2>
+          <StateBadge type={deck.isPlaying ? 'playing' : 'idle'} />
         </div>
         {trackData && (
           <div
@@ -445,7 +447,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
           <div className="flex flex-col items-center gap-5">
             <JogWheel
-              artworkUrl={trackData.artUrl}
+              artworkUrl={trackData.cover || trackData.artUrl}
               title={trackData.title}
               progress={progress}
               isPlaying={deck.isPlaying}
@@ -462,7 +464,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
               {['HOT CUE 1', 'HOT CUE 2', 'HOT CUE 3', 'HOT CUE 4'].map((pad) => (
                 <button
                   key={pad}
-                  className="py-3 rounded-lg bg-gradient-to-b from-[#0f1118] to-[#07080e] border border-white/10 text-xs font-mono uppercase tracking-[0.24em] hover:border-studio-cyan/50 transition-colors"
+                  className="py-3 rounded-lg bg-linear-to-b from-[#0f1118] to-[#07080e] border border-white/10 text-xs font-mono uppercase tracking-[0.24em] hover:border-studio-cyan/50 transition-colors"
                 >
                   {pad}
                 </button>
@@ -555,7 +557,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
             <div className="flex items-center justify-center gap-3 mt-auto flex-wrap">
               <motion.button
                 onClick={() => handleSeek(-10)}
-                className="p-3 rounded-xl bg-gradient-to-b from-[#1f1f1f] to-[#0a0a0a] border border-white/10 hover:border-studio-cyan/40 transition-colors"
+                className="p-3 rounded-xl bg-linear-to-b from-[#1f1f1f] to-obsidian-900 border border-white/10 hover:border-studio-cyan/40 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -565,7 +567,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
               {deck.isPlaying ? (
                 <motion.button
                   onClick={handlePause}
-                  className="p-5 rounded-2xl bg-gradient-to-b from-studio-purple to-[#3b0f6e] text-white font-black uppercase shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                  className="p-5 rounded-2xl bg-linear-to-b from-studio-purple to-[#3b0f6e] text-white font-black uppercase shadow-[0_0_20px_rgba(168,85,247,0.4)]"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -574,7 +576,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
               ) : (
                 <motion.button
                   onClick={handlePlay}
-                  className="p-5 rounded-2xl bg-gradient-to-b from-studio-cyan to-[#0b5d66] text-white font-black uppercase shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                  className="p-5 rounded-2xl bg-linear-to-b from-studio-cyan to-[#0b5d66] text-white font-black uppercase shadow-[0_0_20px_rgba(34,211,238,0.4)]"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -598,7 +600,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
 
               <motion.button
                 onClick={handleStop}
-                className="p-3 rounded-xl bg-gradient-to-b from-[#1f1f1f] to-[#0a0a0a] border border-white/10 hover:border-studio-purple/40 transition-colors"
+                className="p-3 rounded-xl bg-linear-to-b from-[#1f1f1f] to-obsidian-900 border border-white/10 hover:border-studio-purple/40 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -619,7 +621,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
 
               <motion.button
                 onClick={() => handleSeek(10)}
-                className="p-3 rounded-xl bg-gradient-to-b from-[#1f1f1f] to-[#0a0a0a] border border-white/10 hover:border-studio-cyan/40 transition-colors"
+                className="p-3 rounded-xl bg-linear-to-b from-[#1f1f1f] to-obsidian-900 border border-white/10 hover:border-studio-cyan/40 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

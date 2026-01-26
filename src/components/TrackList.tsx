@@ -42,7 +42,7 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
 
   if (isImagePath(coverArt)) {
     return (
-      <div className={`relative overflow-hidden rounded-md border border-white/10 flex-shrink-0 ${className || ""}`}>
+      <div className={`relative overflow-hidden rounded-md border border-white/10 shrink-0 ${className || ""}`}>
         <Image
           src={coverArt}
           alt="Track cover"
@@ -58,7 +58,7 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
     );
   }
   return (
-    <div className={`rounded-md bg-gradient-to-r ${coverArt} flex-shrink-0 border border-white/10 ${className || ""}`} />
+    <div className={`rounded-md bg-linear-to-r ${coverArt} shrink-0 border border-white/10 ${className || ""}`} />
   );
 };
 
@@ -177,7 +177,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
           </>
         ) : (
           <motion.div
-            className={`w-full h-full bg-gradient-to-r ${track.coverArt}`}
+            className={`w-full h-full bg-linear-to-r ${track.coverArt}`}
             whileHover={{ scale: 1.08, y: -4 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
@@ -185,7 +185,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
         {/* Dark-to-Bright Gradient Overlay on Hover */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"
+          className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"
           initial={false}
         />
 
@@ -234,7 +234,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
         {/* Metadata Tooltip on Hover */}
         <motion.div
-          className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-40"
+          className="absolute bottom-0 left-0 right-0 p-3 bg-linear-to-t from-black/95 via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-40"
           initial={false}
         >
           <div className="text-white">

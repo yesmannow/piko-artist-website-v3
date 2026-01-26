@@ -1,10 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useEffect, useCallback } from 'react';
 import type { DeckProps } from "@/components/deck/types";
+import { JogArtwork, type JogArtworkHandle } from '@/components/ui/JogArtwork';
+import { usePerformanceMode } from '@/hooks/usePerformanceMode';
 
 export function DeckDesktop(props: DeckProps) {
-  const { deckId, isFocused, onFocus, isPlaying, onPlay, onPause } = props;
+  const { deckId, isFocused, onFocus, isPlaying, onPlay, onPause, track } = props;
+  const jogRef = useRef<JogArtworkHandle | null>(null);
+  const perf = usePerformanceMode();
+
+  // Rotate while playing, stop when paused
+  useEffect(() => {
+    if (!jogRef.current) return;
+    jogRef.current.setSpinning(!!isPlaying);
+  }, [isPlaying]);
+
+  const handleScratch = useCallback((angle: number) => {
+    // Could emit custom event or handle scratching logic here
+    console.log(`Scratch on Deck ${deckId}: ${angle}°`);
+  }, [deckId]);
 
   return (
     <section
@@ -28,7 +43,17 @@ export function DeckDesktop(props: DeckProps) {
       </header>
 
       <div className="deck-body">
-        <div className="jog-wheel-large" role="application" aria-label={`Jog wheel ${deckId}`} tabIndex={0} />
+        <JogArtwork
+          ref={jogRef}
+          src={track?.cover}
+          size={360}
+          performanceMode={perf}
+          energy={track?.energy ?? 0}
+          trackTitle={track?.title}
+          trackArtist={track?.artist}
+          alt={`${track?.title || 'Track'} cover`}
+          onScratch={handleScratch}
+        />
 
         <div className="waveform-full" role="img" aria-label={`Waveform for deck ${deckId}`} />
 

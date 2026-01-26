@@ -64,8 +64,8 @@ export function JogWheel({
       onClick={disabled ? undefined : onClick}
       data-no-swipe="true"
     >
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#050507] via-[#0b0c11] to-[#050507] border border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]" />
-      <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-b from-[#0f1016] via-[#090a0f] to-[#0f1016] shadow-[inset_0_12px_32px_rgba(0,0,0,0.55)]" />
+      <div className="absolute inset-0 rounded-full bg-linear-to-br from-[#050507] via-[#0b0c11] to-[#050507] border border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]" />
+      <div className="absolute inset-2 rounded-full border border-white/5 bg-linear-to-b from-[#0f1016] via-[#090a0f] to-[#0f1016] shadow-[inset_0_12px_32px_rgba(0,0,0,0.55)]" />
       <div
         className="absolute inset-4 rounded-full bg-[#040507]"
         style={{
@@ -105,7 +105,7 @@ export function JogWheel({
         />
       </svg>
 
-      <div className="absolute inset-9 rounded-full border border-white/5 bg-gradient-to-br from-[#0e1118] via-[#0a0b12] to-[#07070c] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
+      <div className="absolute inset-9 rounded-full border border-white/5 bg-linear-to-br from-[#0e1118] via-[#0a0b12] to-[#07070c] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
         {artworkUrl ? (
           <motion.div
             className="absolute inset-0"
@@ -126,7 +126,7 @@ export function JogWheel({
             />
           </motion.div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#090b12] via-[#0c0d15] to-[#05060b]">
+          <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-[#090b12] via-[#0c0d15] to-[#05060b]">
             <div className="w-20 h-20 rounded-full border border-dashed border-white/10 flex items-center justify-center">
               <div className="text-xs font-mono uppercase tracking-[0.3em] text-white/40">Load</div>
             </div>
@@ -136,7 +136,7 @@ export function JogWheel({
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08),transparent_45%)]" />
       </div>
 
-      <div className="absolute inset-16 rounded-full border border-white/5 bg-gradient-to-br from-[#0a0c12] to-[#05060a] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
+      <div className="absolute inset-16 rounded-full border border-white/5 bg-linear-to-br from-[#0a0c12] to-[#05060a] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 14px ${accent}` }} />
       </div>

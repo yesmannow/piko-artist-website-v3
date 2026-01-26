@@ -11,6 +11,7 @@ export interface DeckState {
     title: string;
     artist: string;
     artUrl?: string;
+    cover?: string;
     key?: string;
     scale?: string;
     energy?: number;

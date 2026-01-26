@@ -1,11 +1,26 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import type { DeckProps } from "@/components/deck/types";
 import { useStudioGestures } from "@/hooks/useStudioGestures";
+import { JogArtwork, type JogArtworkHandle } from '@/components/ui/JogArtwork';
+import { usePerformanceMode } from '@/hooks/usePerformanceMode';
 
-export function DeckMobile({ deckId, isFocused, onFocus, isPlaying, onPlay, onPause }: DeckProps) {
+export function DeckMobile({ deckId, isFocused, onFocus, isPlaying, onPlay, onPause, track }: DeckProps) {
   const rootRef = useRef<HTMLElement | null>(null);
+  const jogRef = useRef<JogArtworkHandle | null>(null);
+  const perf = usePerformanceMode();
+
+  // Rotate while playing, stop when paused
+  useEffect(() => {
+    if (!jogRef.current) return;
+    jogRef.current.setSpinning(!!isPlaying);
+  }, [isPlaying]);
+
+  const handleScratch = useCallback((angle: number) => {
+    // Could emit custom event or handle scratching logic here
+    console.log(`Scratch on Deck ${deckId}: ${angle}°`);
+  }, [deckId]);
 
   useStudioGestures({
     elementRef: rootRef,
@@ -50,7 +65,17 @@ export function DeckMobile({ deckId, isFocused, onFocus, isPlaying, onPlay, onPa
 
       <div className="deck-body">
         <div className="waveform-large" role="img" aria-label={`Waveform for deck ${deckId}`} />
-        <div className="touch-jog" role="application" aria-label={`Jog wheel ${deckId}`} tabIndex={0} />
+        <JogArtwork
+          ref={jogRef}
+          src={track?.cover}
+          size={220}
+          performanceMode={perf}
+          energy={track?.energy ?? 0}
+          trackTitle={track?.title}
+          trackArtist={track?.artist}
+          alt={`${track?.title || 'Track'} cover`}
+          onScratch={handleScratch}
+        />
       </div>
 
       <div className="deck-bottom-sheet" role="dialog" aria-label="Performance controls">

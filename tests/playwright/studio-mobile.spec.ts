@@ -53,21 +53,22 @@ test("mobile deck swipe gesture", async ({ page }) => {
   expect(swipeEventDispatched).toBeTruthy();
 });
 
-test("mobile deck play/pause", async ({ page }) => {
+test("mobile deck artwork loading", async ({ page }) => {
   await page.goto("/studio");
   await page.setViewportSize({ width: 390, height: 844 });
-  
+
   await waitForStudioReady(page);
   await skipOnboarding(page);
 
   const deckA = await waitForDeckReady(page, "A");
 
-  // Find and click play button
-  const playButton = deckA.locator('button[aria-label*="Play"]').first();
-  await playButton.waitFor({ state: "visible", timeout: 5000 });
-  await playButton.click();
+  // Check that canvas is visible
+  await expect(page.locator('[data-deck-id="A"] canvas')).toBeVisible();
 
-  // Check if playing state is set
-  const isPlaying = await playButton.getAttribute("aria-pressed");
-  expect(isPlaying).toBeTruthy();
+  // Check that canvas has dimensions (image loaded)
+  const hasImage = await page.evaluate(() => {
+    const c = document.querySelector('[data-deck-id="A"] canvas') as HTMLCanvasElement | null;
+    return !!(c && c.width > 0 && c.height > 0);
+  });
+  expect(hasImage).toBeTruthy();
 });

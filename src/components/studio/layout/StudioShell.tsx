@@ -16,6 +16,7 @@ import { ShortcutsOverlay } from "@/components/ui/ShortcutsOverlay";
 import { DiagnosticsPanel } from "@/components/dev/DiagnosticsPanel";
 import { SmartSuggestions } from "@/components/ui/SmartSuggestions";
 import { usePerformanceHeuristics } from "@/hooks/usePerformanceHeuristics";
+import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 
 type StudioShellProps = {
   masterProgress: number;
@@ -29,10 +30,19 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
   const setPerformanceMode = useStudioStore((state) => state.setPerformanceMode);
   const isAppActive = useStore((state) => state.isAppActive);
   const perfSampledRef = useRef(false);
+  const performanceHeuristicsMode = usePerformanceMode();
   const show3DEffective = show3D && performanceMode !== "low";
   
   // Monitor performance and auto-adjust
   usePerformanceHeuristics();
+
+  useEffect(() => {
+    if (performanceHeuristicsMode === 'low' && performanceMode !== 'low') {
+      setPerformanceMode('low');
+    } else if (performanceHeuristicsMode === 'high' && performanceMode === 'low') {
+      setPerformanceMode('balanced'); // or high
+    }
+  }, [performanceHeuristicsMode, performanceMode, setPerformanceMode]);
 
   useEffect(() => {
     if (perfSampledRef.current || performanceMode !== "balanced") return;

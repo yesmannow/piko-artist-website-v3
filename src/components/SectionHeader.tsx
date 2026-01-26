@@ -49,7 +49,7 @@ export function SectionHeader({ title, subtitle, className = "" }: SectionHeader
           whileHover={{ scale: 1.05 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <span className="relative z-10 bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+          <span className="relative z-10 bg-linear-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
             {title}
           </span>
 
@@ -65,17 +65,17 @@ export function SectionHeader({ title, subtitle, className = "" }: SectionHeader
               `,
             }}
           >
-            <span className="bg-gradient-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-neon-pink to-neon-green bg-clip-text text-transparent">
               {title}
             </span>
           </motion.span>
 
           {/* Drip effect on hover */}
           <motion.div
-            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-0 bg-gradient-to-b from-neon-pink to-transparent opacity-0 group-hover:opacity-100 group-hover:h-8 transition-all duration-500"
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-0 bg-linear-to-b from-neon-pink to-transparent opacity-0 group-hover:opacity-100 group-hover:h-8 transition-all duration-500"
           />
           <motion.div
-            className="absolute -bottom-2 left-1/2 translate-x-2 w-1 h-0 bg-gradient-to-b from-neon-green to-transparent opacity-0 group-hover:opacity-100 group-hover:h-6 transition-all duration-500 delay-100"
+            className="absolute -bottom-2 left-1/2 translate-x-2 w-1 h-0 bg-linear-to-b from-neon-green to-transparent opacity-0 group-hover:opacity-100 group-hover:h-6 transition-all duration-500 delay-100"
           />
         </motion.h2>
       )}

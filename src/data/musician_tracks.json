@@ -6,7 +6,8 @@
     "bpm": 90,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/amor-sincero.mp3"
+    "src": "/audio/tracks/amor-sincero.mp3",
+    "cover": "/images/tracks/amor-sincero.jpg"
   },
   {
     "trackId": "amores-perdidos.mp3",
@@ -15,7 +16,8 @@
     "bpm": 105,
     "energy": 0.6,
     "key": "Dm",
-    "src": "/audio/tracks/amores-perdidos.mp3"
+    "src": "/audio/tracks/amores-perdidos.mp3",
+    "cover": "/images/tracks/amores-perdidos.jpg"
   },
   {
     "trackId": "bungalow.mp3",
@@ -24,7 +26,8 @@
     "bpm": 120,
     "energy": 0.7,
     "key": "F",
-    "src": "/audio/tracks/bungalow.mp3"
+    "src": "/audio/tracks/bungalow.mp3",
+    "cover": "/images/tracks/bungalow.jpg"
   },
   {
     "trackId": "corazon-y-mente.mp3",
@@ -33,7 +36,8 @@
     "bpm": 98,
     "energy": 0.4,
     "key": "Cm",
-    "src": "/audio/tracks/corazon-y-mente.mp3"
+    "src": "/audio/tracks/corazon-y-mente.mp3",
+    "cover": "/images/tracks/corazon-y-mente.jpg"
   },
   {
     "trackId": "crussin.mp3",
@@ -42,7 +46,8 @@
     "bpm": 110,
     "energy": 0.8,
     "key": "Gm",
-    "src": "/audio/tracks/crussin.mp3"
+    "src": "/audio/tracks/crussin.mp3",
+    "cover": "/images/tracks/crussin.jpg"
   },
   {
     "trackId": "dejate-llevar.mp3",
@@ -51,7 +56,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/dejate-llevar.mp3"
+    "src": "/audio/tracks/dejate-llevar.mp3",
+    "cover": "/images/tracks/dejate-llevar.jpg"
   },
   {
     "trackId": "el-don.mp3",
@@ -60,7 +66,8 @@
     "bpm": 92,
     "energy": 0.6,
     "key": "Dm",
-    "src": "/audio/tracks/el-don.mp3"
+    "src": "/audio/tracks/el-don.mp3",
+    "cover": "/images/tracks/el-don.jpg"
   },
   {
     "trackId": "f-7.mp3",
@@ -69,7 +76,8 @@
     "bpm": 118,
     "energy": 0.75,
     "key": "Fm",
-    "src": "/audio/tracks/f-7.mp3"
+    "src": "/audio/tracks/f-7.mp3",
+    "cover": "/images/tracks/f-7.jpg"
   },
   {
     "trackId": "ganja.mp3",
@@ -78,7 +86,8 @@
     "bpm": 100,
     "energy": 0.65,
     "key": "Em",
-    "src": "/audio/tracks/ganja.mp3"
+    "src": "/audio/tracks/ganja.mp3",
+    "cover": "/images/tracks/ganja.jpg"
   },
   {
     "trackId": "12_05.mp3",
@@ -87,7 +96,8 @@
     "bpm": 115,
     "energy": 0.6,
     "key": "Dm",
-    "src": "/audio/tracks/12_05.mp3"
+    "src": "/audio/tracks/12_05.mp3",
+    "cover": "/images/tracks/12_05.jpg"
   },
   {
     "trackId": "falle.mp3",
@@ -96,7 +106,8 @@
     "bpm": 95,
     "energy": 0.55,
     "key": "Bm",
-    "src": "/audio/tracks/falle.mp3"
+    "src": "/audio/tracks/falle.mp3",
+    "cover": "/images/tracks/falle.jpg"
   },
   {
     "trackId": "entre-humos.mp3",
@@ -105,7 +116,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/entre-humos.mp3"
+    "src": "/audio/tracks/entre-humos.mp3",
+    "cover": "/images/tracks/entre-humos.jpg"
   },
   {
     "trackId": "gunster.mp3",
@@ -114,7 +126,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/gunster.mp3"
+    "src": "/audio/tracks/gunster.mp3",
+    "cover": "/images/tracks/gunster.jpg"
   },
   {
     "trackId": "im-sorry.mp3",
@@ -123,7 +136,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/im-sorry.mp3"
+    "src": "/audio/tracks/im-sorry.mp3",
+    "cover": "/images/tracks/im-sorry.jpg"
   },
   {
     "trackId": "jardin-de-rosas.mp3",
@@ -132,7 +146,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/jardin-de-rosas.mp3"
+    "src": "/audio/tracks/jardin-de-rosas.mp3",
+    "cover": "/images/tracks/jardin-de-rosas.jpg"
   },
   {
     "trackId": "los-5.mp3",
@@ -141,7 +156,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/los-5.mp3"
+    "src": "/audio/tracks/los-5.mp3",
+    "cover": "/images/tracks/los-5.jpg"
   },
   {
     "trackId": "me-cuentan.mp3",
@@ -150,7 +166,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/me-cuentan.mp3"
+    "src": "/audio/tracks/me-cuentan.mp3",
+    "cover": "/images/tracks/me-cuentan.jpg"
   },
   {
     "trackId": "noches-enteras.mp3",
@@ -159,7 +176,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/noches-enteras.mp3"
+    "src": "/audio/tracks/noches-enteras.mp3",
+    "cover": "/images/tracks/noches-enteras.jpg"
   },
   {
     "trackId": "party.mp3",
@@ -168,7 +186,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/party.mp3"
+    "src": "/audio/tracks/party.mp3",
+    "cover": "/images/tracks/party.jpg"
   },
   {
     "trackId": "quejas.mp3",
@@ -177,7 +196,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/quejas.mp3"
+    "src": "/audio/tracks/quejas.mp3",
+    "cover": "/images/tracks/quejas.jpg"
   },
   {
     "trackId": "sentimientos.mp3",
@@ -186,7 +206,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/sentimientos.mp3"
+    "src": "/audio/tracks/sentimientos.mp3",
+    "cover": "/images/tracks/sentimientos.jpg"
   },
   {
     "trackId": "sin-rencores.mp3",
@@ -195,7 +216,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/sin-rencores.mp3"
+    "src": "/audio/tracks/sin-rencores.mp3",
+    "cover": "/images/tracks/sin-rencores.jpg"
   },
   {
     "trackId": "te-perdi.mp3",
@@ -204,7 +226,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/te-perdi.mp3"
+    "src": "/audio/tracks/te-perdi.mp3",
+    "cover": "/images/tracks/te-perdi.jpg"
   },
   {
     "trackId": "te-prometo.mp3",
@@ -213,7 +236,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/te-prometo.mp3"
+    "src": "/audio/tracks/te-prometo.mp3",
+    "cover": "/images/tracks/te-prometo.jpg"
   },
   {
     "trackId": "tortas-de-jamon.mp3",
@@ -222,7 +246,8 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/tortas-de-jamon.mp3"
+    "src": "/audio/tracks/tortas-de-jamon.mp3",
+    "cover": "/images/tracks/tortas-de-jamon.jpg"
   },
   {
     "trackId": "un-dia-mas.mp3",
@@ -231,6 +256,7 @@
     "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "src": "/audio/tracks/un-dia-mas.mp3"
+    "src": "/audio/tracks/un-dia-mas.mp3",
+    "cover": "/images/tracks/un-dia-mas.jpg"
   }
 ]

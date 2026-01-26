@@ -1,5 +1,15 @@
 export type DeckVariant = "desktop" | "tablet" | "mobile";
 
+export type TrackData = {
+  trackId: string;
+  title: string;
+  artist: string;
+  bpm: number;
+  energy?: number;
+  cover?: string;
+  artUrl?: string;
+};
+
 export type DeckProps = {
   deckId: "A" | "B";
   variant: DeckVariant;
@@ -10,6 +20,7 @@ export type DeckProps = {
   isPlaying?: boolean;
   onPlay?: () => void;
   onPause?: () => void;
+  track?: TrackData;
 };
 
 export type DeckRenderContext = {

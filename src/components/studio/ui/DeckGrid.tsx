@@ -67,7 +67,7 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
     <GlassPanel
       depth="mixer"
       accentColor={deckId === 'A' ? '#22d3ee' : '#a855f7'}
-      className="w-full bg-gradient-to-b from-[#0b0c12cc] to-[#06070ccc] rounded-xl p-3 flex flex-col items-center gap-3 backdrop-blur-[20px]"
+      className="w-full bg-linear-to-b from-[#0b0c12cc] to-[#06070ccc] rounded-xl p-3 flex flex-col items-center gap-3 backdrop-blur-[20px]"
     >
       <div className="w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.28em] text-white/50">
         <span>{stripLabel}</span>
@@ -152,7 +152,7 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
                 }}
                 className={`px-2 py-1 rounded-md text-[10px] font-mono uppercase tracking-widest border transition-colors ${
                   isMuted
-                    ? 'bg-[#1a1a1a] border-white/10 text-white/40'
+                    ? 'bg-obsidian-700 border-white/10 text-white/40'
                     : deckId === 'A'
                       ? 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan'
                       : 'bg-studio-purple/20 border-studio-purple text-studio-purple'
@@ -234,14 +234,14 @@ export function DeckGrid() {
           />
           <button
             onClick={handleRecordToggle}
-            className="relative w-14 h-14 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.6)]"
+            className="relative w-14 h-14 rounded-full bg-obsidian-900 border border-white/10 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.6)]"
             aria-label={isRecording ? 'Stop recording' : 'Start recording'}
           >
             <span
               className={`w-3.5 h-3.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-red-500/40'}`}
             />
             <span className="absolute inset-1 rounded-full border border-white/10 pointer-events-none" />
-            <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+            <span className="absolute inset-0 rounded-full bg-linear-to-b from-white/5 to-transparent pointer-events-none" />
           </button>
         </div>
         <Crossfader />
@@ -309,14 +309,14 @@ export function DeckGrid() {
                   />
                   <button
                     onClick={handleRecordToggle}
-                    className="relative w-14 h-14 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.6)]"
+                    className="relative w-14 h-14 rounded-full bg-obsidian-900 border border-white/10 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.6)]"
                     aria-label={isRecording ? 'Stop recording' : 'Start recording'}
                   >
                     <span
                       className={`w-3.5 h-3.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-red-500/40'}`}
                     />
                     <span className="absolute inset-1 rounded-full border border-white/10 pointer-events-none" />
-                    <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+                    <span className="absolute inset-0 rounded-full bg-linear-to-b from-white/5 to-transparent pointer-events-none" />
                   </button>
                 </div>
                 <Crossfader />

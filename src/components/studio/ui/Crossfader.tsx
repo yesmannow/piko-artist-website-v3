@@ -63,7 +63,7 @@ export function Crossfader() {
           dragMomentum={false}
           style={{ x }}
           onDrag={handleDrag}
-          className="absolute w-8 h-8 bg-gradient-to-br from-studio-cyan to-studio-purple rounded-full shadow-lg cursor-grab active:cursor-grabbing flex items-center justify-center"
+          className="absolute w-8 h-8 bg-linear-to-br from-studio-cyan to-studio-purple rounded-full shadow-lg cursor-grab active:cursor-grabbing flex items-center justify-center"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >

@@ -78,7 +78,7 @@ function CoverArt({
 }) {
   return (
     <div
-      className={`relative flex-shrink-0 rounded overflow-hidden bg-zinc-800 ${className || ""}`}
+      className={`relative shrink-0 rounded overflow-hidden bg-zinc-800 ${className || ""}`}
     >
       {isImagePath(coverArt) ? (
         <Image
@@ -89,7 +89,7 @@ function CoverArt({
           sizes="40px"
         />
       ) : (
-        <div className={`w-full h-full bg-gradient-to-r ${coverArt}`} />
+        <div className={`w-full h-full bg-linear-to-r ${coverArt}`} />
       )}
     </div>
   );
@@ -124,7 +124,7 @@ function TrackHero({
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mb-8 md:mb-12 rounded-xl overflow-hidden border-2 border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black"
+      className="relative mb-8 md:mb-12 rounded-xl overflow-hidden border-2 border-zinc-800 bg-linear-to-br from-zinc-900 via-zinc-950 to-black"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 p-6 md:p-8 lg:p-12">
         {/* Left: Large Cover Art */}
@@ -144,7 +144,7 @@ function TrackHero({
                 priority
               />
             ) : (
-              <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+              <div className={`w-full h-full bg-linear-to-r ${track.coverArt}`} />
             )}
             {/* Animated overlay when playing */}
             <AnimatePresence>
@@ -467,7 +467,7 @@ function CardViewItem({
           </motion.div>
         ) : (
           <motion.div
-            className={`w-full h-full bg-gradient-to-r ${track.coverArt}`}
+            className={`w-full h-full bg-linear-to-r ${track.coverArt}`}
             whileHover={{ scale: 1.08, y: -4 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
@@ -587,7 +587,7 @@ function CompactViewItem({
       }`}
     >
       {/* Track Number / Play Icon */}
-      <div className="w-6 flex-shrink-0 flex items-center justify-center">
+      <div className="w-6 shrink-0 flex items-center justify-center">
         {isActive ? (
           <div className="w-4 h-4 bg-toxic-lime rounded-full animate-pulse" />
         ) : (
@@ -604,7 +604,7 @@ function CompactViewItem({
       </div>
 
       {/* Track Art - Small */}
-      <div className="relative w-10 h-10 flex-shrink-0 rounded overflow-hidden bg-zinc-800">
+      <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden bg-zinc-800">
         {isImagePath(track.coverArt) ? (
           <Image
             src={track.coverArt}
@@ -614,7 +614,7 @@ function CompactViewItem({
             sizes="40px"
           />
         ) : (
-          <div className={`w-full h-full bg-gradient-to-r ${track.coverArt}`} />
+          <div className={`w-full h-full bg-linear-to-r ${track.coverArt}`} />
         )}
       </div>
 
@@ -634,7 +634,7 @@ function CompactViewItem({
 
       {/* Duration */}
       {duration > 0 && (
-        <div className="flex-shrink-0 text-zinc-400 text-xs font-industrial">
+        <div className="shrink-0 text-zinc-400 text-xs font-industrial">
           {formatDuration(duration)}
         </div>
       )}
@@ -699,7 +699,7 @@ export default function MusicPage() {
   const featuredTrack = currentTrack || audioTracks[0];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#E0E0E0]">
+    <div className="min-h-screen bg-obsidian-950 text-[#E0E0E0]">
       <section className="relative py-12 md:py-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}

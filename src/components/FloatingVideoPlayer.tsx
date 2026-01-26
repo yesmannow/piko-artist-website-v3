@@ -25,7 +25,7 @@ export function FloatingVideoPlayer() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-100 flex items-center justify-center p-4"
           data-modal-open="true"
         >
           {/* Backdrop */}
@@ -88,11 +88,11 @@ export function FloatingVideoPlayer() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ duration: 0.3 }}
-          className="fixed bottom-24 right-4 z-[90] w-[320px] md:w-[400px] bg-black/95 backdrop-blur-md rounded-lg overflow-hidden shadow-2xl border-2 border-white/10"
+          className="fixed bottom-24 right-4 z-90 w-[320px] md:w-[400px] bg-black/95 backdrop-blur-md rounded-lg overflow-hidden shadow-2xl border-2 border-white/10"
         >
           <div className="flex gap-3 p-3">
             {/* Thumbnail */}
-            <div className="relative w-24 h-16 flex-shrink-0 rounded overflow-hidden bg-black">
+            <div className="relative w-24 h-16 shrink-0 rounded overflow-hidden bg-black">
               <Image
                 src={getYouTubeThumbnailProxy(video.id, 'mqdefault')}
                 alt={video.title}
@@ -103,7 +103,7 @@ export function FloatingVideoPlayer() {
               {/* Play indicator */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                 <div className="w-6 h-6 rounded-full bg-white/90 flex items-center justify-center">
-                  <div className="w-0 h-0 border-l-[6px] border-l-black border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-0.5" />
+                  <div className="w-0 h-0 border-l-[6px] border-l-black border-t-4 border-t-transparent border-b-4 border-b-transparent ml-0.5" />
                 </div>
               </div>
             </div>

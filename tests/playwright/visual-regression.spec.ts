@@ -37,24 +37,22 @@ test.describe("Visual Regression - Critical States", () => {
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test("pad press animation", async ({ page }) => {
+  test("deck with artwork", async ({ page }) => {
     await page.goto("/studio");
     await page.setViewportSize({ width: 1440, height: 900 });
     await waitForStudioReady(page);
     await skipOnboarding(page);
 
-    const pad = page.locator(".pad").first();
-    if ((await pad.count()) > 0) {
-      await pad.hover();
-      await page.waitForTimeout(100);
-      
-      // Check for pressed class when clicking
-      await pad.click({ force: true });
-      await page.waitForTimeout(100);
-      
-      const hasPressedClass = await pad.evaluate((el) => el.classList.contains("pad--pressed"));
-      // Note: pressed state might be very brief, so we just verify the class exists
-      expect(typeof hasPressedClass).toBe("boolean");
-    }
+    const deckA = page.locator('[data-deck-id="A"]');
+    await deckA.waitFor({ state: "visible", timeout: 10000 });
+
+    // Wait for artwork to load
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector('[data-deck-id="A"] canvas') as HTMLCanvasElement | null;
+      return canvas && canvas.width > 0 && canvas.height > 0;
+    }, { timeout: 5000 });
+
+    // Take screenshot of deck with artwork
+    await expect(deckA).toHaveScreenshot('deck-with-artwork.png', { maxDiffPixels: 100 });
   });
 });
