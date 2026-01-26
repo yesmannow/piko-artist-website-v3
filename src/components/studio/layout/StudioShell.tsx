@@ -13,7 +13,7 @@ import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { ComplexityModeProvider } from "@/contexts/ComplexityModeContext";
 import { ShortcutsOverlay } from "@/components/ui/ShortcutsOverlay";
-import { DiagnosticsPanel } from "@/components/ui/DiagnosticsPanel";
+import { DiagnosticsPanel } from "@/components/dev/DiagnosticsPanel";
 import { SmartSuggestions } from "@/components/ui/SmartSuggestions";
 import { usePerformanceHeuristics } from "@/hooks/usePerformanceHeuristics";
 
@@ -79,7 +79,7 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
         <StudioOnboarding />
         
         <ShortcutsOverlay />
-        <DiagnosticsPanel />
+        {process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true' ? <DiagnosticsPanel /> : null}
         <SmartSuggestions />
       </main>
     </ComplexityModeProvider>
