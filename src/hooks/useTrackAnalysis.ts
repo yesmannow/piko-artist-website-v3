@@ -12,6 +12,7 @@
  */
 
 import { useRef, useCallback, useEffect, useState } from 'react';
+import { useStore } from '@/store/useStore';
 import type { AnalysisResult } from '../workers/analysis.worker';
 
 export interface UseTrackAnalysisReturn {
@@ -29,6 +30,8 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
   const workerRef = useRef<Worker | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pendingRejectRef = useRef<((reason?: unknown) => void) | null>(null);
+  const isAppActive = useStore((state) => state.isAppActive);
 
   /**
    * Initialize the Web Worker
@@ -142,6 +145,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
       // This transfers ownership of the ArrayBuffer to the worker
       // with zero-copy performance (critical for large audio files)
       return new Promise<AnalysisResult>((resolve, reject) => {
+        pendingRejectRef.current = reject;
         // Set up message handler for worker response
         const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
         const handleMessage = (event: MessageEvent) => {
@@ -156,6 +160,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
 
           worker.removeEventListener('message', handleMessage);
           setIsAnalyzing(false);
+          pendingRejectRef.current = null;
 
           if (success) {
             console.log('[useTrackAnalysis] Analysis complete:', result);
@@ -183,6 +188,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
       });
     } catch (error) {
       setIsAnalyzing(false);
+      pendingRejectRef.current = null;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMessage);
       console.error('[useTrackAnalysis] Error during analysis:', error);
@@ -198,6 +204,18 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
       terminateWorker();
     };
   }, [terminateWorker]);
+
+  // Suspend worker when app is inactive
+  useEffect(() => {
+    if (isAppActive) return;
+    if (isAnalyzing && pendingRejectRef.current) {
+      pendingRejectRef.current(new Error('Analysis paused while inactive'));
+    }
+    setIsAnalyzing(false);
+    setError((prev) => prev || 'Analysis paused while inactive');
+    terminateWorker();
+    pendingRejectRef.current = null;
+  }, [isAppActive, isAnalyzing, terminateWorker]);
 
   return {
     analyze,

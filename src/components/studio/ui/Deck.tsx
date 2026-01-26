@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
-import { useStore } from '@/store/useStore';
+import { useStore, type DeckState } from '@/store/useStore';
 import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyaniteRecommendations';
 import { useStemGenerator } from '@/hooks/useStemGenerator';
 import { Play, Pause, Square, SkipBack, SkipForward, Wand2, Loader2, Scissors } from 'lucide-react';
@@ -17,16 +17,20 @@ import { RecommendationsPopover } from './RecommendationsPopover';
 import { StemControls } from './StemControls';
 import { JogWheel } from './JogWheel';
 import { WaveformMini } from './WaveformMini';
+import { GlassPanel } from '@/components/ui/GlassPanel';
 
 interface DeckProps {
   deckId: 'A' | 'B';
 }
 
 export function Deck({ deckId }: DeckProps) {
-  const { play, pause, stop, seekTo, getPlaybackPosition, getDeckDuration, loadStems, syncToBpm } = useAudioEngine();
-  const deck = useStore((state) => state[deckId === 'A' ? 'deckA' : 'deckB']);
+  const { play, pause, stop, seekTo, getPlaybackPosition, getDeckDuration, loadStems, syncToBpm, triggerTapeStop } = useAudioEngine();
+  const deckKey: 'deckA' | 'deckB' = deckId === 'A' ? 'deckA' : 'deckB';
+  const deck = useStore((state) => state[deckKey]) as DeckState;
+  const isAppActive = useStore((state) => state.isAppActive);
   const masterBpm = useStore((state) => state.masterBpm);
   const setDeckPlaying = useStore((state) => state.setDeckPlaying);
+  const setKeyLock = useStore((state) => state.setKeyLock);
   const { getRecommendations, loading: recommendationsLoading } = useCyaniteRecommendations();
   const { generateStems, isProcessing: isGeneratingStems, progress: stemProgress, error: stemError, isConfigured: audioShakeConfigured } = useStemGenerator();
   
@@ -34,6 +38,7 @@ export function Deck({ deckId }: DeckProps) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [hasStems, setHasStems] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [deckDuration, setDeckDuration] = useState(0);
   const scratchState = useRef<{
     centerX: number;
     centerY: number;
@@ -45,18 +50,21 @@ export function Deck({ deckId }: DeckProps) {
   const deckColor = deckId === 'A' ? 'bg-studio-cyan' : 'bg-studio-purple';
   const jogAccent = deckId === 'A' ? '#22d3ee' : '#a855f7';
   const deckLabel = `DECK ${deckId}`;
-  const currentBpm = deck.trackData ? deck.trackData.bpm * (deck.playbackRate || 1) : null;
+  const trackData = deck.trackData as DeckState['trackData'] | null;
+  const currentBpm = trackData ? trackData.bpm * (deck.playbackRate || 1) : null;
   const isSynced =
     currentBpm !== null && Math.abs(currentBpm - masterBpm) < 0.5;
-  const energy = deck.trackData?.energy ?? 0;
+  const isKeyLockActive = deck.isKeyLockActive;
+  const energy = trackData?.energy ?? 0;
   const energyLevel = Math.min(1, Math.max(0, energy / 1.2));
   const isLoaded = deck.isLoaded;
+  const fallbackBpm = trackData ? trackData.bpm : undefined;
 
   const handleMagicWand = async () => {
-    if (!deck.trackData) return;
+    if (!trackData) return;
 
     try {
-      const recs = await getRecommendations(deck.trackData.bpm, deck.trackData.energy || 0.5);
+      const recs = await getRecommendations(trackData.bpm, trackData.energy || 0.5);
       setRecommendations(recs);
       setShowRecommendations(true);
     } catch (error) {
@@ -72,10 +80,10 @@ export function Deck({ deckId }: DeckProps) {
   };
 
   const handleSplitStems = async () => {
-    if (!deck.trackData?.url) return;
+    if (!trackData?.url) return;
 
     try {
-      const stems = await generateStems(deck.trackData.url, deck.trackData.title);
+      const stems = await generateStems(trackData.url, trackData.title);
       if (stems) {
         setHasStems(true);
         // Load stems into audio engine
@@ -108,7 +116,7 @@ export function Deck({ deckId }: DeckProps) {
   };
 
   const handleScratchStart = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!deck.trackData) return;
+    if (!trackData) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -167,27 +175,37 @@ export function Deck({ deckId }: DeckProps) {
   useEffect(() => {
     let frameId: number;
     const tick = () => {
+      if (!isAppActive) {
+        frameId = window.requestAnimationFrame(tick);
+        return;
+      }
       const duration = getDeckDuration(deckId);
       const position = getPlaybackPosition(deckId);
       const nextProgress = duration > 0 ? Math.min(1, position / duration) : 0;
       setProgress(nextProgress);
+      setDeckDuration(duration);
       frameId = window.requestAnimationFrame(tick);
     };
     frameId = window.requestAnimationFrame(tick);
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [deckId, getDeckDuration, getPlaybackPosition]);
+  }, [deckId, getDeckDuration, getPlaybackPosition, isAppActive]);
 
   return (
-    <div className="h-full flex flex-col glass-panel backdrop-blur-[20px] bg-obsidian-900/80 rounded-lg p-6 border border-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.45)]">
+    <GlassPanel
+      depth="deck"
+      intensity="high"
+      accentColor={deckId === 'A' ? '#22d3ee' : '#a855f7'}
+      className="h-full flex flex-col bg-obsidian-900/80 rounded-lg p-6"
+    >
       {/* Deck Header */}
-      <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${deckColor}`} />
           <h2 className="text-lg font-black uppercase font-mono">{deckLabel}</h2>
         </div>
-        {deck.trackData && (
+        {trackData && (
           <div
             className={`text-xs font-mono flex items-center gap-3 ${
               isSynced ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.65)]' : 'text-white/60'
@@ -195,6 +213,19 @@ export function Deck({ deckId }: DeckProps) {
           >
             {currentBpm?.toFixed(2)} BPM
             {isSynced && <span className="ml-1 text-[10px] text-white">(MT)</span>}
+            <button
+              onClick={() => setKeyLock(deckId, !isKeyLockActive)}
+              className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-[0.2em] border transition-all ${
+                isKeyLockActive
+                  ? deckId === 'A'
+                    ? 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                    : 'bg-studio-purple/20 border-studio-purple text-studio-purple shadow-[0_0_10px_rgba(168,85,247,0.5)]'
+                  : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white'
+              }`}
+              title="Master Tempo / Key Lock"
+            >
+              MT
+            </button>
             <div className="flex items-center gap-1">
               {[0, 1, 2, 3, 4].map((i) => {
                 const filled = energyLevel * 5 > i;
@@ -213,14 +244,16 @@ export function Deck({ deckId }: DeckProps) {
       </div>
 
       {/* Deck Body */}
-      {deck.trackData ? (
+      {trackData ? (
         <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
           <div className="flex flex-col items-center gap-5">
             <JogWheel
-              artworkUrl={deck.trackData.artUrl}
-              title={deck.trackData.title}
+              artworkUrl={trackData.artUrl}
+              title={trackData.title}
               progress={progress}
               isPlaying={deck.isPlaying}
+              bpm={currentBpm ?? undefined}
+              isSynced={isSynced}
               accent={jogAccent}
               loading={!isLoaded}
               onPointerDown={handleScratchStart}
@@ -243,20 +276,20 @@ export function Deck({ deckId }: DeckProps) {
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-bold text-white truncate">{deck.trackData.title}</h3>
-                <p className="text-sm text-white/60">{deck.trackData.artist}</p>
+                <h3 className="text-xl font-bold text-white truncate">{trackData.title}</h3>
+                <p className="text-sm text-white/60">{trackData.artist}</p>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-white/60">
                   <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
                     <span>BPM</span>
-                    <span className="text-white">{Math.round(deck.trackData.bpm)}</span>
+                    <span className="text-white">{Math.round(trackData.bpm)}</span>
                   </div>
                   <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
                     <span>Key</span>
-                    <span className="text-white">{deck.trackData.key || '---'}</span>
+                    <span className="text-white">{trackData.key || '---'}</span>
                   </div>
                   <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
                     <span>Energy</span>
-                    <span className="text-white">{deck.trackData.energy ? Math.round(deck.trackData.energy * 100) : '--'}%</span>
+                    <span className="text-white">{trackData.energy ? Math.round(trackData.energy * 100) : '--'}%</span>
                   </div>
                 </div>
               </div>
@@ -347,14 +380,14 @@ export function Deck({ deckId }: DeckProps) {
 
               <motion.button
                 onClick={() => syncToBpm(deckId)}
-                disabled={!deck.trackData?.bpm}
+                disabled={!trackData?.bpm}
                 className={`px-4 py-3 rounded-xl border text-xs font-mono uppercase tracking-widest transition-colors ${
                   isSynced
                     ? 'border-white/80 text-white shadow-[0_0_12px_rgba(255,255,255,0.5)]'
                     : 'border-white/10 text-white/60 hover:border-white/40 hover:text-white'
                 } disabled:opacity-40 disabled:cursor-not-allowed`}
-                whileHover={!deck.trackData?.bpm ? {} : { scale: 1.05 }}
-                whileTap={!deck.trackData?.bpm ? {} : { scale: 0.95 }}
+                whileHover={!trackData?.bpm ? {} : { scale: 1.05 }}
+                whileTap={!trackData?.bpm ? {} : { scale: 0.95 }}
               >
                 SYNC
               </motion.button>
@@ -366,6 +399,16 @@ export function Deck({ deckId }: DeckProps) {
                 whileTap={{ scale: 0.95 }}
               >
                 <Square className="w-4 h-4" />
+              </motion.button>
+
+              <motion.button
+                onClick={() => triggerTapeStop(deckId)}
+                disabled={!deck.isLoaded}
+                className="px-4 py-3 rounded-xl border border-white/12 bg-[#0c0c0f] text-xs font-mono uppercase tracking-[0.22em] text-white/80 hover:border-studio-purple/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                whileHover={!deck.isLoaded ? {} : { scale: 1.05 }}
+                whileTap={!deck.isLoaded ? {} : { scale: 0.95 }}
+              >
+                Tape Stop
               </motion.button>
 
               <motion.button
@@ -392,23 +435,27 @@ export function Deck({ deckId }: DeckProps) {
             </div>
 
             {/* Mini Timeline */}
-            {deck.trackData.url && (
+            {trackData?.url && (
               <div className="mt-4">
-                <WaveformMini
-                  url={deck.trackData.url}
-                  color={deckId === 'A' ? '#22d3ee' : '#a855f7'}
-                  beatGrid={deck.trackData.beatGrid}
-                  onSeek={(seconds) => handleSeek(seconds - getPlaybackPosition(deckId))}
-                />
-              </div>
-            )}
-          </div>
+              <WaveformMini
+                url={trackData.url}
+                color={deckId === 'A' ? '#22d3ee' : '#a855f7'}
+                beatGrid={trackData.beatGrid}
+                playhead={progress * deckDuration}
+                durationSeconds={deckDuration}
+                onSeek={(seconds) => handleSeek(seconds - getPlaybackPosition(deckId))}
+              />
+            </div>
+          )}
+        </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
           <JogWheel
             progress={0}
             isPlaying={false}
+            bpm={fallbackBpm}
+            isSynced={false}
             accent={jogAccent}
             onClick={() => {
               window.dispatchEvent(new CustomEvent('studio:open-library'));
@@ -425,6 +472,6 @@ export function Deck({ deckId }: DeckProps) {
         onClose={() => setShowRecommendations(false)}
         onLoadTrack={handleLoadRecommendation}
       />
-    </div>
+    </GlassPanel>
   );
 }

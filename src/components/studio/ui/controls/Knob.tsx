@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface KnobProps {
   label: string;
@@ -25,6 +25,7 @@ export function Knob({
   const lastYRef = useRef(0);
   const valueRef = useRef(clamp01(value));
   const knobRef = useRef<HTMLDivElement>(null);
+  const [isEngaged, setIsEngaged] = useState(false);
 
   useEffect(() => {
     valueRef.current = clamp01(value);
@@ -67,6 +68,7 @@ export function Knob({
 
   const handlePointerUp = useCallback((event: PointerEvent) => {
     dragRef.current = false;
+    setIsEngaged(false);
     window.removeEventListener("pointermove", handlePointerMove);
     window.removeEventListener("pointerup", handlePointerUp);
     knobRef.current?.releasePointerCapture?.(event.pointerId);
@@ -77,6 +79,7 @@ export function Knob({
       event.preventDefault();
       dragRef.current = true;
       lastYRef.current = event.clientY;
+      setIsEngaged(true);
       knobRef.current?.setPointerCapture(event.pointerId);
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
@@ -97,13 +100,16 @@ export function Knob({
   const centerGradientId = `${idBase}-center`;
 
   const accent = color;
+  const knobShadow = isEngaged
+    ? "0 12px 22px rgba(0,0,0,0.55), 0 6px 12px rgba(0,0,0,0.35)"
+    : "0 18px 32px rgba(0,0,0,0.65), 0 10px 18px rgba(0,0,0,0.4)";
 
   return (
     <div className="flex flex-col items-center gap-2 select-none touch-none">
       <div
         ref={knobRef}
-        className="relative rounded-full cursor-grab active:cursor-grabbing"
-        style={{ width: size, height: size }}
+        className="relative rounded-full cursor-grab active:cursor-grabbing transition-[transform,box-shadow] duration-150 will-change-transform"
+        style={{ width: size, height: size, boxShadow: knobShadow, transform: isEngaged ? "translateY(1px)" : "translateY(0)" }}
         onPointerDown={handlePointerDown}
         role="slider"
         aria-valuemin={0}

@@ -19,6 +19,7 @@ import { FXRackSheet } from '@/components/studio/ui/FXRackSheet';
 import { Scene3D } from '@/components/studio/visuals/Scene3D';
 import { Library, Music, Pause, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useMidiBridge } from '@/hooks/useMidiBridge';
 
 type ViewMode = 'mixer' | 'library';
 
@@ -34,11 +35,19 @@ export function StudioLayout() {
   const setMasterBpm = useStore((state) => state.setMasterBpm);
   const setAudioStarted = useStore((state) => state.setAudioStarted);
   const isAudioStarted = useStore((state) => state.isAudioStarted);
+  const isAppActive = useStore((state) => state.isAppActive);
+  const setAppActive = useStore((state) => state.setAppActive);
   const deckAState = useStore((state) => state.deckA);
   const deckBState = useStore((state) => state.deckB);
   const deckAPlaying = useStore((state) => state.deckA.isPlaying);
   const deckBPlaying = useStore((state) => state.deckB.isPlaying);
   const setDeckPlaying = useStore((state) => state.setDeckPlaying);
+  const {
+    isSupported: midiSupported,
+    isActive: midiActive,
+    error: midiError,
+    toggle: toggleMidiLearn,
+  } = useMidiBridge();
 
   const isPlaying = deckAPlaying || deckBPlaying;
   const [bpmInput, setBpmInput] = useState(String(masterBpm));
@@ -73,6 +82,10 @@ export function StudioLayout() {
   useEffect(() => {
     let frameId: number;
     const tick = () => {
+      if (!isAppActive) {
+        frameId = window.requestAnimationFrame(tick);
+        return;
+      }
       const duration = Math.max(getDeckDuration('A'), getDeckDuration('B'));
       const seconds = getTransportSeconds();
       const progress = duration > 0 ? Math.min(1, seconds / duration) : 0;
@@ -83,7 +96,18 @@ export function StudioLayout() {
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [getDeckDuration, getTransportSeconds]);
+  }, [getDeckDuration, getTransportSeconds, isAppActive]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      setAppActive(!document.hidden);
+    };
+    handleVisibility();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [setAppActive]);
 
   const handleEnterStudio = async () => {
     if (audioInitialized) return;
@@ -170,7 +194,7 @@ export function StudioLayout() {
   return (
     <main className="h-dvh w-screen flex flex-col bg-obsidian-900 overflow-hidden relative selection:bg-studio-cyan/30 text-white studio-grain">
       <div className="absolute inset-0 z-0">
-        <Scene3D className="w-full h-full" isActive={activeView === 'mixer'} />
+        <Scene3D className="w-full h-full" isActive={activeView === 'mixer' && isAppActive} />
       </div>
       <div className="relative z-10 flex flex-col h-full">
         <div className="h-0.5 w-full bg-white/10">
@@ -213,6 +237,22 @@ export function StudioLayout() {
                   aria-label="Master BPM"
                 />
               </div>
+
+              <motion.button
+                onClick={toggleMidiLearn}
+                disabled={!midiSupported}
+                className={`px-4 py-2 rounded-full border text-xs font-mono uppercase tracking-[0.24em] transition-all ${
+                  midiActive
+                    ? 'bg-studio-cyan text-black border-studio-cyan shadow-[0_0_16px_rgba(0,242,255,0.6)]'
+                    : 'bg-white/5 text-white/70 border-white/12 hover:border-white/40'
+                } ${!midiSupported ? 'opacity-40 cursor-not-allowed' : ''}`}
+                whileHover={midiSupported ? { scale: 1.03 } : undefined}
+                whileTap={midiSupported ? { scale: 0.97 } : undefined}
+                aria-pressed={midiActive}
+                title={midiError ?? (midiSupported ? 'Toggle MIDI Learn' : 'Web MIDI not available')}
+              >
+                MIDI Learn
+              </motion.button>
 
               {/* View Switcher */}
               <div className="flex items-center gap-1 rounded-full bg-white/5 border border-white/10 p-1">

@@ -1,53 +1,73 @@
 "use client";
 
-import { useRef, useState } from 'react';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { useCallback, useRef, useState } from "react";
+import { useAudioEngine } from "@/hooks/useAudioEngine";
 
-export const useSocialExport = () => {
+/**
+ * useSocialExport - skeleton hook for recording master output and preparing
+ * media for social export (audio + future canvas merge via FFmpeg.wasm).
+ */
+export function useSocialExport() {
+  const { getRecorderStream } = useAudioEngine();
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const ffmpegRef = useRef(new FFmpeg());
-  const loadedRef = useRef(false);
 
-  const convertToSocialMP4 = async (webmBlob: Blob, filename = 'piko-mix.mp4') => {
+  const startRecording = useCallback(() => {
+    if (isRecording) return;
+    const stream = getRecorderStream();
+    if (!stream) {
+      console.warn("[useSocialExport] No recorder stream available");
+      return;
+    }
+    try {
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("[useSocialExport] Failed to start MediaRecorder:", err);
+    }
+  }, [getRecorderStream, isRecording]);
+
+  const stopRecording = useCallback(async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return null;
+    return new Promise<Blob | null>((resolve) => {
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        setIsRecording(false);
+        resolve(blob);
+      };
+      recorder.stop();
+    });
+  }, []);
+
+  // Placeholder for future FFmpeg.wasm pipeline to merge audio + canvas frames.
+  const convertToSocialMP4 = useCallback(async (audio: Blob, _filename?: string) => {
     setIsProcessing(true);
     setProgress(0);
     try {
-      const ffmpeg = ffmpegRef.current;
-      if (!loadedRef.current) {
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-        await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
-        loadedRef.current = true;
-      }
-
-      ffmpeg.on('progress', ({ progress }) => setProgress(progress * 100));
-
-      await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
-
-      // Transcode to Instagram-friendly MP4 (H.264/AAC)
-      await ffmpeg.exec([
-        '-i', 'input.webm',
-        '-c:v', 'libx264', '-preset', 'ultrafast',
-        '-c:a', 'aac',
-        filename,
-      ]);
-
-      const data = await ffmpeg.readFile(filename);
-      const bytes =
-        typeof data === 'string' ? new TextEncoder().encode(data) : new Uint8Array(data);
-      const mp4Blob = new Blob([bytes], { type: 'video/mp4' });
-      return URL.createObjectURL(mp4Blob);
-    } catch (e) {
-      console.error('[useSocialExport] MP4 export failed:', e);
-      return null;
+      // Placeholder: simply return an object URL for now
+      setProgress(100);
+      return URL.createObjectURL(audio);
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, []);
 
-  return { convertToSocialMP4, isProcessing, progress };
-};
+  return {
+    isRecording,
+    startRecording,
+    stopRecording,
+    convertToSocialMP4,
+    isProcessing,
+    progress,
+  };
+}

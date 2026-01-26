@@ -15,6 +15,7 @@ import { useStore } from '@/store/useStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useExporter } from '@/hooks/useExporter';
 import { ExportModal } from '@/components/studio/modals/ExportModal';
+import { GlassPanel } from '@/components/ui/GlassPanel';
 
 type DeckId = 'A' | 'B';
 
@@ -43,7 +44,11 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
   }, [deck.eq.high, deck.eq.low, deck.eq.mid]);
 
   return (
-    <div className="bg-gradient-to-b from-[#0b0c12cc] to-[#06070ccc] rounded-xl border border-white/5 shadow-[0_14px_36px_rgba(0,0,0,0.35)] p-3 flex flex-col items-center gap-3 backdrop-blur-[20px]">
+    <GlassPanel
+      depth="mixer"
+      accentColor={deckId === 'A' ? '#22d3ee' : '#a855f7'}
+      className="w-full bg-gradient-to-b from-[#0b0c12cc] to-[#06070ccc] rounded-xl p-3 flex flex-col items-center gap-3 backdrop-blur-[20px]"
+    >
       <div className="w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.28em] text-white/50">
         <span>{stripLabel}</span>
         <span className={accentText}>Line</span>
@@ -145,26 +150,20 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
         onChange={(value) => setDeckVolume(deckId, value)}
         height={192}
       />
-    </div>
+    </GlassPanel>
   );
 }
 
 export function DeckGrid() {
-  const { getMasterBus } = useAudioEngine();
+  const { getMasterBus, setMasterGain } = useAudioEngine();
   const { recordMasterBus, stopRecording, transcode } = useExporter();
-  const [masterGain, setMasterGain] = useState(1);
+  const [masterGain, setMasterGainLocal] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [showMixerPanel, setShowMixerPanel] = useState(false);
 
   const masterBus = getMasterBus().bus;
-
-  useEffect(() => {
-    if (masterBus) {
-      masterBus.gain.rampTo(masterGain, 0.05);
-    }
-  }, [masterBus, masterGain]);
 
   useEffect(() => {
     if (recordingBlob) {
@@ -196,12 +195,18 @@ export function DeckGrid() {
       <div className="hidden lg:flex">
         <ChannelStrip deckId="A" />
       </div>
-      <div className="hidden lg:flex bg-obsidian-900/80 backdrop-blur-[20px] border border-white/10 rounded-lg flex-col items-center justify-between py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+      <GlassPanel
+        depth="mixer"
+        className="hidden lg:flex bg-obsidian-900/80 backdrop-blur-[20px] rounded-lg flex-col items-center justify-between py-4"
+      >
         <div className="flex flex-col items-center gap-3">
           <Knob
             label="MASTER"
             value={Math.max(0, Math.min(1, masterGain))}
-            onChange={setMasterGain}
+            onChange={(value) => {
+              setMasterGainLocal(value);
+              setMasterGain(value);
+            }}
             size={70}
             color="#22d3ee"
           />
@@ -218,7 +223,7 @@ export function DeckGrid() {
           </button>
         </div>
         <Crossfader />
-      </div>
+      </GlassPanel>
       <div className="hidden lg:flex">
         <ChannelStrip deckId="B" />
       </div>
@@ -253,7 +258,10 @@ export function DeckGrid() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowMixerPanel(false)}
           />
-          <div className="absolute inset-x-0 bottom-0 bg-obsidian-900/90 backdrop-blur-[20px] border-t border-white/10 p-4">
+          <GlassPanel
+            depth="mixer"
+            className="absolute inset-x-0 bottom-0 bg-obsidian-900/90 backdrop-blur-[20px] p-4"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="text-xs font-mono uppercase tracking-widest text-white/60">Mixer</div>
               <button
@@ -265,7 +273,10 @@ export function DeckGrid() {
             </div>
             <div className="grid grid-cols-[1fr_100px_1fr] gap-3">
               <ChannelStrip deckId="A" />
-              <div className="bg-obsidian-900/60 backdrop-blur-[20px] border border-white/10 rounded-lg flex flex-col items-center justify-between py-4">
+              <GlassPanel
+                depth="mixer"
+                className="bg-obsidian-900/60 backdrop-blur-[20px] rounded-lg flex flex-col items-center justify-between py-4"
+              >
                 <div className="flex flex-col items-center gap-3">
                   <Knob
                     label="MASTER"
@@ -287,10 +298,10 @@ export function DeckGrid() {
                   </button>
                 </div>
                 <Crossfader />
-              </div>
+              </GlassPanel>
               <ChannelStrip deckId="B" />
             </div>
-          </div>
+          </GlassPanel>
         </div>
       )}
     </div>

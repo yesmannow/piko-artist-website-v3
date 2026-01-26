@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface FaderProps {
   label?: string;
@@ -14,6 +14,7 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
+  const [isEngaged, setIsEngaged] = useState(false);
 
   const updateFromPointer = useCallback(
     (clientY: number) => {
@@ -37,6 +38,7 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
   const handlePointerUp = useCallback(
     (event: PointerEvent) => {
       draggingRef.current = false;
+      setIsEngaged(false);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       trackRef.current?.releasePointerCapture?.(event.pointerId);
@@ -48,6 +50,7 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
     (event: React.PointerEvent<HTMLDivElement>) => {
       draggingRef.current = true;
       event.preventDefault();
+      setIsEngaged(true);
       trackRef.current?.setPointerCapture(event.pointerId);
       updateFromPointer(event.clientY);
       window.addEventListener("pointermove", handlePointerMove);
@@ -65,6 +68,9 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
 
   const clamped = clamp01(value);
   const handlePosition = `${(1 - clamped) * 100}%`;
+  const handleShadow = isEngaged
+    ? "0 10px 18px rgba(0,0,0,0.55), 0 6px 10px rgba(0,0,0,0.4)"
+    : "0 16px 28px rgba(0,0,0,0.6), 0 10px 16px rgba(0,0,0,0.45)";
 
   return (
     <div className="flex flex-col items-center gap-2 select-none touch-none">
@@ -79,8 +85,12 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
           <div className="absolute left-1/2 -translate-x-1/2 top-3 bottom-3 w-px bg-gradient-to-b from-white/30 via-white/10 to-white/30 pointer-events-none" />
         </div>
         <div
-          className="absolute left-1/2 -translate-x-1/2 w-14 h-12 rounded-lg bg-gradient-to-br from-[#1f2330] via-[#0d0f16] to-[#090a0f] border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] cursor-grab active:cursor-grabbing"
-          style={{ top: handlePosition, transform: "translate(-50%, -50%)" }}
+          className="absolute left-1/2 -translate-x-1/2 w-14 h-12 rounded-lg bg-gradient-to-br from-[#1f2330] via-[#0d0f16] to-[#090a0f] border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] cursor-grab active:cursor-grabbing transition-[box-shadow,transform] duration-150 will-change-transform"
+          style={{
+            top: handlePosition,
+            transform: `translate(-50%, -50%)${isEngaged ? " translateY(1px)" : ""}`,
+            boxShadow: handleShadow,
+          }}
           onPointerDown={handlePointerDown}
         >
           <div className="absolute inset-1 rounded-md bg-gradient-to-br from-white/8 via-transparent to-white/5" />

@@ -19,6 +19,13 @@ const wasmCandidates = [
 // Initialize Essentia.js
 async function initEssentia() {
   if (essentiaInstance) return;
+  if (typeof crossOriginIsolated !== 'undefined' && !crossOriginIsolated) {
+    self.postMessage({
+      type: 'error',
+      message: 'Essentia analysis requires COOP/COEP (crossOriginIsolated). Please enable security headers.',
+    });
+    return;
+  }
 
   try {
     let lastError: unknown;

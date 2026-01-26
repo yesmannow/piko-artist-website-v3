@@ -9,6 +9,8 @@ interface JogWheelProps {
   title?: string;
   progress: number; // 0-1
   isPlaying: boolean;
+  bpm?: number;
+  isSynced?: boolean;
   accent?: string;
   energy?: number;
   loading?: boolean;
@@ -27,6 +29,8 @@ export function JogWheel({
   title,
   progress,
   isPlaying,
+  bpm,
+  isSynced = false,
   accent = "#22d3ee",
   energy = 0,
   loading = false,
@@ -45,6 +49,7 @@ export function JogWheel({
   }, [title, accent]);
   const glowIntensity = Math.min(1, Math.max(0, energy));
   const glowColor = accent;
+  const bpmText = typeof bpm === "number" ? bpm.toFixed(2) : "--.--";
 
   return (
     <div
@@ -132,6 +137,31 @@ export function JogWheel({
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 14px ${accent}` }} />
       </div>
+      {bpm !== undefined && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
+          <motion.div
+            initial={false}
+            animate={{
+              color: isSynced ? "#fff" : "rgba(255,255,255,0.72)",
+              boxShadow: isSynced
+                ? `0 0 20px ${accent}66, 0 8px 24px rgba(0,0,0,0.5)`
+                : "0 8px 24px rgba(0,0,0,0.55)",
+            }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="px-4 py-2 rounded-full bg-black/65 backdrop-blur-md border border-white/12"
+            style={{ fontFamily: "var(--font-inter)" }}
+          >
+            <motion.span
+              initial={false}
+              animate={{ fontWeight: isSynced ? 800 : 400 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="text-sm tracking-[0.22em] uppercase"
+            >
+              {bpmText} <span className="text-[10px]">BPM</span>
+            </motion.span>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
