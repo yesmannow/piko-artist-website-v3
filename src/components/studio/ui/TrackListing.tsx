@@ -22,6 +22,7 @@ export interface Track {
   energy: number;
   key?: string;
   artUrl?: string;
+  src?: string;
   stems?: {
     full?: string;
     vocals?: string;
@@ -40,22 +41,26 @@ export function TrackListing({ track, onTrackLoaded }: TrackListingProps) {
   const { loadTrack } = useAudioEngine();
   const { setDeckTrack, deckA, deckB } = useStore();
 
+  const normalizeFileName = (value: string) => {
+    const trimmed = value.replace(/\\/g, '/').split('/').pop() || '';
+    const noPrefix = trimmed.replace(/^audio\/tracks\//i, '');
+    return noPrefix.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
+  };
+
+  const getLocalUrl = () => {
+    const candidate = track.src || track.stems?.full || track.trackId;
+    const safeFile = normalizeFileName(candidate || '');
+    if (!safeFile) {
+      throw new Error('Missing track filename');
+    }
+    return `/audio/tracks/${safeFile}`;
+  };
+
   const handleLoadTrack = async (deck: 'A' | 'B') => {
     setLoadingDeck(deck);
     
     try {
-      // Get presigned URL from API
-      const response = await fetch(`/api/get-track?key=${encodeURIComponent(track.stems?.full || track.trackId)}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to get presigned URL');
-      }
-      
-      const { url } = await response.json();
-      
-      if (!url) {
-        throw new Error('No URL returned');
-      }
+      const url = getLocalUrl();
 
       // Load track into audio engine
       await loadTrack(deck, url, track.bpm);

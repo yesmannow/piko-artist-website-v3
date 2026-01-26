@@ -1,11 +1,23 @@
-import { getR2Client } from "@/lib/r2";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import pikoTracks from "@/data/piko-tracks.json";
 
-// Create a Set of valid track IDs for O(1) lookup performance
-const validTrackIds = new Set(pikoTracks.map(track => track.trackId));
+type PikoTrack = {
+  trackId: string;
+  src?: string;
+};
+
+const normalizeFileName = (value: string) => {
+  const trimmed = value.replace(/\\/g, '/').split('/').pop() || '';
+  const noPrefix = trimmed.replace(/^audio\/tracks\//i, '').replace(/^\/+/, '');
+  return noPrefix.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
+};
+
+const trackMap = new Map<string, string>(
+  (pikoTracks as PikoTrack[]).map((track) => {
+    const file = normalizeFileName(track.src || track.trackId);
+    return [file, `/audio/tracks/${file}`];
+  })
+);
 
 export async function GET(request: Request) {
   try {
@@ -19,36 +31,22 @@ export async function GET(request: Request) {
       );
     }
 
+    const normalized = normalizeFileName(trackId);
+    const url = trackMap.get(normalized);
+
     // Validate trackId against the manifest to prevent unauthorized file access
-    if (!validTrackIds.has(trackId)) {
+    if (!url) {
       return NextResponse.json(
         { error: "Invalid track ID" },
         { status: 404 }
       );
     }
 
-    // Validate bucket configuration
-    const bucket = process.env.R2_BUCKET_NAME;
-    if (!bucket) {
-      return NextResponse.json(
-        { error: "Storage configuration error" },
-        { status: 500 }
-      );
-    }
-
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: trackId,
-    });
-
-    // Generate signed URL valid for 1 hour
-    const signedUrl = await getSignedUrl(getR2Client(), command, { expiresIn: 3600 });
-
-    return NextResponse.json({ url: signedUrl });
+    return NextResponse.json({ url });
   } catch (error) {
-    console.error("R2 Signing Error:", error);
+    console.error("Track resolution error:", error);
     return NextResponse.json(
-      { error: "Failed to generate secure stream URL" },
+      { error: "Failed to resolve track URL" },
       { status: 500 }
     );
   }

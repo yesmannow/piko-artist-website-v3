@@ -1,177 +1,101 @@
 [
   {
-    "trackId": "Amor Sincero.mp3",
+    "trackId": "amor-sincero.mp3",
     "title": "Amor Sincero",
     "artist": "Piko",
-    "bpm": 90.0,
+    "bpm": 90,
     "energy": 0.5,
     "key": "Am",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "Amor Sincero.mp3",
-      "vocals": "Amor Sincero_vocals.mp3",
-      "drums": "Amor Sincero_drums.mp3",
-      "other": "Amor Sincero_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 13.33,
-      "chorus1": 40.0,
-      "drop": 80.0
-    },
-    "colorTheme": {
-      "primary": "#3b82f6",
-      "secondary": "#9333ea"
-    }
+    "src": "/audio/tracks/amor-sincero.mp3"
   },
   {
-    "trackId": "Amores Perdidos.mp3",
+    "trackId": "amores-perdidos.mp3",
     "title": "Amores Perdidos",
     "artist": "Piko",
-    "bpm": 105.0,
+    "bpm": 105,
     "energy": 0.6,
     "key": "Dm",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "Amores Perdidos.mp3",
-      "vocals": "Amores Perdidos_vocals.mp3",
-      "drums": "Amores Perdidos_drums.mp3",
-      "other": "Amores Perdidos_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 11.43,
-      "chorus1": 34.29,
-      "drop": 68.57
-    },
-    "colorTheme": {
-      "primary": "#9333ea",
-      "secondary": "#3b82f6"
-    }
+    "src": "/audio/tracks/amores-perdidos.mp3"
   },
   {
-    "trackId": "Bungalow.mp3",
+    "trackId": "bungalow.mp3",
     "title": "Bungalow",
     "artist": "Piko",
-    "bpm": 120.0,
+    "bpm": 120,
     "energy": 0.7,
     "key": "F",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "Bungalow.mp3",
-      "vocals": "Bungalow_vocals.mp3",
-      "drums": "Bungalow_drums.mp3",
-      "other": "Bungalow_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 10.0,
-      "chorus1": 30.0,
-      "drop": 60.0
-    },
-    "colorTheme": {
-      "primary": "#ef4444",
-      "secondary": "#f59e0b"
-    }
+    "src": "/audio/tracks/bungalow.mp3"
   },
   {
-    "trackId": "Corazon Y Mente.mp3",
+    "trackId": "corazon-y-mente.mp3",
     "title": "Corazon Y Mente",
     "artist": "Piko",
-    "bpm": 98.0,
+    "bpm": 98,
     "energy": 0.4,
     "key": "Cm",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "Corazon Y Mente.mp3",
-      "vocals": "Corazon Y Mente_vocals.mp3",
-      "drums": "Corazon Y Mente_drums.mp3",
-      "other": "Corazon Y Mente_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 12.24,
-      "chorus1": 36.73,
-      "drop": 73.47
-    },
-    "colorTheme": {
-      "primary": "#3b82f6",
-      "secondary": "#06b6d4"
-    }
+    "src": "/audio/tracks/corazon-y-mente.mp3"
   },
   {
-    "trackId": "Crussin.mp3",
+    "trackId": "crussin.mp3",
     "title": "Crussin",
     "artist": "Piko",
-    "bpm": 110.0,
+    "bpm": 110,
     "energy": 0.8,
     "key": "Gm",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "Crussin.mp3",
-      "vocals": "Crussin_vocals.mp3",
-      "drums": "Crussin_drums.mp3",
-      "other": "Crussin_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 10.91,
-      "chorus1": 32.73,
-      "drop": 65.45
-    },
-    "colorTheme": {
-      "primary": "#ef4444",
-      "secondary": "#f97316"
-    }
+    "src": "/audio/tracks/crussin.mp3"
   },
   {
-    "trackId": "Dejate Llevar.mp3",
+    "trackId": "dejate-llevar.mp3",
     "title": "Dejate Llevar",
     "artist": "Piko",
-    "bpm": 100.0,
+    "bpm": 100,
     "energy": 0.5,
     "key": "Am",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "Dejate Llevar.mp3",
-      "vocals": "Dejate Llevar_vocals.mp3",
-      "drums": "Dejate Llevar_drums.mp3",
-      "other": "Dejate Llevar_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 12.0,
-      "chorus1": 36.0,
-      "drop": 72.0
-    },
-    "colorTheme": {
-      "primary": "#9333ea",
-      "secondary": "#3b82f6"
-    }
+    "src": "/audio/tracks/dejate-llevar.mp3"
   },
   {
-    "trackId": "El Don.mp3",
+    "trackId": "el-don.mp3",
     "title": "El Don",
     "artist": "Piko",
-    "bpm": 92.0,
+    "bpm": 92,
     "energy": 0.6,
     "key": "Dm",
-    "artUrl": "https://placehold.co/400x400/121212/06b6d4?text=Track+Art",
-    "stems": {
-      "full": "El Don.mp3",
-      "vocals": "El Don_vocals.mp3",
-      "drums": "El Don_drums.mp3",
-      "other": "El Don_other.mp3"
-    },
-    "markers": {
-      "intro": 0.0,
-      "verse1": 13.04,
-      "chorus1": 39.13,
-      "drop": 78.26
-    },
-    "colorTheme": {
-      "primary": "#9333ea",
-      "secondary": "#a855f7"
-    }
+    "src": "/audio/tracks/el-don.mp3"
+  },
+  {
+    "trackId": "f-7.mp3",
+    "title": "F-7",
+    "artist": "Piko",
+    "bpm": 118,
+    "energy": 0.75,
+    "key": "Fm",
+    "src": "/audio/tracks/f-7.mp3"
+  },
+  {
+    "trackId": "ganja.mp3",
+    "title": "Ganja",
+    "artist": "Piko",
+    "bpm": 100,
+    "energy": 0.65,
+    "key": "Em",
+    "src": "/audio/tracks/ganja.mp3"
+  },
+  {
+    "trackId": "12_05.mp3",
+    "title": "12_05",
+    "artist": "Piko",
+    "bpm": 115,
+    "energy": 0.6,
+    "key": "Dm",
+    "src": "/audio/tracks/12_05.mp3"
+  },
+  {
+    "trackId": "falle.mp3",
+    "title": "Falle",
+    "artist": "Piko",
+    "bpm": 95,
+    "energy": 0.55,
+    "key": "Bm",
+    "src": "/audio/tracks/falle.mp3"
   }
 ]
