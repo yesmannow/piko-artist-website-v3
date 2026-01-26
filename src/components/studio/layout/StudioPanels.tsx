@@ -4,6 +4,7 @@ import type * as Tone from "tone";
 import { useMemo, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
+import { useComplexityMode } from '@/contexts/ComplexityModeContext';
 import { useGestures } from "@/hooks/useGestures";
 import { Deck } from "@/components/studio/ui/Deck";
 import { MainWaveform } from "@/components/studio/ui/MainWaveform";
@@ -26,6 +27,7 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
   const focusedDeckId = useStudioStore((state) => state.focusedDeckId);
   const setFocusedDeckId = useStudioStore((state) => state.setFocusedDeckId);
   const isFocusActive = focusedDeckId !== null;
+  const { mode: complexityMode } = useComplexityMode();
 
   const deckA = useStore((state) => state.deckA);
   const deckB = useStore((state) => state.deckB);
@@ -76,7 +78,7 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
             url={deckA.trackData?.url}
             beatGrid={deckA.trackData?.beatGrid}
           />
-          <Deck deckId="A" showMiniWaveform={false} />
+          <Deck deckId="A" showMiniWaveform={false} complexityMode={complexityMode} />
           {stemModeEnabled && <StemWaveforms deckId="A" performanceMode={performanceMode} />}
         </div>
         <div className={`studio-deck-column ${focusedDeckId === "A" ? "is-hidden" : ""}`}>
@@ -86,7 +88,7 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
             url={deckB.trackData?.url}
             beatGrid={deckB.trackData?.beatGrid}
           />
-          <Deck deckId="B" showMiniWaveform={false} />
+          <Deck deckId="B" showMiniWaveform={false} complexityMode={complexityMode} />
           {stemModeEnabled && <StemWaveforms deckId="B" performanceMode={performanceMode} />}
         </div>
       </section>

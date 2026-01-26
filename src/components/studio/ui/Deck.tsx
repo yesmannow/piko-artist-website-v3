@@ -23,9 +23,12 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
 
+import { useComplexityMode } from '@/contexts/ComplexityModeContext';
+
 interface DeckProps {
   deckId: 'A' | 'B';
   showMiniWaveform?: boolean;
+  complexityMode?: 'simple' | 'pro';
 }
 
 const UI_UPDATE_INTERVAL_MS = 50;
@@ -40,7 +43,7 @@ type DeckWindow = Window & {
 };
 
 
-export function Deck({ deckId, showMiniWaveform = true }: DeckProps) {
+export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }: DeckProps) {
   const { play, pause, stop, seekTo, getPlaybackPosition, getDeckDuration, loadStems, syncToBpm, triggerTapeStop } = useAudioEngine();
   const deckKey: 'deckA' | 'deckB' = deckId === 'A' ? 'deckA' : 'deckB';
   const deck = useStore((state) => state[deckKey]) as DeckState;
@@ -477,32 +480,38 @@ export function Deck({ deckId, showMiniWaveform = true }: DeckProps) {
                     <span>BPM</span>
                     <span className="text-white">{Math.round(trackData.bpm)}</span>
                   </div>
-                  <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
-                    <span>Key</span>
-                    <span className="text-white">{trackData.key || '---'}</span>
-                  </div>
-                  <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
-                    <span>Energy</span>
-                    <span className="text-white">{trackData.energy ? Math.round(trackData.energy * 100) : '--'}%</span>
-                  </div>
+                  {complexityMode === 'pro' && (
+                    <>
+                      <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
+                        <span>Key</span>
+                        <span className="text-white">{trackData.key || '---'}</span>
+                      </div>
+                      <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
+                        <span>Energy</span>
+                        <span className="text-white">{trackData.energy ? Math.round(trackData.energy * 100) : '--'}%</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <motion.button
-                  onClick={handleMagicWand}
-                  disabled={recommendationsLoading}
-                  className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Get similar track recommendations"
-                >
-                  {recommendationsLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-studio-cyan" />
-                  ) : (
-                    <Wand2 className="w-4 h-4 text-studio-cyan" />
-                  )}
-                </motion.button>
-                {!stemModeEnabled && (
+                {complexityMode === 'pro' && (
+                  <motion.button
+                    onClick={handleMagicWand}
+                    disabled={recommendationsLoading}
+                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Get similar track recommendations"
+                  >
+                    {recommendationsLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-studio-cyan" />
+                    ) : (
+                      <Wand2 className="w-4 h-4 text-studio-cyan" />
+                    )}
+                  </motion.button>
+                )}
+                {!stemModeEnabled && complexityMode === 'pro' && (
                   <motion.button
                     onClick={handleSplitStems}
                     disabled={!canGenerateStems}
@@ -596,15 +605,17 @@ export function Deck({ deckId, showMiniWaveform = true }: DeckProps) {
                 <Square className="w-4 h-4" />
               </motion.button>
 
-              <motion.button
-                onClick={() => triggerTapeStop(deckId)}
-                disabled={!deck.isLoaded}
-                className="px-4 py-3 rounded-xl border border-white/12 bg-[#0c0c0f] text-xs font-mono uppercase tracking-[0.22em] text-white/80 hover:border-studio-purple/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                whileHover={!deck.isLoaded ? {} : { scale: 1.05 }}
-                whileTap={!deck.isLoaded ? {} : { scale: 0.95 }}
-              >
-                Tape Stop
-              </motion.button>
+              {complexityMode === 'pro' && (
+                <motion.button
+                  onClick={() => triggerTapeStop(deckId)}
+                  disabled={!deck.isLoaded}
+                  className="px-4 py-3 rounded-xl border border-white/12 bg-[#0c0c0f] text-xs font-mono uppercase tracking-[0.22em] text-white/80 hover:border-studio-purple/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  whileHover={!deck.isLoaded ? {} : { scale: 1.05 }}
+                  whileTap={!deck.isLoaded ? {} : { scale: 0.95 }}
+                >
+                  Tape Stop
+                </motion.button>
+              )}
 
               <motion.button
                 onClick={() => handleSeek(10)}
