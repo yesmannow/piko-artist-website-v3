@@ -160,9 +160,9 @@ export const useAudioEngine = (): AudioEngineControls => {
       lim.connect(recorderTap);
       recorderTap.toDestination();
 
-      // MediaRecorder tap (for social export) - only when real AudioContext is available
-      if (typeof AudioContext !== 'undefined' && rawCtx instanceof AudioContext) {
-        const mediaDest = rawCtx.createMediaStreamDestination();
+      // MediaRecorder tap (for social export) - only in live browser contexts
+      if (typeof window !== 'undefined' && rawCtx instanceof AudioContext) {
+        const mediaDest = (rawCtx as AudioContext).createMediaStreamDestination();
         recorderTap.connect(mediaDest);
         recorderStream.current = mediaDest.stream;
       }

@@ -104,6 +104,10 @@ const nextConfig = {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
           },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
         ],
       },
     ];

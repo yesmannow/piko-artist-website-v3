@@ -165,6 +165,11 @@ export function DeckGrid() {
 
   const masterBus = getMasterBus().bus;
 
+  // Push master gain changes to the engine outside of the render body
+  useEffect(() => {
+    setMasterGain(masterGain);
+  }, [masterGain, setMasterGain]);
+
   useEffect(() => {
     if (recordingBlob) {
       setIsExportOpen(true);
@@ -203,10 +208,7 @@ export function DeckGrid() {
           <Knob
             label="MASTER"
             value={Math.max(0, Math.min(1, masterGain))}
-            onChange={(value) => {
-              setMasterGainLocal(value);
-              setMasterGain(value);
-            }}
+            onChange={(value) => setMasterGainLocal(value)}
             size={70}
             color="#22d3ee"
           />
@@ -281,7 +283,7 @@ export function DeckGrid() {
                   <Knob
                     label="MASTER"
                     value={Math.max(0, Math.min(1, masterGain))}
-                    onChange={setMasterGain}
+                    onChange={setMasterGainLocal}
                     size={70}
                     color="#22d3ee"
                   />
