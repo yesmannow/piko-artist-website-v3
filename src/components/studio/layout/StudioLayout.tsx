@@ -29,7 +29,7 @@ export function StudioLayout() {
     bus: null,
     postFx: null,
   });
-  const { initAudio, getMasterBus, play, pause, getDeckDuration, getTransportSeconds } = useAudioEngine();
+  const { init, getMasterBus, play, pause, getDeckDuration, getTransportSeconds } = useAudioEngine();
   const masterBpm = useStore((state) => state.masterBpm);
   const setMasterBpm = useStore((state) => state.setMasterBpm);
   const deckAPlaying = useStore((state) => state.deckA.isPlaying);
@@ -40,24 +40,6 @@ export function StudioLayout() {
   const [bpmInput, setBpmInput] = useState(String(masterBpm));
   const [masterProgress, setMasterProgress] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  // Initialize audio on mount (requires user gesture)
-  useEffect(() => {
-    const initializeAudio = async () => {
-      try {
-        await Tone.start();
-        await initAudio();
-        setAudioInitialized(true);
-        setMasterBusNodes(getMasterBus());
-        console.log('[StudioLayout] Audio initialized');
-      } catch (error) {
-        console.error('[StudioLayout] Failed to initialize audio:', error);
-      }
-    };
-
-    // Try to initialize on mount
-    initializeAudio();
-  }, [getMasterBus, initAudio]);
 
   useEffect(() => {
     const handleOpenLibrary = () => {
@@ -99,9 +81,10 @@ export function StudioLayout() {
   }, [getDeckDuration, getTransportSeconds]);
 
   const handleEnterStudio = async () => {
+    if (audioInitialized) return;
     try {
       await Tone.start();
-      await initAudio();
+      await init();
       setAudioInitialized(true);
       setMasterBusNodes(getMasterBus());
       console.log('[StudioLayout] Audio initialized');

@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Share2, Loader2 } from 'lucide-react';
 import { useExporter } from '@/hooks/useExporter';
+import { useSocialExport } from '@/hooks/useSocialExport';
 import * as Tone from 'tone';
 
 interface ExportModalProps {
@@ -33,6 +34,7 @@ export function ExportModal({
   onTranscode,
 }: ExportModalProps) {
   const { transcode, recordMasterBus, isTranscoding, progress, error } = useExporter();
+  const { convertToSocialMP4, isProcessing, progress: socialProgress } = useSocialExport();
   const [isRecording, setIsRecording] = useState(false);
   const [exportComplete, setExportComplete] = useState(false);
 
@@ -198,6 +200,37 @@ export function ExportModal({
                   Share to TikTok
                 </motion.button>
               )}
+
+              <motion.button
+                onClick={async () => {
+                  if (!recordingBlob) return;
+                  const url = await convertToSocialMP4(recordingBlob, 'Piko-Studio-Drop.mp4');
+                  if (url) {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Piko-Studio-Drop.mp4';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }
+                }}
+                disabled={!recordingBlob || isProcessing}
+                className="w-full px-6 py-3 bg-gradient-to-r from-studio-cyan to-studio-purple text-black font-black uppercase rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={!isProcessing ? { scale: 1.02 } : {}}
+                whileTap={!isProcessing ? { scale: 0.98 } : {}}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Exporting MP4... {Math.round(socialProgress)}%
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" />
+                    Export TikTok/Insta Drop (MP4)
+                  </>
+                )}
+              </motion.button>
             </div>
           </motion.div>
         </>

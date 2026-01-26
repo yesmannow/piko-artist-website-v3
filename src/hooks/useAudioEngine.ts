@@ -9,13 +9,13 @@
  * Equal Power crossfade logic prevents volume dips during transitions
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Tone from 'tone';
 import { useStore } from '@/store/useStore';
 import { useEssentiaAnalysis } from './useEssentiaAnalysis';
 
 export interface AudioEngineControls {
-  initAudio: () => Promise<void>;
+  init: () => Promise<void>;
   isReady: boolean;
   loadTrack: (deck: 'A' | 'B', url: string, bpm: number, skipAnalysis?: boolean) => Promise<void>;
   loadStems: (deck: 'A' | 'B', stems: { vocals: string; drums: string; bass: string; other: string }) => Promise<void>;
@@ -37,7 +37,7 @@ export interface AudioEngineControls {
 }
 
 export const useAudioEngine = (): AudioEngineControls => {
-  const { masterBpm, crossfadeValue, deckA, deckB, setAudioReady, setDeckTrack, setDeckRate } = useStore();
+  const { masterBpm, crossfadeValue, deckA, deckB, setAudioReady, setDeckTrack, setDeckRate, updateDeck } = useStore();
   const { analyzeTrack } = useEssentiaAnalysis();
   
   // Audio nodes - persisted across renders
@@ -64,43 +64,55 @@ export const useAudioEngine = (): AudioEngineControls => {
   const postFxBus = useRef<Tone.Gain | null>(null);
   const compressor = useRef<Tone.Compressor | null>(null);
   const limiter = useRef<Tone.Limiter | null>(null);
-  
+
   const isInitialized = useRef(false);
-  const isReadyRef = useRef(false);
+  const isInitializing = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   // Initialize audio context and master bus
-  const initAudio = useCallback(async () => {
-    if (isInitialized.current) return;
+  const init = useCallback(async () => {
+    if (isInitialized.current || isInitializing.current) return;
+    isInitializing.current = true;
 
     try {
       // Start Tone.js context (requires user gesture)
       await Tone.start();
-      
+      // Unlock hardware with a silent buffer (mobile fix)
+      const rawCtx = Tone.getContext().rawContext;
+      const buffer = rawCtx.createBuffer(1, 1, rawCtx.sampleRate);
+      const source = rawCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(rawCtx.destination);
+      source.start(0);
+      console.log('[AudioEngine] Hardware Unlocked for Mobile');
+
       // Create Master Bus chain
       const crossfade = new Tone.CrossFade(0.5);
       const comp = new Tone.Compressor({
-        threshold: -24,
-        ratio: 4,
-        attack: 0.003,
-        release: 0.1,
+        threshold: -18,
+        ratio: 2,
+        attack: 0.01,
+        release: 0.15,
       });
       const lim = new Tone.Limiter(-0.1);
+      const recorderTap = new Tone.Gain(1);
       const master = new Tone.Gain(1);
       const postFx = new Tone.Gain(1);
-      
+
       // Connect: CrossFade -> Master Bus -> Post-FX -> Compressor -> Limiter -> Destination
       crossfade.connect(master);
       master.connect(postFx);
       postFx.connect(comp);
       comp.connect(lim);
-      lim.toDestination();
-      
+      lim.connect(recorderTap);
+      recorderTap.toDestination();
+
       crossFade.current = crossfade;
       masterBus.current = master;
       postFxBus.current = postFx;
       compressor.current = comp;
       limiter.current = lim;
-      
+
       // Initialize decks
       const channelA = new Tone.Channel({ volume: 0 });
       const channelB = new Tone.Channel({ volume: 0 });
@@ -108,23 +120,25 @@ export const useAudioEngine = (): AudioEngineControls => {
       const eqB = new Tone.EQ3({ low: 0, mid: 0, high: 0 });
       const filterA = new Tone.Filter({ type: 'lowpass', frequency: 20000 });
       const filterB = new Tone.Filter({ type: 'lowpass', frequency: 20000 });
-      
+
       // Connect: Player -> EQ -> Filter -> Channel -> CrossFade
       channelA.connect(crossfade.a);
       channelB.connect(crossfade.b);
-      
+
       channels.current = { A: channelA, B: channelB };
       eqs.current = { A: eqA, B: eqB };
       filters.current = { A: filterA, B: filterB };
-      
+
       isInitialized.current = true;
-      isReadyRef.current = true;
+      setIsReady(true);
       setAudioReady(true);
-      
+
       console.log('[AudioEngine] Initialized successfully');
     } catch (error) {
       console.error('[AudioEngine] Initialization failed:', error);
       throw error;
+    } finally {
+      isInitializing.current = false;
     }
   }, [setAudioReady]);
 
@@ -154,7 +168,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   // Load track on deck
   const loadTrack = useCallback(async (deck: 'A' | 'B', url: string, bpm: number, skipAnalysis = false) => {
     if (!isInitialized.current) {
-      await initAudio();
+      throw new Error('[AudioEngine] init() must be called before loading tracks');
     }
 
     try {
@@ -164,11 +178,12 @@ export const useAudioEngine = (): AudioEngineControls => {
         autostart: false,
         onload: () => {
           console.log(`[AudioEngine] Track loaded on Deck ${deck}`);
+          updateDeck(deck, { isLoaded: true });
         },
         onerror: (error) => {
           console.error(`[AudioEngine] Error loading track on Deck ${deck}:`, error);
         },
-      });
+      } as Tone.PlayerOptions);
 
       // Connect player to processing chain
       const channel = channels.current[deck];
@@ -213,8 +228,13 @@ export const useAudioEngine = (): AudioEngineControls => {
           const arrayBuffer = await response.arrayBuffer();
           
           // Decode audio data
-          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          const AudioContextCtor =
+            window.AudioContext ??
+            (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+          if (!AudioContextCtor) {
+            throw new Error('AudioContext is not supported in this browser');
+          }
+          const audioBuffer = await new AudioContextCtor().decodeAudioData(arrayBuffer);
           
           // Analyze in worker
           const analysisResult = await analyzeTrack(audioBuffer, url);
@@ -229,7 +249,10 @@ export const useAudioEngine = (): AudioEngineControls => {
                 ...currentDeck.trackData,
                 bpm: analysisResult.bpm,
                 key: analysisResult.key,
+                scale: analysisResult.scale,
                 energy: analysisResult.energy,
+                danceability: analysisResult.danceability,
+                beatGrid: analysisResult.beatGrid,
               });
             }
           }
@@ -242,7 +265,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       console.error(`[AudioEngine] Failed to load track on Deck ${deck}:`, error);
       throw error;
     }
-  }, [initAudio, masterBpm, setDeckTrack, analyzeTrack, deckA, deckB]);
+  }, [masterBpm, setDeckTrack, analyzeTrack, deckA, deckB, updateDeck]);
 
   // Seek to position
   const seekTo = useCallback((deck: 'A' | 'B', timeInSeconds: number) => {
@@ -283,7 +306,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   const getPlaybackPosition = useCallback((deck: 'A' | 'B'): number => {
     const player = players.current[deck];
     if (player && player.loaded) {
-      const rawPosition = (player as any).position ?? 0;
+      const rawPosition = (player as { position?: number | string }).position ?? 0;
       if (typeof rawPosition === 'number') {
         return rawPosition;
       }
@@ -363,7 +386,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     stems: { vocals: string; drums: string; bass: string; other: string }
   ) => {
     if (!isInitialized.current) {
-      await initAudio();
+      throw new Error('[AudioEngine] init() must be called before loading stems');
     }
 
     try {
@@ -421,7 +444,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       console.error(`[AudioEngine] Failed to load stems on Deck ${deck}:`, error);
       throw error;
     }
-  }, [initAudio]);
+  }, []);
 
   // Toggle stem mute/solo (real stems)
   const toggleStem = useCallback((deck: 'A' | 'B', stem: 'vocals' | 'drums' | 'bass' | 'other') => {
@@ -533,6 +556,21 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Play deck (handles both regular tracks and stems)
   const play = useCallback((deck: 'A' | 'B') => {
+    const stateDeck = deck === 'A' ? deckA : deckB;
+    const player = players.current[deck];
+    const beatGrid = stateDeck.trackData?.beatGrid;
+
+    // If quantization possible, schedule to next beat using Tone.Transport
+    if (player && player.loaded && beatGrid && beatGrid.length > 0) {
+      const secondsPerBeat = 60 / masterBpm;
+      const currentTime = Tone.Transport.seconds;
+      const nextBeatOffset = secondsPerBeat - (currentTime % secondsPerBeat);
+      const startAt = Tone.now() + nextBeatOffset;
+      player.start(startAt);
+      console.log(`[AudioEngine] Deck ${deck} quantized start in ${nextBeatOffset.toFixed(3)}s`);
+      return;
+    }
+
     // Check if stems are loaded
     const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
     
@@ -554,7 +592,7 @@ export const useAudioEngine = (): AudioEngineControls => {
         console.warn(`[AudioEngine] Cannot play Deck ${deck} - track not loaded`);
       }
     }
-  }, []);
+  }, [deckA, deckB, masterBpm]);
 
   // Pause deck (handles both regular tracks and stems)
   const pause = useCallback((deck: 'A' | 'B') => {
@@ -603,8 +641,8 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, []);
 
   return {
-    initAudio,
-    isReady: isReadyRef.current,
+    init,
+    isReady,
     loadTrack,
     loadStems,
     play,

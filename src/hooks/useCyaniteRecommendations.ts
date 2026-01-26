@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react';
 
-interface Recommendation {
+export interface Recommendation {
   id: string;
   title: string;
   artist: string;

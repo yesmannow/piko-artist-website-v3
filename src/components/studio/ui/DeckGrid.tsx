@@ -29,6 +29,9 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
   const setDeckFilter = useStore((state) => state.setDeckFilter);
   const { toggleStem, getStemMuteState } = useAudioEngine();
   const [stemMutes, setStemMutes] = useState(() => getStemMuteState(deckId));
+  const stripLabel = deckId === 'A' ? 'Strip A' : 'Strip B';
+  const accentText = deckId === 'A' ? 'text-studio-cyan/80' : 'text-studio-purple/80';
+  const accentBg = deckId === 'A' ? 'bg-studio-cyan/30 border-studio-cyan text-studio-cyan' : 'bg-studio-purple/30 border-studio-purple text-studio-purple';
 
   const eqValues = useMemo(() => {
     const normalize = (value: number) => (value + 12) / 24;
@@ -40,7 +43,36 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
   }, [deck.eq.high, deck.eq.low, deck.eq.mid]);
 
   return (
-    <div className="bg-obsidian-900/60 backdrop-blur-[20px] border-x border-white/5 p-2 flex flex-col items-center gap-3">
+    <div className="bg-gradient-to-b from-[#0b0c12cc] to-[#06070ccc] rounded-xl border border-white/5 shadow-[0_14px_36px_rgba(0,0,0,0.35)] p-3 flex flex-col items-center gap-3 backdrop-blur-[20px]">
+      <div className="w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.28em] text-white/50">
+        <span>{stripLabel}</span>
+        <span className={accentText}>Line</span>
+      </div>
+      <div className="w-full flex items-center justify-between gap-2">
+        {([
+          { label: 'VOX', key: 'vocals' },
+          { label: 'DRM', key: 'drums' },
+          { label: 'BAS', key: 'bass' },
+        ] as const).map((stem) => {
+          const isMuted = stemMutes[stem.key];
+          return (
+            <button
+              key={stem.key}
+              onClick={() => {
+                toggleStem(deckId, stem.key);
+                setStemMutes(getStemMuteState(deckId));
+              }}
+              className={`flex-1 py-1 rounded-md text-[10px] font-mono uppercase tracking-[0.2em] border transition-all ${
+                isMuted
+                  ? 'bg-[#0a0b10] border-white/10 text-white/40'
+                  : accentBg
+              }`}
+            >
+              {stem.label}
+            </button>
+          );
+        })}
+      </div>
       <Knob
         label="GAIN"
         value={clamp01(deck.volume)}
@@ -75,9 +107,10 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
         onChange={(value) => setDeckFilter(deckId, value)}
         size={68}
         color="#22d3ee"
+        bipolar
       />
       <div className="w-full flex flex-col items-center gap-2">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-white/60">STEMS</div>
+        <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-white/60">STEMS</div>
         <div className="flex items-center gap-2">
           {([
             { label: 'VOCAL', key: 'vocals' },
@@ -110,7 +143,7 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
         label="VOLUME"
         value={clamp01(deck.volume)}
         onChange={(value) => setDeckVolume(deckId, value)}
-        height={220}
+        height={192}
       />
     </div>
   );
@@ -156,14 +189,14 @@ export function DeckGrid() {
   };
 
   return (
-    <div className="h-full w-full flex flex-col gap-3 overflow-hidden lg:grid lg:grid-cols-[1fr_80px_100px_80px_1fr] lg:gap-3">
+    <div className="h-full w-full grid grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[1.15fr_0.85fr_0.95fr_0.85fr_1.15fr]">
       <div className="min-w-0 flex-1">
         <Deck deckId="A" />
       </div>
       <div className="hidden lg:flex">
         <ChannelStrip deckId="A" />
       </div>
-      <div className="hidden lg:flex bg-obsidian-900/60 backdrop-blur-[20px] border border-white/10 rounded-lg flex-col items-center justify-between py-4">
+      <div className="hidden lg:flex bg-obsidian-900/80 backdrop-blur-[20px] border border-white/10 rounded-lg flex-col items-center justify-between py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
         <div className="flex flex-col items-center gap-3">
           <Knob
             label="MASTER"
@@ -174,12 +207,14 @@ export function DeckGrid() {
           />
           <button
             onClick={handleRecordToggle}
-            className="relative w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center"
+            className="relative w-14 h-14 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.6)]"
             aria-label={isRecording ? 'Stop recording' : 'Start recording'}
           >
             <span
-              className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-red-500/40'}`}
+              className={`w-3.5 h-3.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-red-500/40'}`}
             />
+            <span className="absolute inset-1 rounded-full border border-white/10 pointer-events-none" />
+            <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
           </button>
         </div>
         <Crossfader />
@@ -241,12 +276,14 @@ export function DeckGrid() {
                   />
                   <button
                     onClick={handleRecordToggle}
-                    className="relative w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center"
+                    className="relative w-14 h-14 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.6)]"
                     aria-label={isRecording ? 'Stop recording' : 'Start recording'}
                   >
                     <span
-                      className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-red-500/40'}`}
+                      className={`w-3.5 h-3.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-red-500/40'}`}
                     />
+                    <span className="absolute inset-1 rounded-full border border-white/10 pointer-events-none" />
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
                   </button>
                 </div>
                 <Crossfader />

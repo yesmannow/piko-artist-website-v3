@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import withSerwistInit from '@serwist/next';
 
@@ -126,11 +127,27 @@ const nextConfig = {
       layers: true, // Required for some WASM builds
     };
 
-    // Rule to handle .wasm files as assets if not automatically handled
+    // Ensure .wasm files are emitted as static assets (never inlined)
     config.module.rules.push({
       test: /\.wasm$/,
-      type: "asset/resource",
+      type: 'asset/resource',
+      generator: {
+        filename: 'static/wasm/[name][contenthash][ext]',
+      },
     });
+
+    // Copy Essentia WASM to public/wasm for worker-side direct loading fallback
+    const wasmSource = path.resolve(__dirname, 'node_modules/essentia.js/dist/essentia-wasm.web.wasm');
+    const wasmTargetDir = path.resolve(__dirname, 'public/wasm');
+    if (fs.existsSync(wasmSource)) {
+      fs.mkdirSync(wasmTargetDir, { recursive: true });
+      const dest = path.join(wasmTargetDir, 'essentia-wasm.web.wasm');
+      const sourceMTime = fs.statSync(wasmSource).mtimeMs;
+      const needsCopy = !fs.existsSync(dest) || fs.statSync(dest).mtimeMs < sourceMTime;
+      if (needsCopy) {
+        fs.copyFileSync(wasmSource, dest);
+      }
+    }
 
     // Fix for Essentia.js "fs" module resolution in browser
     if (!isServer) {

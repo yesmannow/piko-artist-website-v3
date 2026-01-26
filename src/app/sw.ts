@@ -30,6 +30,15 @@ declare const self: WorkerGlobalScope;
  * - Adds cache cleanup on quota errors
  */
 const customRuntimeCaching: RuntimeCaching[] = [
+  // API routes and placeholder images should bypass cache to avoid opaque/no-response issues
+  {
+    matcher: ({ url }) => url.origin === location.origin && url.pathname.startsWith('/api/'),
+    handler: new NetworkOnly(),
+  },
+  {
+    matcher: ({ url }) => url.hostname === 'placehold.co',
+    handler: new NetworkOnly(),
+  },
   // Audio stems - Strict 50-item limit to prevent QuotaExceededError
   // Note: Stems are large files, so we use NetworkOnly to prevent caching
   // If caching is needed in the future, use maxEntries: 50

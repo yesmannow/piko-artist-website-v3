@@ -10,7 +10,10 @@ export interface DeckState {
     artist: string;
     artUrl?: string;
     key?: string;
+    scale?: string;
     energy?: number;
+    danceability?: number;
+    beatGrid?: number[];
     stems?: {
       full?: string;
       vocals?: string;
@@ -29,6 +32,7 @@ export interface DeckState {
     };
   } | null;
   isPlaying: boolean;
+  isLoaded: boolean;
   volume: number; // 0 to 1
   playbackRate: number; // 1.0 is normal speed
   eq: { low: number; mid: number; high: number }; // Gains in dB
@@ -67,6 +71,7 @@ const initialDeckState: DeckState = {
   trackId: null,
   trackData: null,
   isPlaying: false,
+  isLoaded: false,
   volume: 1,
   playbackRate: 1,
   eq: { low: 0, mid: 0, high: 0 },
@@ -91,16 +96,17 @@ export const useStore = create<MixerState>((set) => ({
 
   setDeckTrack: (deck, trackData) => set((state) => {
     const deckKey = `deck${deck}` as 'deckA' | 'deckB';
-    const currentDeck = state[deckKey];
-    return {
-      [deckKey]: {
-        ...currentDeck,
-        trackData: trackData,
-        trackId: trackData?.url || null, // Using URL as ID for simplicity
-        playbackRate: trackData ? state.masterBpm / trackData.bpm : 1 // Auto-calc initial sync rate
-      }
-    };
-  }),
+  const currentDeck = state[deckKey];
+  return {
+    [deckKey]: {
+      ...currentDeck,
+      trackData: trackData,
+      trackId: trackData?.url || null, // Using URL as ID for simplicity
+      playbackRate: trackData ? state.masterBpm / trackData.bpm : 1, // Auto-calc initial sync rate
+      isLoaded: false,
+    }
+  };
+}),
 
   updateDeck: (deck, updates) => set((state) => {
     const deckKey = `deck${deck}` as 'deckA' | 'deckB';

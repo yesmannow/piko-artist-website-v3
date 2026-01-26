@@ -143,20 +143,28 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
       // with zero-copy performance (critical for large audio files)
       return new Promise<AnalysisResult>((resolve, reject) => {
         // Set up message handler for worker response
+        const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
         const handleMessage = (event: MessageEvent) => {
-          const { type, result, error: workerError } = event.data;
+          const { id, success, result, error: workerError } = event.data as {
+            id?: string;
+            success?: boolean;
+            result?: AnalysisResult;
+            error?: string;
+          };
 
-          if (type === 'result') {
+          if (id !== requestId) return;
+
+          worker.removeEventListener('message', handleMessage);
+          setIsAnalyzing(false);
+
+          if (success) {
             console.log('[useTrackAnalysis] Analysis complete:', result);
-            worker.removeEventListener('message', handleMessage);
-            setIsAnalyzing(false);
-            resolve(result);
-          } else if (type === 'error') {
-            console.error('[useTrackAnalysis] Analysis error:', workerError);
-            worker.removeEventListener('message', handleMessage);
-            setIsAnalyzing(false);
-            setError(workerError);
-            reject(new Error(workerError));
+            resolve(result as AnalysisResult);
+          } else {
+            const errMsg = workerError || 'Unknown error';
+            console.error('[useTrackAnalysis] Analysis error:', errMsg);
+            setError(errMsg);
+            reject(new Error(errMsg));
           }
         };
 
@@ -167,9 +175,8 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
         // The third parameter [monoData.buffer] transfers ownership to the worker
         worker.postMessage(
           {
-            type: 'analyze',
-            audioData: monoData,
-            sampleRate: audioBuffer.sampleRate,
+            id: requestId,
+            audioBuffer: monoData,
           },
           [monoData.buffer]
         );

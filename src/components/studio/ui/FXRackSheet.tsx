@@ -36,7 +36,7 @@ export function FXRackSheet({ masterBus, masterPostFx }: FXRackSheetProps) {
       </AnimatePresence>
 
       <motion.div
-        className="glass-panel border-t border-white/10 overflow-hidden"
+        className="glass-panel border-t border-white/10 overflow-hidden bg-obsidian-900/80 backdrop-blur-[20px]"
         animate={{ height: isExpanded ? '16rem' : '3rem' }}
         transition={{ duration: 0.25, ease: 'easeInOut' }}
       >

@@ -13,6 +13,8 @@ interface AnalysisResult {
   key: string;
   energy: number;
   danceability?: number;
+  scale?: string;
+  beatGrid?: number[];
 }
 
 interface UseEssentiaAnalysisReturn {

@@ -7,17 +7,37 @@
 
 import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.web.js';
 import Essentia from 'essentia.js/dist/essentia.js-core.es.js';
+import wasmAssetUrl from 'essentia.js/dist/essentia-wasm.web.wasm?url';
 
-let essentiaInstance: any = null;
+let essentiaInstance: Essentia | null = null;
+const wasmCandidates = [
+  typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_ESSENTIA_WASM_URL : undefined,
+  wasmAssetUrl,
+  typeof self !== 'undefined' ? `${self.location.origin}/wasm/essentia-wasm.web.wasm` : undefined,
+].filter(Boolean) as string[];
 
 // Initialize Essentia.js
 async function initEssentia() {
   if (essentiaInstance) return;
 
   try {
-    const wasm = await EssentiaWASM();
-    essentiaInstance = new Essentia(wasm);
-    console.log('[EssentiaWorker] Essentia.js initialized');
+    let lastError: unknown;
+
+    for (const candidate of wasmCandidates) {
+      try {
+        const wasm = await EssentiaWASM({
+          locateFile: (path: string) => (path.endsWith('.wasm') ? candidate : path),
+        });
+        essentiaInstance = new Essentia(wasm);
+        console.log('[EssentiaWorker] Essentia.js initialized from', candidate);
+        return;
+      } catch (error) {
+        lastError = error;
+        console.warn('[EssentiaWorker] Failed to load Essentia WASM from', candidate, error);
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error('Failed to initialize Essentia.js');
   } catch (error) {
     console.error('[EssentiaWorker] Failed to initialize Essentia:', error);
     throw error;
@@ -32,6 +52,9 @@ self.onmessage = async (e: MessageEvent) => {
     // Initialize if needed
     if (!essentiaInstance) {
       await initEssentia();
+    }
+    if (!essentiaInstance) {
+      throw new Error('Essentia failed to initialize');
     }
 
     // Convert AudioBuffer to Float32Array
@@ -66,11 +89,14 @@ self.onmessage = async (e: MessageEvent) => {
     essentiaInstance.delete(keyExtractor);
 
     // Calculate RMS (energy)
-    const rms = essentiaInstance.RMS(audioVector);
-    const energy = Math.min(1, Math.max(0, rms / 0.3)); // Normalize to 0-1 range
+    const rmsResult = essentiaInstance.RMS(audioVector) as { rms?: number } | number;
+    const rmsValue = typeof rmsResult === 'number' ? rmsResult : rmsResult?.rms ?? 0;
+    const energy = Math.min(1, Math.max(0, rmsValue / 0.3)); // Normalize to 0-1 range
 
-    // Clean up RMS
-    essentiaInstance.delete(rms);
+    // Clean up RMS object if applicable
+    if (typeof rmsResult === 'object' && rmsResult !== null) {
+      essentiaInstance.delete(rmsResult);
+    }
 
     // Clean up audio vector
     essentiaInstance.delete(audioVector);
