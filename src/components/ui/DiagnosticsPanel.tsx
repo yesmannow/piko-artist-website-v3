@@ -32,17 +32,18 @@ export function DiagnosticsPanel() {
     const updateDiagnostics = () => {
       const now = performance.now();
       frameCountRef.current++;
-      
+
       if (now - lastTimeRef.current >= 1000) {
         const fps = Math.round((frameCountRef.current * 1000) / (now - lastTimeRef.current));
         frameCountRef.current = 0;
         lastTimeRef.current = now;
 
-        // Get memory if available
-        const memory = (performance as any).memory
+        // Get memory if available (performance.memory is non-standard)
+        const perf = performance as unknown as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number } };
+        const memory = perf.memory
           ? {
-              used: Math.round((performance as any).memory.usedJSHeapSize / 1048576),
-              total: Math.round((performance as any).memory.totalJSHeapSize / 1048576),
+              used: Math.round(perf.memory.usedJSHeapSize / 1048576),
+              total: Math.round(perf.memory.totalJSHeapSize / 1048576),
             }
           : undefined;
 
@@ -120,9 +121,12 @@ export function DiagnosticsPanel() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#9ca3af' }}>FPS:</span>
-              <span style={{ color: data.fps < 30 ? '#ef4444' : data.fps < 50 ? '#f59e0b' : '#22c55e' }}>
-                {data.fps}
-              </span>
+              {(() => {
+                let color = '#22c55e';
+                if (data.fps < 30) color = '#ef4444';
+                else if (data.fps < 50) color = '#f59e0b';
+                return <span style={{ color }}>{data.fps}</span>;
+              })()}
             </div>
             {data.memoryUsage !== undefined && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

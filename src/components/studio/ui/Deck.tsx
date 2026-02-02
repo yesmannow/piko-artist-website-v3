@@ -24,12 +24,11 @@ import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
 import { StateBadge } from '@/components/ui/StateBadge';
 
-import { useComplexityMode } from '@/contexts/ComplexityModeContext';
-
+// complexity mode is passed as a prop; keep the prop shape immutable
 interface DeckProps {
-  deckId: 'A' | 'B';
-  showMiniWaveform?: boolean;
-  complexityMode?: 'simple' | 'pro';
+  readonly deckId: 'A' | 'B';
+  readonly showMiniWaveform?: boolean;
+  readonly complexityMode?: 'simple' | 'pro';
 }
 
 const UI_UPDATE_INTERVAL_MS = 50;
@@ -58,7 +57,6 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const setStems = useStudioStore((state) => state.setStems);
   const markStemsReady = useStudioStore((state) => state.markStemsReady);
   const focusedDeckId = useStudioStore((state) => state.focusedDeckId);
-  const setFocusedDeckId = useStudioStore((state) => state.setFocusedDeckId);
   const stemGenerationRequest = useStudioStore((state) => state.stemGenerationRequest);
   const autoStem = useStudioStore((state) => state.autoStem);
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
@@ -97,7 +95,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const deckColor = deckId === 'A' ? 'bg-studio-cyan' : 'bg-studio-purple';
   const jogAccent = deckId === 'A' ? '#22d3ee' : '#a855f7';
   const deckLabel = `DECK ${deckId}`;
-  const trackData = deck.trackData as DeckState['trackData'] | null;
+  const trackData = deck.trackData ?? null;
   const pitchDelta = (deck.playbackRate || 1) - 1;
   const currentBpm = trackData ? calculateNewBpm(trackData.bpm, pitchDelta) : null;
   const isSynced =
@@ -113,7 +111,9 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const showInlineStemControls = hasStems && !stemModeEnabled;
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return;
+    // guard for SSR / missing browser APIs
+  const Global = typeof globalThis === 'undefined' ? undefined : (globalThis as unknown as Window & { ResizeObserver?: typeof ResizeObserver });
+    if (Global?.ResizeObserver === undefined) return;
     const el = deckRef.current;
     if (!el) return;
 
@@ -126,15 +126,16 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
       }
       deckReadyRef.current = ready;
       setDeckReady(ready);
-      el.setAttribute('data-deck-ready', ready ? 'true' : 'false');
+      // prefer dataset for data-* attributes
+      el.dataset.deckReady = ready ? 'true' : 'false';
     };
 
-    const testHelpers = (window as DeckWindow).__PIKO_TEST_HELPERS__;
+    const testHelpers = (globalThis as unknown as DeckWindow).__PIKO_TEST_HELPERS__;
     if (testHelpers?.forceDeckLayout) {
       testHelpers.forceDeckLayout(deckId);
     }
 
-    const ro = new ResizeObserver((entries) => {
+    const ro = new Global.ResizeObserver((entries: ReadonlyArray<ResizeObserverEntry>) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         updateReady(width > 8 && height > 8, width, height);
@@ -167,7 +168,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
     // For now, we'll just show a message since we don't have the actual track URL
     // In a real implementation, you'd need to map Cyanite IDs to your track URLs
     console.log(`[Deck] Would load recommendation: ${rec.title} to Deck ${targetDeck}`);
-    // TODO: Map Cyanite recommendation to actual track URL and load it
+  // Mapping Cyanite recommendation to an actual track URL requires backend support.
   };
 
   const handleSplitStems = useCallback(async () => {
@@ -180,9 +181,8 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
 
       const response = await fetch(trackData.url);
       const arrayBuffer = await response.arrayBuffer();
-      const AudioContextCtor =
-        window.AudioContext ??
-        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const LocalGlobal = globalThis as any;
+    const AudioContextCtor = LocalGlobal.AudioContext ?? LocalGlobal.webkitAudioContext;
       if (!AudioContextCtor) {
         throw new Error('AudioContext is not supported in this browser');
       }
@@ -243,7 +243,8 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   ]);
 
   useEffect(() => {
-    if (!stemGenerationRequest || stemGenerationRequest.deck !== deckId) return;
+    // prefer optional chain for concision
+    if (stemGenerationRequest?.deck !== deckId) return;
     if (canGenerateStems) {
       handleSplitStems();
     }
@@ -338,10 +339,11 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
 
   useEffect(() => {
     let frameId: number;
+    const Global = globalThis as any;
     const studioDeckKey = deckId === 'A' ? 'deckA' : 'deckB';
     const tick = (time: number) => {
       if (!isAppActive) {
-        frameId = window.requestAnimationFrame(tick);
+        frameId = Global.requestAnimationFrame(tick);
         return;
       }
       const duration = getDeckDuration(deckId);
@@ -370,13 +372,31 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         lastUiUpdateRef.current = time;
       }
 
-      frameId = window.requestAnimationFrame(tick);
+        frameId = Global.requestAnimationFrame(tick);
     };
-    frameId = window.requestAnimationFrame(tick);
+    frameId = Global.requestAnimationFrame(tick);
     return () => {
-      window.cancelAnimationFrame(frameId);
+      Global.cancelAnimationFrame(frameId);
     };
   }, [deckId, getDeckDuration, getPlaybackPosition, isAppActive, setDeckDurationStore, updateDeckTime]);
+
+  // compute a few derived classNames/titles to avoid nested ternaries in JSX
+  const keyLockClass = (() => {
+    if (isKeyLockActive) {
+      if (deckId === 'A') return 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan shadow-[0_0_10px_rgba(34,211,238,0.5)]';
+      return 'bg-studio-purple/20 border-studio-purple text-studio-purple shadow-[0_0_10px_rgba(168,85,247,0.5)]';
+    }
+    return 'bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white';
+  })();
+
+  const energyFilledClass = (filled: boolean) => {
+    if (!filled) return 'bg-white/10';
+    return deckId === 'A' ? 'bg-studio-cyan shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'bg-studio-purple shadow-[0_0_8px_rgba(168,85,247,0.6)]';
+  };
+
+  let stemButtonTitle = 'Split track into stems';
+  if (stemWorkerError) stemButtonTitle = `Stem worker error: ${stemWorkerError}`;
+  else if (stemInitializing) stemButtonTitle = 'Loading stem model...';
 
   return (
     <div
@@ -385,11 +405,6 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
       data-stems-ready={hasStems ? 'true' : 'false'}
       data-deck-id={deckId}
       data-deck-ready={deckReady ? 'true' : 'false'}
-      onClick={() => {
-        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-          setFocusedDeckId(isFocused ? null : deckId);
-        }
-      }}
     >
       <GlassPanel
         depth="deck"
@@ -414,13 +429,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
             {isSynced && <span className="ml-1 text-[10px] text-white">(MT)</span>}
             <button
               onClick={() => setKeyLock(deckId, !isKeyLockActive)}
-              className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-[0.2em] border transition-all ${
-                isKeyLockActive
-                  ? deckId === 'A'
-                    ? 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan shadow-[0_0_10px_rgba(34,211,238,0.5)]'
-                    : 'bg-studio-purple/20 border-studio-purple text-studio-purple shadow-[0_0_10px_rgba(168,85,247,0.5)]'
-                  : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white'
-              }`}
+              className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-[0.2em] border transition-all ${keyLockClass}`}
               title="Master Tempo / Key Lock"
             >
               MT
@@ -431,9 +440,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                 return (
                   <span
                     key={i}
-                    className={`w-1.5 h-3 rounded-sm transition-all duration-300 ${
-                      filled ? (deckId === 'A' ? 'bg-studio-cyan shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'bg-studio-purple shadow-[0_0_8px_rgba(168,85,247,0.6)]') : 'bg-white/10'
-                    }`}
+                    className={`w-1.5 h-3 rounded-sm transition-all duration-300 ${energyFilledClass(filled)}`}
                   />
                 );
               })}
@@ -520,13 +527,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                     className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
                     whileHover={canGenerateStems ? { scale: 1.05 } : {}}
                     whileTap={canGenerateStems ? { scale: 0.95 } : {}}
-                    title={
-                      stemWorkerError
-                        ? `Stem worker error: ${stemWorkerError}`
-                        : stemInitializing
-                          ? "Loading stem model..."
-                          : "Split track into stems"
-                    }
+                    title={stemButtonTitle}
                     data-testid="generate-stems"
                   >
                     {isGeneratingStems ? (
@@ -592,8 +593,8 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                     ? 'border-white/80 text-white shadow-[0_0_12px_rgba(255,255,255,0.5)]'
                     : 'border-white/10 text-white/60 hover:border-white/40 hover:text-white'
                 } disabled:opacity-40 disabled:cursor-not-allowed`}
-                whileHover={!trackData?.bpm ? {} : { scale: 1.05 }}
-                whileTap={!trackData?.bpm ? {} : { scale: 0.95 }}
+                whileHover={trackData?.bpm ? { scale: 1.05 } : {}}
+                whileTap={trackData?.bpm ? { scale: 0.95 } : {}}
               >
                 SYNC
               </motion.button>
@@ -612,8 +613,8 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                   onClick={() => triggerTapeStop(deckId)}
                   disabled={!deck.isLoaded}
                   className="px-4 py-3 rounded-xl border border-white/12 bg-[#0c0c0f] text-xs font-mono uppercase tracking-[0.22em] text-white/80 hover:border-studio-purple/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  whileHover={!deck.isLoaded ? {} : { scale: 1.05 }}
-                  whileTap={!deck.isLoaded ? {} : { scale: 0.95 }}
+                  whileHover={deck.isLoaded ? { scale: 1.05 } : {}}
+                  whileTap={deck.isLoaded ? { scale: 0.95 } : {}}
                 >
                   Tape Stop
                 </motion.button>
@@ -666,7 +667,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
             isSynced={false}
             accent={jogAccent}
             onClick={() => {
-              window.dispatchEvent(new CustomEvent('studio:open-library'));
+              (globalThis as any).dispatchEvent(new CustomEvent('studio:open-library'));
             }}
           />
           <p className="font-mono text-xs text-white/60 uppercase tracking-[0.3em]">Tap the wheel to load Deck {deckId}</p>

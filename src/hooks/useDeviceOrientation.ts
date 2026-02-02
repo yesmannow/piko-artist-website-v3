@@ -25,12 +25,11 @@ export function useDeviceOrientation() {
 
   useEffect(() => {
     // Check if DeviceOrientationEvent is supported
-    if (typeof window === "undefined") return;
+    if (typeof globalThis === 'undefined') return;
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isSupported =
-      "DeviceOrientationEvent" in window ||
-      (isIOS && "DeviceOrientationEvent" in window);
+    const nav = (globalThis as unknown as { navigator?: Navigator }).navigator;
+    const isIOS = nav ? /iPad|iPhone|iPod/.test(nav.userAgent) : false;
+  const isSupported = (globalThis as unknown as any).DeviceOrientationEvent !== undefined || (isIOS && (globalThis as unknown as any).DeviceOrientationEvent !== undefined);
 
     setIsSupported(isSupported);
 
@@ -38,8 +37,7 @@ export function useDeviceOrientation() {
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       // iOS uses different property names
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const alpha = event.alpha ?? (event as any).webkitCompassHeading ?? null;
+  const alpha = event.alpha ?? ((event as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ?? null);
       const beta = event.beta ?? null;
       const gamma = event.gamma ?? null;
 
@@ -48,32 +46,30 @@ export function useDeviceOrientation() {
       // Normalize gamma (left/right tilt) and beta (forward/back tilt) to -1 to 1 range
       // Gamma: -90 to 90 -> -1 to 1
       // Beta: -180 to 180 -> -1 to 1 (clamped to reasonable range)
-      const normalizedX = gamma !== null ? Math.max(-1, Math.min(1, gamma / 90)) : 0;
-      const normalizedY = beta !== null ? Math.max(-1, Math.min(1, (beta - 90) / 90)) : 0;
+  const normalizedX = gamma === null ? 0 : Math.max(-1, Math.min(1, gamma / 90));
+  const normalizedY = beta === null ? 0 : Math.max(-1, Math.min(1, (beta - 90) / 90));
 
       setNormalized({ x: normalizedX, y: normalizedY });
     };
 
     // Request permission on iOS 13+
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (isIOS && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (DeviceOrientationEvent as any)
+      if (isIOS && typeof (DeviceOrientationEvent as unknown as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as unknown as any)
         .requestPermission()
         .then((response: string) => {
-          if (response === "granted") {
-            window.addEventListener("deviceorientation", handleOrientation);
+          if (response === 'granted') {
+            (globalThis as unknown as Window).addEventListener('deviceorientation', handleOrientation);
           }
         })
         .catch(() => {
           // Permission denied or error
         });
     } else {
-      window.addEventListener("deviceorientation", handleOrientation);
+      (globalThis as unknown as Window).addEventListener('deviceorientation', handleOrientation);
     }
 
     return () => {
-      window.removeEventListener("deviceorientation", handleOrientation);
+      (globalThis as unknown as Window).removeEventListener('deviceorientation', handleOrientation);
     };
   }, []);
 

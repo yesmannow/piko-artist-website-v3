@@ -34,6 +34,36 @@ High-performance artist platform built with **Next.js App Router**: music librar
 - **Node.js**: 20.x (repo pins `20.17.0` in `.node-version`, and `>=20 <21` in `package.json`)
 - **Package manager**: npm (this repo includes `package-lock.json`)
 
+## Development Environment
+
+### Recommended: WSL2 (Windows)
+
+For the most reliable development experience on Windows, use WSL2 Ubuntu:
+
+```bash
+# Open WSL2
+wsl -d Ubuntu
+
+# Run the setup script (installs Node.js and validates builds)
+bash /mnt/c/dev/piko-artist-website-v3/wsl-setup.sh
+
+# Or manually:
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt-get install -y nodejs build-essential
+cd /mnt/c/dev/piko-artist-website-v3
+npm ci
+npm run build
+```
+
+**Why WSL2?** Avoids Windows-specific TypeScript hangs and matches production Linux environments.
+
+### Alternative: Docker
+
+```bash
+docker build -t piko-studio .
+docker run --rm piko-studio
+```
+
 ## Getting started
 
 ```bash

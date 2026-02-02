@@ -45,9 +45,9 @@ export function usePerformanceHeuristics() {
 
         // Calculate memory pressure if available
         let memoryPressure = 0;
-        if ((performance as any).memory) {
-          const mem = (performance as any).memory;
-          const used = mem.usedJSHeapSize / mem.jsHeapSizeLimit;
+        const memInfo = (performance as unknown as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+        if (memInfo) {
+          const used = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
           memoryPressure = Math.min(1, used);
         }
 

@@ -135,14 +135,14 @@ export const useStore = create<MixerState>()(
 
       setDeckTrack: (deck, trackData) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
               ...currentDeck,
               trackData: trackData,
               trackId: trackData?.trackId ?? trackData?.url ?? null,
-              playbackRate: trackData && trackData.bpm ? state.masterBpm / trackData.bpm : 1, // Auto-calc initial sync rate
+              playbackRate: trackData?.bpm ? state.masterBpm / trackData.bpm : 1, // Auto-calc initial sync rate
               isLoaded: false,
             },
           };
@@ -150,7 +150,7 @@ export const useStore = create<MixerState>()(
 
       updateDeck: (deck, updates) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -162,7 +162,7 @@ export const useStore = create<MixerState>()(
 
       setDeckVolume: (deck, vol) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -174,7 +174,7 @@ export const useStore = create<MixerState>()(
 
       setDeckRate: (deck, rate) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -186,7 +186,7 @@ export const useStore = create<MixerState>()(
 
       setDeckEQ: (deck, eq) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -198,7 +198,7 @@ export const useStore = create<MixerState>()(
 
       setDeckFilter: (deck, filter) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -210,7 +210,7 @@ export const useStore = create<MixerState>()(
 
       togglePlay: (deck) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -222,7 +222,7 @@ export const useStore = create<MixerState>()(
 
       setDeckPlaying: (deck, playing) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -234,7 +234,7 @@ export const useStore = create<MixerState>()(
 
       toggleStem: (deck, stem) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {
@@ -249,7 +249,7 @@ export const useStore = create<MixerState>()(
 
       setKeyLock: (deck, active) =>
         set((state) => {
-          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
           return {
             [deckKey]: {

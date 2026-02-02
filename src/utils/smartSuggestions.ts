@@ -18,7 +18,13 @@ export function suggestFxChain(current: TrackMeta) {
   return ['Filter Lowpass 1/4', 'Delay 1/8'];
 }
 
-export async function oneClickMix(deckA: TrackMeta, deckB: TrackMeta, audioEngine: any) {
+type MinimalEngine = {
+  setTempo: (deckId: string, bpm: number) => Promise<void>;
+  setCrossfadeCurve: (curve: string) => Promise<void> | void;
+  applyFxChain: (deckId: string, chain: string[]) => Promise<void> | void;
+};
+
+export async function oneClickMix(deckA: TrackMeta, deckB: TrackMeta, audioEngine: MinimalEngine) {
   // align BPM (simple ratio), set crossfade curve, apply subtle filter
   const targetBpm = deckA.bpm;
   await audioEngine.setTempo(deckB.id, targetBpm);

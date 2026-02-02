@@ -18,7 +18,8 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "studio:validate": "bash scripts/studio-validate.sh",
-    "sync": "node scripts/sync-videos.mjs"
+    "sync": "node scripts/sync-videos.mjs",
+    "audit": "node scripts/audit-repo.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",

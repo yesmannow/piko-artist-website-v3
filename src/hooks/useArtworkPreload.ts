@@ -34,12 +34,14 @@ export function useArtworkPreload(src?: string, thumbSize = 256) {
         canvas.height = Math.round(image.height * ratio);
         ctx?.drawImage(image, 0, 0, canvas.width, canvas.height);
         setThumb(canvas);
-      } catch (e) {
+      } catch (error_) {
         // cross-origin or other issues — ignore thumbnail
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _err = error_;
         setThumb(null);
       }
     };
-    image.onerror = () => { if (!cancelled) setError(true); };
+  image.onerror = (_err) => { if (!cancelled) setError(true); };
     return () => { cancelled = true; };
   }, [src, thumbSize]);
 

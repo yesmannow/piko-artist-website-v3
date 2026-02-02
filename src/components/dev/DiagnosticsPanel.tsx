@@ -19,13 +19,16 @@ export function DiagnosticsPanel() {
     }
     raf = requestAnimationFrame(tick);
     const memInterval = setInterval(() => {
-      if ((performance as any).memory) setMem(Math.round(((performance as any).memory.usedJSHeapSize || 0) / 1024 / 1024));
+      const perf = performance as unknown as { memory?: { usedJSHeapSize?: number } };
+      const usedMB = perf.memory?.usedJSHeapSize ? Math.round((perf.memory.usedJSHeapSize || 0) / 1024 / 1024) : null;
+      if (usedMB !== null) setMem(usedMB);
     }, 2000);
     // worker health ping (assumes useStemWorker exposes ping)
     const healthInterval = setInterval(async () => {
       try {
         // ping worker via global helper if available
-        const ok = await (window as any).__PIKO_TEST_HELPERS__?.pingWorker?.();
+        const helpers = (globalThis as unknown as { __PIKO_TEST_HELPERS__?: { pingWorker?: () => Promise<boolean> } }).__PIKO_TEST_HELPERS__;
+        const ok = await helpers?.pingWorker?.();
         setWorkerHealth(ok ? 'ok' : 'unreachable');
       } catch {
         setWorkerHealth('error');

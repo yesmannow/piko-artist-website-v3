@@ -9,9 +9,12 @@ export function useComplexityMode() {
       if (stored === 'simple' || stored === 'pro') return stored;
     } catch {}
     // auto-detect: low-power devices -> simple
-    if (typeof navigator !== 'undefined') {
-      const hc = (navigator as any).hardwareConcurrency ?? 4;
-      if (hc < 4) return 'simple';
+    if (typeof globalThis !== 'undefined') {
+      const nav = (globalThis as unknown as { navigator?: Navigator }).navigator;
+      if (nav) {
+        const hc = nav.hardwareConcurrency ?? 4;
+        if (hc < 4) return 'simple';
+      }
     }
     return 'pro';
   });

@@ -6,7 +6,7 @@
  * Five-column layout: Deck A | Strip A | Crossfader | Strip B | Deck B
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Deck } from './Deck';
 import { Crossfader } from './Crossfader';
 import { Knob } from './controls/Knob';
@@ -42,7 +42,7 @@ function linearToFader(linear: number) {
   return clamp01((db - MIN_VOLUME_DB) / (0 - MIN_VOLUME_DB));
 }
 
-function ChannelStrip({ deckId }: { deckId: DeckId }) {
+function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
   const deck = useStore((state) => (deckId === 'A' ? state.deckA : state.deckB));
   const setDeckVolume = useStore((state) => state.setDeckVolume);
   const setDeckEQ = useStore((state) => state.setDeckEQ);
@@ -143,6 +143,15 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
             { label: 'BASS', key: 'bass' },
           ] as const).map((stem) => {
             const isMuted = stemMutes[stem.key];
+            let stemClass = '';
+            if (isMuted) {
+              stemClass = 'bg-obsidian-700 border-white/10 text-white/40';
+            } else if (deckId === 'A') {
+              stemClass = 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan';
+            } else {
+              stemClass = 'bg-studio-purple/20 border-studio-purple text-studio-purple';
+            }
+
             return (
               <button
                 key={stem.key}
@@ -150,13 +159,7 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
                   toggleStem(deckId, stem.key);
                   setStemMutes(getStemMuteState(deckId));
                 }}
-                className={`px-2 py-1 rounded-md text-[10px] font-mono uppercase tracking-widest border transition-colors ${
-                  isMuted
-                    ? 'bg-obsidian-700 border-white/10 text-white/40'
-                    : deckId === 'A'
-                      ? 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan'
-                      : 'bg-studio-purple/20 border-studio-purple text-studio-purple'
-                }`}
+                className={`px-2 py-1 rounded-md text-[10px] font-mono uppercase tracking-widest border transition-colors ${stemClass}`}
               >
                 {stem.label}
               </button>
@@ -177,7 +180,7 @@ function ChannelStrip({ deckId }: { deckId: DeckId }) {
 export function DeckGrid() {
   const { getMasterBus, setMasterGain } = useAudioEngine();
   const { recordMasterBus, stopRecording, transcode } = useExporter();
-  const [masterGain, setMasterGainLocal] = useState(1);
+  const [masterGainLocal, setMasterGainLocal] = useState<number>(1);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -187,8 +190,8 @@ export function DeckGrid() {
 
   // Push master gain changes to the engine outside of the render body
   useEffect(() => {
-    setMasterGain(masterGain);
-  }, [masterGain, setMasterGain]);
+    setMasterGain(masterGainLocal);
+  }, [masterGainLocal, setMasterGain]);
 
   useEffect(() => {
     if (recordingBlob) {
@@ -196,7 +199,7 @@ export function DeckGrid() {
     }
   }, [recordingBlob]);
 
-  const handleRecordToggle = async () => {
+  const handleRecordToggle = useCallback(async () => {
     if (!masterBus) return;
     if (!isRecording) {
       recordMasterBus(masterBus);
@@ -210,6 +213,32 @@ export function DeckGrid() {
       setRecordingBlob(blob);
       setIsExportOpen(true);
     }
+  }, [masterBus, isRecording, recordMasterBus, stopRecording]);
+
+  const handleAutomix = useCallback(async () => {
+    try {
+      console.log('Analyzing tracks for automix...');
+      const analysis = await fetchTrackAnalysis();
+      console.log('Adjusting mixer settings for seamless transitions', analysis);
+    } catch (error) {
+      console.error('Automix failed:', error);
+    }
+  }, []);
+
+  const handleBatchExport = useCallback(async () => {
+    try {
+      console.log('Preparing batch export...');
+      const selectedTracks = await openBatchExportModal();
+      console.log('Exporting tracks:', selectedTracks);
+    } catch (error) {
+      console.error('Batch export failed:', error);
+    }
+  }, []);
+
+  // Enhanced mobile mixer panel with animations and touch optimizations
+  const mobilePanelStyles = {
+    transition: 'transform 0.3s ease-in-out',
+    transform: showMixerPanel ? 'translateY(0)' : 'translateY(100%)',
   };
 
   return (
@@ -227,7 +256,7 @@ export function DeckGrid() {
         <div className="flex flex-col items-center gap-3">
           <Knob
             label="MASTER"
-            value={Math.max(0, Math.min(1, masterGain))}
+            value={Math.max(0, Math.min(1, masterGainLocal))}
             onChange={(value) => setMasterGainLocal(value)}
             size={70}
             color="#22d3ee"
@@ -274,12 +303,24 @@ export function DeckGrid() {
         </button>
       </div>
 
+      {/* Mobile Mixer Panel */}
       {showMixerPanel && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowMixerPanel(false)}
-          />
+        <div
+          className="lg:hidden fixed inset-0 z-50"
+          style={mobilePanelStyles}
+        >
+          <div className="absolute inset-0">
+            <button
+              aria-label="Close mixer panel"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowMixerPanel(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setShowMixerPanel(false);
+                }
+              }}
+            />
+          </div>
           <GlassPanel
             depth="mixer"
             className="absolute inset-x-0 bottom-0 bg-obsidian-900/90 backdrop-blur-[20px] p-4"
@@ -302,8 +343,8 @@ export function DeckGrid() {
                 <div className="flex flex-col items-center gap-3">
                   <Knob
                     label="MASTER"
-                    value={Math.max(0, Math.min(1, masterGain))}
-                    onChange={setMasterGainLocal}
+                    value={Math.max(0, Math.min(1, masterGainLocal))}
+                    onChange={(value) => setMasterGainLocal(value)}
                     size={70}
                     color="#22d3ee"
                   />
@@ -326,6 +367,60 @@ export function DeckGrid() {
           </GlassPanel>
         </div>
       )}
+
+      {/* Action Buttons for Automix and Batch Export */}
+      <div className="flex justify-center gap-4 mt-4">
+        <button
+          onClick={handleAutomix}
+          className="px-4 py-2 bg-studio-cyan text-black font-bold rounded shadow-md hover:bg-studio-cyan/80"
+        >
+          Automix
+        </button>
+        <button
+          onClick={handleBatchExport}
+          className="px-4 py-2 bg-studio-purple text-white font-bold rounded shadow-md hover:bg-studio-purple/80"
+        >
+          Batch Export
+        </button>
+      </div>
     </div>
   );
+}
+
+/**
+ * Placeholder function to simulate track analysis
+ */
+async function fetchTrackAnalysis() {
+  try {
+    const response = await fetch('/api/studio/analyze-track', {
+      method: 'POST',
+      body: JSON.stringify({ file: 'track-file-placeholder' }), // Replace with actual file data
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze track');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error in fetchTrackAnalysis:', error);
+    throw error;
+  }
+}
+
+/**
+ * Placeholder function to simulate opening the batch export modal
+ */
+async function openBatchExportModal() {
+  try {
+    // Placeholder logic for opening the ExportModal
+    console.log('Opening batch export modal...');
+    return ['track1', 'track2']; // Replace with actual selected tracks
+  } catch (error) {
+    console.error('Error in openBatchExportModal:', error);
+    throw error;
+  }
 }

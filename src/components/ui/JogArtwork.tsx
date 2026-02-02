@@ -50,7 +50,7 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
   energy = 0,
   trackTitle,
   trackArtist,
-  onScratch
+  onScratch: _onScratch
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -61,6 +61,9 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
   const { img, thumb } = useArtworkPreload(src, 256);
 
   // Nudge animation
+  const drawRef = useRef<(rotation?: number) => void | null>(null);
+  const loopRef = useRef<(() => void) | null>(null);
+
   const animateNudge = useCallback(() => {
     if (!nudgeRef.current?.active) return;
 
@@ -71,7 +74,7 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
 
     const currentRotation = nudgeRef.current.target * easeOut;
     rotationRef.current = currentRotation;
-    draw(currentRotation);
+  drawRef.current?.(currentRotation);
 
     if (progress < 1) {
       rafRef.current = requestAnimationFrame(animateNudge);
@@ -112,8 +115,11 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    if (typeof globalThis !== 'undefined' && typeof (globalThis as any).addEventListener === 'function') {
+      (globalThis as any).addEventListener('keydown', handleKeyDown);
+      return () => (globalThis as any).removeEventListener('keydown', handleKeyDown);
+    }
+    return undefined;
   }, [nudge]);
 
   // draw function
@@ -122,7 +128,7 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
+  const dpr = (typeof globalThis !== 'undefined' && (globalThis as any).devicePixelRatio) || 1;
     const w = size;
     const h = size;
     canvas.width = Math.round(w * dpr);
@@ -149,7 +155,7 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
     ctx.translate(-cx, -cy);
 
     // draw image (use thumbnail if available for speed)
-    if (thumb && performanceMode === 'high') {
+  if (thumb && performanceMode === 'high') {
       // draw thumbnail scaled to cover
       const imgCanvas = thumb;
       const scale = Math.max(w / imgCanvas.width, h / imgCanvas.height);
@@ -173,8 +179,8 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
 
     ctx.restore();
 
-    // grooves overlay (subtle)
-    Grooves(ctx, cx, cy, radius);
+  // grooves overlay (subtle)
+  Grooves(ctx, cx, cy, radius);
 
     // rim: outer ring
     ctx.save();
@@ -203,6 +209,8 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    // store ref to drawing fn so callbacks can use it without being a dependency
+    drawRef.current = draw;
   };
 
   // animation loop for spinning
@@ -215,7 +223,7 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
 
   useEffect(() => {
     // initial draw
-    draw(rotationRef.current);
+    drawRef.current?.(rotationRef.current);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
@@ -225,11 +233,11 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
   useImperativeHandle(ref, () => ({
     setRotation: (deg: number) => {
       rotationRef.current = deg;
-      draw(rotationRef.current);
+      drawRef.current?.(rotationRef.current);
     },
     setSpinning: (on: boolean) => {
       spinningRef.current = on;
-      if (on && !rafRef.current) rafRef.current = requestAnimationFrame(loop);
+      if (on && !rafRef.current) rafRef.current = requestAnimationFrame(() => loopRef.current?.());
       if (!on && rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     },
     nudge,
@@ -247,33 +255,35 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
         height: size,
         boxShadow: reactiveShadow
       }}
-      tabIndex={0}
-      role="application"
-      aria-label={`Jog wheel with ${alt}`}
+      aria-hidden={false}
     >
       {performanceMode === 'low' ? (
-        // Low-power CSS fallback
-        <div
-          className="jog-fallback"
-          style={{
-            width: size,
-            height: size,
-            borderRadius: '50%',
-            backgroundImage: src ? `url(${src})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            boxShadow: reactiveShadow,
-            filter: 'blur(0.5px)'
-          }}
-          role="img"
-          aria-label={alt}
-        />
+        // Low-power CSS fallback. Provide real <img> for accessibility but hide it visually.
+        <div style={{ position: 'relative' }}>
+          <div
+            className="jog-fallback"
+            style={{
+              width: size,
+              height: size,
+              borderRadius: '50%',
+              backgroundImage: src ? `url(${src})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              boxShadow: reactiveShadow,
+              filter: 'blur(0.5px)'
+            }}
+            aria-hidden={true}
+          />
+          {src && (
+            <img src={src} alt={alt} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} aria-hidden={false} />
+          )}
+        </div>
       ) : (
         <canvas
           ref={canvasRef}
           className="jog-artwork-canvas"
-          role="img"
-          aria-label={alt}
+          aria-hidden={true}
+          tabIndex={-1}
         />
       )}
 
@@ -287,3 +297,5 @@ export const JogArtwork = forwardRef<JogArtworkHandle, Props>(({
     </div>
   );
 });
+
+JogArtwork.displayName = 'JogArtwork';

@@ -16,10 +16,12 @@ const ComplexityModeContext = createContext<ComplexityModeContextType | undefine
 
 const STORAGE_KEY = 'piko-complexity-mode';
 
-export function ComplexityModeProvider({ children }: { children: React.ReactNode }) {
+export function ComplexityModeProvider({ children }: { readonly children: React.ReactNode }) {
   const [mode, setModeState] = useState<ComplexityMode>(() => {
-    if (typeof window === 'undefined') return 'simple';
-    const stored = localStorage.getItem(STORAGE_KEY);
+    if (typeof globalThis === 'undefined') return 'simple';
+    const ls = (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    if (!ls) return 'simple';
+    const stored = ls.getItem(STORAGE_KEY);
     return (stored === 'pro' || stored === 'simple') ? stored : 'simple';
   });
 
@@ -35,20 +37,15 @@ export function ComplexityModeProvider({ children }: { children: React.ReactNode
     setModeState((prev) => (prev === 'simple' ? 'pro' : 'simple'));
   }, []);
 
-  // Auto-switch to Pro if user interacts with advanced features
-  const autoSwitchToPro = useCallback(() => {
-    if (mode === 'simple') {
-      setModeState('pro');
-    }
-  }, [mode]);
+  // Note: autoSwitchToPro helper intentionally removed to avoid unused variable lint.
 
-  const value: ComplexityModeContextType = {
+  const value = React.useMemo<ComplexityModeContextType>(() => ({
     mode,
     setMode,
     toggleMode,
     isPro: mode === 'pro',
     isSimple: mode === 'simple',
-  };
+  }), [mode, setMode, toggleMode]);
 
   return (
     <ComplexityModeContext.Provider value={value}>

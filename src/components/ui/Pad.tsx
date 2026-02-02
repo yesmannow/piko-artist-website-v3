@@ -24,7 +24,7 @@ export function Pad({ label, onTrigger, onLongPress, onSecondary, ariaLabel, cla
     };
   }, []);
 
-  function handlePointerDown(e: React.PointerEvent) {
+  function handlePointerDown(_e: React.PointerEvent) {
     setPressed(true);
     haptic('weak');
     longPressTimerRef.current = window.setTimeout(() => {
@@ -34,7 +34,7 @@ export function Pad({ label, onTrigger, onLongPress, onSecondary, ariaLabel, cla
     }, 600) as unknown as number;
   }
 
-  function handlePointerUp(e: React.PointerEvent) {
+  function handlePointerUp(_e: React.PointerEvent) {
     setPressed(false);
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);

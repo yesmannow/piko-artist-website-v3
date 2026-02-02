@@ -2,17 +2,17 @@
 
 /**
  * useAudioEngine.ts - High-Performance Audio Engine for Studio V3
- * 
+ *
  * Uses Tone.js with Master Bus chain:
  * Channel -> CrossFade -> Compressor -> Limiter -> Destination
- * 
+ *
  * Equal Power crossfade logic prevents volume dips during transitions
  */
 
 import { useCallback, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
-import { useStore } from '@/store/useStore';
-import { useStudioStore } from '@/store/useStudioStore';
+import { useStore } from '../store/useStore';
+import { useStudioStore } from '../store/useStudioStore';
 import { useEssentiaAnalysis } from './useEssentiaAnalysis';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 
@@ -223,8 +223,8 @@ export const useAudioEngine = (): AudioEngineControls => {
     engineRef.current = engineSingletonRef.current ?? createEngineState();
     engineSingletonRef.current = engineRef.current;
   }
-  const engine = engineRef.current!;
-  
+  const engine = engineRef.current;
+
   // Audio nodes - singleton shared across hook instances
   const players = engine.players;
   const stemPlayers = engine.stemPlayers;
@@ -279,8 +279,10 @@ export const useAudioEngine = (): AudioEngineControls => {
       source.connect(rawCtx.destination);
       source.start(0);
       console.log('[AudioEngine] Hardware Unlocked for Mobile');
-      if (Tone.Transport.state !== 'started') {
-        Tone.Transport.start();
+      if (Tone.getContext().transport.state !== 'started') {
+        // start transport and give a micro-safety delay
+        Tone.getContext().transport.start();
+        console.log('[AudioEngine] Transport started for scheduling');
       }
 
       // Create Master Bus chain
@@ -332,10 +334,10 @@ export const useAudioEngine = (): AudioEngineControls => {
       recorderTap.toDestination();
 
       // MediaRecorder tap (for social export) - only in live browser contexts
-      if (typeof window !== 'undefined' && rawCtx instanceof AudioContext) {
-        const mediaDest = (rawCtx as AudioContext).createMediaStreamDestination();
+      if (globalThis.window !== undefined && rawCtx instanceof AudioContext) {
+        const mediaDest = rawCtx.createMediaStreamDestination();
         recorderTap.connect(mediaDest);
-        recorderStream.current = mediaDest.stream;
+        engine.recorderStream.current = mediaDest.stream;
       }
 
       crossFade.current = crossfade;
@@ -445,6 +447,48 @@ export const useAudioEngine = (): AudioEngineControls => {
     [deckA.isKeyLockActive, deckB.isKeyLockActive, pitchShift]
   );
 
+  // Helper: perform audio analysis and update deck metadata if needed
+  const performTrackAnalysis = useCallback(async (deck: 'A' | 'B', url: string, bpm: number) => {
+    try {
+      // Fetch audio file for analysis
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+
+      // Decode audio data
+  const AudioContextCtor = typeof globalThis !== 'undefined'
+  ? ((globalThis as unknown as { AudioContext?: typeof AudioContext }).AudioContext || (globalThis as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)
+  : undefined;
+      if (!AudioContextCtor) {
+        throw new Error('AudioContext is not supported in this browser');
+      }
+      const decodeCtx = new AudioContextCtor();
+      const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+
+      // Analyze in worker
+  const analysisResult = await analyzeTrack(audioBuffer, url);
+
+      // Update store with analyzed BPM/key if different
+      if (analysisResult && analysisResult.bpm > 0 && Math.abs(analysisResult.bpm - bpm) > 2) {
+        console.log(`[AudioEngine] Analyzed BPM: ${analysisResult.bpm} (was ${bpm})`);
+        const currentDeck = useStore.getState()[deck === 'A' ? 'deckA' : 'deckB'];
+        if (currentDeck.trackData) {
+          setDeckTrack(deck, {
+            ...currentDeck.trackData,
+            bpm: analysisResult.bpm,
+            key: analysisResult.key,
+            scale: analysisResult.scale,
+            energy: analysisResult.energy,
+            danceability: analysisResult.danceability,
+            beatGrid: analysisResult.beatGrid,
+          });
+        }
+      }
+    } catch (analysisError) {
+      console.warn(`[AudioEngine] Analysis failed for Deck ${deck}:`, analysisError);
+      // Don't fail track loading if analysis fails
+    }
+  }, [analyzeTrack, setDeckTrack]);
+
   // Load track on deck
   const loadTrack = useCallback(async (deck: 'A' | 'B', url: string, bpm: number, skipAnalysis = false) => {
     if (!isInitialized.current) {
@@ -481,7 +525,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       const eq = eqs.current[deck];
       const filter = filters.current[deck];
       const pitchNode = pitchShift.current[deck];
-      
+
       if (!channel || !eq || !filter) {
         throw new Error(`[AudioEngine] Deck ${deck} not initialized`);
       }
@@ -504,7 +548,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       updateKeyLockComp(deck, syncRate);
 
       players.current[deck] = player;
-      
+
       // Update store with track data
       setDeckTrack(deck, {
         url,
@@ -517,68 +561,32 @@ export const useAudioEngine = (): AudioEngineControls => {
 
       // Perform Essentia.js analysis if not skipped
       if (!skipAnalysis) {
-        try {
-          // Fetch audio file for analysis
-          const response = await fetch(url);
-          const arrayBuffer = await response.arrayBuffer();
-          
-          // Decode audio data
-          const AudioContextCtor =
-            window.AudioContext ??
-            (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-          if (!AudioContextCtor) {
-            throw new Error('AudioContext is not supported in this browser');
-          }
-          const audioBuffer = await new AudioContextCtor().decodeAudioData(arrayBuffer);
-          
-          // Analyze in worker
-          const analysisResult = await analyzeTrack(audioBuffer, url);
-          
-          // Update store with analyzed BPM/key if different
-          if (analysisResult && analysisResult.bpm > 0 && Math.abs(analysisResult.bpm - bpm) > 2) {
-            console.log(`[AudioEngine] Analyzed BPM: ${analysisResult.bpm} (was ${bpm})`);
-            // Update deck with analyzed data
-            const currentDeck = deck === 'A' ? deckA : deckB;
-            if (currentDeck.trackData) {
-              setDeckTrack(deck, {
-                ...currentDeck.trackData,
-                bpm: analysisResult.bpm,
-                key: analysisResult.key,
-                scale: analysisResult.scale,
-                energy: analysisResult.energy,
-                danceability: analysisResult.danceability,
-                beatGrid: analysisResult.beatGrid,
-              });
-            }
-          }
-        } catch (analysisError) {
-          console.warn(`[AudioEngine] Analysis failed for Deck ${deck}:`, analysisError);
-          // Don't fail track loading if analysis fails
-        }
+        await performTrackAnalysis(deck, url, bpm);
       }
     } catch (error) {
       console.error(`[AudioEngine] Failed to load track on Deck ${deck}:`, error);
       throw error;
     }
   }, [
-    masterBpm,
-    setDeckTrack,
-    analyzeTrack,
-    deckA,
-    deckB,
-    updateDeck,
-    init,
-    updateKeyLockComp,
-    isInitialized,
-    failedTracksRef,
-    channels,
-    eqs,
-    filters,
-    pitchShift,
-    stemPlayers,
-    stemMutes,
-    players,
-  ]);
+     masterBpm,
+     setDeckTrack,
+     analyzeTrack,
+     performTrackAnalysis,
+     deckA,
+     deckB,
+     updateDeck,
+     init,
+     updateKeyLockComp,
+     isInitialized,
+     failedTracksRef,
+     channels,
+     eqs,
+     filters,
+     pitchShift,
+     stemPlayers,
+     stemMutes,
+     players,
+   ]);
 
   // Seek to position
   const seekTo = useCallback((deck: 'A' | 'B', timeInSeconds: number) => {
@@ -586,7 +594,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     const hasStems = Object.values(stemSet).some((player) => player !== null);
     if (hasStems) {
       Object.values(stemSet).forEach((player) => {
-        if (player && player.loaded) {
+        if (player?.loaded) {
           player.seek(timeInSeconds);
         }
       });
@@ -595,7 +603,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
 
     const player = players.current[deck];
-    if (player && player.loaded) {
+    if (player?.loaded) {
       player.seek(timeInSeconds);
       console.log(`[AudioEngine] Deck ${deck} seeked to ${timeInSeconds}s`);
     }
@@ -688,11 +696,11 @@ export const useAudioEngine = (): AudioEngineControls => {
     const stemSet = stemPlayers.current[deck];
     const hasStems = Object.values(stemSet).some((player) => player !== null);
     if (hasStems) {
-      return Tone.Transport.seconds || 0;
+      return Tone.getContext().transport.seconds || 0;
     }
 
     const player = players.current[deck];
-    if (player && player.loaded) {
+    if (player?.loaded) {
       const rawPosition = (player as { position?: number | string }).position ?? 0;
       if (typeof rawPosition === 'number') {
         return rawPosition;
@@ -715,7 +723,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, [players, stemPlayers]);
 
   const getTransportSeconds = useCallback(() => {
-    return Tone.Transport.seconds || 0;
+    return Tone.getContext().transport.seconds || 0;
   }, []);
 
   const setMasterGain = useCallback((value: number) => {
@@ -875,7 +883,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       const eq = eqs.current[deck];
       const filter = filters.current[deck];
       const pitchNode = pitchShift.current[deck];
-      
+
       if (!channel || !eq || !filter) {
         throw new Error(`[AudioEngine] Deck ${deck} not initialized`);
       }
@@ -977,7 +985,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     postFx: postFxBus.current,
   }), [masterBus, postFxBus]);
 
-  const getRecorderStream = useCallback(() => recorderStream.current, [recorderStream]);
+  const getRecorderStream = useCallback(() => recorderStream.current, []);
 
   // Update deck volumes when store changes
   useEffect(() => {
@@ -1040,7 +1048,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     const restoreRate = Math.max(0.001, deckState.playbackRate || 1);
 
     const rampPlayerDown = (player: Tone.Player | null) => {
-      if (!player || !player.loaded) return false;
+      if (!player?.loaded) return false;
       const param = player.playbackRate as unknown as PlaybackRateParam;
       try {
         if (typeof param.cancelScheduledValues === 'function') {
@@ -1093,9 +1101,9 @@ export const useAudioEngine = (): AudioEngineControls => {
     const beatGrid = stateDeck.trackData?.beatGrid;
 
     // If quantization possible, schedule to next beat using Tone.Transport
-    if (player && player.loaded && beatGrid && beatGrid.length > 0) {
+    if (player?.loaded && beatGrid && beatGrid.length > 0) {
       const secondsPerBeat = 60 / masterBpm;
-      const currentTime = Tone.Transport.seconds;
+      const currentTime = Tone.getContext().transport.seconds;
       const nextBeatOffset = secondsPerBeat - (currentTime % secondsPerBeat);
       const startAt = Tone.now() + nextBeatOffset;
       player.start(startAt);
@@ -1105,15 +1113,15 @@ export const useAudioEngine = (): AudioEngineControls => {
 
     // Check if stems are loaded
     const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
-    
+
     if (hasStems) {
-      const startAt = Tone.Transport.seconds + 0.05;
-      if (Tone.Transport.state !== 'started') {
-        Tone.Transport.start();
+      const startAt = Tone.getContext().transport.seconds + 0.05;
+      if (Tone.getContext().transport.state !== 'started') {
+        Tone.getContext().transport.start();
       }
       // Play all unmuted stems aligned to shared transport time
       Object.entries(stemPlayers.current[deck]).forEach(([stemType, player]) => {
-        if (player && player.loaded && !stemMutes.current[deck][stemType as keyof typeof stemMutes.current['A']]) {
+        if (player?.loaded && !stemMutes.current[deck][stemType as keyof typeof stemMutes.current['A']]) {
           player.stop(); // clear any pending
           player.start(startAt);
         }
@@ -1122,7 +1130,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     } else {
       // Fallback to main player
       const player = players.current[deck];
-      if (player && player.loaded) {
+      if (player?.loaded) {
         player.start();
         console.log(`[AudioEngine] Deck ${deck} playing`);
       } else {
@@ -1135,22 +1143,21 @@ export const useAudioEngine = (): AudioEngineControls => {
   const pause = useCallback((deck: 'A' | 'B') => {
     // Check if stems are loaded
     const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
-    
+
     if (hasStems) {
       // Stop all stem players
       Object.values(stemPlayers.current[deck]).forEach(player => {
-        if (player) {
-          player.stop(Tone.Transport.seconds);
-        }
+        player?.stop(Tone.getContext().transport.seconds);
       });
       console.log(`[AudioEngine] Deck ${deck} paused (stems)`);
-    } else {
-      // Fallback to main player
-      const player = players.current[deck];
-      if (player) {
-        player.stop();
-        console.log(`[AudioEngine] Deck ${deck} paused`);
-      }
+      return;
+    }
+
+    // Fallback to main player
+    const player = players.current[deck];
+    if (player?.loaded) {
+      player.stop(Tone.getContext().transport.seconds);
+      console.log(`[AudioEngine] Deck ${deck} paused`);
     }
   }, [players, stemPlayers]);
 
@@ -1158,24 +1165,23 @@ export const useAudioEngine = (): AudioEngineControls => {
   const stop = useCallback((deck: 'A' | 'B') => {
     // Check if stems are loaded
     const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
-    
+
     if (hasStems) {
       // Stop and seek all stem players
       Object.values(stemPlayers.current[deck]).forEach(player => {
-        if (player) {
-          player.stop(Tone.Transport.seconds);
-          player.seek(0);
-        }
+        player?.stop(Tone.getContext().transport.seconds);
+        player.seek(0);
       });
       console.log(`[AudioEngine] Deck ${deck} stopped (stems)`);
-    } else {
-      // Fallback to main player
-      const player = players.current[deck];
-      if (player) {
-        player.stop();
-        player.seek(0);
-        console.log(`[AudioEngine] Deck ${deck} stopped`);
-      }
+      return;
+    }
+
+    // Fallback to main player
+    const player = players.current[deck];
+    if (player) {
+      player.stop();
+      player.seek(0);
+      console.log(`[AudioEngine] Deck ${deck} stopped`);
     }
   }, [players, stemPlayers]);
 
@@ -1195,6 +1201,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     setDeckEQ,
     setDeckFilter,
     setMasterGain,
+    // setMasterGainLocal is intentionally not exported; use setMasterGain for external control
     setDelayWetMix,
     setDelayFeedbackAmount,
     setReverbWetMix,
