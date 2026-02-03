@@ -17,11 +17,11 @@ import { StemDebugPanel } from "@/components/studio/ui/StemDebugPanel";
 import { FXRack } from "@/components/studio/core/FXRack";
 
 type StudioPanelsProps = {
-  masterBus?: Tone.Gain | null;
-  masterPostFx?: Tone.Gain | null;
+  readonly masterBus?: Tone.Gain | null;
+  readonly masterPostFx?: Tone.Gain | null;
 };
 
-export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
+export function StudioPanels({ masterBus, masterPostFx }: Readonly<StudioPanelsProps>) {
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
   const fxPanelOpen = useStudioStore((state) => state.fxPanelOpen);
   const performanceMode = useStudioStore((state) => state.performanceMode);
@@ -39,8 +39,8 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
   const gestureConfig = useMemo(
     () => ({
       shouldStart: (event: PointerEvent) => {
-        if (typeof window === "undefined") return false;
-        if (window.innerWidth >= 768) return false;
+        if (globalThis.window === undefined) return false;
+        if (globalThis.innerWidth >= 768) return false;
         const target = event.target as HTMLElement | null;
         if (!target) return false;
         return !target.closest("button, input, select, textarea, [data-no-swipe='true']");
@@ -52,8 +52,8 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
         dragDeltaRef.current += deltaX;
       },
       onDragEnd: () => {
-        if (typeof window === "undefined") return;
-        if (window.innerWidth >= 768) return;
+        if (globalThis.window === undefined) return;
+        if (globalThis.innerWidth >= 768) return;
         if (Math.abs(dragDeltaRef.current) < 80) return;
         setFocusedDeckId(dragDeltaRef.current > 0 ? "A" : "B");
       },

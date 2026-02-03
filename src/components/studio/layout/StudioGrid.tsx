@@ -18,12 +18,12 @@ import { LibraryRow } from "./LibraryRow";
 import { useStudioStore } from "@/store/useStudioStore";
 
 interface StudioGridProps {
-  masterBus?: Tone.Gain | null;
-  masterPostFx?: Tone.Gain | null;
-  masterProgress: number;
+  readonly masterBus?: Tone.Gain | null;
+  readonly masterPostFx?: Tone.Gain | null;
+  readonly masterProgress: number;
 }
 
-export function StudioGrid({ masterBus, masterPostFx, masterProgress }: StudioGridProps) {
+export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly<StudioGridProps>) {
   const libraryOpen = useStudioStore((state) => state.libraryOpen);
 
   return (

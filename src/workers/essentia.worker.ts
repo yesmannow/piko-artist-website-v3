@@ -8,26 +8,50 @@
 import { EssentiaWASM } from 'essentia.js';
 
 let essentiaInstance = null;
+let initializationPromise: Promise<void> | null = null;
+let isInitialized = false;
 
-// Initialize Essentia.js
+// Initialize Essentia.js with proper race condition handling
 const initEssentia = async () => {
-  if (essentiaInstance) return;
+  if (isInitialized && essentiaInstance) return;
+  if (initializationPromise !== null) return initializationPromise;
 
-  const factory = (EssentiaWASM as unknown as {
-    EssentiaWASMInterfaced: (options: { locateFile: (path: string) => string }) => Promise<any>;
-  }).EssentiaWASMInterfaced;
+  initializationPromise = (async () => {
+    try {
+      const factory = (EssentiaWASM as unknown as {
+        EssentiaWASMInterfaced: (options: { locateFile: (path: string) => string }) => Promise<any>;
+      }).EssentiaWASMInterfaced;
 
-  const EssentiaWASMModule = await factory({
-    locateFile: (path: string) =>
-      path.includes('wasm') ? '/wasm/essentia-wasm.web.wasm' : `/wasm/${path}`,
-  });
+      const EssentiaWASMModule = await factory({
+        locateFile: (path: string) =>
+          path.includes('wasm') ? '/wasm/essentia-wasm.web.wasm' : `/wasm/${path}`,
+      });
 
-  essentiaInstance = new EssentiaWASMModule.EssentiaJs();
+      essentiaInstance = new EssentiaWASMModule.EssentiaJs();
+      isInitialized = true;
+      console.log('[EssentiaWorker] Initialized successfully');
+    } catch (error) {
+      console.error('[EssentiaWorker] Initialization failed:', error);
+      initializationPromise = null;
+      throw error;
+    }
+  })();
+
+  return initializationPromise;
 };
 
 // Handle messages from main thread
 globalThis.onmessage = async (e: MessageEvent) => {
-  await initEssentia();
+  try {
+    await initEssentia();
+  } catch (error) {
+    globalThis.postMessage({
+      type: 'error',
+      message: 'Essentia.js initialization failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return;
+  }
 
   if (!essentiaInstance) {
     globalThis.postMessage({

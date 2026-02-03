@@ -75,12 +75,12 @@ export function WaveformMini({
   playhead = 0,
   durationSeconds,
   onSeek,
-}: WaveformMiniProps) {
+}: Readonly<WaveformMiniProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const transferredRef = useRef(false);
-  const teardownTimerRef = useRef<number | null>(null);
+  const teardownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const supportsOffscreenRef = useRef<boolean | null>(null);
   const initialColorRef = useRef(color);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,12 +95,12 @@ export function WaveformMini({
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (globalThis.window === undefined) return;
     const canvasEl = canvasRef.current;
     const containerEl = containerRef.current;
     if (!canvasEl || !containerEl) return;
     if (teardownTimerRef.current !== null) {
-      window.clearTimeout(teardownTimerRef.current);
+      globalThis.clearTimeout(teardownTimerRef.current);
       teardownTimerRef.current = null;
     }
     if (!("transferControlToOffscreen" in canvasEl)) {
@@ -144,7 +144,7 @@ export function WaveformMini({
     return () => {
       resizeObserver.disconnect();
       if (workerRef.current) {
-        teardownTimerRef.current = window.setTimeout(() => {
+        teardownTimerRef.current = globalThis.setTimeout(() => {
           workerRef.current?.terminate();
           workerRef.current = null;
           transferredRef.current = false;
@@ -155,7 +155,7 @@ export function WaveformMini({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (globalThis.window === undefined) return;
     if (supportsOffscreenRef.current === false) return;
     const worker = workerRef.current;
     if (!worker) return;
@@ -180,8 +180,8 @@ export function WaveformMini({
       let audioContext: AudioContext | null = null;
       try {
         const AudioContextCtor =
-          window.AudioContext ||
-          (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+          globalThis.AudioContext ||
+          (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 
         if (!AudioContextCtor) {
           throw new Error("AudioContext not supported");

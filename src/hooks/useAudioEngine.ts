@@ -421,7 +421,9 @@ export const useAudioEngine = (): AudioEngineControls => {
     if (!crossFade.current) return;
     const clamped = Math.max(-1, Math.min(1, value));
     const normalized = (clamped + 1) / 2;
-    crossFade.current.fade.rampTo(normalized, 0.05);
+    if (crossFade.current.fade && typeof crossFade.current.fade.rampTo === 'function') {
+      crossFade.current.fade.rampTo(normalized, 0.05);
+    }
   }, [crossFade]);
 
   useEffect(() => {
@@ -436,13 +438,15 @@ export const useAudioEngine = (): AudioEngineControls => {
   const updateKeyLockComp = useCallback(
     (deck: 'A' | 'B', rate: number) => {
       const node = pitchShift.current[deck];
-      if (!node) return;
+      if (!node || !node.wet) return;
       const active = deck === 'A' ? deckA.isKeyLockActive : deckB.isKeyLockActive;
       const safeRate = Math.max(0.001, rate || 1);
       const semitoneComp = active ? -12 * Math.log2(safeRate) : 0;
       try {
         node.pitch = semitoneComp;
-        node.wet.rampTo(active ? 1 : 0, 0.05);
+        if (typeof node.wet.rampTo === 'function') {
+          node.wet.rampTo(active ? 1 : 0, 0.05);
+        }
       } catch (error) {
         console.warn(`[AudioEngine] Key lock update failed on Deck ${deck}:`, error);
       }
@@ -730,57 +734,78 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   const setMasterGain = useCallback((value: number) => {
     const master = masterBus.current;
-    if (!master) return;
+    if (!master || !master.gain) return;
     const clamped = Math.max(0, Math.min(1, value));
-    master.gain.rampTo(clamped, 0.05);
+    if (typeof master.gain.rampTo === 'function') {
+      master.gain.rampTo(clamped, 0.05);
+    } else {
+      master.gain.value = clamped;
+    }
   }, [masterBus]);
 
   // Set deck volume
   const setDeckVolume = useCallback((deck: 'A' | 'B', volume: number) => {
     const channel = channels.current[deck];
-    if (channel) {
+    if (channel && channel.volume) {
       const volumeDb = volume > 0 ? 20 * Math.log10(volume) : -Infinity;
-      channel.volume.rampTo(volumeDb, 0.05);
+      if (typeof channel.volume.rampTo === 'function') {
+        channel.volume.rampTo(volumeDb, 0.05);
+      } else {
+        channel.volume.value = volumeDb;
+      }
     }
   }, [channels]);
 
   // Set deck EQ
   const setDeckEQ = useCallback((deck: 'A' | 'B', eq: { low: number; mid: number; high: number }) => {
     const eqNode = eqs.current[deck];
-    if (eqNode) {
-      eqNode.low.rampTo(eq.low, 0.05);
-      eqNode.mid.rampTo(eq.mid, 0.05);
-      eqNode.high.rampTo(eq.high, 0.05);
+    if (eqNode && eqNode.low && eqNode.mid && eqNode.high) {
+      if (typeof eqNode.low.rampTo === 'function') {
+        eqNode.low.rampTo(eq.low, 0.05);
+        eqNode.mid.rampTo(eq.mid, 0.05);
+        eqNode.high.rampTo(eq.high, 0.05);
+      } else {
+        eqNode.low.value = eq.low;
+        eqNode.mid.value = eq.mid;
+        eqNode.high.value = eq.high;
+      }
     }
   }, [eqs]);
 
   // Set deck filter
   const setDeckFilter = useCallback((deck: 'A' | 'B', position: number) => {
     const filter = filters.current[deck];
-    if (filter) {
-      const clamped = Math.max(0, Math.min(1, position));
-      const lowPassRange = clamped < 0.48;
-      const highPassRange = clamped > 0.52;
+    if (!filter || !filter.frequency) return;
+    const clamped = Math.max(0, Math.min(1, position));
+    const lowPassRange = clamped < 0.48;
+    const highPassRange = clamped > 0.52;
 
-      if (!lowPassRange && !highPassRange) {
-        filter.type = 'lowpass';
-        filter.Q.value = 0;
+    if (!lowPassRange && !highPassRange) {
+      filter.type = 'lowpass';
+      filter.Q.value = 0;
+      if (typeof filter.frequency.rampTo === 'function') {
         filter.frequency.rampTo(20000, 0.05);
-        return;
+      } else {
+        filter.frequency.value = 20000;
       }
+      return;
+    }
 
-      const normalized = lowPassRange
-        ? clamped / 0.48
-        : (clamped - 0.52) / 0.48;
+    const normalized = lowPassRange
+      ? clamped / 0.48
+      : (clamped - 0.52) / 0.48;
 
-      const min = 20;
-      const max = 20000;
-      const exp = Math.pow(max / min, Math.max(0, Math.min(1, normalized)));
-      const frequency = min * exp;
+    const min = 20;
+    const max = 20000;
+    const exp = Math.pow(max / min, Math.max(0, Math.min(1, normalized)));
+    const frequency = min * exp;
 
-      filter.type = lowPassRange ? 'lowpass' : 'highpass';
-      filter.Q.value = 1;
+    filter.type = lowPassRange ? 'lowpass' : 'highpass';
+    filter.Q.value = 1;
+    if (typeof filter.frequency.rampTo === 'function') {
       filter.frequency.rampTo(Math.max(20, Math.min(20000, frequency)), 0.05);
+    } else {
+      filter.frequency.value = Math.max(20, Math.min(20000, frequency));
     }
   }, [filters]);
 
