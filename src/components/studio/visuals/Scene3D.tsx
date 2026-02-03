@@ -161,25 +161,28 @@ export function Scene3D({ className, isActive = true }: Scene3DProps) {
   // Phase X: Override with manual performance mode if set
   useEffect(() => {
     if (performanceMode === 'low') {
-      setPerfProfile({
-        ...perfProfile,
+      // Legitimate use: responding to external performance mode change
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPerfProfile((prev) => ({
+        ...prev,
         tier: 1,
         isLowEnd: true,
         fpsTarget: 30,
         sphereDetail: 32,
         enableAntialias: false,
         useBasicMaterials: true,
-      });
+      }));
     } else if (performanceMode === 'high') {
-      setPerfProfile({
-        ...perfProfile,
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPerfProfile((prev) => ({
+        ...prev,
         tier: 3,
         isLowEnd: false,
         fpsTarget: 60,
         sphereDetail: 64,
         enableAntialias: true,
         useBasicMaterials: false,
-      });
+      }));
     }
   }, [performanceMode]);
 

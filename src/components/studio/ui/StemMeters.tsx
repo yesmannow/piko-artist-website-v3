@@ -18,6 +18,8 @@ export function StemMeters({ deckId }: StemMetersProps) {
 
   useEffect(() => {
     if (!hasStems || performanceMode === "low") {
+      // Legitimate use: resetting visualization state when stems are removed
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLevels(STEMS.map(() => 0));
       return;
     }

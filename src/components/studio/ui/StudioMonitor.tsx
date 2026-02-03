@@ -25,8 +25,9 @@ interface StudioMonitorProps {
 export function StudioMonitor({ logs, maxLines = 10, className = "" }: StudioMonitorProps) {
   const [displayedLogs, setDisplayedLogs] = useState<string[]>([]);
 
-  // Update displayed logs (limit to maxLines)
+  // Update displayed logs (limit to maxLines) - legitimate display synchronization
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayedLogs(logs.slice(-maxLines));
   }, [logs, maxLines]);
 

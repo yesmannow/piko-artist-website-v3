@@ -11,7 +11,7 @@
  * - 60fps smooth animation via useFrame
  */
 
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { TextureLoader, Mesh, Group } from 'three';
 import * as THREE from 'three';
@@ -68,12 +68,16 @@ export function JogPlatter3D({
     }
   );
 
-  useEffect(() => {
-    if (artworkTexture) {
-      artworkTexture.anisotropy = 16;
-      artworkTexture.minFilter = THREE.LinearMipmapLinearFilter;
-      artworkTexture.magFilter = THREE.LinearFilter;
-    }
+  // Configure texture properties for optimal rendering quality
+  const configuredTexture = useMemo(() => {
+    if (!artworkTexture) return null;
+    // Clone the texture to avoid modifying the cached original
+    const tex = artworkTexture.clone();
+    tex.anisotropy = 16;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
   }, [artworkTexture]);
 
   // Animation loop - 60fps rotation updates
@@ -189,7 +193,7 @@ export function JogPlatter3D({
       >
         <cylinderGeometry args={[0.35, 0.35, 0.001, 32]} />
         <meshStandardMaterial
-          map={artworkTexture}
+          map={configuredTexture}
           metalness={0.1}
           roughness={0.8}
         />

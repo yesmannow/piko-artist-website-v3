@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as Tone from 'tone';
 
 interface LevelMeterProps {
@@ -131,7 +131,10 @@ export function LevelMeter({
   const peakLevelRef = useRef(0);
   const peakHoldTimeRef = useRef(0);
   const currentLevelRef = useRef(0);
-  const [isActive, setIsActive] = useState(false);
+
+  // Note: isActive is only used for canvas styling, not actual functionality
+  // The meter works based on analyserRef.current existence
+  const isActive = Boolean(audioNode);
 
   const isVertical = orientation === 'vertical';
   const canvasWidth = isVertical ? width : height;
@@ -140,7 +143,6 @@ export function LevelMeter({
   // Initialize analyser when audio node changes
   useEffect(() => {
     if (!audioNode) {
-      setIsActive(false);
       if (analyserRef.current) {
         analyserRef.current.dispose();
         analyserRef.current = null;
@@ -159,12 +161,10 @@ export function LevelMeter({
       // Connect audio node to analyser (doesn't affect audio path)
       audioNode.connect(analyser);
       analyserRef.current = analyser;
-      setIsActive(true);
 
       console.log('[LevelMeter] Analyser connected');
     } catch (error) {
       console.error('[LevelMeter] Failed to create analyser:', error);
-      setIsActive(false);
     }
 
     return () => {
