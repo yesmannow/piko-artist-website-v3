@@ -12,9 +12,7 @@ import { useEffect, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { ComplexityModeProvider } from "@/contexts/ComplexityModeContext";
-import { ShortcutsOverlay } from "@/components/ui/ShortcutsOverlay";
 import { DiagnosticsPanel } from "@/components/dev/DiagnosticsPanel";
-import { SmartSuggestions } from "@/components/ui/SmartSuggestions";
 import { usePerformanceHeuristics } from "@/hooks/usePerformanceHeuristics";
 import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 
@@ -32,7 +30,7 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
   const perfSampledRef = useRef(false);
   const performanceHeuristicsMode = usePerformanceMode();
   const show3DEffective = show3D && performanceMode !== "low";
-  
+
   // Monitor performance and auto-adjust
   usePerformanceHeuristics();
 
@@ -87,10 +85,8 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
 
         <StudioSettingsPanel />
         <StudioOnboarding />
-        
-        <ShortcutsOverlay />
+
         {process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true' ? <DiagnosticsPanel /> : null}
-        <SmartSuggestions />
       </main>
     </ComplexityModeProvider>
   );

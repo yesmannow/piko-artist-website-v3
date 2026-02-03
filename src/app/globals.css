@@ -560,6 +560,39 @@
 
 /* Studio 2026 design system */
 :root {
+  /* Sophisticated Dark Mode Palette */
+  --bg-primary: #09090b;
+  --bg-secondary: #121212;
+  --bg-tertiary: #1a1a1a;
+
+  /* Accent Colors (Cyber Lime Primary) */
+  --accent: #bef264;
+  --accent-hover: #a3e635;
+  --accent-pressed: #84cc16;
+
+  /* Studio Equipment Colors */
+  --studio-cyan: #22d3ee;
+  --studio-purple: #9333ea;
+  --studio-crimson: #ef4444;
+  --studio-gold: #f59e0b;
+
+  /* Typography */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-tertiary: rgba(255, 255, 255, 0.6);
+  --text-disabled: rgba(255, 255, 255, 0.4);
+
+  /* Borders & Dividers */
+  --border-primary: rgba(255, 255, 255, 0.1);
+  --border-secondary: rgba(255, 255, 255, 0.05);
+
+  /* Hardware Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 20px rgba(190, 242, 100, 0.3);
+}
+:root {
   --color-bg: #050510;
   --color-bg-elevated: rgba(15, 15, 40, 0.9);
   --color-border-subtle: rgba(255, 255, 255, 0.06);

@@ -25,7 +25,6 @@ import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';
 import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
-import { StateBadge } from '@/components/ui/StateBadge';
 
 // complexity mode is passed as a prop; keep the prop shape immutable
 interface DeckProps {
@@ -443,7 +442,9 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${deckColor}`} />
           <h2 className="text-lg font-black uppercase font-mono">{deckLabel}</h2>
-          <StateBadge type={deck.isPlaying ? 'playing' : 'idle'} />
+          <span className={`text-xs px-2 py-1 rounded ${deck.isPlaying ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/60'}`}>
+            {deck.isPlaying ? 'PLAYING' : 'IDLE'}
+          </span>
         </div>
         {trackData && (
           <div

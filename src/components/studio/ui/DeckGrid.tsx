@@ -9,8 +9,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Deck } from './Deck';
 import { Crossfader } from './Crossfader';
-import { Knob } from '@/components/studio/controls/Knob';
-import { Fader } from '@/components/studio/controls/Fader';
+import { Knob } from '@/components/studio/ui/controls/Knob';
+import { Fader } from '@/components/studio/ui/controls/Fader';
 import { LevelMeter } from './LevelMeter';
 import { useStore } from '@/store/useStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -166,33 +166,32 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
       <Knob
         label="GAIN"
         value={volumeFader}
-        onValueChange={handleVolumeChange}
+        onChange={handleVolumeChange}
         size={56}
       />
       <Knob
         label="HIGH"
         value={eqValues.high}
-        onValueChange={(value) => handleEQChange('high', value)}
+        onChange={(value) => handleEQChange('high', value)}
         size={60}
       />
       <Knob
         label="MID"
         value={eqValues.mid}
-        onValueChange={(value) => handleEQChange('mid', value)}
+        onChange={(value) => handleEQChange('mid', value)}
         size={60}
       />
       <Knob
         label="LOW"
         value={eqValues.low}
-        onValueChange={(value) => handleEQChange('low', value)}
+        onChange={(value) => handleEQChange('low', value)}
         size={60}
       />
       <Knob
         label="FILTER"
         value={clamp01(deck.filter)}
-        onValueChange={handleFilterChange}
+        onChange={handleFilterChange}
         size={68}
-        rotationRange={300}
       />
       <div className="w-full flex flex-col items-center gap-2">
         <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-white/60">STEMS</div>
@@ -238,7 +237,7 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
         <Fader
           label="VOLUME"
           value={volumeFader}
-          onValueChange={handleVolumeChange}
+          onChange={handleVolumeChange}
           height={192}
         />
       </div>
@@ -344,7 +343,7 @@ export function DeckGrid() {
           <Knob
             label="MASTER"
             value={masterGainLocal}
-            onValueChange={handleMasterGainChange}
+            onChange={handleMasterGainChange}
             size={70}
           />
           <button
@@ -430,7 +429,7 @@ export function DeckGrid() {
                   <Knob
                     label="MASTER"
                     value={masterGainLocal}
-                    onValueChange={handleMasterGainChange}
+                    onChange={handleMasterGainChange}
                     size={70}
                   />
                   <button
@@ -509,3 +508,4 @@ async function openBatchExportModal() {
     throw error;
   }
 }
+

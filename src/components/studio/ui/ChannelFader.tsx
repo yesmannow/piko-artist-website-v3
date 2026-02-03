@@ -7,7 +7,7 @@
  */
 
 import { useStore } from "@/store/useStore";
-import { Fader } from "@/components/studio/controls/Fader";
+import { Fader } from "@/components/studio/ui/controls/Fader";
 
 interface ChannelFaderProps {
   deckId: "A" | "B";
@@ -26,7 +26,6 @@ export function ChannelFader({ deckId }: ChannelFaderProps) {
       <Fader
         value={deck.volume}
         onChange={(value) => setDeckVolume(deckId, value)}
-        orientation="vertical"
         height={200}
       />
     </div>

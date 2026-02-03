@@ -5,7 +5,7 @@
  * drag interactions with instant audio engine updates.
  */
 
-import { Fader, Knob } from '@/components/studio/controls';
+import { Fader, Knob } from '@/components/studio/ui/controls';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useCallback, useState } from 'react';
 
@@ -28,7 +28,7 @@ export function VolumeFaderExample() {
     <Fader
       label="VOLUME"
       value={volume}
-      onValueChange={handleVolumeChange}
+      onChange={handleVolumeChange}
       height={120}
     />
   );
@@ -56,10 +56,8 @@ export function EQKnobExample() {
     <Knob
       label="LOW"
       value={eqLow}
-      onValueChange={handleEQChange}
-      size={60}
-      rotationRange={270}
-    />
+      onChange={handleEQChange}
+      size={60}/>
   );
 }
 
@@ -82,9 +80,8 @@ export function FilterKnobExample() {
     <Knob
       label="FILTER"
       value={filter}
-      onValueChange={handleFilterChange}
-      size={68}
-      rotationRange={300} // Wider arc for more precision
+      onChange={handleFilterChange}
+      size={68}// Wider arc for more precision
     />
   );
 }
@@ -110,7 +107,7 @@ export function MasterGainExample() {
     <Knob
       label="MASTER"
       value={gain}
-      onValueChange={handleGainChange}
+      onChange={handleGainChange}
       size={70}
     />
   );
@@ -136,7 +133,7 @@ export function FXSendExample() {
       <Fader
         label="DELAY SEND"
         value={send}
-        onValueChange={handleSendChange}
+        onChange={handleSendChange}
         height={100}
       />
       <span className="text-xs text-white/60 font-mono">
@@ -172,25 +169,25 @@ export function ChannelStripExample() {
       <Knob
         label="HIGH"
         value={eq.high}
-        onValueChange={(v) => handleEQChange('high', v)}
+        onChange={(v) => handleEQChange('high', v)}
         size={56}
       />
       <Knob
         label="MID"
         value={eq.mid}
-        onValueChange={(v) => handleEQChange('mid', v)}
+        onChange={(v) => handleEQChange('mid', v)}
         size={56}
       />
       <Knob
         label="LOW"
         value={eq.low}
-        onValueChange={(v) => handleEQChange('low', v)}
+        onChange={(v) => handleEQChange('low', v)}
         size={56}
       />
       <Fader
         label="VOLUME"
         value={volume}
-        onValueChange={handleVolumeChange}
+        onChange={handleVolumeChange}
         height={150}
       />
     </div>
@@ -222,7 +219,7 @@ export function TempoFaderExample() {
       <Fader
         label="TEMPO"
         value={tempo}
-        onValueChange={handleTempoChange}
+        onChange={handleTempoChange}
         height={140}
       />
       <div className="text-center">
@@ -244,3 +241,5 @@ export function TempoFaderExample() {
  * 6. Set appropriate sizes: Knobs 48-70px, Faders height 100-200px
  * 7. For wider rotation arcs, use rotationRange prop (default 270°)
  */
+
+

@@ -7,7 +7,6 @@ import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { useHaptic } from "@/hooks/useHaptic";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { TrackDrawer } from "@/components/TrackDrawer";
 
 const vibeColors = {
@@ -45,14 +44,15 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
       <div className={`relative overflow-hidden rounded-md border border-white/10 shrink-0 ${className || ""}`}>
         <Image
           src={coverArt}
-          alt="Track cover"
-          fill
-          className="object-cover"
+          alt="Track Cover"
+          width={40}
+          height={40}
+          className="object-cover w-full h-full"
           sizes="(max-width: 768px) 40px, 40px"
           onLoad={() => setIsLoaded(true)}
         />
         {!isLoaded && (
-          <Skeleton className="absolute inset-0" />
+          <div className="absolute inset-0 bg-white/5 animate-pulse" />
         )}
       </div>
     );
@@ -171,7 +171,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
                 onLoad={() => setIsLoaded(true)}
               />
               {!isLoaded && (
-                <Skeleton className="absolute inset-0" />
+                <div className="absolute inset-0 bg-white/5 animate-pulse" />
               )}
             </motion.div>
           </>
