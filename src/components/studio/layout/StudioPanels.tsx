@@ -35,40 +35,40 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
   const deckB = useStore((state) => state.deckB);
   const dragDeltaRef = useRef(0);
 
+  // Always call hooks before any conditional returns
+  const gestureConfig = useMemo(
+    () => ({
+      shouldStart: (event: PointerEvent) => {
+        if (typeof window === "undefined") return false;
+        if (window.innerWidth >= 768) return false;
+        const target = event.target as HTMLElement | null;
+        if (!target) return false;
+        return !target.closest("button, input, select, textarea, [data-no-swipe='true']");
+      },
+      onDragStart: () => {
+        dragDeltaRef.current = 0;
+      },
+      onDrag: (deltaX: number) => {
+        dragDeltaRef.current += deltaX;
+      },
+      onDragEnd: () => {
+        if (typeof window === "undefined") return;
+        if (window.innerWidth >= 768) return;
+        if (Math.abs(dragDeltaRef.current) < 80) return;
+        setFocusedDeckId(dragDeltaRef.current > 0 ? "A" : "B");
+      },
+    }),
+    [setFocusedDeckId]
+  );
+
+  const gestureHandlers = useGestures(gestureConfig);
+
   // Phase V: Use new 3-row grid layout
   if (useGridLayout && complexityMode === 'pro') {
     return <StudioGrid masterBus={masterBus} masterPostFx={masterPostFx} masterProgress={0} />;
   }
 
-  // Legacy layout for backwards compatibility
-  const gestureHandlers = useGestures(
-    useMemo(
-      () => ({
-        shouldStart: (event: PointerEvent) => {
-          if (typeof window === "undefined") return false;
-          if (window.innerWidth >= 768) return false;
-          const target = event.target as HTMLElement | null;
-          if (!target) return false;
-          return !target.closest("button, input, select, textarea, [data-no-swipe='true']");
-        },
-        onDragStart: () => {
-          dragDeltaRef.current = 0;
-        },
-        onDrag: (deltaX) => {
-          dragDeltaRef.current += deltaX;
-        },
-        onDragEnd: () => {
-          if (typeof window === "undefined") return;
-          if (window.innerWidth >= 768) return;
-          if (Math.abs(dragDeltaRef.current) < 80) return;
-          setFocusedDeckId(dragDeltaRef.current > 0 ? "A" : "B");
-        },
-      }),
-      [setFocusedDeckId]
-    )
-  );
-
-  // Extract only DOM-compatible props from gestureHandlers
+  // Legacy layout for backwards compatibility  // Extract only DOM-compatible props from gestureHandlers
   const domGestureHandlers = {
     onPointerDown: gestureHandlers.onPointerDown,
     onPointerMove: gestureHandlers.onPointerMove,

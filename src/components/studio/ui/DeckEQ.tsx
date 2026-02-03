@@ -10,11 +10,26 @@
  */
 
 import { useStore } from "@/store/useStore";
-import { Knob } from "@/components/studio/controls/Knob";
+import { Knob } from "@/components/studio/ui/controls/Knob";
 
 interface DeckEQProps {
   deckId: "A" | "B";
 }
+
+// EQ range: -24dB to +12dB (total 36dB range)
+const EQ_MIN = -24;
+const EQ_MAX = 12;
+const EQ_RANGE = EQ_MAX - EQ_MIN;
+
+// Convert dB value to 0-1 normalized range
+const dbToNormalized = (db: number): number => {
+  return (db - EQ_MIN) / EQ_RANGE;
+};
+
+// Convert 0-1 normalized value to dB
+const normalizedToDb = (normalized: number): number => {
+  return normalized * EQ_RANGE + EQ_MIN;
+};
 
 export function DeckEQ({ deckId }: DeckEQProps) {
   const deckKey: 'deckA' | 'deckB' = deckId === 'A' ? 'deckA' : 'deckB';
@@ -27,33 +42,24 @@ export function DeckEQ({ deckId }: DeckEQProps) {
     <div className="grid grid-cols-3 gap-1">
       <Knob
         label="High"
-        value={eq.high}
-        onChange={(value) => setDeckEQ(deckId, { ...eq, high: value })}
-        size="sm"
+        value={dbToNormalized(eq.high)}
+        onChange={(normalized) => setDeckEQ(deckId, { ...eq, high: normalizedToDb(normalized) })}
+        size={48}
         color="#00F2FF"
-        min={-24}
-        max={12}
-        defaultValue={0}
       />
       <Knob
         label="Mid"
-        value={eq.mid}
-        onChange={(value) => setDeckEQ(deckId, { ...eq, mid: value })}
-        size="sm"
+        value={dbToNormalized(eq.mid)}
+        onChange={(normalized) => setDeckEQ(deckId, { ...eq, mid: normalizedToDb(normalized) })}
+        size={48}
         color="#9333ea"
-        min={-24}
-        max={12}
-        defaultValue={0}
       />
       <Knob
         label="Low"
-        value={eq.low}
-        onChange={(value) => setDeckEQ(deckId, { ...eq, low: value })}
-        size="sm"
+        value={dbToNormalized(eq.low)}
+        onChange={(normalized) => setDeckEQ(deckId, { ...eq, low: normalizedToDb(normalized) })}
+        size={48}
         color="#ef4444"
-        min={-24}
-        max={12}
-        defaultValue={0}
       />
     </div>
   );

@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+// Phase V-B: Per-Deck FX State
+export interface DeckFXState {
+  filter: number;        // 0-1 (bipolar high-pass/low-pass)
+  reverb: number;        // 0-1 (dry/wet mix)
+  reverbDecay: number;   // 0-1 (decay time)
+  delay: number;         // 0-1 (dry/wet mix)
+  delayFeedback: number; // 0-1 (feedback amount)
+  delayTime: number;     // 0-1 (delay time)
+  distortion: number;    // 0-1 (drive amount)
+}
+
 // Define the shape of a single Deck's state
 export interface DeckState {
   trackId: string | null;
@@ -39,11 +50,14 @@ export interface DeckState {
   volume: number; // 0 to 1
   playbackRate: number; // 1.0 is normal speed
   eq: { low: number; mid: number; high: number }; // Gains in dB
-  filter: number; // 0..1 bipolar filter position
+  filter: number; // 0..1 bipolar filter position (DEPRECATED - moved to fx.filter)
   stems: { vocals: boolean; inst: boolean }; // Phase VI: Stem toggle state
   isKeyLockActive: boolean;
+  // Phase V-B: Per-Deck FX
+  fx: DeckFXState;
 }
 
+// Legacy global FX rack (being phased out in favor of per-deck FX)
 export interface FxRackState {
   bitcrush: number;
   filter: number;
@@ -86,7 +100,20 @@ export interface MixerState {
   toggleStem: (deck: 'A' | 'B', stem: 'vocals' | 'inst') => void;
   setKeyLock: (deck: 'A' | 'B', active: boolean) => void;
   setFxRack: (updates: Partial<FxRackState>) => void;
+  // Phase V-B: Per-Deck FX Actions
+  setDeckFX: (deck: 'A' | 'B', effect: keyof DeckFXState, value: number) => void;
+  updateDeckFX: (deck: 'A' | 'B', updates: Partial<DeckFXState>) => void;
 }
+
+const initialDeckFXState: DeckFXState = {
+  filter: 0.5,        // Center (neutral)
+  reverb: 0,          // Dry
+  reverbDecay: 0.4,   // Medium decay
+  delay: 0,           // Dry
+  delayFeedback: 0.35, // Moderate feedback
+  delayTime: 0.375,   // Dotted eighth note
+  distortion: 0,      // Clean
+};
 
 const initialDeckState: DeckState = {
   trackId: null,
@@ -96,9 +123,10 @@ const initialDeckState: DeckState = {
   volume: 1,
   playbackRate: 1,
   eq: { low: 0, mid: 0, high: 0 },
-  filter: 0.5,
+  filter: 0.5, // DEPRECATED - use fx.filter instead
   stems: { vocals: true, inst: true }, // Both stems enabled by default
   isKeyLockActive: false,
+  fx: { ...initialDeckFXState },
 };
 
 const initialFxRackState: FxRackState = {
@@ -266,6 +294,37 @@ export const useStore = create<MixerState>()(
             ...updates,
           },
         })),
+
+      // Phase V-B: Per-Deck FX Actions
+      setDeckFX: (deck, effect, value) =>
+        set((state) => {
+          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const currentDeck = state[deckKey];
+          return {
+            [deckKey]: {
+              ...currentDeck,
+              fx: {
+                ...currentDeck.fx,
+                [effect]: value,
+              },
+            },
+          };
+        }),
+
+      updateDeckFX: (deck, updates) =>
+        set((state) => {
+          const deckKey = `deck${deck}` as 'deckA' | 'deckB';
+          const currentDeck = state[deckKey];
+          return {
+            [deckKey]: {
+              ...currentDeck,
+              fx: {
+                ...currentDeck.fx,
+                ...updates,
+              },
+            },
+          };
+        }),
     }),
     {
       name: 'piko-studio-state',

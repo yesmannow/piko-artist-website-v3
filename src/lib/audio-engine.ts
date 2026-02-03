@@ -4,8 +4,11 @@
  * Features:
  * - AudioBuffer caching for zero-latency playback
  * - Lookahead scheduler using Web Audio API clock for drift-free timing
- * - Proper gain staging with master effects chain
+ * - Proper gain staging with per-deck FX chains and master effects
+ * - Phase V-B: Independent FX chains for Deck A and Deck B
  */
+
+import { DeckFXChain, type DeckFXState } from './deck-fx-chain';
 
 export interface AudioEngineConfig {
   lookahead: number;      // How far ahead to schedule (seconds)
@@ -299,21 +302,29 @@ export function createDistortionCurve(amount: number): Float32Array {
 }
 
 /**
- * Audio Engine - combines buffer manager and scheduler
+ * Audio Engine - combines buffer manager and scheduler with per-deck FX chains
  */
 export class AudioEngine {
   public audioContext: AudioContext;
   public bufferManager: AudioBufferManager;
   public scheduler: LookaheadScheduler | null = null;
 
-  // Effects chain nodes
+  // Per-Deck FX Chains (Phase V-B)
+  public deckA_FX: DeckFXChain;
+  public deckB_FX: DeckFXChain;
+
+  // Deck gain nodes (pre-FX)
+  public deckA_Gain: GainNode;
+  public deckB_Gain: GainNode;
+
+  // Master bus nodes
   public masterGain: GainNode;
   public filterNode: BiquadFilterNode;
   public waveShaperNode: WaveShaperNode;
 
   private initialized = false;
 
-  constructor() {
+  constructor(bpm: number = 128) {
     // Create AudioContext (will be in suspended state until user interaction)
     const AudioContextClass = window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -321,7 +332,17 @@ export class AudioEngine {
 
     this.bufferManager = new AudioBufferManager(this.audioContext);
 
-    // Create effects chain
+    // Create per-deck gain nodes
+    this.deckA_Gain = this.audioContext.createGain();
+    this.deckA_Gain.gain.value = 1.0;
+    this.deckB_Gain = this.audioContext.createGain();
+    this.deckB_Gain.gain.value = 1.0;
+
+    // Create per-deck FX chains
+    this.deckA_FX = new DeckFXChain(this.audioContext, 'A', bpm);
+    this.deckB_FX = new DeckFXChain(this.audioContext, 'B', bpm);
+
+    // Create master effects chain
     this.filterNode = this.audioContext.createBiquadFilter();
     this.filterNode.type = "lowpass";
     this.filterNode.frequency.value = 22050;
@@ -333,9 +354,18 @@ export class AudioEngine {
     this.waveShaperNode.curve = createDistortionCurve(0) as Float32Array<ArrayBuffer>;
     this.waveShaperNode.oversample = "4x";
 
-    // Connect: filter -> masterGain -> waveShaper -> destination
-    this.filterNode.connect(this.masterGain);
-    this.masterGain.connect(this.waveShaperNode);
+    // Signal routing:
+    // Deck A: deckA_Gain -> deckA_FX -> masterGain
+    // Deck B: deckB_Gain -> deckB_FX -> masterGain
+    // Master: masterGain -> filterNode -> waveShaper -> destination
+    this.deckA_Gain.connect(this.deckA_FX.input);
+    this.deckA_FX.output.connect(this.masterGain);
+
+    this.deckB_Gain.connect(this.deckB_FX.input);
+    this.deckB_FX.output.connect(this.masterGain);
+
+    this.masterGain.connect(this.filterNode);
+    this.filterNode.connect(this.waveShaperNode);
     this.waveShaperNode.connect(this.audioContext.destination);
 
     this.initialized = true;
@@ -398,10 +428,73 @@ export class AudioEngine {
   }
 
   /**
-   * Get the input node for the effects chain
+   * Get the input node for a specific deck
+   */
+  getDeckInput(deck: 'A' | 'B'): AudioNode {
+    return deck === 'A' ? this.deckA_Gain : this.deckB_Gain;
+  }
+
+  /**
+   * Set deck volume (0-1)
+   */
+  setDeckVolume(deck: 'A' | 'B', volume: number): void {
+    const gainNode = deck === 'A' ? this.deckA_Gain : this.deckB_Gain;
+    gainNode.gain.value = Math.max(0, Math.min(1, volume));
+  }
+
+  /**
+   * Set deck FX parameter
+   */
+  setDeckFX(deck: 'A' | 'B', effect: keyof DeckFXState, value: number): void {
+    const fxChain = deck === 'A' ? this.deckA_FX : this.deckB_FX;
+
+    switch (effect) {
+      case 'filter':
+        fxChain.setFilter(value);
+        break;
+      case 'reverb':
+        fxChain.setReverb(value);
+        break;
+      case 'delay':
+        fxChain.setDelay(value);
+        break;
+      case 'distortion':
+        fxChain.setDistortion(value);
+        break;
+      case 'reverbDecay':
+        fxChain.setReverb(fxChain.getState().reverb, value);
+        break;
+      case 'delayFeedback':
+        fxChain.setDelay(fxChain.getState().delay, value);
+        break;
+      case 'delayTime':
+        fxChain.setDelay(fxChain.getState().delay, fxChain.getState().delayFeedback, value);
+        break;
+    }
+  }
+
+  /**
+   * Update BPM for delay timing on both decks
+   */
+  updateBPM(bpm: number): void {
+    this.deckA_FX.setBpm(bpm);
+    this.deckB_FX.setBpm(bpm);
+  }
+
+  /**
+   * Reset deck FX to default
+   */
+  resetDeckFX(deck: 'A' | 'B'): void {
+    const fxChain = deck === 'A' ? this.deckA_FX : this.deckB_FX;
+    fxChain.reset();
+  }
+
+  /**
+   * Get the input node for the effects chain (legacy - use getDeckInput instead)
+   * @deprecated Use getDeckInput('A') or getDeckInput('B')
    */
   getInputNode(): AudioNode {
-    return this.filterNode;
+    return this.deckA_Gain;
   }
 
   /**
@@ -418,6 +511,8 @@ export class AudioEngine {
     if (this.scheduler) {
       this.scheduler.stop();
     }
+    this.deckA_FX.dispose();
+    this.deckB_FX.dispose();
     this.bufferManager.clearCache();
     if (this.audioContext.state !== "closed") {
       this.audioContext.close();
@@ -428,9 +523,9 @@ export class AudioEngine {
 // Singleton instance
 let audioEngineInstance: AudioEngine | null = null;
 
-export function getAudioEngine(): AudioEngine {
+export function getAudioEngine(bpm: number = 128): AudioEngine {
   if (!audioEngineInstance) {
-    audioEngineInstance = new AudioEngine();
+    audioEngineInstance = new AudioEngine(bpm);
   }
   return audioEngineInstance;
 }

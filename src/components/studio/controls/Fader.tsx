@@ -13,6 +13,10 @@ interface FaderProps {
   readonly value?: number;
   /** Callback fired instantly during drag with normalized value */
   readonly onValueChange?: (value: number) => void;
+  /** Legacy onChange handler (alias for onValueChange) */
+  readonly onChange?: (value: number) => void;
+  /** Orientation of the fader */
+  readonly orientation?: 'vertical' | 'horizontal';
   /** Height of the fader track in pixels */
   readonly height?: number;
   /** Label displayed below the fader */
@@ -31,6 +35,8 @@ interface FaderProps {
 export function Fader({
   value = 0.75,
   onValueChange,
+  onChange,
+  orientation = 'vertical',
   height = 120,
   label,
   disabled = false,
@@ -53,14 +59,16 @@ export function Fader({
   // Subscribe to motion value changes for instant callbacks
   useEffect(() => {
     const unsubscribe = normalizedValue.on('change', (latest) => {
-      if (onValueChange && !disabled) {
+      if (!disabled) {
         // Clamp to 0-1 range
         const clamped = Math.max(0, Math.min(1, latest));
-        onValueChange(clamped);
+        // Support both callback names
+        if (onValueChange) onValueChange(clamped);
+        if (onChange) onChange(clamped);
       }
     });
     return unsubscribe;
-  }, [normalizedValue, onValueChange, disabled]);
+  }, [normalizedValue, onValueChange, onChange, disabled]);
 
   // Sync external value changes
   useEffect(() => {

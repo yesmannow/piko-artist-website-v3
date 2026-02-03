@@ -5,7 +5,9 @@ import * as Tone from 'tone';
 
 interface LevelMeterProps {
   /** Tone.js node to analyze */
-  readonly audioNode: Tone.ToneAudioNode | null;
+  readonly audioNode?: Tone.ToneAudioNode | null;
+  /** Deck identifier for automatic node connection */
+  readonly deckId?: 'A' | 'B' | 'master';
   /** Meter orientation */
   readonly orientation?: 'vertical' | 'horizontal';
   /** Height in pixels (for vertical) */
@@ -34,6 +36,7 @@ interface LevelMeterProps {
  */
 export function LevelMeter({
   audioNode,
+  deckId,
   orientation = 'vertical',
   height = 120,
   width = 24,
