@@ -11,6 +11,7 @@ import { Deck } from './Deck';
 import { Crossfader } from './Crossfader';
 import { Knob } from '@/components/studio/controls/Knob';
 import { Fader } from '@/components/studio/controls/Fader';
+import { LevelMeter } from './LevelMeter';
 import { useStore } from '@/store/useStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useExporter } from '@/hooks/useExporter';
@@ -47,15 +48,30 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
   const setDeckVolume = useStore((state) => state.setDeckVolume);
   const setDeckEQ = useStore((state) => state.setDeckEQ);
   const setDeckFilter = useStore((state) => state.setDeckFilter);
-  const { setDeckVolume: setAudioVolume, setDeckEQ: setAudioEQ, setDeckFilter: setAudioFilter, toggleStem, getStemMuteState } = useAudioEngine();
+  const {
+    setDeckVolume: setAudioVolume,
+    setDeckEQ: setAudioEQ,
+    setDeckFilter: setAudioFilter,
+    toggleStem,
+    getStemMuteState,
+    getDeckChannel,
+  } = useAudioEngine();
   const [stemMutes, setStemMutes] = useState(() => getStemMuteState(deckId));
+  const [deckChannel, setDeckChannel] = useState(() => getDeckChannel(deckId));
   const stripLabel = deckId === 'A' ? 'Strip A' : 'Strip B';
   const accentText = deckId === 'A' ? 'text-studio-cyan/80' : 'text-studio-purple/80';
   const accentBg = deckId === 'A' ? 'bg-studio-cyan/30 border-studio-cyan text-studio-cyan' : 'bg-studio-purple/30 border-studio-purple text-studio-purple';
+  const accentColor = deckId === 'A' ? '#22d3ee' : '#a855f7';
   const volumeFader = useMemo(() => linearToFader(deck.volume), [deck.volume]);
 
   // Track if we're in a user interaction to prevent feedback loops
   const isUserInteracting = useRef(false);
+
+  // Update deck channel reference when it changes
+  useEffect(() => {
+    const channel = getDeckChannel(deckId);
+    setDeckChannel(channel);
+  }, [deckId, getDeckChannel]);
 
   const eqValues = useMemo(() => {
     const normalize = (value: number) => (value + 12) / 24;
@@ -211,26 +227,42 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
           })}
         </div>
       </div>
-      <Fader
-        label="VOLUME"
-        value={volumeFader}
-        onValueChange={handleVolumeChange}
-        height={192}
-      />
+      <div className="w-full flex items-center justify-center gap-3">
+        <LevelMeter
+          audioNode={deckChannel}
+          height={192}
+          width={16}
+          segments={16}
+          accentColor={accentColor}
+        />
+        <Fader
+          label="VOLUME"
+          value={volumeFader}
+          onValueChange={handleVolumeChange}
+          height={192}
+        />
+      </div>
     </GlassPanel>
   );
 }
 
 export function DeckGrid() {
-  const { getMasterBus, setMasterGain } = useAudioEngine();
+  const { getMasterBus, setMasterGain, getMasterChannel } = useAudioEngine();
   const { recordMasterBus, stopRecording, transcode } = useExporter();
   const [masterGainLocal, setMasterGainLocal] = useState<number>(1);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [showMixerPanel, setShowMixerPanel] = useState(false);
+  const [masterChannel, setMasterChannel] = useState(() => getMasterChannel());
 
   const masterBus = getMasterBus().bus;
+
+  // Update master channel reference
+  useEffect(() => {
+    const channel = getMasterChannel();
+    setMasterChannel(channel);
+  }, [getMasterChannel]);
 
   // Direct audio engine wiring for master gain
   const handleMasterGainChange = useCallback((value: number) => {
@@ -301,6 +333,14 @@ export function DeckGrid() {
         className="hidden lg:flex bg-obsidian-900/80 backdrop-blur-[20px] rounded-lg flex-col items-center justify-between py-4"
       >
         <div className="flex flex-col items-center gap-3">
+          <LevelMeter
+            audioNode={masterChannel}
+            height={160}
+            width={20}
+            segments={20}
+            label="MASTER"
+            accentColor="#22d3ee"
+          />
           <Knob
             label="MASTER"
             value={masterGainLocal}

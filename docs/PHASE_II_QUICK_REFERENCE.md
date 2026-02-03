@@ -116,7 +116,7 @@ const { setDeckFilter } = useAudioEngine();
 const handleChange = useCallback((value: number) => {
   // 1. Update audio engine FIRST
   setAudioParam(value);
-  
+
   // 2. Update UI state SECOND
   setLocalState(value);
 }, [setAudioParam]);
@@ -140,10 +140,10 @@ const isUserInteracting = useRef(false);
 
 const handleChange = useCallback((value: number) => {
   if (isUserInteracting.current) return;
-  
+
   isUserInteracting.current = true;
   updateAudioEngine(value);
-  
+
   requestAnimationFrame(() => {
     isUserInteracting.current = false;
   });
@@ -232,8 +232,8 @@ useEffect(() => {
 ### ✅ Correct
 ```typescript
 // Use callback to update audio + state
-<Fader 
-  value={volume} 
+<Fader
+  value={volume}
   onValueChange={useCallback((v) => {
     setAudioVolume('A', v);
     setVolume(v);

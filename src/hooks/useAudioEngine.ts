@@ -59,6 +59,8 @@ export interface AudioEngineControls {
   getRecorderStream: () => MediaStream | null;
   getDeckDuration: (deck: 'A' | 'B') => number;
   getTransportSeconds: () => number;
+  getDeckChannel: (deck: 'A' | 'B') => Tone.Channel | null;
+  getMasterChannel: () => Tone.Gain | null;
 }
 
 type EngineState = {
@@ -1183,6 +1185,16 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [players, stemPlayers]);
 
+  // Get deck channel for level metering
+  const getDeckChannel = useCallback((deck: 'A' | 'B') => {
+    return channels.current[deck];
+  }, [channels]);
+
+  // Get master bus for level metering
+  const getMasterChannel = useCallback(() => {
+    return masterBus.current;
+  }, [masterBus]);
+
   return {
     init,
     isReady,
@@ -1211,5 +1223,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     getDeckDuration,
     getTransportSeconds,
     triggerTapeStop,
+    getDeckChannel,
+    getMasterChannel,
   };
 };
