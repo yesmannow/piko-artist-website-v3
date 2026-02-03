@@ -129,7 +129,7 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
         key: rawResult.key || 'Unknown',
         camelotKey,
         energy: rawResult.energy || 0,
-        confidence: rawResult.confidence || 0,
+        confidence: rawResult.danceability || 0, // Use danceability as confidence proxy
       };
 
       console.log('[SmartAnalysis] Analysis complete:', result);
