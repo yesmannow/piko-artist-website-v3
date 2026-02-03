@@ -15,6 +15,7 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
   const [isEngaged, setIsEngaged] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   const updateFromPointer = useCallback(
     (clientY: number) => {
@@ -39,11 +40,14 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
     (event: PointerEvent) => {
       draggingRef.current = false;
       setIsEngaged(false);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
       trackRef.current?.releasePointerCapture?.(event.pointerId);
+      // Use cleanup ref to avoid circular dependency
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
     },
-    [handlePointerMove]
+    []
   );
 
   const handlePointerDown = useCallback(
@@ -53,18 +57,27 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
       setIsEngaged(true);
       trackRef.current?.setPointerCapture(event.pointerId);
       updateFromPointer(event.clientY);
+      
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
+      
+      // Store cleanup function
+      cleanupRef.current = () => {
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
+      };
     },
     [handlePointerMove, handlePointerUp, updateFromPointer]
   );
 
   useEffect(() => {
     return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
     };
-  }, [handlePointerMove, handlePointerUp]);
+  }, []);
 
   const clamped = clamp01(value);
   const handlePosition = `${(1 - clamped) * 100}%`;

@@ -1,0 +1,9 @@
+
+> piko-artist-website-v3@0.1.0 audit:circular
+> madge --circular --extensions ts,tsx src/
+
+- Finding files
+Processed 179 files (8.8s) (91 warnings)
+
+Γ£ö No circular dependency found!
+

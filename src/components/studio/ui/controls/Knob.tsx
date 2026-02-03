@@ -26,6 +26,7 @@ export function Knob({
   const valueRef = useRef(clamp01(value));
   const knobRef = useRef<HTMLDivElement>(null);
   const [isEngaged, setIsEngaged] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     valueRef.current = clamp01(value);
@@ -69,10 +70,13 @@ export function Knob({
   const handlePointerUp = useCallback((event: PointerEvent) => {
     dragRef.current = false;
     setIsEngaged(false);
-    window.removeEventListener("pointermove", handlePointerMove);
-    window.removeEventListener("pointerup", handlePointerUp);
     knobRef.current?.releasePointerCapture?.(event.pointerId);
-  }, [handlePointerMove]);
+    // Use cleanup ref to avoid circular dependency
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+  }, []);
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -81,18 +85,27 @@ export function Knob({
       lastYRef.current = event.clientY;
       setIsEngaged(true);
       knobRef.current?.setPointerCapture(event.pointerId);
+      
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
+      
+      // Store cleanup function
+      cleanupRef.current = () => {
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
+      };
     },
     [handlePointerMove, handlePointerUp]
   );
 
   useEffect(() => {
     return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
     };
-  }, [handlePointerMove, handlePointerUp]);
+  }, []);
 
   const idBase = useMemo(() => label.replace(/\s+/g, "-").toLowerCase(), [label]);
   const ringGradientId = `${idBase}-ring`;

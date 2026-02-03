@@ -57,7 +57,6 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
     getDeckChannel,
   } = useAudioEngine();
   const [stemMutes, setStemMutes] = useState(() => getStemMuteState(deckId));
-  const [deckChannel, setDeckChannel] = useState(() => getDeckChannel(deckId));
   const stripLabel = deckId === 'A' ? 'Strip A' : 'Strip B';
   const accentText = deckId === 'A' ? 'text-studio-cyan/80' : 'text-studio-purple/80';
   const accentBg = deckId === 'A' ? 'bg-studio-cyan/30 border-studio-cyan text-studio-cyan' : 'bg-studio-purple/30 border-studio-purple text-studio-purple';
@@ -67,10 +66,9 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
   // Track if we're in a user interaction to prevent feedback loops
   const isUserInteracting = useRef(false);
 
-  // Update deck channel reference when it changes
-  useEffect(() => {
-    const channel = getDeckChannel(deckId);
-    setDeckChannel(channel);
+  // Use useMemo instead of useState + useEffect to derive deck channel
+  const deckChannel = useMemo(() => {
+    return getDeckChannel(deckId);
   }, [deckId, getDeckChannel]);
 
   const eqValues = useMemo(() => {
@@ -251,16 +249,17 @@ export function DeckGrid() {
   const [masterGainLocal, setMasterGainLocal] = useState<number>(1);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
-  const [isExportOpen, setIsExportOpen] = useState(false);
   const [showMixerPanel, setShowMixerPanel] = useState(false);
-  const [masterChannel, setMasterChannel] = useState(() => getMasterChannel());
+  const [manuallyClosedExport, setManuallyClosedExport] = useState(false);
+
+  // Derive isExportOpen from recordingBlob instead of using useEffect
+  const isExportOpen = Boolean(recordingBlob) && !manuallyClosedExport;
 
   const masterBus = getMasterBus().bus;
 
-  // Update master channel reference
-  useEffect(() => {
-    const channel = getMasterChannel();
-    setMasterChannel(channel);
+  // Use useMemo instead of useState + useEffect to derive master channel
+  const masterChannel = useMemo(() => {
+    return getMasterChannel();
   }, [getMasterChannel]);
 
   // Direct audio engine wiring for master gain
