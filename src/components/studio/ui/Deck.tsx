@@ -14,7 +14,7 @@ import { useStemWorker } from '@/hooks/useStemWorker';
 import { Play, Pause, Square, SkipBack, SkipForward, Wand2, Loader2, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RecommendationsPopover } from './RecommendationsPopover';
-import { StemControls } from './StemControls';
+import { StemRack } from './StemRack';
 import { JogWheel } from './JogWheel';
 import { WaveformMini } from './WaveformMini';
 import { GlassPanel } from '@/components/ui/GlassPanel';
@@ -553,7 +553,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
               </div>
             )}
 
-            {showInlineStemControls && <StemControls deckId={deckId} />}
+            {showInlineStemControls && <StemRack deckId={deckId} compact={false} />}
 
             <div className="flex items-center justify-center gap-3 mt-auto flex-wrap">
               <motion.button

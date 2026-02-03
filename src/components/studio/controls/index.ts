@@ -5,3 +5,4 @@
 
 export { Fader } from './Fader';
 export { Knob } from './Knob';
+export { StemRack } from './StemRack';

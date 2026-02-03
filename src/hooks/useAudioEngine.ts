@@ -54,6 +54,7 @@ export interface AudioEngineControls {
   setReverbWetMix: (amount: number) => void;
   setReverbDecayTime: (seconds: number) => void;
   toggleStem: (deck: 'A' | 'B', stem: 'vocals' | 'drums' | 'bass' | 'other') => void;
+  setStemMute: (deck: 'A' | 'B', stem: 'vocals' | 'drums' | 'bass' | 'other', isMuted: boolean) => void;
   getStemMuteState: (deck: 'A' | 'B') => { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
   getMasterBus: () => { bus: Tone.Gain | null; postFx: Tone.Gain | null };
   getRecorderStream: () => MediaStream | null;
@@ -975,6 +976,17 @@ export const useAudioEngine = (): AudioEngineControls => {
     setMutedStem(deck, stem, !isMuted);
   }, []);
 
+  // Set stem mute state directly (Zero-Latency control for UI)
+  const setStemMute = useCallback((deck: 'A' | 'B', stem: 'vocals' | 'drums' | 'bass' | 'other', isMuted: boolean) => {
+    const player = stemPlayers.current[deck][stem];
+    stemMutes.current[deck][stem] = isMuted;
+    if (player) {
+      player.mute = isMuted;
+    }
+    // Also update store for UI consistency
+    useStudioStore.getState().setMutedStem(deck, stem, isMuted);
+  }, [stemPlayers, stemMutes]);
+
   // Get stem mute state
   const getStemMuteState = useCallback((deck: 'A' | 'B') => {
     return { ...useStudioStore.getState().mutedStems[deck] };
@@ -1217,6 +1229,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     setReverbWetMix,
     setReverbDecayTime,
     toggleStem,
+    setStemMute,
     getStemMuteState,
     getMasterBus,
     getRecorderStream,

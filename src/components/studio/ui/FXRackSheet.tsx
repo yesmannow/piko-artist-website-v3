@@ -2,7 +2,7 @@
 
 /**
  * FXRackSheet - Collapsible Bottom Sheet for FX Rack
- * 
+ *
  * Wrapper component for FXRack with minimize/expand functionality
  * Minimized by default, expands on click
  */
