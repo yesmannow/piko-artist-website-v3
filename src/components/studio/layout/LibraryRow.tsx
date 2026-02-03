@@ -45,7 +45,7 @@ export function LibraryRow() {
 
   return (
     <section
-      className="flex flex-col border-t border-white/5 bg-(--bg-secondary) overflow-hidden h-full"
+      className="flex flex-col min-h-0 border-t border-white/5 bg-(--bg-secondary) overflow-hidden h-full"
       aria-label="Track Library"
     >
       {/* Library Header */}
@@ -62,7 +62,7 @@ export function LibraryRow() {
       </div>
 
       {/* Library Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto">
         <TrackLibrary isOpen={libraryOpen} onClose={() => setLibraryOpen(false)} />
       </div>
     </section>

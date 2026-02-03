@@ -25,27 +25,33 @@ interface PerformanceRowProps {
 export function PerformanceRow({ masterBus, masterPostFx }: PerformanceRowProps) {
   return (
     <section
-      className="grid gap-4 p-4 border-b border-white/5 h-full overflow-hidden"
+      className="grid gap-3 p-3 border-b border-white/5 h-full min-h-0 overflow-hidden w-full max-w-[1600px] mx-auto"
       style={{
-        gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 380px) minmax(0, 1fr)',
+        gridTemplateColumns: 'minmax(320px, 1fr) minmax(320px, 420px) minmax(320px, 1fr)',
       }}
       aria-label="Performance Controls"
     >
       {/* Left Column: Deck A Controls + FX */}
-      <div className="flex flex-col gap-4 overflow-y-auto">
-        <DeckControls deckId="A" />
-        <DeckFXRack deckId="A" />
+      <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+        <div className="min-h-0 overflow-y-auto">
+          <DeckControls deckId="A" />
+          <DeckFXRack deckId="A" />
+        </div>
       </div>
 
       {/* Center Column: Mixer (Slightly Elevated) */}
-      <div className="flex flex-col bg-(--bg-secondary) rounded-lg border border-white/5 p-4 shadow-lg overflow-y-auto">
-        <MixerCenter masterBus={masterBus} masterPostFx={masterPostFx} />
+      <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+        <div className="min-h-0 overflow-y-auto bg-(--bg-secondary) rounded-lg border border-white/5 p-4 shadow-lg">
+          <MixerCenter masterBus={masterBus} masterPostFx={masterPostFx} />
+        </div>
       </div>
 
       {/* Right Column: Deck B Controls + FX */}
-      <div className="flex flex-col gap-4 overflow-y-auto">
-        <DeckControls deckId="B" />
-        <DeckFXRack deckId="B" />
+      <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+        <div className="min-h-0 overflow-y-auto">
+          <DeckControls deckId="B" />
+          <DeckFXRack deckId="B" />
+        </div>
       </div>
     </section>
   );

@@ -112,15 +112,10 @@ const nextConfig = {
     // YouTube images are automatically proxied through /api/image-proxy for compatibility.
     // All components using YouTube thumbnails have been updated to use the proxy utility.
   },
-  experimental: {
-    // Vercel deployment configuration
-  },
-  // External packages that should not be bundled (for Node.js sidecar scripts)
-  serverExternalPackages: ['prolink-connect'],
+  // External packages that should not be bundled (for Node.js sidecar scripts and browser-only packages)
+  serverExternalPackages: ['prolink-connect', 'essentia.js'],
   // Transpile Tailwind v4 packages and ONNX Runtime for Turbopack compatibility
   transpilePackages: ['@tailwindcss/postcss', '@tailwindcss/node', 'onnxruntime-web'],
-  // Exclude browser-only packages from server bundle
-  serverComponentsExternalPackages: ['essentia.js'],
   outputFileTracingRoot: __dirname,
   webpack: (config, { isServer, dev }) => {
     if (!dev && process.env.VERCEL_ENV === 'production' && process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true') {

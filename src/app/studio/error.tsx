@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default function StudioError({
@@ -43,9 +44,9 @@ export default function StudioError({
           Try again
         </button>
 
-        <a href="/" className="studio-error-link">
+        <Link href="/" className="studio-error-link">
           Return to homepage
-        </a>
+        </Link>
       </div>
 
       <style jsx>{`

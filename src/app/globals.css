@@ -634,10 +634,12 @@
 }
 
 .studio-shell {
-  position: relative;
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   background: radial-gradient(circle at top, #151530 0, #050510 55%);
   color: var(--color-text-primary);
   font-family: var(--font-lexend), var(--font-inter), system-ui, sans-serif;
@@ -799,6 +801,7 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: 16px;
   padding: 16px;
+  min-height: 0;
 }
 
 .library-drawer {
@@ -1415,16 +1418,6 @@
 }
 
 @media (min-width: 1024px) {
-  .studio-control-bar {
-    order: 2;
-    position: sticky;
-    top: 0;
-  }
-
-  .studio-main {
-    order: 3;
-  }
-
   .library-filter-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1466,9 +1459,10 @@
 @media (min-width: 1024px) {
   .studio-main {
     display: grid;
-    grid-template-columns: 280px 1fr 360px;
+    grid-template-columns: 280px minmax(0, 1fr);
     gap: var(--gap);
-    height: calc(100vh - var(--control-bar-height));
+    height: auto;
+    min-height: 0;
   }
   .decks-area {
     display: grid;
