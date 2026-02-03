@@ -89,7 +89,7 @@ export function StudioNavMenu() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200]"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-200"
             />
 
             {/* Drawer */}
@@ -98,7 +98,7 @@ export function StudioNavMenu() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 bottom-0 w-80 bg-obsidian-900 border-r border-white/10 z-[201] flex flex-col shadow-2xl"
+              className="fixed left-0 top-0 bottom-0 w-80 bg-obsidian-900 border-r border-white/10 z-201 flex flex-col shadow-2xl"
             >
               {/* Header */}
               <div className="glass-panel p-4 border-b border-white/10 flex items-center justify-between">

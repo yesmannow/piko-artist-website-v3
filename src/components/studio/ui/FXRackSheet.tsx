@@ -26,7 +26,7 @@ export function FXRackSheet({ masterBus, masterPostFx, isExpanded, onExpandedCha
   const setExpanded = onExpandedChange ?? setInternalExpanded;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[60]">
+    <div className="fixed bottom-0 left-0 right-0 z-60">
       <AnimatePresence>
         {expanded && (
           <motion.div

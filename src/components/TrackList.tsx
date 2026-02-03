@@ -314,7 +314,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 type="button"
                 onClick={() => setActiveFilter(opt.id)}
                   className={[
-                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
+                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-11 touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
                     isActive
                       ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
                       : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",

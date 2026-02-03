@@ -33,7 +33,7 @@ export default function Error({
         )}
         <button
           onClick={reset}
-          className="px-6 py-3 bg-toxic-lime text-black font-bold rounded-full hover:bg-toxic-lime/80 transition-colors min-h-[44px]"
+          className="px-6 py-3 bg-toxic-lime text-black font-bold rounded-full hover:bg-toxic-lime/80 transition-colors min-h-11"
         >
           Reload Page
         </button>

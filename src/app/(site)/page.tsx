@@ -21,7 +21,7 @@ export default function Home() {
       {/* Hero Section - V3 SYNDICATE */}
       <section
         id="home"
-        className="relative h-screen flex items-center justify-center overflow-hidden bg-[#050505]"
+        className="relative h-screen flex items-center justify-center overflow-hidden bg-obsidian-950"
       >
         {/* Fluid Vapor Background */}
         <FluidVaporBackground />
@@ -37,7 +37,7 @@ export default function Home() {
             filter: "grayscale(1) contrast(1.2) brightness(0.8)",
           }}
         />
-        <div className="absolute inset-0 bg-[#050505]/80 z-10" />
+        <div className="absolute inset-0 bg-obsidian-950/80 z-10" />
 
         {/* Ghosted Stencil "V3 SYNDICATE" Backdrop */}
         <h1
@@ -80,7 +80,7 @@ export default function Home() {
 
           <motion.button
             onClick={scrollToMusic}
-            className="px-12 py-6 bg-[#E0E0E0] text-black font-black italic uppercase text-xl md:text-2xl md:skew-x-[-12deg] skew-x-[-6deg] hover:bg-[#FFD700] transition-all"
+            className="px-12 py-6 bg-[#E0E0E0] text-black font-black italic uppercase text-xl md:text-2xl md:-skew-x-12 -skew-x-6 hover:bg-[#FFD700] transition-all"
             style={{
               fontFamily: "var(--font-lexend), system-ui, sans-serif",
               boxShadow: "8px 8px 0px #000",
@@ -96,7 +96,7 @@ export default function Home() {
       {/* Section 1: LATEST DROPS - Warehouse Shipping Manifest */}
       <section
         id="latest-drops"
-        className="relative py-12 md:py-20 px-4 md:px-8 bg-[#050505] border-t-2 border-[#E0E0E0]/10"
+        className="relative py-12 md:py-20 px-4 md:px-8 bg-obsidian-950 border-t-2 border-[#E0E0E0]/10"
       >
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -127,7 +127,7 @@ export default function Home() {
             <div className="relative">
               <TrackList featuredOnly={true} />
               {/* Scan-line overlay on hover */}
-              <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity bg-[linear-gradient(transparent_50%,rgba(255,215,0,0.1)_50%)] bg-[length:100%_4px]" />
+              <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity bg-[linear-gradient(transparent_50%,rgba(255,215,0,0.1)_50%)] bg-size-[100%_4px]" />
             </div>
           </motion.div>
         </div>

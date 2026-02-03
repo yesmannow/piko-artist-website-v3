@@ -64,6 +64,17 @@
   --breakpoint-lg: 1024px;   /* Laptops: Horizontal Dual-Deck + FX */
   --breakpoint-xl: 1280px;   /* Desktop: Full Studio Timeline + Stems */
   --breakpoint-2xl: 1536px; /* Pro Monitor: Multi-track DAW + Library */
+
+  /* Z-Index Layering - Studio UI Stack */
+  --z-index-60: 60;          /* FX Rack Sheet */
+  --z-index-180: 180;        /* Recommendations Popover base */
+  --z-index-181: 181;        /* Recommendations Popover content */
+  --z-index-200: 200;        /* Studio Nav Menu base */
+  --z-index-201: 201;        /* Studio Nav Menu content */
+  --z-index-300: 300;        /* Video Modal overlay */
+
+  /* Max Width Constraints (using container namespace for max-w-* utilities) */
+  --container-studio: 1600px; /* Studio Performance Row max width */
 }
 
 /* Glassmorphism Utilities - Phase 3 Liquid Obsidian Spec */

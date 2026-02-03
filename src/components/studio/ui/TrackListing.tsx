@@ -200,7 +200,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
               <div
                 key={i}
                 className={`w-2 h-2 rounded-full ${
-                  i < track.energy * 5 ? 'bg-gradient-to-r from-indigo-500 to-lime-400' : 'bg-white/20'
+                  i < track.energy * 5 ? 'bg-linear-to-r from-indigo-500 to-lime-400' : 'bg-white/20'
                 }`}
               />
             ))}

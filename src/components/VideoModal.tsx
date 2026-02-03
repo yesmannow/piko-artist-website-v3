@@ -47,12 +47,12 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
       iframeRef.current.setAttribute('credentialless', 'true');
       // Set iframe src to trigger loading
       iframeRef.current.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
-      
+
       // Fallback timeout in case onLoad doesn't fire (10 seconds)
       const timeout = setTimeout(() => {
         setIsLoading(false);
       }, 10000);
-      
+
       return () => clearTimeout(timeout);
     }
   }, [isOpen, videoId]);
@@ -81,7 +81,7 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+          className="fixed inset-0 z-300 flex items-center justify-center p-4"
           onClick={(e) => {
             // Close on backdrop click
             if (e.target === e.currentTarget) {
@@ -151,7 +151,7 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 onLoad={handleIframeLoad}
-                style={{ 
+                style={{
                   opacity: isLoading ? 0 : 1,
                   visibility: isLoading ? "hidden" : "visible",
                   transition: "opacity 0.3s ease-in-out"

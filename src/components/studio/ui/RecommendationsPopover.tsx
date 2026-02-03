@@ -2,7 +2,7 @@
 
 /**
  * RecommendationsPopover Component
- * 
+ *
  * Displays list of recommended tracks from Cyanite.ai
  * Shows track title, artist, BPM, mood indicators
  * "Load A" / "Load B" buttons for each recommendation
@@ -79,7 +79,7 @@ export function RecommendationsPopover({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[180]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-180"
           />
 
           {/* Popover */}
@@ -87,7 +87,7 @@ export function RecommendationsPopover({
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-obsidian-900 border border-white/10 rounded-lg shadow-2xl z-[181] max-h-[80vh] flex flex-col"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-obsidian-900 border border-white/10 rounded-lg shadow-2xl z-181 max-h-[80vh] flex flex-col"
           >
             {/* Header */}
             <div className="glass-panel p-4 border-b border-white/10 flex items-center justify-between">

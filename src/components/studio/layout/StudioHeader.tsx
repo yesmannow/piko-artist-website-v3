@@ -109,7 +109,7 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="studio-logo">
-            <Music2 className="h-4 w-4 text-[var(--color-accent)]" />
+            <Music2 className="h-4 w-4 text-(--color-accent)" />
             <span>Piko Studio</span>
           </div>
           <div className="studio-status">

@@ -98,7 +98,7 @@ export function PerformanceRow({ masterBus, masterPostFx }: PerformanceRowProps)
   };
   return (
     <section
-      className="grid gap-3 p-3 border-b border-white/5 h-full min-h-0 overflow-hidden w-full max-w-[1600px] mx-auto"
+      className="grid gap-3 p-3 border-b border-white/5 h-full min-h-0 overflow-hidden w-full max-w-studio mx-auto"
       style={{
         gridTemplateColumns: 'minmax(320px, 1fr) minmax(320px, 420px) minmax(320px, 1fr)',
       }}

@@ -258,7 +258,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#E0E0E0]">
+    <div className="min-h-screen bg-obsidian-950 text-[#E0E0E0]">
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0">
@@ -360,7 +360,7 @@ export default function ContactPage() {
                         transform: `rotate(${idx % 2 === 0 ? -1.0 : 0.9}deg)`,
                       }}
                     >
-                      <div className="relative w-full h-[200px] sm:h-[220px] bg-black/50">
+                      <div className="relative w-full h-50 sm:h-55 bg-black/50">
                         <Image
                           src={p.src}
                           alt={p.label}
@@ -523,7 +523,7 @@ export default function ContactPage() {
               <div className="p-4 md:p-5 grid grid-cols-2 md:grid-cols-4 gap-3">
                 {PRESS_PHOTOS.map((p) => (
                   <div key={p.src} className="border border-white/10 bg-black/20">
-                    <div className="relative aspect-[4/5]">
+                    <div className="relative aspect-4/5">
                       <Image src={p.src} alt={p.label} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
                     </div>
                     <div className="p-3 border-t border-white/10 flex items-center justify-between gap-2">
@@ -932,7 +932,7 @@ export default function ContactPage() {
                 <textarea
                   value={form.message}
                   onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-mono font-bold tracking-wider border-2 border-black min-h-[140px] resize-none"
+                  className="w-full px-4 py-3 bg-gray-300 text-black font-mono font-bold tracking-wider border-2 border-black min-h-35 resize-none"
                   placeholder="What are you looking for? Include timelines, expectations, deliverables."
                   minLength={10}
                   maxLength={5000}

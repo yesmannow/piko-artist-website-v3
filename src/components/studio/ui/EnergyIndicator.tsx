@@ -37,7 +37,7 @@ export function EnergyIndicator({ energy, className = '' }: EnergyIndicatorProps
           {[...Array(10)].map((_, i) => (
             <div
               key={i}
-              className="h-[1px] bg-zinc-950/50 mx-1"
+              className="h-px bg-zinc-950/50 mx-1"
             />
           ))}
         </div>
