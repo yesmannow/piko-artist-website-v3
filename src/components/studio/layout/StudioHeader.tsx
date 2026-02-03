@@ -2,14 +2,85 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Activity, ArrowLeft, Cpu, Music2 } from "lucide-react";
+import { Activity, ArrowLeft, Cpu, Music2, Wifi, WifiOff } from "lucide-react";
 import { useMidiBridge } from "@/hooks/useMidiBridge";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
+import { useState, useEffect, useRef } from "react";
 
 type StudioHeaderProps = {
-  masterProgress: number;
+  readonly masterProgress: number;
 };
+
+/**
+ * ProLink WebSocket Status Hook
+ * Monitors connection to ws://localhost:8080 for hardware CDJ integration
+ */
+function useProlinkStatus() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const connect = () => {
+      try {
+        const ws = new WebSocket('ws://localhost:8080');
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          if (mounted) {
+            setIsConnected(true);
+            setError(null);
+            console.log('[ProLink] Connected to ws://localhost:8080');
+          }
+        };
+
+        ws.onclose = () => {
+          if (mounted) {
+            setIsConnected(false);
+            setError('Disconnected');
+
+            // Attempt reconnect after 5 seconds
+            reconnectTimeoutRef.current = window.setTimeout(() => {
+              if (mounted) {
+                connect();
+              }
+            }, 5000);
+          }
+        };
+
+        ws.onerror = () => {
+          if (mounted) {
+            setIsConnected(false);
+            setError('Connection failed');
+          }
+        };
+      } catch (err) {
+        if (mounted) {
+          setError('Failed to connect');
+          setIsConnected(false);
+        }
+      }
+    };
+
+    connect();
+
+    return () => {
+      mounted = false;
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (reconnectTimeoutRef.current !== null) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return { isConnected, error };
+}
 
 export function StudioHeader({ masterProgress }: StudioHeaderProps) {
   const { isSupported, isActive, error, toggle } = useMidiBridge();
@@ -17,6 +88,7 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
   const masterBpm = useStore((state) => state.masterBpm);
   const setMasterBpm = useStore((state) => state.setMasterBpm);
+  const { isConnected: prolinkConnected, error: prolinkError } = useProlinkStatus();
 
   return (
     <header className="studio-header">
@@ -52,6 +124,20 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
               aria-label="Master BPM"
             />
           </div>
+
+          {/* ProLink Hardware Status */}
+          <motion.div
+            className={`studio-chip ${prolinkConnected ? "is-active" : ""}`}
+            title={prolinkConnected ? "ProLink Connected" : (prolinkError || "ProLink Offline")}
+            whileHover={{ scale: 1.02 }}
+          >
+            {prolinkConnected ? (
+              <Wifi className="h-3.5 w-3.5" />
+            ) : (
+              <WifiOff className="h-3.5 w-3.5" />
+            )}
+            CDJ
+          </motion.div>
 
           <motion.button
             type="button"

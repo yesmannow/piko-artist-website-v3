@@ -4,7 +4,16 @@
 
 /* Tailwind v4 Theme Configuration */
 @theme {
-  /* Liquid Obsidian Palette - Optimized for OLED */
+  /* Phase VIII: Professional Dark Mode Palette - Eye-Strain Reduction */
+  --bg-primary: #121212;        /* Deep gray for main background */
+  --bg-secondary: #1E1E1E;      /* Lighter gray for elevated panels/cards */
+  --bg-tertiary: #252525;       /* Hover/active states */
+  --text-primary: #E0E0E0;      /* Off-white for main text */
+  --text-secondary: #A0A0A0;    /* Muted for secondary text */
+  --accent-color: #009688;      /* Desaturated teal for professional accents */
+  --accent-hover: #00B8A9;      /* Slightly brighter on hover */
+
+  /* Liquid Obsidian Palette - Optimized for OLED (Legacy) */
   --color-obsidian-950: #050505;
   --color-obsidian-900: #0a0a0a;
   --color-obsidian-800: #121212;
@@ -25,10 +34,10 @@
 
   /* Liquid Mesh Background Gradient */
   --background-image-liquid-mesh: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%);
-  
+
   /* Glass Gradient */
   --background-image-glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
-  
+
   /* Studio Glow Shadow */
   --shadow-studio-glow: 0 0 20px -5px var(--color-studio-cyan);
   --shadow-depth-1: 0 28px 88px rgba(0, 0, 0, 0.55), 0 18px 52px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -498,7 +507,7 @@
   .vu-bar {
     width: 0.375rem; /* w-1.5 */
     border-radius: 9999px; /* rounded-full */
-    background: linear-gradient(to top, 
+    background: linear-gradient(to top,
       var(--color-studio-cyan, #00F2FF) 0%,
       var(--color-studio-purple, #9333ea) 50%,
       var(--color-studio-crimson, #ef4444) 100%
