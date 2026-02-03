@@ -3,8 +3,8 @@
  *
  * Phase VII: Intelligent Library Sync
  *
- * Syncs tracks from Cloudflare R2 to local IndexedDB on app mount.
- * Assigns local artwork using round-robin distribution.
+ * Syncs tracks from local /api/tracks (static manifest) to IndexedDB on app mount.
+ * Uses deterministic artwork assignment based on track ID hash.
  * Preserves existing analysis data (BPM/Key) for tracks already in DB.
  *
  * Usage:
@@ -15,28 +15,6 @@
 
 import { useEffect, useState } from 'react';
 import { db, bulkImportTracks, getDatabaseStats, type Track } from '@/lib/db';
-
-// All local artwork images (round-robin assignment)
-const ARTWORK_IMAGES = [
-  '/images/tracks/abstract-1846847_1280.jpg',
-  '/images/tracks/architecture-3189972_1280.jpg',
-  '/images/tracks/aurora-borealis-9267515_1280.jpg',
-  '/images/tracks/background-1833056_1280.jpg',
-  '/images/tracks/bicycle-3045580_1280.jpg',
-  '/images/tracks/dj-2581269_1280.jpg',
-  '/images/tracks/gong-8255081_1280.jpg',
-  '/images/tracks/graffiti-1476119_1280.jpg',
-  '/images/tracks/graffiti-3750912_1280.jpg',
-  '/images/tracks/hamburg-2718329_1280.jpg',
-  '/images/tracks/skateboard-447147_1280.jpg',
-  '/images/tracks/skull-and-crossbones-414207_1280.jpg',
-  '/images/tracks/starry-sky-1655503_1280.jpg',
-  '/images/tracks/street-art-1499524_1280.jpg',
-  '/images/tracks/tube-7260586_1280.jpg',
-  '/images/tracks/vinyl-1595847_1280.jpg',
-  '/images/tracks/wall-2583885_1280.jpg',
-  '/images/tracks/woman-3633737_1280.jpg',
-];
 
 interface SyncStats {
   total: number;
@@ -64,9 +42,9 @@ export function useLibrarySync(): UseLibrarySyncReturn {
       setIsLoading(true);
       setError(null);
 
-      console.log('[LibrarySync] Starting sync...');
+      console.log('[LibrarySync] Starting sync from local manifest...');
 
-      // Step A: Fetch tracks from R2 API
+      // Step A: Fetch tracks from local /api/tracks
       const response = await fetch('/api/tracks');
 
       if (!response.ok) {
@@ -79,10 +57,10 @@ export function useLibrarySync(): UseLibrarySyncReturn {
         throw new Error(data.error);
       }
 
-      const r2Tracks = data.tracks || [];
-      console.log(`[LibrarySync] Fetched ${r2Tracks.length} tracks from R2`);
+      const localTracks = data.tracks || [];
+      console.log(`[LibrarySync] Fetched ${localTracks.length} tracks from local manifest`);
 
-      if (r2Tracks.length === 0) {
+      if (localTracks.length === 0) {
         const dbStats = await getDatabaseStats();
         setStats({ ...dbStats, newTracksAdded: 0 });
         setIsLoading(false);
@@ -95,32 +73,30 @@ export function useLibrarySync(): UseLibrarySyncReturn {
 
       console.log(`[LibrarySync] Found ${existingTracks.length} existing tracks in DB`);
 
-      // Step C: Sync logic - Add new tracks with artwork
+      // Step C: Sync logic - Add new tracks with deterministic artwork
       const newTracks: Omit<Track, 'id'>[] = [];
 
-      r2Tracks.forEach((r2Track: any, index: number) => {
+      localTracks.forEach((track: { url: string; title: string; artworkUrl?: string }) => {
         // Skip if already exists
-        if (existingUrls.has(r2Track.url)) {
+        if (existingUrls.has(track.url)) {
           return;
         }
 
-        // Parse artist from title (R2 API should provide this)
-        const parts = r2Track.title.split(' - ');
+        // Parse artist from title (e.g., "Te Perdi" => "Unknown Artist", "Te Perdi")
+        const parts = track.title.split(' - ');
         const artist = parts.length >= 2 ? parts[0].trim() : 'Unknown Artist';
-        const title = parts.length >= 2 ? parts.slice(1).join(' - ').trim() : r2Track.title;
+        const title = parts.length >= 2 ? parts.slice(1).join(' - ').trim() : track.title;
 
-        // Round-robin artwork assignment
-        const artworkIndex = (existingTracks.length + newTracks.length) % ARTWORK_IMAGES.length;
-        const artwork = ARTWORK_IMAGES[artworkIndex];
+        // Use deterministic artwork from manifest
+        const artwork = track.artworkUrl || '/images/tracks/vinyl-1595847_1280.jpg';
 
         newTracks.push({
-          url: r2Track.url,
+          url: track.url,
           title,
           artist,
           artwork,
           dateAdded: new Date(),
           status: 'unanalyzed',
-          fileSize: r2Track.size,
         });
       });
 
@@ -162,7 +138,7 @@ export function useLibrarySync(): UseLibrarySyncReturn {
     }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     isLoading,

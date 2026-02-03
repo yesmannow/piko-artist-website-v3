@@ -7,7 +7,7 @@
  * Studio-specific dark theme styling
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Home, Music, Video, Radio, Mail } from 'lucide-react';

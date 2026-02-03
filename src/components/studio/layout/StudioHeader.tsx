@@ -15,14 +15,25 @@ type StudioHeaderProps = {
 /**
  * ProLink WebSocket Status Hook
  * Monitors connection to ws://localhost:8080 for hardware CDJ integration
+ *
+ * DISABLED BY DEFAULT in production to prevent WebSocket spam.
+ * Enable by setting NEXT_PUBLIC_ENABLE_PROLINK=true
  */
 function useProlinkStatus() {
+  const enableProlink = process.env.NEXT_PUBLIC_ENABLE_PROLINK === 'true';
   const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    enableProlink ? null : 'Hardware disabled'
+  );
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Gate: Only enable if explicitly configured
+    if (!enableProlink) {
+      return;
+    }
+
     let mounted = true;
 
     const connect = () => {
@@ -58,7 +69,7 @@ function useProlinkStatus() {
             setError('Connection failed');
           }
         };
-      } catch (err) {
+      } catch {
         if (mounted) {
           setError('Failed to connect');
           setIsConnected(false);
@@ -77,7 +88,7 @@ function useProlinkStatus() {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, []);
+  }, [enableProlink]);
 
   return { isConnected, error };
 }
