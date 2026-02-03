@@ -23,6 +23,8 @@ import { TrackListing, Track as TrackListingInterface } from './TrackListing';
 import { db } from '@/lib/db';
 import { useLibrarySync } from '@/hooks/useLibrarySync';
 import { useStudioStore } from '@/store/useStudioStore';
+import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
+import { useStore } from '@/store/useStore';
 
 interface TrackLibraryProps {
   readonly isOpen: boolean;
@@ -34,14 +36,21 @@ interface TrackLibraryProps {
 
 export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, panelId }: TrackLibraryProps) {
   const stemsCache = useStudioStore((state) => state.stemsCache);
+  const deckA = useStore((state) => state.deckA);
+  const deckB = useStore((state) => state.deckB);
   const [query, setQuery] = useState('');
   const [genreFilter, setGenreFilter] = useState<string>('all');
   const [moodFilter, setMoodFilter] = useState<string>('all');
   const [bpmMin, setBpmMin] = useState<number>(0);
   const [bpmMax, setBpmMax] = useState<number>(220);
+  const [sortBy, setSortBy] = useState<'dateAdded' | 'bpm' | 'energy'>('dateAdded');
+  const [batchAnalyzing, setBatchAnalyzing] = useState(false);
 
   // Phase VII: Sync tracks from R2 to IndexedDB
   const { isLoading: isSyncing, error: syncError, stats, refetch } = useLibrarySync();
+  
+  // Phase IX.5: AI Analysis Hook
+  const { analyzeIfNeeded, isAnalyzing, currentTrack } = useSmartTrackAnalysis();
 
   // Live query from IndexedDB (reactive!)
   const dbTracks = useLiveQuery(
@@ -53,25 +62,39 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
   const tracks: TrackListingInterface[] = useMemo(() => {
     if (!dbTracks) return [];
 
-    return dbTracks.map((dbTrack): TrackListingInterface => ({
-      trackId: dbTrack.url, // Use URL as unique ID
-      title: dbTrack.title,
-      artist: dbTrack.artist,
-      bpm: dbTrack.bpm || 120, // Default BPM if not analyzed
-      energy: 0.7, // Placeholder - can be analyzed later
-      key: dbTrack.key,
-      genre: dbTrack.genre,
-      mood: dbTrack.mood,
-      artUrl: dbTrack.artwork,
-      cover: dbTrack.artwork,
-      src: dbTrack.url,
-      stems: dbTrack.stemUrls ? {
-        full: dbTrack.url,
-        vocals: dbTrack.stemUrls[0],
-        drums: dbTrack.stemUrls[1],
-        other: dbTrack.stemUrls[2],
-      } : undefined,
-    }));
+    return dbTracks.map((dbTrack): TrackListingInterface => {
+      // Parse energy from analysisData if available
+      let energy = dbTrack.energy || 0.5;
+      if (dbTrack.analysisData) {
+        try {
+          const parsed = JSON.parse(dbTrack.analysisData);
+          energy = parsed.energy || energy;
+        } catch {
+          // Use default
+        }
+      }
+
+      return {
+        trackId: dbTrack.url, // Use URL as unique ID
+        title: dbTrack.title,
+        artist: dbTrack.artist,
+        bpm: dbTrack.bpm || 0,
+        energy,
+        key: dbTrack.key,
+        genre: dbTrack.genre,
+        mood: dbTrack.mood,
+        artUrl: dbTrack.artwork,
+        cover: dbTrack.artwork,
+        src: dbTrack.url,
+        status: dbTrack.status,
+        stems: dbTrack.stemUrls ? {
+          full: dbTrack.url,
+          vocals: dbTrack.stemUrls[0],
+          drums: dbTrack.stemUrls[1],
+          other: dbTrack.stemUrls[2],
+        } : undefined,
+      };
+    });
   }, [dbTracks]);
 
   const genres = useMemo(() => {
@@ -84,9 +107,19 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
     return ['all', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
   }, [tracks]);
 
+  // Get active deck's Camelot key for harmonic matching
+  const activeDeckKey = useMemo(() => {
+    const activeDeck = deckA.isPlaying ? deckA : deckB.isPlaying ? deckB : null;
+    if (!activeDeck?.trackData?.key) return null;
+    
+    // Extract Camelot notation from key string (e.g., "C major (8B)" -> "8B")
+    const match = activeDeck.trackData.key.match(/\(([0-9]{1,2}[AB])\)/);
+    return match ? match[1] : null;
+  }, [deckA, deckB]);
+
   const filteredTracks = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return tracks.filter((track) => {
+    const result = tracks.filter((track) => {
       const matchesQuery =
         !normalizedQuery ||
         track.title.toLowerCase().includes(normalizedQuery) ||
@@ -96,11 +129,98 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
       const matchesBpm = (!bpmMin || track.bpm >= bpmMin) && (!bpmMax || track.bpm <= bpmMax);
       return matchesQuery && matchesGenre && matchesMood && matchesBpm;
     });
-  }, [bpmMax, bpmMin, genreFilter, moodFilter, query, tracks]);
 
-  const handleAnalyzeTrack = (track: TrackListingInterface) => {
-    console.log(`[TrackLibrary] Analyze requested for ${track.trackId}`);
+    // Sort by selected criteria
+    if (sortBy === 'bpm') {
+      result.sort((a, b) => (b.bpm || 0) - (a.bpm || 0));
+    } else if (sortBy === 'energy') {
+      result.sort((a, b) => (b.energy || 0) - (a.energy || 0));
+    }
+    // Default 'dateAdded' is already sorted by reverse date in the query
+
+    return result;
+  }, [bpmMax, bpmMin, genreFilter, moodFilter, query, tracks, sortBy]);
+
+  const handleAnalyzeTrack = async (track: TrackListingInterface) => {
+    if (!dbTracks) return;
+    
+    const dbTrack = dbTracks.find(t => t.url === track.trackId);
+    if (!dbTrack) return;
+
+    try {
+      console.log(`[TrackLibrary] Analyzing ${track.title}...`);
+      await analyzeIfNeeded(dbTrack);
+      console.log(`[TrackLibrary] Analysis complete for ${track.title}`);
+    } catch (error) {
+      console.error(`[TrackLibrary] Analysis failed for ${track.title}:`, error);
+    }
   };
+
+  const handleBatchAnalyze = async () => {
+    if (!dbTracks || batchAnalyzing) return;
+
+    const unanalyzedTracks = dbTracks.filter(
+      track => track.status === 'unanalyzed' || track.status === 'error'
+    );
+
+    if (unanalyzedTracks.length === 0) {
+      alert('All tracks are already analyzed!');
+      return;
+    }
+
+    setBatchAnalyzing(true);
+    console.log(`[TrackLibrary] Starting batch analysis of ${unanalyzedTracks.length} tracks...`);
+
+    for (const track of unanalyzedTracks) {
+      try {
+        await analyzeIfNeeded(track);
+        // Add small delay to prevent UI blocking
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        console.error(`[TrackLibrary] Failed to analyze ${track.title}:`, error);
+      }
+    }
+
+    setBatchAnalyzing(false);
+    console.log('[TrackLibrary] Batch analysis complete');
+  };
+
+  // Mark compatible tracks with Perfect Match indicator
+  const tracksWithCompatibility = useMemo(() => {
+    if (!activeDeckKey) return filteredTracks;
+
+    return filteredTracks.map(track => {
+      if (!track.key) return track;
+
+      // Extract Camelot notation from key string
+      const camelotMatch = track.key.match(/\(([0-9]{1,2}[AB])\)/);
+      if (!camelotMatch) return track;
+
+      const trackCamelot = camelotMatch[1];
+      const match = activeDeckKey.match(/^(\d+)([AB])$/);
+      if (!match) return track;
+
+      const [, numStr, letter] = match;
+      const num = parseInt(numStr, 10);
+      const oppositeLetter = letter === 'A' ? 'B' : 'A';
+
+      // Calculate compatible keys
+      const prevNum = num === 1 ? 12 : num - 1;
+      const nextNum = num === 12 ? 1 : num + 1;
+
+      const compatibleKeys = new Set([
+        activeDeckKey,                    // Same key
+        `${num}${oppositeLetter}`,        // Relative major/minor
+        `${prevNum}${letter}`,            // -1 on wheel
+        `${nextNum}${letter}`,            // +1 on wheel
+      ]);
+
+      return {
+        ...track,
+        isCompatible: compatibleKeys.has(trackCamelot),
+      };
+    });
+  }, [filteredTracks, activeDeckKey]);
 
   // Close on Escape key
   useEffect(() => {
@@ -115,6 +235,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
 
   // Inline view (for persistent shell)
   if (inline) {
+    const unanalyzedCount = dbTracks?.filter(t => t.status === 'unanalyzed' || t.status === 'error').length || 0;
+
     return (
       <div className="h-full flex flex-col" id={panelId} aria-hidden={!isOpen}>
         {/* Header */}
@@ -137,6 +259,15 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Analysis Progress */}
+            {(isAnalyzing || batchAnalyzing) && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-cyan-400/10 border border-cyan-400/30">
+                <RefreshCw className="w-3 h-3 text-cyan-400 animate-spin" />
+                <span className="text-xs text-cyan-400 font-mono">
+                  {currentTrack ? `Analyzing: ${currentTrack}` : 'Batch analyzing...'}
+                </span>
+              </div>
+            )}
             {/* Sync Status */}
             {isSyncing && (
               <RefreshCw className="w-4 h-4 text-studio-cyan animate-spin" />
@@ -163,6 +294,60 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
               <X className="w-5 h-5 text-white/80" />
             </button>
           </div>
+        </div>
+
+        {/* Toolbar: Sort + Batch Analysis */}
+        <div className="px-4 mb-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-white/60 font-mono uppercase">Sort:</span>
+            <button
+              onClick={() => setSortBy('dateAdded')}
+              className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
+                sortBy === 'dateAdded' 
+                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400' 
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+              }`}
+            >
+              Recent
+            </button>
+            <button
+              onClick={() => setSortBy('bpm')}
+              className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
+                sortBy === 'bpm' 
+                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400' 
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+              }`}
+            >
+              BPM
+            </button>
+            <button
+              onClick={() => setSortBy('energy')}
+              className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
+                sortBy === 'energy' 
+                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400' 
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+              }`}
+            >
+              Energy
+            </button>
+          </div>
+          <button
+            onClick={handleBatchAnalyze}
+            disabled={batchAnalyzing || unanalyzedCount === 0}
+            className="px-4 py-2 rounded-lg font-mono text-xs uppercase bg-indigo-500/20 border border-indigo-500 text-indigo-400 hover:bg-indigo-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {batchAnalyzing ? (
+              <>
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Database className="w-3 h-3" />
+                Analyze All ({unanalyzedCount})
+              </>
+            )}
+          </button>
         </div>
         <div className="library-filters">
           <input
@@ -220,12 +405,12 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
 
         {/* Track List */}
         <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
-          {filteredTracks.length === 0 ? (
+          {tracksWithCompatibility.length === 0 ? (
             <div className="text-center py-12 text-white/60">
               <p>No tracks available</p>
             </div>
           ) : (
-            filteredTracks.map((track) => (
+            tracksWithCompatibility.map((track) => (
               <TrackListing
                 key={track.trackId}
                 track={track}
@@ -358,12 +543,12 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
                   </label>
                 </div>
               </div>
-              {filteredTracks.length === 0 ? (
+              {tracksWithCompatibility.length === 0 ? (
                 <div className="text-center py-12 text-white/60">
                   <p>No tracks available</p>
                 </div>
               ) : (
-                filteredTracks.map((track) => (
+                tracksWithCompatibility.map((track) => (
                   <TrackListing
                     key={track.trackId}
                     track={track}

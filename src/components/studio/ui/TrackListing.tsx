@@ -27,6 +27,8 @@ export interface Track {
   artUrl?: string;
   cover?: string;
   src?: string;
+  status?: 'unanalyzed' | 'analyzing' | 'analyzed' | 'error';
+  isCompatible?: boolean; // Phase IX.5: Harmonic matching indicator
   stems?: {
     full?: string;
     vocals?: string;
@@ -110,12 +112,41 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
 
   const isLoadedA = deckA.trackData?.title === track.title;
   const isLoadedB = deckB.trackData?.title === track.title;
+  
+  // Phase IX.5: Display analysis status
+  const showAnalysisStatus = track.status && track.status !== 'analyzed';
+  const analysisStatusText = track.status === 'analyzing' ? 'Analyzing...' : track.status === 'error' ? 'Error' : 'Unanalyzed';
 
   return (
-    <div className="glass-panel p-4 rounded-lg border border-white/10" data-track-id={track.trackId}>
+    <div 
+      className={`glass-panel p-4 rounded-lg border transition-all ${
+        track.isCompatible 
+          ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]' // Cyber Lime glow
+          : 'border-white/10'
+      }`}
+      data-track-id={track.trackId}
+    >
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-white truncate">{track.title}</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-bold text-white truncate">{track.title}</h3>
+            {track.isCompatible && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-widest bg-lime-400/20 border border-lime-400 text-lime-400 shrink-0">
+                Perfect Match
+              </span>
+            )}
+            {showAnalysisStatus && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-widest shrink-0 ${
+                track.status === 'analyzing' 
+                  ? 'bg-cyan-400/20 border border-cyan-400 text-cyan-400 animate-pulse' 
+                  : track.status === 'error'
+                  ? 'bg-red-400/20 border border-red-400 text-red-400'
+                  : 'bg-white/10 border border-white/20 text-white/60'
+              }`}>
+                {analysisStatusText}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-white/60">{track.artist}</p>
         </div>
         {track.artUrl && (
@@ -131,10 +162,12 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
         )}
       </div>
 
-      <div className="flex items-center gap-4 mb-4 text-sm">
+      <div className="flex items-center gap-4 mb-4 text-sm flex-wrap">
         <div className="flex items-center gap-2">
           <span className="text-white/60">BPM:</span>
-          <span className="font-mono font-bold text-white">{track.bpm}</span>
+          <span className={`font-mono font-bold ${track.bpm > 0 ? 'text-white' : 'text-white/40'}`}>
+            {track.bpm > 0 ? track.bpm : '—'}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-white/60">Energy:</span>
@@ -143,7 +176,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
               <div
                 key={i}
                 className={`w-2 h-2 rounded-full ${
-                  i < track.energy * 5 ? 'bg-studio-cyan' : 'bg-white/20'
+                  i < track.energy * 5 ? 'bg-gradient-to-r from-indigo-500 to-lime-400' : 'bg-white/20'
                 }`}
               />
             ))}

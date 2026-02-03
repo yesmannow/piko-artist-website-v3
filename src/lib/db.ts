@@ -3,7 +3,7 @@
  *
  * Phase VII: Intelligent Library & Cloud Ecosystem
  * Phase IX: AI Insights & Smart Metadata
- * 
+ *
  * This is the single source of truth for the TrackLibrary component.
  *
  * Architecture:

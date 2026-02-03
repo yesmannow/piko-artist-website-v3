@@ -1,18 +1,18 @@
 /**
  * useSmartTrackAnalysis.ts - AI-Driven "Smart" Metadata Hook
- * 
+ *
  * Phase IX: AI Insights & Masterpiece Layout
- * 
+ *
  * This hook intelligently analyzes tracks from the R2-synced library using Essentia.js
  * and persists results to IndexedDB (Dexie.js) for instant loading on subsequent plays.
- * 
+ *
  * Key Features:
  * - BPM Detection (Rhythm Extraction)
  * - Key Detection (mapped to Camelot Wheel for harmonic mixing)
  * - Energy Level (0.0-1.0 scale for dynamic mixing)
  * - One-time analysis with persistent caching
  * - UI feedback during analysis
- * 
+ *
  * Architecture:
  * - Runs in Web Worker (zero UI blocking)
  * - Uses IndexedDB for persistence (no Supabase)
@@ -40,7 +40,7 @@ const KEY_TO_CAMELOT: Record<string, string> = {
   'Eb major': '5B',
   'Bb major': '6B',
   'F major': '7B',
-  
+
   // Minor keys
   'A minor': '8A',
   'E minor': '9A',
@@ -95,7 +95,7 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
 
   /**
    * Analyze a track and persist results to IndexedDB
-   * 
+   *
    * @param track - Track object from Dexie
    * @returns Analysis results with Camelot mapping
    */
@@ -112,7 +112,7 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
 
     try {
       console.log('[SmartAnalysis] Starting analysis for:', track.title);
-      
+
       // Update track status to 'analyzing'
       await db.tracks.where('url').equals(track.url).modify({ status: 'analyzing' });
       setProgress(20);
@@ -161,10 +161,10 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
       return result;
     } catch (error) {
       console.error('[SmartAnalysis] Error analyzing track:', error);
-      
+
       // Mark as error in DB
-      await db.tracks.where('url').equals(track.url).modify({ 
-        status: 'error' 
+      await db.tracks.where('url').equals(track.url).modify({
+        status: 'error'
       });
 
       setCurrentTrack(null);
@@ -177,7 +177,7 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
   /**
    * Analyze track only if not already analyzed
    * This is the "smart" part - avoids redundant analysis
-   * 
+   *
    * @param track - Track object from Dexie
    * @returns Analysis results or null if already analyzed
    */
@@ -185,11 +185,11 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
     // Check if already analyzed
     if (track.status === 'analyzed' && track.bpm && track.key) {
       console.log('[SmartAnalysis] Track already analyzed:', track.title);
-      
+
       // Parse existing analysis data
       try {
         const analysisData = track.analysisData ? JSON.parse(track.analysisData) : null;
-        
+
         if (analysisData) {
           const result: SmartAnalysisResult = {
             bpm: analysisData.bpm || track.bpm || 0,
@@ -198,10 +198,10 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
             energy: analysisData.energy || 0,
             confidence: analysisData.confidence || 0,
           };
-          
+
           // Cache it
           analysisCache.current.set(track.url, result);
-          
+
           return result;
         }
       } catch (error) {
@@ -236,12 +236,12 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
 
 /**
  * Helper: Get compatible tracks for harmonic mixing
- * 
+ *
  * Compatible keys are:
  * - Same key
  * - +/- 1 on Camelot wheel (adjacent keys)
  * - Relative major/minor (e.g., 8A ↔ 8B)
- * 
+ *
  * @param currentCamelot - Current track's Camelot key
  * @param tracks - Array of tracks to filter
  * @returns Compatible tracks for smooth mixing
@@ -273,18 +273,18 @@ export function getCompatibleTracks(currentCamelot: string, tracks: Track[]): Tr
 
   return tracks.filter(track => {
     if (!track.key) return false;
-    
+
     // Extract Camelot notation from key string
     const camelotMatch = track.key.match(/\(([0-9]{1,2}[AB])\)/);
     if (!camelotMatch) return false;
-    
+
     return compatibleKeys.has(camelotMatch[1]);
   });
 }
 
 /**
  * Helper: Get energy-matched tracks
- * 
+ *
  * @param targetEnergy - Target energy level (0.0-1.0)
  * @param tracks - Array of tracks to filter
  * @param tolerance - Acceptable energy difference (default: 0.15)
@@ -297,11 +297,11 @@ export function getEnergyMatchedTracks(
 ): Track[] {
   return tracks.filter(track => {
     if (!track.analysisData) return false;
-    
+
     try {
       const data = JSON.parse(track.analysisData);
       const energy = data.energy || 0;
-      
+
       return Math.abs(energy - targetEnergy) <= tolerance;
     } catch {
       return false;

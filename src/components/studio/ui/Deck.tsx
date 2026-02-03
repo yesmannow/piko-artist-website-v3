@@ -11,12 +11,15 @@ import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useStore, type DeckState } from '@/store/useStore';
 import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyaniteRecommendations';
 import { useStemWorker } from '@/hooks/useStemWorker';
+import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
+import { db } from '@/lib/db';
 import { Play, Pause, Square, SkipBack, SkipForward, Wand2, Loader2, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RecommendationsPopover } from './RecommendationsPopover';
 import { StemRack } from './StemRack';
 import { JogWheel } from './JogWheel';
 import { WaveformMini } from './WaveformMini';
+import { EnergyIndicator } from './EnergyIndicator';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';
@@ -61,6 +64,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const autoStem = useStudioStore((state) => state.autoStem);
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
   const { getRecommendations, loading: recommendationsLoading } = useCyaniteRecommendations();
+  const { analyzeIfNeeded } = useSmartTrackAnalysis(); // Phase IX.5: Auto-analysis
   const stemModelUrl = process.env.NEXT_PUBLIC_STEM_MODEL_URL ?? '/models/stems.onnx';
   const {
     init: initStemWorker,
@@ -260,6 +264,28 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
     handleSplitStems();
   }, [autoStem, canGenerateStems, deck.isLoaded, handleSplitStems, hasStems, trackData?.url]);
 
+  // Phase IX.5: Auto-analyze track if not already analyzed
+  useEffect(() => {
+    if (!trackData?.url || !deck.isLoaded) return;
+
+    const performAnalysis = async () => {
+      try {
+        const dbTrack = await db.tracks.where('url').equals(trackData.url).first();
+        if (!dbTrack) return;
+
+        if (dbTrack.status === 'unanalyzed' || dbTrack.status === 'error') {
+          console.log(`[Deck:${deckId}] Auto-analyzing track: ${trackData.title}`);
+          await analyzeIfNeeded(dbTrack);
+          console.log(`[Deck:${deckId}] Analysis complete`);
+        }
+      } catch (error) {
+        console.error(`[Deck:${deckId}] Auto-analysis failed:`, error);
+      }
+    };
+
+    performAnalysis();
+  }, [trackData?.url, trackData?.title, deck.isLoaded, deckId, analyzeIfNeeded]);
+
   const handlePlay = () => {
     play(deckId);
     setDeckPlaying(deckId, true);
@@ -421,12 +447,25 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         </div>
         {trackData && (
           <div
-            className={`text-xs font-mono flex items-center gap-3 ${
+            className={`text-xs font-mono flex items-center gap-4 ${
               isSynced ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.65)]' : 'text-white/60'
             }`}
           >
-            {currentBpm?.toFixed(2)} BPM
-            {isSynced && <span className="ml-1 text-[10px] text-white">(MT)</span>}
+            {/* Phase IX.5: Prominent Camelot Key Display */}
+            {trackData.key && (
+              <div className="px-3 py-1.5 rounded-lg bg-lime-400/10 border border-lime-400/30">
+                <span className="text-[10px] uppercase text-lime-400/70 tracking-wider mr-2">Key</span>
+                <span className="text-sm font-bold text-lime-400">{trackData.key}</span>
+              </div>
+            )}
+            
+            {/* BPM Display */}
+            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+              <span className="text-[10px] uppercase text-white/60 tracking-wider mr-2">BPM</span>
+              <span className="text-sm font-bold text-white">{currentBpm?.toFixed(1)}</span>
+              {isSynced && <span className="ml-1 text-[10px] text-lime-400">(SYNC)</span>}
+            </div>
+            
             <button
               onClick={() => setKeyLock(deckId, !isKeyLockActive)}
               className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-[0.2em] border transition-all ${keyLockClass}`}
@@ -452,30 +491,37 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
       {/* Deck Body */}
       {trackData ? (
         <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
-          <div className="flex flex-col items-center gap-5">
-            <JogWheel
-              artworkUrl={trackData.cover || trackData.artUrl}
-              title={trackData.title}
-              progress={progress}
-              isPlaying={deck.isPlaying}
-              bpm={currentBpm ?? undefined}
-              isSynced={isSynced}
-              accent={jogAccent}
-              loading={!isLoaded}
-              onPointerDown={handleScratchStart}
-              onPointerMove={handleScratchMove}
-              onPointerUp={handleScratchEnd}
-              onPointerCancel={handleScratchEnd}
-            />
-            <div className="grid grid-cols-2 gap-3 w-full">
-              {['HOT CUE 1', 'HOT CUE 2', 'HOT CUE 3', 'HOT CUE 4'].map((pad) => (
-                <button
-                  key={pad}
-                  className="py-3 rounded-lg bg-linear-to-b from-[#0f1118] to-[#07080e] border border-white/10 text-xs font-mono uppercase tracking-[0.24em] hover:border-studio-cyan/50 transition-colors"
-                >
-                  {pad}
-                </button>
-              ))}
+          <div className="flex items-center justify-center gap-4">
+            {/* Phase IX.5: Energy Indicator */}
+            {complexityMode === 'pro' && (
+              <EnergyIndicator energy={trackData.energy || 0} />
+            )}
+            
+            <div className="flex flex-col items-center gap-5">
+              <JogWheel
+                artworkUrl={trackData.cover || trackData.artUrl}
+                title={trackData.title}
+                progress={progress}
+                isPlaying={deck.isPlaying}
+                bpm={currentBpm ?? undefined}
+                isSynced={isSynced}
+                accent={jogAccent}
+                loading={!isLoaded}
+                onPointerDown={handleScratchStart}
+                onPointerMove={handleScratchMove}
+                onPointerUp={handleScratchEnd}
+                onPointerCancel={handleScratchEnd}
+              />
+              <div className="grid grid-cols-2 gap-3 w-full">
+                {['HOT CUE 1', 'HOT CUE 2', 'HOT CUE 3', 'HOT CUE 4'].map((pad) => (
+                  <button
+                    key={pad}
+                    className="py-3 rounded-lg bg-linear-to-b from-[#0f1118] to-[#07080e] border border-white/10 text-xs font-mono uppercase tracking-[0.24em] hover:border-studio-cyan/50 transition-colors"
+                  >
+                    {pad}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
