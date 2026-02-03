@@ -455,9 +455,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       const arrayBuffer = await response.arrayBuffer();
 
       // Decode audio data
-  const AudioContextCtor = typeof globalThis !== 'undefined'
-  ? ((globalThis as unknown as { AudioContext?: typeof AudioContext }).AudioContext || (globalThis as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)
-  : undefined;
+  const AudioContextCtor = typeof globalThis === 'undefined' ? null : globalThis.AudioContext;
       if (!AudioContextCtor) {
         throw new Error('AudioContext is not supported in this browser');
       }

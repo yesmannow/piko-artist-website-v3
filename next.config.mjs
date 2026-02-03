@@ -11,6 +11,8 @@ const withSerwist = withSerwistInit({
   swDest: 'public/sw.js',
   // Serwist does not support Turbopack in dev yet; disable outside production.
   disable: process.env.NODE_ENV !== 'production',
+  // Increase the maximum file size to cache for large WASM files
+  maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // Increase to 30MB
 });
 
 /** @type {import('next').NextConfig} */

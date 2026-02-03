@@ -1,5 +1,4 @@
 {
-  "extends": "./tsconfig.json.bak2",
   "compilerOptions": {
     "skipLibCheck": true,
     "noEmit": true,
