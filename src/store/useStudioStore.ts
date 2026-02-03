@@ -6,7 +6,7 @@ type StemKey = 'vocals' | 'drums' | 'bass' | 'other';
 
 type StemBufferMap = Record<StemKey, AudioBuffer | null>;
 type StemMuteMap = Record<StemKey, boolean>;
-type StemDeckMap<T> = { A: T; B: T };
+type StemDeckMap<T> = { A: T; B: T }
 type PerformanceMode = 'high' | 'balanced' | 'low';
 
 type DeckFocusId = 'A' | 'B' | null;
@@ -59,6 +59,7 @@ interface StudioState {
   onboardingStep: OnboardingStep;
   onboardingSeen: boolean;
   useGridLayout?: boolean; // Phase V: Toggle between grid and legacy layout
+  layoutMode: 'Performance' | 'Library-Heavy'; // New state for layout mode
 
   deckA: DeckState;
   deckB: DeckState;
@@ -89,6 +90,7 @@ interface StudioState {
   startOnboarding: () => void;
   nextOnboardingStep: () => void;
   skipOnboarding: () => void;
+  setLayoutMode: (mode: 'Performance' | 'Library-Heavy') => void; // New action for setting layout mode
 }
 
 const initialDeckState: DeckState = {
@@ -148,6 +150,7 @@ export const useStudioStore = create<StudioState>()(
     onboardingSeen: false,
     deckA: { ...initialDeckState },
     deckB: { ...initialDeckState },
+    layoutMode: 'Performance', // Initial layout mode
 
     setCrossfader: (pos) =>
       set(() => {
@@ -273,5 +276,6 @@ export const useStudioStore = create<StudioState>()(
         };
       }),
     skipOnboarding: () => set({ onboardingStep: 'done', onboardingSeen: true }),
+    setLayoutMode: (mode) => set({ layoutMode: mode }), // Action for setting layout mode
   }))
 );

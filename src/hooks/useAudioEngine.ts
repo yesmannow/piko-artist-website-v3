@@ -664,7 +664,8 @@ export const useAudioEngine = (): AudioEngineControls => {
         }
         const currentValue = typeof param.value === 'number' ? param.value : normalized;
         if (typeof param.setValueAtTime === 'function') {
-          param.setValueAtTime(Math.max(0.001, currentValue), now);
+          const value = Math.max(0.001, currentValue);
+          param.setValueAtTime(value, now);
         }
         if (typeof param.exponentialRampToValueAtTime === 'function') {
           param.exponentialRampToValueAtTime(normalized, now + 0.05);
@@ -827,12 +828,10 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, [reverbNode, reverbSend]);
 
   const setReverbDecayTime = useCallback((seconds: number) => {
-    const reverb = reverbNode.current;
-    if (!reverb) return;
-    const clamped = Math.max(0.4, Math.min(12, seconds));
-    reverbDecayRef.current = clamped;
-    reverb.decay = clamped;
-  }, [reverbDecayRef, reverbNode]);
+    if (reverbNode.current) {
+      reverbNode.current.decay = seconds;
+    }
+  }, []);
 
   const applyStemMix = useCallback((deck: 'A' | 'B') => {
     const { mutedStems, soloStem } = useStudioStore.getState();
@@ -1198,9 +1197,9 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, [players, stemPlayers]);
 
   // Get deck channel for level metering
-  const getDeckChannel = useCallback((deck: 'A' | 'B') => {
-    return channels.current[deck];
-  }, [channels]);
+  const getDeckChannel = (deck: 'A' | 'B') => {
+    return channels.current[deck] || null;
+  };
 
   // Get master bus for level metering
   const getMasterChannel = useCallback(() => {

@@ -1,67 +1,45 @@
 /**
  * Essentia.js Worker for Audio Analysis
- * 
+ *
  * Performs BPM, key, and energy analysis using Essentia.js in a Web Worker
  * Prevents UI blocking during analysis
  */
 
-import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.web.js';
-import Essentia from 'essentia.js/dist/essentia.js-core.es.js';
+import { EssentiaWASM } from 'essentia.js';
 
-let essentiaInstance: Essentia | null = null;
-const wasmCandidates = [
-  typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_ESSENTIA_WASM_URL : undefined,
-  typeof self !== 'undefined' ? `${self.location.origin}/wasm/essentia-wasm.web.wasm` : undefined,
-].filter(Boolean) as string[];
+let essentiaInstance = null;
 
 // Initialize Essentia.js
-async function initEssentia() {
+const initEssentia = async () => {
   if (essentiaInstance) return;
-  if (typeof crossOriginIsolated !== 'undefined' && !crossOriginIsolated) {
-    self.postMessage({
+
+  const factory = (EssentiaWASM as unknown as {
+    EssentiaWASMInterfaced: (options: { locateFile: (path: string) => string }) => Promise<any>;
+  }).EssentiaWASMInterfaced;
+
+  const EssentiaWASMModule = await factory({
+    locateFile: (path: string) =>
+      path.includes('wasm') ? '/wasm/essentia-wasm.web.wasm' : `/wasm/${path}`,
+  });
+
+  essentiaInstance = new EssentiaWASMModule.EssentiaJs();
+};
+
+// Handle messages from main thread
+globalThis.onmessage = async (e: MessageEvent) => {
+  await initEssentia();
+
+  if (!essentiaInstance) {
+    globalThis.postMessage({
       type: 'error',
-      message: 'Essentia analysis requires COOP/COEP (crossOriginIsolated). Please enable security headers.',
+      message: 'Essentia.js failed to initialize. Cannot process the message.',
     });
     return;
   }
 
-  try {
-    let lastError: unknown;
-
-    for (const candidate of wasmCandidates) {
-      try {
-        const wasm = await EssentiaWASM({
-          locateFile: (path: string) => (path.endsWith('.wasm') ? candidate : path),
-        });
-        essentiaInstance = new Essentia(wasm);
-        console.log('[EssentiaWorker] Essentia.js initialized from', candidate);
-        return;
-      } catch (error) {
-        lastError = error;
-        console.warn('[EssentiaWorker] Failed to load Essentia WASM from', candidate, error);
-      }
-    }
-
-    throw lastError instanceof Error ? lastError : new Error('Failed to initialize Essentia.js');
-  } catch (error) {
-    console.error('[EssentiaWorker] Failed to initialize Essentia:', error);
-    throw error;
-  }
-}
-
-// Handle messages from main thread
-self.onmessage = async (e: MessageEvent) => {
   const { audioBuffer, trackId, sampleRate } = e.data;
 
   try {
-    // Initialize if needed
-    if (!essentiaInstance) {
-      await initEssentia();
-    }
-    if (!essentiaInstance) {
-      throw new Error('Essentia failed to initialize');
-    }
-
     // Convert AudioBuffer to Float32Array
     // AudioBuffer is transferred, so we need to extract the data
     let audioData: Float32Array;
@@ -70,7 +48,7 @@ self.onmessage = async (e: MessageEvent) => {
     } else if (audioBuffer instanceof Float32Array) {
       audioData = audioBuffer;
     } else {
-      throw new Error('Invalid audioBuffer format');
+      throw new TypeError('Invalid audioBuffer format');
     }
 
     // Convert to Essentia vector
@@ -107,7 +85,7 @@ self.onmessage = async (e: MessageEvent) => {
     essentiaInstance.delete(audioVector);
 
     // Send results back to main thread
-    self.postMessage({
+    globalThis.postMessage({
       trackId,
       bpm: Math.round(bpm * 10) / 10, // Round to 1 decimal
       key: keyString,
@@ -116,7 +94,7 @@ self.onmessage = async (e: MessageEvent) => {
     });
   } catch (error) {
     console.error('[EssentiaWorker] Analysis error:', error);
-    self.postMessage({
+    globalThis.postMessage({
       trackId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });

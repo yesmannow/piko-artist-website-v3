@@ -366,6 +366,23 @@ export function WaveformMini({
     }
   };
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch waveform data: ${response.statusText}`);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("WaveformMini fetch error:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [url]);
+
   return (
     <>
       <div
@@ -384,7 +401,7 @@ export function WaveformMini({
         aria-disabled={resolvedDuration <= 0}
         data-no-swipe="true"
       >
-        <canvas ref={canvasRef} className="block w-full h-[76px]" />
+        <canvas ref={canvasRef} className="block w-full h-19" />
         {isLoading && (
           <div className="absolute inset-0 bg-white/5 animate-pulse" aria-hidden="true">
             <div className="absolute inset-y-3 left-4 right-4 rounded-full bg-white/10 blur-sm" />

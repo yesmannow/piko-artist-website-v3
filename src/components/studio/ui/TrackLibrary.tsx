@@ -351,6 +351,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
         </div>
         <div className="library-filters">
           <input
+            id={`search-tracks-${panelId}`}
+            name="search-tracks"
             type="search"
             placeholder="Search tracks..."
             value={query}
@@ -382,6 +384,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
               <span>BPM</span>
               <div className="library-bpm">
                 <input
+                  id={`bpm-min-${panelId}`}
+                  name="bpm-min"
                   type="number"
                   min={0}
                   max={300}
@@ -391,6 +395,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
                 />
                 <span>-</span>
                 <input
+                  id={`bpm-max-${panelId}`}
+                  name="bpm-max"
                   type="number"
                   min={0}
                   max={300}
@@ -492,6 +498,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
               <div className="library-filters mb-4">
                 <input
+                  id={`search-tracks-${panelId}`}
+                  name="search-tracks"
                   type="search"
                   placeholder="Search tracks..."
                   value={query}
@@ -523,6 +531,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
                     <span>BPM</span>
                     <div className="library-bpm">
                       <input
+                        id={`bpm-min-${panelId}`}
+                        name="bpm-min"
                         type="number"
                         min={0}
                         max={300}
@@ -532,6 +542,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
                       />
                       <span>-</span>
                       <input
+                        id={`bpm-max-${panelId}`}
+                        name="bpm-max"
                         type="number"
                         min={0}
                         max={300}
