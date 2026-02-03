@@ -1,20 +1,30 @@
 "use client";
 
 /**
- * StudioGrid - Industry-Standard 3-Row DJ Layout
+ * StudioGrid - 2026 Iron-Clad Single-Viewport Workstation
  *
  * Professional DJ mixer layout based on CDJ/DJM setup:
- * - Row 1 (Top 40%): Deck Waveforms & Track Info
- * - Row 2 (Middle 35%): Performance Controls & Mixer
- * - Row 3 (Bottom 25%): Track Library & Browser
+ * - Desktop (md+): Fixed 3-row layout with zero scroll
+ *   - Row 1 (Top): Deck Waveforms & Track Info
+ *   - Row 2 (Middle): Performance Controls & Mixer (flex-1 expansion)
+ *   - Row 3 (Bottom): Track Library & Browser
  *
- * Design System: Pro DJ Dark Mode with 8-point grid spacing
+ * - Mobile (<md): Tab-based view switcher
+ *   - DECKS | MIXER | LIBRARY navigation tabs
+ *   - Single active view at a time
+ *
+ * Design System: Expert Desaturated Palette with 8-point grid spacing
+ * Constraint: ZERO vertical scrolling on desktop (1080p+)
  */
 
 import type * as Tone from "tone";
+import { useState } from "react";
 import { DeckWaveform } from "@/components/studio/ui/DeckWaveform";
+import { DeckControls } from "@/components/studio/ui/DeckControls";
+import { TrackLibrary } from "@/components/studio/ui/TrackLibrary";
 import { PerformanceRow } from "./PerformanceRow";
 import { LibraryRow } from "./LibraryRow";
+import { MixerCenter } from "./MixerCenter";
 import { useStudioStore } from "@/store/useStudioStore";
 
 interface StudioGridProps {
@@ -23,45 +33,124 @@ interface StudioGridProps {
   readonly masterProgress: number;
 }
 
+type MobileTab = 'DECKS' | 'MIXER' | 'LIBRARY';
+
 export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly<StudioGridProps>) {
   const libraryOpen = useStudioStore((state) => state.libraryOpen);
+  const [mobileTab, setMobileTab] = useState<MobileTab>('DECKS');
 
   return (
-    <div
-      className="h-screen grid bg-(--bg-primary) overflow-hidden"
-      style={{
-        gridTemplateRows: libraryOpen
-          ? 'minmax(0, 3fr) minmax(0, 3fr) minmax(0, 4fr)' // Library expanded
-          : 'minmax(0, 4fr) minmax(0, 3.5fr) minmax(0, 2.5fr)', // Default DJ layout
-      }}
-    >
-      {/* Row 1: Deck Waveforms (Top 40%) */}
-      <section
-        className="relative flex gap-4 p-4 border-b border-white/5"
-        aria-label="Deck Waveforms"
+    <>
+      {/* DESKTOP: Fixed 3-Row Workstation (md+) - ZERO SCROLL */}
+      <div
+        className="hidden md:flex fixed inset-0 h-screen w-screen overflow-hidden flex-col bg-(--bg-primary)"
       >
-        {/* Deck A Waveform */}
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="text-xs font-mono uppercase tracking-wider text-white/60 px-2">
-            Deck A
+        {/* Row 1: Deck Waveforms (Fixed Height) */}
+        <section
+          className="relative flex gap-4 p-4 border-b border-white/5 h-35 min-h-35"
+          aria-label="Deck Waveforms"
+        >
+          {/* Deck A Waveform */}
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary) px-2">
+              Deck A
+            </div>
+            <DeckWaveform deckId="A" />
           </div>
-          <DeckWaveform deckId="A" />
+
+          {/* Deck B Waveform */}
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary) px-2">
+              Deck B
+            </div>
+            <DeckWaveform deckId="B" />
+          </div>
+        </section>
+
+        {/* Row 2: Performance & Mixer (Flex-1 - Expands to fill) */}
+        <div className="flex-1 overflow-hidden">
+          <PerformanceRow masterBus={masterBus} masterPostFx={masterPostFx} />
         </div>
 
-        {/* Deck B Waveform */}
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="text-xs font-mono uppercase tracking-wider text-white/60 px-2">
-            Deck B
-          </div>
-          <DeckWaveform deckId="B" />
+        {/* Row 3: Library & Browser (Fixed or Collapsed) */}
+        <div className={libraryOpen ? "h-75 min-h-75" : "h-12 min-h-12"}>
+          <LibraryRow />
         </div>
-      </section>
+      </div>
 
-      {/* Row 2: Performance & Mixer (Middle 35%) */}
-      <PerformanceRow masterBus={masterBus} masterPostFx={masterPostFx} />
+      {/* MOBILE: Tab-Based View Switcher (<md) */}
+      <div className="flex md:hidden flex-col h-screen overflow-hidden bg-(--bg-primary)">
+        {/* Active View Content */}
+        <div className="flex-1 overflow-hidden">
+          {mobileTab === 'DECKS' && (
+            <div className="h-full overflow-y-auto p-4 space-y-4">
+              <div className="space-y-2">
+                <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary)">
+                  Deck A
+                </div>
+                <DeckWaveform deckId="A" />
+                <DeckControls deckId="A" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary)">
+                  Deck B
+                </div>
+                <DeckWaveform deckId="B" />
+                <DeckControls deckId="B" />
+              </div>
+            </div>
+          )}
 
-      {/* Row 3: Library & Browser (Bottom 25%) */}
-      <LibraryRow />
-    </div>
+          {mobileTab === 'MIXER' && (
+            <div className="h-full overflow-y-auto p-4">
+              <MixerCenter masterBus={masterBus} masterPostFx={masterPostFx} />
+            </div>
+          )}
+
+          {mobileTab === 'LIBRARY' && (
+            <div className="h-full overflow-hidden">
+              <TrackLibrary
+                isOpen={true}
+                onClose={() => setMobileTab('DECKS')}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Navigation Tabs */}
+        <nav className="h-16 min-h-16 border-t border-white/10 flex justify-around items-center bg-(--bg-secondary)">
+          <button
+            onClick={() => setMobileTab('DECKS')}
+            className={`flex-1 h-full flex items-center justify-center text-xs font-mono uppercase tracking-wider transition-colors ${
+              mobileTab === 'DECKS'
+                ? 'text-(--accent-color) bg-white/5'
+                : 'text-(--text-secondary) hover:text-(--text-primary)'
+            }`}
+          >
+            Decks
+          </button>
+          <button
+            onClick={() => setMobileTab('MIXER')}
+            className={`flex-1 h-full flex items-center justify-center text-xs font-mono uppercase tracking-wider transition-colors ${
+              mobileTab === 'MIXER'
+                ? 'text-(--accent-color) bg-white/5'
+                : 'text-(--text-secondary) hover:text-(--text-primary)'
+            }`}
+          >
+            Mixer
+          </button>
+          <button
+            onClick={() => setMobileTab('LIBRARY')}
+            className={`flex-1 h-full flex items-center justify-center text-xs font-mono uppercase tracking-wider transition-colors ${
+              mobileTab === 'LIBRARY'
+                ? 'text-(--accent-color) bg-white/5'
+                : 'text-(--text-secondary) hover:text-(--text-primary)'
+            }`}
+          >
+            Library
+          </button>
+        </nav>
+      </div>
+    </>
   );
 }

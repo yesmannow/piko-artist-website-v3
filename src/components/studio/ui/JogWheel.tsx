@@ -6,24 +6,59 @@ import { useMemo } from "react";
 import { beatsToSeconds } from "@/lib/utils/audioMath";
 
 interface JogWheelProps {
-  artworkUrl?: string;
-  title?: string;
-  progress: number; // 0-1
-  isPlaying: boolean;
-  bpm?: number;
-  isSynced?: boolean;
-  accent?: string;
-  energy?: number;
-  loading?: boolean;
-  onPointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerMove?: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerUp?: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerCancel?: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onClick?: () => void;
-  disabled?: boolean;
+  readonly artworkUrl?: string;
+  readonly title?: string;
+  readonly progress: number; // 0-1
+  readonly isPlaying: boolean;
+  readonly bpm?: number;
+  readonly isSynced?: boolean;
+  readonly accent?: string;
+  readonly energy?: number;
+  readonly loading?: boolean;
+  readonly onPointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  readonly onPointerMove?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  readonly onPointerUp?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  readonly onPointerCancel?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  readonly onClick?: () => void;
+  readonly disabled?: boolean;
 }
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+// Extract cursor class logic to reduce complexity
+const getCursorClass = (disabled: boolean, artworkUrl?: string, loading?: boolean): string => {
+  if (disabled) return "cursor-not-allowed";
+  if (artworkUrl) return "cursor-grab active:cursor-grabbing";
+  return "cursor-pointer";
+};
+
+// Extract beat flash animation config to reduce complexity
+const getBeatFlashAnimation = (isPlaying: boolean, tealAccent: string) => {
+  if (!isPlaying) return {};
+  return {
+    filter: [
+      `drop-shadow(0 0 10px ${tealAccent}66)`,
+      `drop-shadow(0 0 20px ${tealAccent}dd)`,
+      `drop-shadow(0 0 10px ${tealAccent}66)`,
+    ],
+  };
+};
+
+// Extract rotation animation config
+const getRotationAnimation = (isPlaying: boolean, rotationSeconds: number) => {
+  if (isPlaying) {
+    return { repeat: Infinity, ease: "linear", duration: rotationSeconds };
+  }
+  return { ease: "easeOut", duration: 0.4 };
+};
+
+// Extract BPM badge animation config
+const getBPMBadgeAnimation = (isSynced: boolean, accent: string) => ({
+  color: isSynced ? "#fff" : "rgba(255,255,255,0.72)",
+  boxShadow: isSynced
+    ? `0 0 20px ${accent}66, 0 8px 24px rgba(0,0,0,0.5)`
+    : "0 8px 24px rgba(0,0,0,0.55)",
+});
 
 export function JogWheel({
   artworkUrl,
@@ -41,11 +76,11 @@ export function JogWheel({
   onPointerCancel,
   onClick,
   disabled = false,
-}: JogWheelProps) {
+}: Readonly<JogWheelProps>) {
   const circumference = 2 * Math.PI * 46;
   const dash = clamp01(progress) * circumference;
   const ringGradientId = useMemo(() => {
-    const key = (title || accent || "jog").toString().replace(/[^a-z0-9-]/gi, "-").toLowerCase();
+    const key = (title || accent || "jog").toString().replaceAll(/[^a-z0-9-]/gi, "-").toLowerCase();
     return `jog-ring-${key}`;
   }, [title, accent]);
   const glowIntensity = Math.min(1, Math.max(0, energy));
@@ -53,15 +88,23 @@ export function JogWheel({
   const bpmText = typeof bpm === "number" ? bpm.toFixed(2) : "--.--";
   const rotationSeconds = bpm && bpm > 0 ? beatsToSeconds(4, bpm) : 7;
 
-  return (
+  // Beat flash: Pulse on every beat (Quarter notes)
+  const beatFlashDuration = bpm && bpm > 0 ? (60 / bpm) : 1;
+  const tealAccent = "#009688"; // 2026 Expert Teal
+
+  const cursorClass = getCursorClass(disabled, artworkUrl, loading);
+  const loadingClass = loading ? "animate-pulse" : "";
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement | HTMLButtonElement>) => {
+    if (onClick && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
+  const wheelContent = (
     <div
-      className={`relative w-full max-w-[360px] aspect-square rounded-full ${disabled ? "cursor-not-allowed" : artworkUrl ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"} ${loading ? "animate-pulse" : ""}`}
-      onPointerDown={disabled ? undefined : onPointerDown}
-      onPointerMove={disabled ? undefined : onPointerMove}
-      onPointerUp={disabled ? undefined : onPointerUp}
-      onPointerCancel={disabled ? undefined : onPointerCancel}
-      onPointerLeave={disabled ? undefined : onPointerCancel}
-      onClick={disabled ? undefined : onClick}
+      className={`relative w-full max-w-90 aspect-square rounded-full ${loadingClass}`}
       data-no-swipe="true"
     >
       <div className="absolute inset-0 rounded-full bg-linear-to-br from-[#050507] via-[#0b0c11] to-[#050507] border border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]" />
@@ -81,6 +124,7 @@ export function JogWheel({
             <stop offset="100%" stopColor={accent} stopOpacity="1" />
           </linearGradient>
         </defs>
+        {/* Background ring */}
         <circle
           cx="60"
           cy="60"
@@ -91,7 +135,8 @@ export function JogWheel({
           strokeDasharray={`${circumference} ${circumference}`}
           transform="rotate(-120 60 60)"
         />
-        <circle
+        {/* Progress ring with beat flash */}
+        <motion.circle
           cx="60"
           cy="60"
           r="46"
@@ -101,7 +146,12 @@ export function JogWheel({
           strokeDasharray={`${dash} ${circumference}`}
           transform="rotate(-120 60 60)"
           strokeLinecap="round"
-          style={{ filter: "drop-shadow(0 0 10px rgba(34,211,238,0.65))" }}
+          animate={getBeatFlashAnimation(isPlaying, tealAccent)}
+          transition={{
+            duration: beatFlashDuration,
+            repeat: isPlaying ? Infinity : 0,
+            ease: "easeInOut",
+          }}
         />
       </svg>
 
@@ -110,11 +160,7 @@ export function JogWheel({
           <motion.div
             className="absolute inset-0"
             animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-            transition={
-              isPlaying
-                ? { repeat: Infinity, ease: "linear", duration: rotationSeconds }
-                : { ease: "easeOut", duration: 0.4 }
-            }
+            transition={getRotationAnimation(isPlaying, rotationSeconds)}
             style={{ originX: "50%", originY: "50%" }}
           >
             <Image
@@ -144,12 +190,7 @@ export function JogWheel({
         <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
           <motion.div
             initial={false}
-            animate={{
-              color: isSynced ? "#fff" : "rgba(255,255,255,0.72)",
-              boxShadow: isSynced
-                ? `0 0 20px ${accent}66, 0 8px 24px rgba(0,0,0,0.5)`
-                : "0 8px 24px rgba(0,0,0,0.55)",
-            }}
+            animate={getBPMBadgeAnimation(isSynced, accent)}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="px-4 py-2 rounded-full bg-black/65 backdrop-blur-md border border-white/12"
             style={{ fontFamily: "var(--font-inter)" }}
@@ -167,4 +208,29 @@ export function JogWheel({
       )}
     </div>
   );
+
+  // Wrap in button if interactive
+  if (onClick && !disabled) {
+    return (
+      <button
+        type="button"
+        className={`${cursorClass} bg-transparent border-none p-0 m-0 block`}
+        onClick={onClick}
+        onKeyDown={handleKeyDown}
+        aria-label={title || "Jog wheel"}
+      >
+        <div
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onPointerLeave={onPointerCancel}
+        >
+          {wheelContent}
+        </div>
+      </button>
+    );
+  }
+
+  return wheelContent;
 }

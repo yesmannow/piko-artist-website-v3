@@ -25,7 +25,7 @@ interface PerformanceRowProps {
 export function PerformanceRow({ masterBus, masterPostFx }: PerformanceRowProps) {
   return (
     <section
-      className="grid gap-4 p-4 border-b border-white/5"
+      className="grid gap-4 p-4 border-b border-white/5 h-full overflow-hidden"
       style={{
         gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 380px) minmax(0, 1fr)',
       }}

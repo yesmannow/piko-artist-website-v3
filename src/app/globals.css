@@ -4,14 +4,22 @@
 
 /* Tailwind v4 Theme Configuration */
 @theme {
-  /* Phase VIII: Professional Dark Mode Palette - Eye-Strain Reduction */
-  --bg-primary: #121212;        /* Deep gray for main background */
-  --bg-secondary: #1E1E1E;      /* Lighter gray for elevated panels/cards */
-  --bg-tertiary: #252525;       /* Hover/active states */
-  --text-primary: #E0E0E0;      /* Off-white for main text */
-  --text-secondary: #A0A0A0;    /* Muted for secondary text */
-  --accent-color: #009688;      /* Desaturated teal for professional accents */
-  --accent-hover: #00B8A9;      /* Slightly brighter on hover */
+  /* Phase X: 2026 Expert Desaturated Design System - Zero Eye Strain */
+  --bg-primary: #121212;        /* Primary canvas - Deep Onyx */
+  --bg-secondary: #1E1E1E;      /* Elevated panels - Secondary Gray */
+  --bg-tertiary: #252525;       /* Hover/active states - Tertiary Gray */
+  --text-primary: #E0E0E0;      /* Off-white for main text - High readability */
+  --text-secondary: #A0A0A0;    /* Muted for secondary text - Hierarchy */
+  --accent-color: #009688;      /* Research-grade Teal - Active indicators */
+  --accent-hover: #00B8A9;      /* Hover state - Slightly brighter */
+
+  /* 8-Point Grid System - Professional Density */
+  --spacing-unit: 8px;
+  --spacing-xs: 4px;   /* 0.5 units */
+  --spacing-sm: 8px;   /* 1 unit */
+  --spacing-md: 16px;  /* 2 units */
+  --spacing-lg: 24px;  /* 3 units */
+  --spacing-xl: 32px;  /* 4 units */
 
   /* Liquid Obsidian Palette - Optimized for OLED (Legacy) */
   --color-obsidian-950: #050505;
@@ -558,7 +566,7 @@
   }
 }
 
-/* Studio 2026 design system */
+/* Studio 2026 design system - unified root variables */
 :root {
   /* Sophisticated Dark Mode Palette */
   --bg-primary: #09090b;
@@ -591,8 +599,8 @@
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.7);
   --shadow-glow: 0 0 20px rgba(190, 242, 100, 0.3);
-}
-:root {
+
+  /* Legacy color system (merged from line 603) */
   --color-bg: #050510;
   --color-bg-elevated: rgba(15, 15, 40, 0.9);
   --color-border-subtle: rgba(255, 255, 255, 0.06);

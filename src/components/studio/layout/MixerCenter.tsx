@@ -25,12 +25,12 @@ interface MixerCenterProps {
   masterPostFx?: Tone.Gain | null;
 }
 
-export function MixerCenter({ masterBus, masterPostFx }: MixerCenterProps) {
+export function MixerCenter({ masterBus, masterPostFx }: Readonly<MixerCenterProps>) {
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-xs font-mono uppercase tracking-[0.3em] text-white/60">
+        <h2 className="text-xs font-mono uppercase tracking-[0.3em] text-(--text-secondary)">
           Mixer
         </h2>
       </div>
@@ -38,13 +38,13 @@ export function MixerCenter({ masterBus, masterPostFx }: MixerCenterProps) {
       {/* EQ Section */}
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-2 p-2 bg-(--bg-tertiary) rounded border border-white/5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-(--text-secondary)">
             EQ A
           </span>
           <DeckEQ deckId="A" />
         </div>
         <div className="flex flex-col gap-2 p-2 bg-(--bg-tertiary) rounded border border-white/5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-(--text-secondary)">
             EQ B
           </span>
           <DeckEQ deckId="B" />
@@ -56,13 +56,13 @@ export function MixerCenter({ masterBus, masterPostFx }: MixerCenterProps) {
         {/* Channel A */}
         <div className="flex gap-2 items-stretch">
           <ChannelFader deckId="A" />
-          <LevelMeter deckId="A" />
+          <LevelMeter deckId="A" accentColor="#009688" />
         </div>
 
         {/* Channel B */}
         <div className="flex gap-2 items-stretch">
           <ChannelFader deckId="B" />
-          <LevelMeter deckId="B" />
+          <LevelMeter deckId="B" accentColor="#009688" />
         </div>
       </div>
 
@@ -73,11 +73,11 @@ export function MixerCenter({ masterBus, masterPostFx }: MixerCenterProps) {
 
       {/* Master Meter */}
       <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded border border-white/5">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">
+        <span className="text-[10px] font-mono uppercase tracking-wider text-(--text-secondary)">
           Master
         </span>
         <div className="flex-1">
-          <LevelMeter deckId="master" orientation="horizontal" />
+          <LevelMeter deckId="master" orientation="horizontal" accentColor="#009688" />
         </div>
       </div>
 
