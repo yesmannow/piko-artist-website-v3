@@ -58,6 +58,7 @@ interface StudioState {
   stemsCache: StemCache;
   onboardingStep: OnboardingStep;
   onboardingSeen: boolean;
+  useGridLayout?: boolean; // Phase V: Toggle between grid and legacy layout
 
   deckA: DeckState;
   deckB: DeckState;

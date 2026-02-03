@@ -6,6 +6,7 @@ import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { useComplexityMode } from '@/contexts/ComplexityModeContext';
 import { useGestures } from "@/hooks/useGestures";
+import { StudioGrid } from "./StudioGrid";
 import { Deck } from "@/components/studio/ui/Deck";
 import { MainWaveform } from "@/components/studio/ui/MainWaveform";
 import { StemWaveforms } from "@/components/studio/ui/StemWaveforms";
@@ -28,11 +29,18 @@ export function StudioPanels({ masterBus, masterPostFx }: StudioPanelsProps) {
   const setFocusedDeckId = useStudioStore((state) => state.setFocusedDeckId);
   const isFocusActive = focusedDeckId !== null;
   const { mode: complexityMode } = useComplexityMode();
+  const useGridLayout = useStudioStore((state) => state.useGridLayout ?? true); // Default to true for Phase V
 
   const deckA = useStore((state) => state.deckA);
   const deckB = useStore((state) => state.deckB);
   const dragDeltaRef = useRef(0);
 
+  // Phase V: Use new 3-row grid layout
+  if (useGridLayout && complexityMode === 'pro') {
+    return <StudioGrid masterBus={masterBus} masterPostFx={masterPostFx} masterProgress={0} />;
+  }
+
+  // Legacy layout for backwards compatibility
   const gestureHandlers = useGestures(
     useMemo(
       () => ({
