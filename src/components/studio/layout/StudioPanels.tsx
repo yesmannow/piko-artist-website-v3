@@ -1,6 +1,7 @@
 "use client";
 
 import type * as Tone from "tone";
+import dynamic from "next/dynamic";
 import { useMemo, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
@@ -9,19 +10,33 @@ import { useGestures } from "@/hooks/useGestures";
 import { StudioGrid } from "./StudioGrid";
 import { Deck } from "@/components/studio/ui/Deck";
 import { MainWaveform } from "@/components/studio/ui/MainWaveform";
-import { StemWaveforms } from "@/components/studio/ui/StemWaveforms";
 import { StemMeters } from "@/components/studio/ui/StemMeters";
-import { StemGenerator } from "@/components/studio/ui/StemGenerator";
 import { StemControls } from "@/components/studio/ui/StemControls";
-import { StemDebugPanel } from "@/components/studio/ui/StemDebugPanel";
 import { FXRack } from "@/components/studio/core/FXRack";
+
+// Lazy-load heavy stem components to reduce first-load JS
+const StemWaveforms = dynamic(
+  () => import("@/components/studio/ui/StemWaveforms").then(m => ({ default: m.StemWaveforms })),
+  { ssr: false }
+);
+
+const StemGenerator = dynamic(
+  () => import("@/components/studio/ui/StemGenerator").then(m => ({ default: m.StemGenerator })),
+  { ssr: false }
+);
+
+const StemDebugPanel = dynamic(
+  () => import("@/components/studio/ui/StemDebugPanel").then(m => ({ default: m.StemDebugPanel })),
+  { ssr: false }
+);
 
 type StudioPanelsProps = {
   readonly masterBus?: Tone.Gain | null;
   readonly masterPostFx?: Tone.Gain | null;
+  readonly masterProgress?: number;
 };
 
-export function StudioPanels({ masterBus, masterPostFx }: Readonly<StudioPanelsProps>) {
+export function StudioPanels({ masterBus, masterPostFx, masterProgress }: Readonly<StudioPanelsProps>) {
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
   const fxPanelOpen = useStudioStore((state) => state.fxPanelOpen);
   const performanceMode = useStudioStore((state) => state.performanceMode);
@@ -65,7 +80,7 @@ export function StudioPanels({ masterBus, masterPostFx }: Readonly<StudioPanelsP
 
   // Phase V: Use new 3-row grid layout
   if (useGridLayout && complexityMode === 'pro') {
-    return <StudioGrid masterBus={masterBus} masterPostFx={masterPostFx} masterProgress={0} />;
+    return <StudioGrid masterBus={masterBus} masterPostFx={masterPostFx} masterProgress={masterProgress ?? 0} />;
   }
 
   // Legacy layout for backwards compatibility  // Extract only DOM-compatible props from gestureHandlers

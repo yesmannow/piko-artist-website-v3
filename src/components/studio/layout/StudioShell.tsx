@@ -1,20 +1,30 @@
 "use client";
 
 import type * as Tone from "tone";
+import dynamic from "next/dynamic";
 import { StudioHeader } from "./StudioHeader";
 import { StudioControlBar } from "./StudioControlBar";
 import { StudioPanels } from "./StudioPanels";
 import { LibraryDrawer } from "@/components/studio/ui/LibraryDrawer";
 import { StudioSettingsPanel } from "@/components/studio/ui/StudioSettingsPanel";
 import { StudioOnboarding } from "@/components/studio/ui/StudioOnboarding";
-import { Scene3D } from "@/components/studio/visuals/Scene3D";
 import { useEffect, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { ComplexityModeProvider } from "@/contexts/ComplexityModeContext";
-import { DiagnosticsPanel } from "@/components/dev/DiagnosticsPanel";
 import { usePerformanceHeuristics } from "@/hooks/usePerformanceHeuristics";
 import { usePerformanceMode } from "@/hooks/usePerformanceMode";
+
+// Lazy-load heavy modules to reduce first-load JS
+const Scene3D = dynamic(
+  () => import("@/components/studio/visuals/Scene3D").then(m => ({ default: m.Scene3D })),
+  { ssr: false }
+);
+
+const DiagnosticsPanel = dynamic(
+  () => import("@/components/dev/DiagnosticsPanel").then(m => ({ default: m.DiagnosticsPanel })),
+  { ssr: false }
+);
 
 type StudioShellProps = {
   masterProgress: number;
@@ -78,7 +88,7 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
 
         <div className="studio-main">
           <LibraryDrawer />
-          <StudioPanels masterBus={masterBus} masterPostFx={masterPostFx} />
+          <StudioPanels masterBus={masterBus} masterPostFx={masterPostFx} masterProgress={masterProgress} />
         </div>
 
         <StudioControlBar />

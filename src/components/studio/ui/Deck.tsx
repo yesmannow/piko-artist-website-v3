@@ -17,6 +17,7 @@ import { Play, Pause, Square, SkipBack, SkipForward, Wand2, Loader2, Scissors } 
 import { motion } from 'framer-motion';
 import { RecommendationsPopover } from './RecommendationsPopover';
 import { StemRack } from './StemRack';
+import { StemPerformancePads } from './StemPerformancePads'; // Phase 3.3
 import { JogWheel } from './JogWheel';
 import { WaveformMini } from './WaveformMini';
 import { EnergyIndicator } from './EnergyIndicator';
@@ -62,6 +63,12 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const stemGenerationRequest = useStudioStore((state) => state.stemGenerationRequest);
   const autoStem = useStudioStore((state) => state.autoStem);
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
+  // Phase 3.3: Stem Performance Pads
+  const mutedStems = useStudioStore((state) => state.mutedStems[deckId]);
+  const soloStem = useStudioStore((state) => state.soloStem[deckId]);
+  const toggleStemMute = useStudioStore((state) => state.toggleStemMute);
+  const activateSoloStem = useStudioStore((state) => state.activateSoloStem);
+  const clearSolo = useStudioStore((state) => state.clearSolo);
   const { getRecommendations, loading: recommendationsLoading } = useCyaniteRecommendations();
   const { analyzeIfNeeded } = useSmartTrackAnalysis(); // Phase IX.5: Auto-analysis
   const stemModelUrl = process.env.NEXT_PUBLIC_STEM_MODEL_URL ?? '/models/stems.onnx';
@@ -601,6 +608,32 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
             )}
 
             {showInlineStemControls && <StemRack deckId={deckId} compact={false} />}
+
+            {/* Phase 3.3: Stem Performance Pads (Pro mode only) */}
+            {complexityMode === 'pro' && hasStems && (
+              <StemPerformancePads
+                deckId={deckId}
+                disabled={false}
+                mutedStems={mutedStems}
+                soloStem={soloStem}
+                onToggle={(stem) => toggleStemMute(deckId, stem)}
+                onSolo={(stem) => activateSoloStem(deckId, stem)}
+                onClearSolo={() => clearSolo(deckId)}
+              />
+            )}
+
+            {/* Show disabled pads with CTA when stems not ready */}
+            {complexityMode === 'pro' && !hasStems && canGenerateStems && (
+              <StemPerformancePads
+                deckId={deckId}
+                disabled={true}
+                mutedStems={mutedStems}
+                soloStem={null}
+                onToggle={handleSplitStems}
+                onSolo={() => {}}
+                onClearSolo={() => {}}
+              />
+            )}
 
             <div className="flex items-center justify-center gap-3 mt-auto flex-wrap">
               <motion.button

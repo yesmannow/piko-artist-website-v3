@@ -5,6 +5,45 @@ import { useStudioStore } from "@/store/useStudioStore";
 
 const ONBOARDING_STORAGE_KEY = "piko-studio-onboarding-seen";
 
+/**
+ * Reset App - Clears service workers, caches, and reloads
+ * Used to recover from stale cache issues
+ */
+async function resetApp() {
+  try {
+    // Unregister all service workers
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+      }
+    }
+
+    // Clear CacheStorage
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }
+
+    // Optional: Clear studio-related localStorage (preserve user content)
+    // Only clear known studio keys, not all localStorage
+    const studioKeys = ["piko-studio-onboarding-seen", "piko-studio-settings"];
+    studioKeys.forEach((key) => {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Ignore errors
+      }
+    });
+
+    // Reload the page
+    window.location.reload();
+  } catch (error) {
+    console.error("[Reset App] Failed:", error);
+    alert("Failed to reset app. Please clear your browser cache manually.");
+  }
+}
+
 export function StudioSettingsPanel() {
   const settingsOpen = useStudioStore((state) => state.settingsOpen);
   const setSettingsOpen = useStudioStore((state) => state.setSettingsOpen);
@@ -88,6 +127,22 @@ export function StudioSettingsPanel() {
             }}
           >
             Restart
+          </button>
+        </div>
+
+        <div className="studio-setting-row">
+          <span>Reset App</span>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => {
+              if (confirm("Clear all caches and reload? This will help fix stale content issues.")) {
+                resetApp();
+              }
+            }}
+            title="Unregister service workers, clear caches, and reload"
+          >
+            Reset
           </button>
         </div>
       </div>

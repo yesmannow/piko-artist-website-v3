@@ -32,6 +32,9 @@ jobs:
       - name: Lint
         run: npm run lint --if-present
 
+      - name: Studio Audit
+        run: npm run audit:studio
+
       - name: Build
         run: npm run build
 

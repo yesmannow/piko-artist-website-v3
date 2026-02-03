@@ -16,8 +16,8 @@ export function ServiceWorkerRegistration() {
       return;
     }
 
-    // Only register in production or when explicitly enabled
-    if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_SW === "true") {
+    // Only register when explicitly enabled (kill switch for production safety)
+    if (process.env.NEXT_PUBLIC_ENABLE_SW === "true") {
       const registerSW = async () => {
         try {
           const registration = await navigator.serviceWorker.register("/sw.js", {

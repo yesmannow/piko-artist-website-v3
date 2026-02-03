@@ -39,6 +39,9 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
   const libraryOpen = useStudioStore((state) => state.libraryOpen);
   const [mobileTab, setMobileTab] = useState<MobileTab>('DECKS');
 
+  // Clamp progress for UI display (0-1 range)
+  const progressClamped = Math.max(0, Math.min(1, masterProgress ?? 0));
+
   return (
     <>
       {/* DESKTOP: Fixed 3-Row Workstation (md+) - ZERO SCROLL */}
@@ -66,6 +69,29 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
             <DeckWaveform deckId="B" />
           </div>
         </section>
+
+        {/* Global Transport / Progress Strip (Desktop Pro Workstation) */}
+        <div className="hidden md:block px-4 py-2 border-b border-white/5 bg-(--bg-secondary)">
+          <div
+            className="relative h-2 rounded bg-white/10 overflow-hidden border border-white/10"
+            role="progressbar"
+            aria-label="Master progress"
+            aria-valuenow={Math.round(progressClamped * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            {/* Progress fill */}
+            <div
+              className="h-full bg-(--color-accent) transition-[width] duration-100 ease-linear"
+              style={{ width: `${progressClamped * 100}%` }}
+            />
+            {/* Playhead marker */}
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-white/80 shadow-[0_0_4px_rgba(255,255,255,0.5)]"
+              style={{ left: `${progressClamped * 100}%` }}
+            />
+          </div>
+        </div>
 
         {/* Row 2: Performance & Mixer (Flex-1 - Expands to fill) */}
         <div className="flex-1 overflow-hidden">

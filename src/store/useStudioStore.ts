@@ -74,6 +74,9 @@ interface StudioState {
   setStems: (deck: 'A' | 'B', stems: StemBufferMap) => void;
   setMutedStem: (deck: 'A' | 'B', stem: StemKey, muted: boolean) => void;
   setSoloStem: (deck: 'A' | 'B', stem: StemKey | null) => void;
+  toggleStemMute: (deck: 'A' | 'B', stem: StemKey) => void; // Phase 3.3: Toggle stem on/off
+  activateSoloStem: (deck: 'A' | 'B', stem: StemKey) => void; // Phase 3.3: Solo a stem (mute all others)
+  clearSolo: (deck: 'A' | 'B') => void; // Phase 3.3: Clear solo mode
   setFocusedDeckId: (deck: DeckFocusId) => void;
   setStemModeEnabled: (enabled: boolean) => void;
   setLibraryOpen: (open: boolean) => void;
@@ -223,6 +226,51 @@ export const useStudioStore = create<StudioState>()(
         soloStem: {
           ...state.soloStem,
           [deck]: stem,
+        },
+      })),
+
+    // Phase 3.3: Convenience actions for performance pads
+    toggleStemMute: (deck, stem) =>
+      set((state) => ({
+        mutedStems: {
+          ...state.mutedStems,
+          [deck]: {
+            ...state.mutedStems[deck],
+            [stem]: !state.mutedStems[deck][stem],
+          },
+        },
+      })),
+
+    activateSoloStem: (deck, stem) =>
+      set((state) => {
+        // Set this stem as solo (unmute it, mute all others)
+        const newMutes: StemMuteMap = {
+          vocals: stem !== 'vocals',
+          drums: stem !== 'drums',
+          bass: stem !== 'bass',
+          other: stem !== 'other',
+        };
+        return {
+          soloStem: {
+            ...state.soloStem,
+            [deck]: stem,
+          },
+          mutedStems: {
+            ...state.mutedStems,
+            [deck]: newMutes,
+          },
+        };
+      }),
+
+    clearSolo: (deck) =>
+      set((state) => ({
+        soloStem: {
+          ...state.soloStem,
+          [deck]: null,
+        },
+        mutedStems: {
+          ...state.mutedStems,
+          [deck]: { ...initialStemMutes }, // Unmute all
         },
       })),
 

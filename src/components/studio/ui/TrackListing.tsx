@@ -46,6 +46,7 @@ interface TrackListingProps {
 
 export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnalyze }: TrackListingProps) {
   const [loadingDeck, setLoadingDeck] = useState<'A' | 'B' | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const { loadTrack } = useAudioEngine();
   const { setDeckTrack, deckA, deckB } = useStore();
   const setStems = useStudioStore((state) => state.setStems);
@@ -117,14 +118,37 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
   const showAnalysisStatus = track.status && track.status !== 'analyzed';
   const analysisStatusText = track.status === 'analyzing' ? 'Analyzing...' : track.status === 'error' ? 'Error' : 'Unanalyzed';
 
+  // Phase 3.2A: Drag & Drop handlers (desktop only)
+  const handleDragStart = (e: React.DragEvent) => {
+    // Only enable drag on desktop (not mobile/touch)
+    if (globalThis.window && globalThis.innerWidth < 768) {
+      e.preventDefault();
+      return;
+    }
+
+    setIsDragging(true);
+
+    // Set track ID for drop handler
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/x-piko-track-id', track.trackId);
+    e.dataTransfer.setData('text/plain', track.trackId); // Fallback
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <div
       className={`glass-panel p-4 rounded-lg border transition-all ${
         track.isCompatible
           ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]' // Cyber Lime glow
           : 'border-white/10'
-      }`}
+      } ${isDragging ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}`}
       data-track-id={track.trackId}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 min-w-0">

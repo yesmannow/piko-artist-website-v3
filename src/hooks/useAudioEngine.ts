@@ -64,6 +64,13 @@ export interface AudioEngineControls {
   getMasterChannel: () => Tone.Gain | null;
 }
 
+type StemGainNodes = {
+  vocals: Tone.Gain | null;
+  drums: Tone.Gain | null;
+  bass: Tone.Gain | null;
+  other: Tone.Gain | null;
+};
+
 type EngineState = {
   players: { current: { A: Tone.Player | null; B: Tone.Player | null } };
   stemPlayers: {
@@ -72,7 +79,14 @@ type EngineState = {
       B: { vocals: Tone.Player | null; drums: Tone.Player | null; bass: Tone.Player | null; other: Tone.Player | null };
     };
   };
+  stemGains: { current: { A: StemGainNodes; B: StemGainNodes } }; // Phase 3.3B: Per-stem gain nodes for smooth ramping
   stemMutes: {
+    current: {
+      A: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
+      B: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
+    };
+  };
+  userMuteState: { // Phase 3.3B: Track user toggles separately from solo state
     current: {
       A: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
       B: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
@@ -100,6 +114,7 @@ type EngineState = {
   isInitializing: { current: boolean };
   isReady: { current: boolean };
   failedTracks: { current: Set<string> };
+  stemMuteFxEnabled: { current: boolean }; // Phase 3.3B: Optional echo tail on mutes
 };
 
 const createEngineState = (): EngineState => ({
@@ -110,7 +125,19 @@ const createEngineState = (): EngineState => ({
       B: { vocals: null, drums: null, bass: null, other: null },
     },
   },
+  stemGains: {
+    current: {
+      A: { vocals: null, drums: null, bass: null, other: null },
+      B: { vocals: null, drums: null, bass: null, other: null },
+    },
+  },
   stemMutes: {
+    current: {
+      A: { vocals: false, drums: false, bass: false, other: false },
+      B: { vocals: false, drums: false, bass: false, other: false },
+    },
+  },
+  userMuteState: {
     current: {
       A: { vocals: false, drums: false, bass: false, other: false },
       B: { vocals: false, drums: false, bass: false, other: false },
@@ -138,6 +165,7 @@ const createEngineState = (): EngineState => ({
   isInitializing: { current: false },
   isReady: { current: false },
   failedTracks: { current: new Set() },
+  stemMuteFxEnabled: { current: true }, // Phase 3.3B: Enabled by default in pro mode
 });
 
 const engineSingletonRef: { current: EngineState | null } = { current: null };
@@ -161,6 +189,7 @@ const disposeEngine = (engine: EngineState) => {
   const compressorToDispose = engine.compressor.current;
   const limiterToDispose = engine.limiter.current;
   const stemPlayersToDispose = engine.stemPlayers.current;
+  const stemGainsToDispose = engine.stemGains.current; // Phase 3.3B
 
   playersToDispose.A?.dispose();
   playersToDispose.B?.dispose();
@@ -185,13 +214,24 @@ const disposeEngine = (engine: EngineState) => {
   limiterToDispose?.dispose();
   Object.values(stemPlayersToDispose.A).forEach((player) => player?.dispose());
   Object.values(stemPlayersToDispose.B).forEach((player) => player?.dispose());
+  // Phase 3.3B: Dispose stem gain nodes
+  Object.values(stemGainsToDispose.A).forEach((gain) => gain?.dispose());
+  Object.values(stemGainsToDispose.B).forEach((gain) => gain?.dispose());
 
   engine.players.current = { A: null, B: null };
   engine.stemPlayers.current = {
     A: { vocals: null, drums: null, bass: null, other: null },
     B: { vocals: null, drums: null, bass: null, other: null },
   };
+  engine.stemGains.current = {
+    A: { vocals: null, drums: null, bass: null, other: null },
+    B: { vocals: null, drums: null, bass: null, other: null },
+  };
   engine.stemMutes.current = {
+    A: { vocals: false, drums: false, bass: false, other: false },
+    B: { vocals: false, drums: false, bass: false, other: false },
+  };
+  engine.userMuteState.current = {
     A: { vocals: false, drums: false, bass: false, other: false },
     B: { vocals: false, drums: false, bass: false, other: false },
   };
@@ -231,7 +271,9 @@ export const useAudioEngine = (): AudioEngineControls => {
   // Audio nodes - singleton shared across hook instances
   const players = engine.players;
   const stemPlayers = engine.stemPlayers;
+  const stemGains = engine.stemGains; // Phase 3.3B: Per-stem gain nodes
   const stemMutes = engine.stemMutes;
+  const userMuteState = engine.userMuteState; // Phase 3.3B: User toggle state
   const channels = engine.channels;
   const eqs = engine.eqs;
   const filters = engine.filters;
@@ -250,6 +292,7 @@ export const useAudioEngine = (): AudioEngineControls => {
   const compressor = engine.compressor;
   const limiter = engine.limiter;
   const recorderStream = engine.recorderStream;
+  const stemMuteFxEnabled = engine.stemMuteFxEnabled; // Phase 3.3B: Echo tail toggle
 
   const isInitialized = engine.isInitialized;
   const isInitializing = engine.isInitializing;
@@ -858,19 +901,85 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, []);
 
+  // Phase 3.3B: Smooth stem gain ramping with solo logic
   const applyStemMix = useCallback((deck: 'A' | 'B') => {
     const { mutedStems, soloStem } = useStudioStore.getState();
     const deckMutes = mutedStems[deck];
     const deckSolo = soloStem[deck];
+    const rampTime = 0.020; // 20ms ramp to prevent clicks/pops
+
     (['vocals', 'drums', 'bass', 'other'] as const).forEach((stemType) => {
       const player = stemPlayers.current[deck][stemType];
-      const shouldMute = deckSolo ? stemType !== deckSolo : deckMutes[stemType];
-      stemMutes.current[deck][stemType] = shouldMute;
-      if (player) {
-        player.mute = shouldMute;
+      const gainNode = stemGains.current[deck][stemType];
+
+      if (!player) return;
+
+      // Calculate effective gain: solo takes priority over individual mutes
+      let targetGain = 1;
+      if (deckSolo) {
+        // Solo mode: only the solo stem is audible
+        targetGain = stemType === deckSolo ? 1 : 0;
+      } else {
+        // Normal mode: respect individual mute toggles
+        targetGain = deckMutes[stemType] ? 0 : 1;
       }
+
+      // Update internal mute state tracking
+      const shouldMute = targetGain === 0;
+      const wasAudible = !stemMutes.current[deck][stemType];
+      stemMutes.current[deck][stemType] = shouldMute;
+
+      // Apply gain ramp for smooth transition (no clicks/pops)
+      if (gainNode && typeof gainNode.gain.rampTo === 'function') {
+        gainNode.gain.rampTo(targetGain, rampTime);
+
+        // Phase 3.3B STEP 4: Optional echo tail on mute
+        if (stemMuteFxEnabled.current && wasAudible && shouldMute) {
+          // Trigger brief echo tail when muting an audible stem
+          const delay = delayNode.current;
+          if (delay && delaySend.current) {
+            // Store current delay settings
+            const currentSend = delaySend.current.gain.value;
+            const currentFeedback = delay.feedback.value;
+
+            // Briefly boost delay send for this stem's mute
+            const now = Tone.now();
+            delaySend.current.gain.setValueAtTime(currentSend, now);
+            delaySend.current.gain.linearRampToValueAtTime(
+              Math.min(currentSend + 0.15, 0.3),
+              now + 0.05
+            );
+            // Return to original after 300ms
+            delaySend.current.gain.linearRampToValueAtTime(currentSend, now + 0.3);
+
+            if (typeof delay.feedback.rampTo === 'function') {
+              delay.feedback.setValueAtTime(currentFeedback, now);
+              delay.feedback.linearRampToValueAtTime(
+                Math.min(currentFeedback + 0.2, 0.5),
+                now + 0.05
+              );
+              delay.feedback.linearRampToValueAtTime(currentFeedback, now + 0.4);
+            }
+          }
+        }
+      } else if (gainNode) {
+        // Fallback: instant gain change
+        gainNode.gain.value = targetGain;
+      }
+
+      // Keep legacy player.mute as fallback
+      player.mute = shouldMute;
     });
-  }, [stemMutes, stemPlayers]);
+
+    // Phase 3.3B STEP 2: Diagnostic logging (dev-only)
+    if (process.env.NODE_ENV === 'development') {
+      const gains = ['vocals', 'drums', 'bass', 'other'].map((stem) => {
+        const gainNode = stemGains.current[deck][stem as keyof StemGainNodes];
+        return `${stem}:${gainNode?.gain.value.toFixed(2) ?? 'N/A'}`;
+      });
+      console.log(`[StemMix:${deck}] ${deckSolo ? `SOLO=${deckSolo}` : 'NORMAL'} | ${gains.join(', ')}`);
+    }
+  }, [stemMutes, stemPlayers, stemGains, stemMuteFxEnabled, delayNode, delaySend]);
 
   useEffect(() => {
     const unsubscribeMutes = useStudioStore.subscribe(
@@ -917,8 +1026,14 @@ export const useAudioEngine = (): AudioEngineControls => {
       Object.values(stemPlayers.current[deck]).forEach(player => {
         player?.dispose();
       });
+      // Phase 3.3B: Dispose old stem gain nodes
+      Object.values(stemGains.current[deck]).forEach(gain => {
+        gain?.dispose();
+      });
       stemPlayers.current[deck] = { vocals: null, drums: null, bass: null, other: null };
+      stemGains.current[deck] = { vocals: null, drums: null, bass: null, other: null };
       stemMutes.current[deck] = { vocals: false, drums: false, bass: false, other: false };
+      userMuteState.current[deck] = { vocals: false, drums: false, bass: false, other: false }; // Phase 3.3B
 
       // Create players for each stem
       const stemTypes = ['vocals', 'drums', 'bass', 'other'] as const;
@@ -944,15 +1059,21 @@ export const useAudioEngine = (): AudioEngineControls => {
         const currentRate = deck === 'A' ? deckA.playbackRate : deckB.playbackRate;
         player.playbackRate = Math.max(0.001, currentRate || 1);
 
-        // Connect: Player -> Pitch (optional) -> EQ chain already routed to filter/channel
+        // Phase 3.3B: Create dedicated gain node for smooth ramping
+        const gainNode = new Tone.Gain(1).toDestination(); // Start at full volume
+        gainNode.disconnect(); // Remove default connection
+
+        // Connect: Player -> Gain Node -> Pitch (optional) -> EQ chain
+        player.connect(gainNode);
         if (pitchNode) {
-          player.connect(pitchNode);
+          gainNode.connect(pitchNode);
         } else {
-          player.connect(eq);
+          gainNode.connect(eq);
         }
         player.sync();
 
         stemPlayers.current[deck][stemType] = player;
+        stemGains.current[deck][stemType] = gainNode; // Phase 3.3B: Store gain node
         stemMutes.current[deck][stemType] = false; // All stems enabled by default
       }
 
@@ -984,7 +1105,9 @@ export const useAudioEngine = (): AudioEngineControls => {
     filters,
     pitchShift,
     stemPlayers,
+    stemGains, // Phase 3.3B
     stemMutes,
+    userMuteState, // Phase 3.3B
     players,
     applyStemMix,
   ]);
