@@ -2,13 +2,16 @@
  * PikoDatabase - IndexedDB Layer via Dexie.js
  *
  * Phase VII: Intelligent Library & Cloud Ecosystem
+ * Phase IX: AI Insights & Smart Metadata
+ * 
  * This is the single source of truth for the TrackLibrary component.
  *
  * Architecture:
  * - Stores tracks fetched from Cloudflare R2
- * - Caches BPM/Key analysis data
+ * - Caches BPM/Key/Energy analysis data from Essentia.js
  * - Maps local artwork to remote audio
  * - Enables instant app loading on subsequent visits
+ * - NO SUPABASE - 100% local-first with IndexedDB
  */
 
 import Dexie, { type Table } from 'dexie';
@@ -18,10 +21,11 @@ export interface Track {
   url: string; // Unique - R2 object URL
   title: string;
   artist: string;
-  bpm?: number;
-  key?: string;
+  bpm?: number; // Detected BPM (Rhythm Extraction)
+  key?: string; // Musical key with Camelot notation (e.g., "C major (8B)")
+  energy?: number; // Energy level 0.0-1.0 (Phase IX)
   artwork: string; // Local image path
-  analysisData?: string; // JSON stringified analysis (waveform, stems, etc.)
+  analysisData?: string; // JSON stringified analysis (waveform, stems, confidence, etc.)
   dateAdded: Date;
   status: 'unanalyzed' | 'analyzing' | 'analyzed' | 'error';
   genre?: string;
@@ -37,6 +41,19 @@ export class PikoDatabase extends Dexie {
   constructor() {
     super('PikoDJ');
 
+    // Version 2: Added energy field for Phase IX
+    this.version(2).stores({
+      tracks: '++id, url, title, artist, bpm, key, energy, status, dateAdded, genre, mood'
+    }).upgrade(tx => {
+      // Migrate existing records to add energy field
+      return tx.table('tracks').toCollection().modify(track => {
+        if (track.energy === undefined) {
+          track.energy = 0.5; // Default medium energy
+        }
+      });
+    });
+
+    // Keep version 1 for backwards compatibility
     this.version(1).stores({
       tracks: '++id, url, title, artist, bpm, key, status, dateAdded, genre, mood'
     });
