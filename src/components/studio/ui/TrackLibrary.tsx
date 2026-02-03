@@ -48,7 +48,7 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
 
   // Phase VII: Sync tracks from R2 to IndexedDB
   const { isLoading: isSyncing, error: syncError, stats, refetch } = useLibrarySync();
-  
+
   // Phase IX.5: AI Analysis Hook
   const { analyzeIfNeeded, isAnalyzing, currentTrack } = useSmartTrackAnalysis();
 
@@ -111,7 +111,7 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
   const activeDeckKey = useMemo(() => {
     const activeDeck = deckA.isPlaying ? deckA : deckB.isPlaying ? deckB : null;
     if (!activeDeck?.trackData?.key) return null;
-    
+
     // Extract Camelot notation from key string (e.g., "C major (8B)" -> "8B")
     const match = activeDeck.trackData.key.match(/\(([0-9]{1,2}[AB])\)/);
     return match ? match[1] : null;
@@ -143,7 +143,7 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
 
   const handleAnalyzeTrack = async (track: TrackListingInterface) => {
     if (!dbTracks) return;
-    
+
     const dbTrack = dbTracks.find(t => t.url === track.trackId);
     if (!dbTrack) return;
 
@@ -303,8 +303,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
             <button
               onClick={() => setSortBy('dateAdded')}
               className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
-                sortBy === 'dateAdded' 
-                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400' 
+                sortBy === 'dateAdded'
+                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400'
                   : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
               }`}
             >
@@ -313,8 +313,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
             <button
               onClick={() => setSortBy('bpm')}
               className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
-                sortBy === 'bpm' 
-                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400' 
+                sortBy === 'bpm'
+                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400'
                   : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
               }`}
             >
@@ -323,8 +323,8 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
             <button
               onClick={() => setSortBy('energy')}
               className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
-                sortBy === 'energy' 
-                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400' 
+                sortBy === 'energy'
+                  ? 'bg-lime-400/20 border border-lime-400 text-lime-400'
                   : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
               }`}
             >

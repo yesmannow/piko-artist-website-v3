@@ -47,8 +47,8 @@ const activeDeckKey = useMemo(() => {
 
 ```typescript
 <div className={`border transition-all ${
-  track.isCompatible 
-    ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]' 
+  track.isCompatible
+    ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]'
     : 'border-white/10'
 }`}>
   {track.isCompatible && (
@@ -188,13 +188,13 @@ const dbTracks = useLiveQuery(
 ```typescript
 test('Perfect Match indicator appears', async ({ page }) => {
   await page.goto('/studio');
-  
+
   // Load track with known Camelot key
   await page.click('[data-track-id="track-8b"]');
-  
+
   // Open library
   await page.click('[data-testid="library-toggle"]');
-  
+
   // Verify compatible tracks glow
   await expect(page.locator('.border-lime-400')).toBeVisible();
 });

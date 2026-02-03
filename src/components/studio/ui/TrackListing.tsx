@@ -2,7 +2,7 @@
 
 /**
  * TrackListing Component
- * 
+ *
  * Displays track metadata (Title, BPM, Energy) with "Load A" and "Load B" buttons
  * Shows visual loader (pulsing waveform) during local load
  */
@@ -68,7 +68,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
 
   const handleLoadTrack = async (deck: 'A' | 'B') => {
     setLoadingDeck(deck);
-    
+
     try {
       const url = getLocalUrl();
       const emptyStems = { vocals: null, drums: null, bass: null, other: null };
@@ -97,7 +97,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
       markStemsReady(track.trackId, false);
 
       console.log(`[TrackListing] Loaded ${track.title} on Deck ${deck}`);
-      
+
       // Trigger callback to switch view back to decks
       if (onTrackLoaded) {
         onTrackLoaded(deck);
@@ -112,15 +112,15 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
 
   const isLoadedA = deckA.trackData?.title === track.title;
   const isLoadedB = deckB.trackData?.title === track.title;
-  
+
   // Phase IX.5: Display analysis status
   const showAnalysisStatus = track.status && track.status !== 'analyzed';
   const analysisStatusText = track.status === 'analyzing' ? 'Analyzing...' : track.status === 'error' ? 'Error' : 'Unanalyzed';
 
   return (
-    <div 
+    <div
       className={`glass-panel p-4 rounded-lg border transition-all ${
-        track.isCompatible 
+        track.isCompatible
           ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]' // Cyber Lime glow
           : 'border-white/10'
       }`}
@@ -137,8 +137,8 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
             )}
             {showAnalysisStatus && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-widest shrink-0 ${
-                track.status === 'analyzing' 
-                  ? 'bg-cyan-400/20 border border-cyan-400 text-cyan-400 animate-pulse' 
+                track.status === 'analyzing'
+                  ? 'bg-cyan-400/20 border border-cyan-400 text-cyan-400 animate-pulse'
                   : track.status === 'error'
                   ? 'bg-red-400/20 border border-red-400 text-red-400'
                   : 'bg-white/10 border border-white/20 text-white/60'

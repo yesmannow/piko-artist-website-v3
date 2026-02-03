@@ -458,14 +458,14 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                 <span className="text-sm font-bold text-lime-400">{trackData.key}</span>
               </div>
             )}
-            
+
             {/* BPM Display */}
             <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
               <span className="text-[10px] uppercase text-white/60 tracking-wider mr-2">BPM</span>
               <span className="text-sm font-bold text-white">{currentBpm?.toFixed(1)}</span>
               {isSynced && <span className="ml-1 text-[10px] text-lime-400">(SYNC)</span>}
             </div>
-            
+
             <button
               onClick={() => setKeyLock(deckId, !isKeyLockActive)}
               className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-[0.2em] border transition-all ${keyLockClass}`}
@@ -496,7 +496,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
             {complexityMode === 'pro' && (
               <EnergyIndicator energy={trackData.energy || 0} />
             )}
-            
+
             <div className="flex flex-col items-center gap-5">
               <JogWheel
                 artworkUrl={trackData.cover || trackData.artUrl}
