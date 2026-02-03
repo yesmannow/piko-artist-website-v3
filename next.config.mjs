@@ -1,6 +1,6 @@
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import withSerwistInit from '@serwist/next';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,7 +12,7 @@ const withSerwist = withSerwistInit({
   // Serwist does not support Turbopack in dev yet; disable outside production.
   disable: process.env.NODE_ENV !== 'production',
   // Increase the maximum file size to cache for large WASM files
-  maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // Increase to 30MB
+  maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // Ensure large WASM files are cached
 });
 
 /** @type {import('next').NextConfig} */

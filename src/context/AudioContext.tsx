@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
 import { MediaItem, tracks } from "@/lib/data";
 
-type WebkitWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+type WebkitWindow = Window & typeof globalThis & { webkitAudioContext?: typeof window.AudioContext };
 
 interface AudioContextType {
   currentTrack: MediaItem | null;
@@ -31,7 +31,7 @@ interface AudioContextType {
   clearPlaybackError: () => void;
 }
 
-const AudioContext = createContext<AudioContextType | undefined>(undefined);
+const AudioPlayerContext = createContext<AudioContextType | undefined>(undefined);
 const audioContextSingletonRef: { current: globalThis.AudioContext | null } = { current: null };
 
 export function AudioProvider({ children }: { children: ReactNode }) {
@@ -46,7 +46,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
-  const webAudioContextRef = useRef<AudioContext | null>(null);
+  const webAudioContextRef = useRef<globalThis.AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
 
@@ -113,21 +113,21 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         // This handles the case where a new track is loaded while another is playing
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
-        
+
         // Set source and load
         audioRef.current.src = track.src;
         audioRef.current.load();
-        
+
         // Track if we've attempted to play to avoid duplicate attempts
         let hasAttemptedPlay = false;
-        
+
         // Wait for audio to be ready before playing
         const handleCanPlay = () => {
           if (audioRef.current && !hasAttemptedPlay) {
             hasAttemptedPlay = true;
             audioRef.current.removeEventListener("canplay", handleCanPlay);
             audioRef.current.removeEventListener("error", handleError);
-            
+
             // Play the track
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
@@ -150,24 +150,24 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             }
           }
         };
-        
+
         const handleError = (_e?: Event) => {
           hasAttemptedPlay = true;
           if (audioRef.current) {
             audioRef.current.removeEventListener("canplay", handleCanPlay);
             audioRef.current.removeEventListener("error", handleError);
           }
-          const errorMsg = audioRef.current?.error 
+          const errorMsg = audioRef.current?.error
             ? `Audio error (code ${audioRef.current.error.code})`
             : "Failed to load audio file";
           setPlaybackError(`Unable to play "${track.title}". ${errorMsg}`);
           setIsPlaying(false);
         };
-        
+
         // Add event listeners
         audioRef.current.addEventListener("canplay", handleCanPlay, { once: true });
         audioRef.current.addEventListener("error", handleError, { once: true });
-        
+
         // Fallback: if canplay doesn't fire within reasonable time, try playing anyway
         setTimeout(() => {
           if (audioRef.current && !hasAttemptedPlay) {
@@ -306,7 +306,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [currentTrack, isPlaying, skipNext, skipPrevious]);
 
   return (
-    <AudioContext.Provider
+    <AudioPlayerContext.Provider
       value={{
         currentTrack,
         isPlaying,
@@ -358,12 +358,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           setVolume(e.currentTarget.volume);
         }}
       />
-    </AudioContext.Provider>
+    </AudioPlayerContext.Provider>
   );
 }
 
 export function useAudio() {
-  const context = useContext(AudioContext);
+  const context = useContext(AudioPlayerContext);
   if (context === undefined) {
     throw new Error("useAudio must be used within an AudioProvider");
   }
