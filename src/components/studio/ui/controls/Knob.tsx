@@ -85,10 +85,10 @@ export function Knob({
       lastYRef.current = event.clientY;
       setIsEngaged(true);
       knobRef.current?.setPointerCapture(event.pointerId);
-      
+
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
-      
+
       // Store cleanup function
       cleanupRef.current = () => {
         window.removeEventListener("pointermove", handlePointerMove);

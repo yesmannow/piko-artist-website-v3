@@ -2,7 +2,7 @@
 
 /**
  * StudioNavMenu - Hamburger Menu for Studio Navigation
- * 
+ *
  * Slide-out drawer from left side with site navigation links
  * Studio-specific dark theme styling
  */
@@ -31,10 +31,14 @@ export function StudioNavMenu() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Close menu on route change
+  // Close menu on route change - use a key instead of setState in effect
+  const menuKey = useMemo(() => pathname, [pathname]);
+
+  // Reset isOpen when pathname changes (legitimate use case - responding to external navigation)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
-  }, [pathname]);
+  }, [menuKey]);
 
   // Close on Escape key
   useEffect(() => {

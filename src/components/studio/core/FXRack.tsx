@@ -2,12 +2,12 @@
 
 /**
  * FXRack Component
- * 
+ *
  * Tone.js FX Chain with Macro Knobs:
  * - Bitcrusher (vintage sampler grit)
  * - AutoFilter (BPM-synced sweeps)
  * - StereoWidener (vocal enhancement)
- * 
+ *
  * One knob controls wet/dry + parameters for each effect
  */
 
@@ -27,13 +27,13 @@ interface FXRackProps {
 export function FXRack({ masterBus, masterPostFx }: FXRackProps) {
   const { masterBpm, fxRack, setFxRack } = useStore();
   const { setDelayWetMix, setDelayFeedbackAmount, setReverbWetMix, setReverbDecayTime } = useAudioEngine();
-  
+
   // FX Nodes
   const bitcrusherRef = useRef<Tone.BitCrusher | null>(null);
   const autoFilterRef = useRef<Tone.AutoFilter | null>(null);
   const stereoWidenerRef = useRef<Tone.StereoWidener | null>(null);
   const dryWetRef = useRef<Tone.CrossFade | null>(null);
-  
+
   // Macro values from store (persisted)
   const bitcrushMacro = fxRack.bitcrush;
   const filterMacro = fxRack.filter;
@@ -69,7 +69,7 @@ export function FXRack({ masterBus, masterPostFx }: FXRackProps) {
     bitcrusher.connect(autoFilter);
     autoFilter.connect(stereoWidener);
     stereoWidener.connect(dryWet.b); // Wet signal
-    
+
     // Connect dry/wet back into master chain
     dryWet.connect(masterPostFx);
 
@@ -115,7 +115,7 @@ export function FXRack({ masterBus, masterPostFx }: FXRackProps) {
 
     autoFilter.wet.value = wetAmount;
     autoFilter.octaves = depth;
-    
+
     // Sync frequency to BPM
     if (masterBpm > 0) {
       const beatDuration = 60 / masterBpm;

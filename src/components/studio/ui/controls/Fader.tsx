@@ -57,10 +57,10 @@ export function Fader({ label, value, onChange, height = 192 }: FaderProps) {
       setIsEngaged(true);
       trackRef.current?.setPointerCapture(event.pointerId);
       updateFromPointer(event.clientY);
-      
+
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
-      
+
       // Store cleanup function
       cleanupRef.current = () => {
         window.removeEventListener("pointermove", handlePointerMove);

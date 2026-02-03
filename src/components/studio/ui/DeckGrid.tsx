@@ -6,7 +6,7 @@
  * Five-column layout: Deck A | Strip A | Crossfader | Strip B | Deck B
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Deck } from './Deck';
 import { Crossfader } from './Crossfader';
 import { Knob } from '@/components/studio/ui/controls/Knob';
@@ -270,12 +270,6 @@ export function DeckGrid() {
     setMasterGain(clampedValue);
   }, [setMasterGain]);
 
-  useEffect(() => {
-    if (recordingBlob) {
-      setIsExportOpen(true);
-    }
-  }, [recordingBlob]);
-
   const handleRecordToggle = useCallback(async () => {
     if (!masterBus) return;
     if (!isRecording) {
@@ -288,7 +282,8 @@ export function DeckGrid() {
     setIsRecording(false);
     if (blob) {
       setRecordingBlob(blob);
-      setIsExportOpen(true);
+      // Reset manual close flag when new recording is available
+      setManuallyClosedExport(false);
     }
   }, [masterBus, isRecording, recordMasterBus, stopRecording]);
 
@@ -368,7 +363,7 @@ export function DeckGrid() {
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => {
-          setIsExportOpen(false);
+          setManuallyClosedExport(true);
           setRecordingBlob(null);
         }}
         masterBus={masterBus || undefined}

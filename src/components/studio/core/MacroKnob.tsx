@@ -2,7 +2,7 @@
 
 /**
  * MacroKnob Component
- * 
+ *
  * Simple vertical fader-style knob for FX parameters.
  * Displays percentage value and uses color-coded visualization.
  */
