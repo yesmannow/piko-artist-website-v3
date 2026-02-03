@@ -7,6 +7,7 @@
  * - ReactiveShape (Sphere) distorts based on Tone.Meter input (Bass)
  * - Color/geometry changes based on currentTheme from Zustand (Chill vs. Hype)
  * - PHASE VI: Audio-reactive lighting synced to bass frequencies
+ * - PHASE X: GPU-adaptive rendering for mobile performance
  */
 
 import { useRef, useEffect, useState } from 'react';
@@ -14,8 +15,11 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Sphere, MeshDistortMaterial } from '@react-three/drei';
 import * as Tone from 'tone';
 import { useStore } from '@/store/useStore';
+import { useStudioStore } from '@/store/useStudioStore';
 import * as THREE from 'three';
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
+import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { getPerformanceProfile, getFallbackProfile, type PerformanceProfile } from '@/lib/gpu-utils';
 
 function ReactiveLighting() {
   const spotLightRef = useRef<THREE.SpotLight>(null);
@@ -61,27 +65,39 @@ function ReactiveLighting() {
   );
 }
 
-function ReactiveShape() {
+function ReactiveShape({ perfProfile }: { readonly perfProfile: PerformanceProfile }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const meterRef = useRef<Tone.Meter | null>(null);
   const { deckA, deckB } = useStore();
+  const audioEngine = useAudioEngine();
 
   // Determine theme from active track
   const activeTrack = deckA.trackData || deckB.trackData;
   const isHype = (activeTrack?.energy || 0) > 0.6 || (activeTrack?.bpm || 0) > 110;
   const themeColor = isHype ? '#ef4444' : '#06b6d4'; // Crimson for hype, Cyan for chill
 
-  // Initialize audio meter
+  // Phase X: Connect to real master bus meter
   useEffect(() => {
-    const meter = new Tone.Meter();
-    // Connect to master output (this would need to be connected to the actual audio engine)
-    // For now, we'll use a dummy connection
-    meterRef.current = meter;
+    if (!audioEngine.isReady) return;
 
-    return () => {
-      meter.dispose();
-    };
-  }, []);
+    try {
+      const masterChannel = audioEngine.getMasterChannel();
+      if (masterChannel) {
+        const meter = new Tone.Meter();
+        masterChannel.connect(meter);
+        meterRef.current = meter;
+
+        return () => {
+          if (meterRef.current) {
+            masterChannel.disconnect(meterRef.current);
+            meterRef.current.dispose();
+          }
+        };
+      }
+    } catch (err) {
+      console.warn('[Scene3D] Failed to connect master meter:', err);
+    }
+  }, [audioEngine, audioEngine.isReady]);
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -100,8 +116,20 @@ function ReactiveShape() {
     meshRef.current.scale.set(scale, scale, scale);
   });
 
+  // Phase X: GPU-adaptive sphere detail
+  const sphereSegments = perfProfile.sphereDetail;
+
+  // Phase X: Use basic material on low-end devices
+  if (perfProfile.useBasicMaterials) {
+    return (
+      <Sphere ref={meshRef} args={[1, sphereSegments, sphereSegments]}>
+        <meshBasicMaterial color={themeColor} />
+      </Sphere>
+    );
+  }
+
   return (
-    <Sphere ref={meshRef} args={[1, 64, 64]}>
+    <Sphere ref={meshRef} args={[1, sphereSegments, sphereSegments]}>
       <MeshDistortMaterial
         color={themeColor}
         distort={0.4}
@@ -116,12 +144,44 @@ function ReactiveShape() {
 }
 
 interface Scene3DProps {
-  className?: string;
-  isActive?: boolean;
+  readonly className?: string;
+  readonly isActive?: boolean;
 }
 
 export function Scene3D({ className, isActive = true }: Scene3DProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const [perfProfile, setPerfProfile] = useState<PerformanceProfile>(getFallbackProfile());
+  const performanceMode = useStudioStore((state) => state.performanceMode);
+
+  // Phase X: Detect GPU capabilities on mount
+  useEffect(() => {
+    getPerformanceProfile().then(setPerfProfile);
+  }, []);
+
+  // Phase X: Override with manual performance mode if set
+  useEffect(() => {
+    if (performanceMode === 'low') {
+      setPerfProfile({
+        ...perfProfile,
+        tier: 1,
+        isLowEnd: true,
+        fpsTarget: 30,
+        sphereDetail: 32,
+        enableAntialias: false,
+        useBasicMaterials: true,
+      });
+    } else if (performanceMode === 'high') {
+      setPerfProfile({
+        ...perfProfile,
+        tier: 3,
+        isLowEnd: false,
+        fpsTarget: 60,
+        sphereDetail: 64,
+        enableAntialias: true,
+        useBasicMaterials: false,
+      });
+    }
+  }, [performanceMode]);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -140,11 +200,15 @@ export function Scene3D({ className, isActive = true }: Scene3DProps) {
     <div className={`w-full h-full ${className || ''}`}>
       <Canvas
         camera={{ position: [0, 0, 5], fov: 50 }}
-        dpr={[1, 1.5]} // Cap DPR for mobile performance
-        gl={{ antialias: true, alpha: true }}
+        dpr={[1, perfProfile.maxDPR]} // Phase X: GPU-adaptive DPR
+        gl={{
+          antialias: perfProfile.enableAntialias, // Phase X: Disable on mobile
+          alpha: true,
+        }}
+        frameloop={shouldRender ? 'always' : 'never'} // Phase X: Pause when not visible
       >
         <ReactiveLighting />
-        {shouldRender && <ReactiveShape />}
+        {shouldRender && <ReactiveShape perfProfile={perfProfile} />}
       </Canvas>
     </div>
   );

@@ -2,6 +2,7 @@
  * useSmartTrackAnalysis.ts - AI-Driven "Smart" Metadata Hook
  *
  * Phase IX: AI Insights & Masterpiece Layout
+ * Phase X: Second-Screen Broadcasting via Broadcast Channel API
  *
  * This hook intelligently analyzes tracks from the R2-synced library using Essentia.js
  * and persists results to IndexedDB (Dexie.js) for instant loading on subsequent plays.
@@ -12,16 +13,46 @@
  * - Energy Level (0.0-1.0 scale for dynamic mixing)
  * - One-time analysis with persistent caching
  * - UI feedback during analysis
+ * - **Phase X**: Real-time metadata broadcast to second screens (monitor route)
  *
  * Architecture:
  * - Runs in Web Worker (zero UI blocking)
  * - Uses IndexedDB for persistence (no Supabase)
  * - Integrates with existing useTrackAnalysis hook
+ * - Broadcasts via BroadcastChannel API for multi-screen DJ setups
  */
 
 import { useState, useCallback, useRef } from 'react';
 import { db, updateTrackAnalysis, type Track } from '@/lib/db';
 import { useTrackAnalysis } from './useTrackAnalysis';
+
+// Phase X: BroadcastChannel for second-screen sync
+let broadcastChannel: BroadcastChannel | null = null;
+
+if (globalThis.window !== undefined && 'BroadcastChannel' in globalThis) {
+  broadcastChannel = new BroadcastChannel('piko_studio_sync');
+}
+
+/**
+ * Broadcast track metadata to second screens (monitor route)
+ */
+function broadcastTrackMetadata(track: Track, result: SmartAnalysisResult) {
+  if (!broadcastChannel) return;
+
+  broadcastChannel.postMessage({
+    type: 'track_update',
+    payload: {
+      title: track.title,
+      artist: track.artist,
+      bpm: result.bpm,
+      key: result.key,
+      camelotKey: result.camelotKey,
+      energy: result.energy,
+      confidence: result.confidence,
+      timestamp: Date.now(),
+    },
+  });
+}
 
 // Camelot Wheel mapping for harmonic mixing
 const KEY_TO_CAMELOT: Record<string, string> = {
@@ -154,6 +185,9 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
 
       // Cache result
       analysisCache.current.set(track.url, result);
+
+      // Phase X: Broadcast to second screens
+      broadcastTrackMetadata(track, result);
 
       setCurrentTrack(null);
       setProgress(0);

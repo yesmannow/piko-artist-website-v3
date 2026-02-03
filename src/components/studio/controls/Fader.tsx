@@ -85,6 +85,28 @@ export function Fader({
 
       // Hard stops at top and bottom (hardware emulation)
       newY = Math.max(0, Math.min(trackHeight, newY));
+
+      // Phase X: Haptic feedback at detents
+      const normalizedVal = 1 - (newY / trackHeight);
+      const prevNormalizedVal = 1 - (currentY / trackHeight);
+
+      // Detents at 0% (muted), 50% (center), 75% (unity), and 100% (max)
+      const detents = [0, 0.5, 0.75, 1];
+      const detentThreshold = 0.02;
+
+      for (const detent of detents) {
+        const wasNearDetent = Math.abs(prevNormalizedVal - detent) < detentThreshold;
+        const isNearDetent = Math.abs(normalizedVal - detent) < detentThreshold;
+
+        // Trigger haptic when crossing into detent zone
+        if (!wasNearDetent && isNearDetent) {
+          if ('vibrate' in navigator) {
+            navigator.vibrate(10); // Phase X: Haptic detent feedback
+          }
+          break;
+        }
+      }
+
       y.set(newY);
     },
     [y, trackHeight, disabled]
@@ -125,18 +147,20 @@ export function Fader({
 
         {/* Draggable Handle */}
         <motion.div
-          className="absolute left-0 right-0 mx-auto cursor-grab active:cursor-grabbing touch-none"
+          className="absolute left-0 right-0 mx-auto cursor-grab active:cursor-grabbing touch-none select-none"
           style={{
             y,
             width: 28,
             height: handleHeight,
             left: 2,
+            touchAction: 'none', // Phase X: Prevent mobile scrolling
           }}
           drag="y"
           dragConstraints={{ top: 0, bottom: trackHeight }}
           dragElastic={0}
           dragMomentum={false}
           onDrag={handleDrag}
+          onPointerDown={(e) => e.stopPropagation()} // Phase X: Multi-touch isolation
           whileTap={{ scale: 1.05 }}
         >
           {/* Handle body */}
