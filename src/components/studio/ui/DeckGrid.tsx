@@ -6,11 +6,11 @@
  * Five-column layout: Deck A | Strip A | Crossfader | Strip B | Deck B
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Deck } from './Deck';
 import { Crossfader } from './Crossfader';
-import { Knob } from './controls/Knob';
-import { Fader } from './controls/Fader';
+import { Knob } from '@/components/studio/controls/Knob';
+import { Fader } from '@/components/studio/controls/Fader';
 import { useStore } from '@/store/useStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useExporter } from '@/hooks/useExporter';
@@ -47,12 +47,15 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
   const setDeckVolume = useStore((state) => state.setDeckVolume);
   const setDeckEQ = useStore((state) => state.setDeckEQ);
   const setDeckFilter = useStore((state) => state.setDeckFilter);
-  const { toggleStem, getStemMuteState } = useAudioEngine();
+  const { setDeckVolume: setAudioVolume, setDeckEQ: setAudioEQ, setDeckFilter: setAudioFilter, toggleStem, getStemMuteState } = useAudioEngine();
   const [stemMutes, setStemMutes] = useState(() => getStemMuteState(deckId));
   const stripLabel = deckId === 'A' ? 'Strip A' : 'Strip B';
   const accentText = deckId === 'A' ? 'text-studio-cyan/80' : 'text-studio-purple/80';
   const accentBg = deckId === 'A' ? 'bg-studio-cyan/30 border-studio-cyan text-studio-cyan' : 'bg-studio-purple/30 border-studio-purple text-studio-purple';
   const volumeFader = useMemo(() => linearToFader(deck.volume), [deck.volume]);
+
+  // Track if we're in a user interaction to prevent feedback loops
+  const isUserInteracting = useRef(false);
 
   const eqValues = useMemo(() => {
     const normalize = (value: number) => (value + 12) / 24;
@@ -62,6 +65,52 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
       low: clamp01(normalize(deck.eq.low)),
     };
   }, [deck.eq.high, deck.eq.low, deck.eq.mid]);
+
+  // Direct audio engine wiring - Method 1: Instant updates
+  const handleVolumeChange = useCallback((value: number) => {
+    isUserInteracting.current = true;
+    const linearVolume = faderToLinear(value);
+
+    // Update audio engine instantly (bypasses React render cycle)
+    setAudioVolume(deckId, linearVolume);
+
+    // Update store for UI sync
+    setDeckVolume(deckId, linearVolume);
+
+    requestAnimationFrame(() => {
+      isUserInteracting.current = false;
+    });
+  }, [deckId, setAudioVolume, setDeckVolume]);
+
+  const handleEQChange = useCallback((band: 'low' | 'mid' | 'high', value: number) => {
+    isUserInteracting.current = true;
+    const dbValue = value * 24 - 12;
+    const newEQ = { ...deck.eq, [band]: dbValue };
+
+    // Update audio engine instantly
+    setAudioEQ(deckId, newEQ);
+
+    // Update store for UI sync
+    setDeckEQ(deckId, newEQ);
+
+    requestAnimationFrame(() => {
+      isUserInteracting.current = false;
+    });
+  }, [deckId, deck.eq, setAudioEQ, setDeckEQ]);
+
+  const handleFilterChange = useCallback((value: number) => {
+    isUserInteracting.current = true;
+
+    // Update audio engine instantly
+    setAudioFilter(deckId, value);
+
+    // Update store for UI sync
+    setDeckFilter(deckId, value);
+
+    requestAnimationFrame(() => {
+      isUserInteracting.current = false;
+    });
+  }, [deckId, setAudioFilter, setDeckFilter]);
 
   return (
     <GlassPanel
@@ -101,38 +150,33 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
       <Knob
         label="GAIN"
         value={volumeFader}
-        onChange={(value) => setDeckVolume(deckId, faderToLinear(value))}
+        onValueChange={handleVolumeChange}
         size={56}
-        color="#06b6d4"
       />
       <Knob
         label="HIGH"
         value={eqValues.high}
-        onChange={(value) => setDeckEQ(deckId, { ...deck.eq, high: value * 24 - 12 })}
+        onValueChange={(value) => handleEQChange('high', value)}
         size={60}
-        color="#22d3ee"
       />
       <Knob
         label="MID"
         value={eqValues.mid}
-        onChange={(value) => setDeckEQ(deckId, { ...deck.eq, mid: value * 24 - 12 })}
+        onValueChange={(value) => handleEQChange('mid', value)}
         size={60}
-        color="#a855f7"
       />
       <Knob
         label="LOW"
         value={eqValues.low}
-        onChange={(value) => setDeckEQ(deckId, { ...deck.eq, low: value * 24 - 12 })}
+        onValueChange={(value) => handleEQChange('low', value)}
         size={60}
-        color="#06b6d4"
       />
       <Knob
         label="FILTER"
         value={clamp01(deck.filter)}
-        onChange={(value) => setDeckFilter(deckId, value)}
+        onValueChange={handleFilterChange}
         size={68}
-        color="#22d3ee"
-        bipolar
+        rotationRange={300}
       />
       <div className="w-full flex flex-col items-center gap-2">
         <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-white/60">STEMS</div>
@@ -170,7 +214,7 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
       <Fader
         label="VOLUME"
         value={volumeFader}
-        onChange={(value) => setDeckVolume(deckId, faderToLinear(value))}
+        onValueChange={handleVolumeChange}
         height={192}
       />
     </GlassPanel>
@@ -188,10 +232,13 @@ export function DeckGrid() {
 
   const masterBus = getMasterBus().bus;
 
-  // Push master gain changes to the engine outside of the render body
-  useEffect(() => {
-    setMasterGain(masterGainLocal);
-  }, [masterGainLocal, setMasterGain]);
+  // Direct audio engine wiring for master gain
+  const handleMasterGainChange = useCallback((value: number) => {
+    const clampedValue = Math.max(0, Math.min(1, value));
+    setMasterGainLocal(clampedValue);
+    // Update audio engine instantly
+    setMasterGain(clampedValue);
+  }, [setMasterGain]);
 
   useEffect(() => {
     if (recordingBlob) {
@@ -256,10 +303,9 @@ export function DeckGrid() {
         <div className="flex flex-col items-center gap-3">
           <Knob
             label="MASTER"
-            value={Math.max(0, Math.min(1, masterGainLocal))}
-            onChange={(value) => setMasterGainLocal(value)}
+            value={masterGainLocal}
+            onValueChange={handleMasterGainChange}
             size={70}
-            color="#22d3ee"
           />
           <button
             onClick={handleRecordToggle}
@@ -343,10 +389,9 @@ export function DeckGrid() {
                 <div className="flex flex-col items-center gap-3">
                   <Knob
                     label="MASTER"
-                    value={Math.max(0, Math.min(1, masterGainLocal))}
-                    onChange={(value) => setMasterGainLocal(value)}
+                    value={masterGainLocal}
+                    onValueChange={handleMasterGainChange}
                     size={70}
-                    color="#22d3ee"
                   />
                   <button
                     onClick={handleRecordToggle}
