@@ -11,7 +11,7 @@
  * Collapses when not in use to maximize performance controls
  */
 
-import { TrackLibrary } from "@/components/studio/ui/TrackLibrary";
+import { TrackLibrary } from "@/components/studio/library/TrackLibrary";
 import { useStudioStore } from "@/store/useStudioStore";
 
 export function LibraryRow() {

@@ -13,7 +13,7 @@ import { StudioGrid } from "./StudioGrid";
 import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";
 import { MobileLandscapeWorkstation } from "./MobileLandscapeWorkstation";
 import { Deck } from "@/components/studio/deck/Deck";
-import { MainWaveform } from "@/components/studio/ui/MainWaveform";
+import { MainWaveform } from "@/components/studio/waveforms/MainWaveform";
 import { StemMeters } from "@/components/studio/stems/StemMeters";
 import { StemControls } from "@/components/studio/stems/StemControls";
 

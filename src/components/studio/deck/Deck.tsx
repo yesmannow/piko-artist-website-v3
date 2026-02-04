@@ -14,12 +14,12 @@ import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyani
 import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
 import { db } from '@/lib/db';
 import { Loader2 } from 'lucide-react';
-import { RecommendationsPopover } from '../ui/RecommendationsPopover';
+import { RecommendationsPopover } from '../library/RecommendationsPopover';
 import { StemRack } from '../stems/StemRack';
 import { StemPerformancePads } from '../stems/StemPerformancePads';
 import { JogWheel } from './JogWheel';
-import { WaveformMini } from '../ui/WaveformMini';
-import { EnergyIndicator } from '../ui/EnergyIndicator';
+import { WaveformMini } from '../waveforms/WaveformMini';
+import { EnergyIndicator } from '../waveforms/EnergyIndicator';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';

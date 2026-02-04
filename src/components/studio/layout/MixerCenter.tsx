@@ -13,10 +13,10 @@
  * Phase 3: FX moved to deck-level controls (DeckFXRack)
  */
 
-import { Crossfader } from "@/components/studio/ui/Crossfader";
-import { LevelMeter } from "@/components/studio/ui/LevelMeter";
+import { Crossfader } from "@/components/studio/mixer/Crossfader";
+import { LevelMeter } from "@/components/studio/mixer/LevelMeter";
 import { DeckEQ } from "@/components/studio/deck/DeckEQ";
-import { ChannelFader } from "@/components/studio/ui/ChannelFader";
+import { ChannelFader } from "@/components/studio/mixer/ChannelFader";
 
 export function MixerCenter() {
   return (

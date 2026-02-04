@@ -14,7 +14,7 @@
 import { useState } from "react";
 import { DeckWaveformWS } from "@/components/studio/deck/DeckWaveformWS";
 import { Deck } from "@/components/studio/deck/Deck";
-import { TrackLibrary } from "@/components/studio/ui/TrackLibrary";
+import { TrackLibrary } from "@/components/studio/library/TrackLibrary";
 import { MixerCenter } from "./MixerCenter";
 
 type MobileTab = 'DECKS' | 'MIXER' | 'LIBRARY';
