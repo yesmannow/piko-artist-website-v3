@@ -2,7 +2,7 @@
 
 import { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStudioStore } from '@/store/useStudioStore';
 
 interface StemRackProps {

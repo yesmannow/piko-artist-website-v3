@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 

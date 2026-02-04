@@ -18,7 +18,7 @@
 
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
-import { Knob } from '@/components/studio/ui/controls/Knob';
+import { Knob } from '@/components/ui/controls/Knob';
 import { getAudioEngine } from '@/lib/audio-engine';
 
 interface DeckFXRackProps {

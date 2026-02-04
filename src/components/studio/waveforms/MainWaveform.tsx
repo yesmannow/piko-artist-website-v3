@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
 import { WaveformMini } from "./WaveformMini";
 import { useStore } from "@/store/useStore";
 import { db } from "@/lib/db";

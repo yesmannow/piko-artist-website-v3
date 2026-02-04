@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
 
 /**
  * useSocialExport - skeleton hook for recording master output and preparing

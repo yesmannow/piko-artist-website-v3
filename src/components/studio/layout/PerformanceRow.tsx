@@ -18,7 +18,7 @@ import { DeckControls } from "@/components/studio/deck/DeckControls";
 import { DeckFXRack } from "@/components/studio/core/DeckFXRack";
 import { DeckDropZone } from "@/components/studio/deck/DeckDropZone";
 import { MixerCenter } from "./MixerCenter";
-import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
 import { useStore } from "@/store/useStore";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useLiveQuery } from "dexie-react-hooks";

@@ -9,12 +9,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Deck } from './Deck';
 import { Crossfader } from '../mixer/Crossfader';
-import { Knob } from '@/components/studio/ui/controls/Knob';
-import { Fader } from '@/components/studio/ui/controls/Fader';
+import { Knob } from '@/components/ui/controls/Knob';
+import { Fader } from '@/components/ui/controls/Fader';
 import { LevelMeter } from '../mixer/LevelMeter';
 import { useStore } from '@/store/useStore';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
-import { useExporter } from '@/hooks/useExporter';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
+import { useExporter } from '@/hooks/audio/useExporter';
 import { ExportModal } from '@/components/studio/modals/ExportModal';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { dbToLinear } from '@/lib/utils/audioMath';

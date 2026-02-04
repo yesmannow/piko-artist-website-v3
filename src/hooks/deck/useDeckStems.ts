@@ -5,10 +5,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
-import { useStemWorker } from '@/hooks/useStemWorker';
+import { useStemWorker } from '@/hooks/audio/useStemWorker';
 import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
 import type { StemChannels } from '@/workers/stem.types';
 

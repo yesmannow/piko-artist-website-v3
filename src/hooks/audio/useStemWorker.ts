@@ -91,7 +91,7 @@ const ensureWorker = (modelUrl: string) => {
     return;
   }
 
-  const worker = new Worker(new URL("../workers/stem.worker.ts", import.meta.url), {
+  const worker = new Worker(new URL("../../workers/stem.worker.ts", import.meta.url), {
     type: "module",
   });
   shared.worker = worker;

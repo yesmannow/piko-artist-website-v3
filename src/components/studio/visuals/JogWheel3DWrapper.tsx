@@ -12,7 +12,7 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { JogPlatter3D } from '../visuals/JogPlatter3D';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 

@@ -24,7 +24,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
 
 interface LoopControlsProps {
   readonly deckId: "A" | "B";

@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 
 interface UseDeckTransportProps {

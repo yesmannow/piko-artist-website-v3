@@ -12,7 +12,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Share2, Loader2 } from 'lucide-react';
-import { useExporter } from '@/hooks/useExporter';
+import { useExporter } from '@/hooks/audio/useExporter';
 import { useSocialExport } from '@/hooks/useSocialExport';
 import * as Tone from 'tone';
 

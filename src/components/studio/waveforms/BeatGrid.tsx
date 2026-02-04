@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
 import { getInsights } from "@/db/studioDb";
 import { calculateBeatGrid } from "@/features/insights/analyzeBeat";
 import { useStore } from "@/store/useStore";
-import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
 
 interface BeatGridProps {
   readonly deckId: "A" | "B";

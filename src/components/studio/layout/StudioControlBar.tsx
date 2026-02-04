@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, Library, Settings2 } from "lucide-react";
-import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useStore } from "@/store/useStore";
 import { useStudioStore } from "@/store/useStudioStore";

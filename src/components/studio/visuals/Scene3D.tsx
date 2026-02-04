@@ -17,8 +17,8 @@ import * as Tone from 'tone';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 import * as THREE from 'three';
-import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioAnalyser } from '@/hooks/audio/useAudioAnalyser';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { getPerformanceProfile, getFallbackProfile, type PerformanceProfile } from '@/lib/gpu-utils';
 
 function ReactiveLighting() {
@@ -173,7 +173,7 @@ export function Scene3D({ className, isActive = true }: Scene3DProps) {
         useBasicMaterials: true,
       }));
     } else if (performanceMode === 'high') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setPerfProfile((prev) => ({
         ...prev,
         tier: 3,

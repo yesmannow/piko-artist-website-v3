@@ -7,7 +7,7 @@
  */
 
 import { useStore } from "@/store/useStore";
-import { Fader } from "@/components/studio/ui/controls/Fader";
+import { Fader } from "@/components/ui/controls/Fader";
 
 interface ChannelFaderProps {
   deckId: "A" | "B";

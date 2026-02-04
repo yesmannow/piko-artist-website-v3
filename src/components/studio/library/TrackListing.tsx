@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Loader2 } from 'lucide-react';

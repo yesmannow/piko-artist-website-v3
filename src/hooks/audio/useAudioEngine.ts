@@ -13,9 +13,9 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
-import { useStore } from '../store/useStore';
-import { useStudioStore } from '../store/useStudioStore';
-import { useEssentiaAnalysis } from './useEssentiaAnalysis';
+import { useStore } from '@/store/useStore';
+import { useStudioStore } from '@/store/useStudioStore';
+import { useEssentiaAnalysis } from '@/hooks/useEssentiaAnalysis';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { applyCrossfaderCurve, normalizeCrossfaderValue } from '@/audio/mixer/crossfaderCurves';
 import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2

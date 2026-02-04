@@ -5,8 +5,8 @@
  * drag interactions with instant audio engine updates.
  */
 
-import { Fader, Knob } from '@/components/studio/ui/controls';
-import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { Fader, Knob } from '@/components/ui/controls';
+import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useCallback, useState } from 'react';
 
 /**

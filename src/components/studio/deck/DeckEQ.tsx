@@ -10,7 +10,7 @@
  */
 
 import { useStore } from "@/store/useStore";
-import { Knob } from "@/components/studio/ui/controls/Knob";
+import { Knob } from "@/components/ui/controls/Knob";
 
 interface DeckEQProps {
   deckId: "A" | "B";
