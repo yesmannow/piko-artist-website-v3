@@ -6,7 +6,7 @@ import { tracks } from "@/lib/data";
 import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
-import { useHaptic } from "@/hooks/useHaptic";
+import { useHaptic } from "@/hooks/device/useHaptic";
 import { TrackDrawer } from "@/components/TrackDrawer";
 
 const vibeColors = {

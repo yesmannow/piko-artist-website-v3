@@ -1,7 +1,7 @@
 "use client";
 
 import { useStudioStore } from "@/store/useStudioStore";
-import { useHaptic } from "@/hooks/useHaptic";
+import { useHaptic } from "@/hooks/device/useHaptic";
 
 export function StemModeToggle() {
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);

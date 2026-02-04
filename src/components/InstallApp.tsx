@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download } from "lucide-react";
-import { useHaptic } from "@/hooks/useHaptic";
+import { useHaptic } from "@/hooks/device/useHaptic";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;

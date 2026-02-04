@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { tracks } from "@/lib/data";
 import { useAudio } from "@/context/AudioContext";
-import { useHaptic } from "@/hooks/useHaptic";
+import { useHaptic } from "@/hooks/device/useHaptic";
 import { useSearchParams } from "next/navigation";
 import {
   Calendar,

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useHaptic } from "@/hooks/useHaptic";
+import { useHaptic } from "@/hooks/device/useHaptic";
 import { useState, useEffect, useMemo } from "react";
 import { ImmersivePlayerOverlay } from "@/components/ImmersivePlayerOverlay";
 

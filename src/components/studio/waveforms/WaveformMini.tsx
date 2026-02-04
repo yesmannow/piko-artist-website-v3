@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useGestures } from "@/hooks/useGestures";
+import { useGestures } from "@/hooks/device/useGestures";
 
 interface WaveformMiniProps {
   url: string;

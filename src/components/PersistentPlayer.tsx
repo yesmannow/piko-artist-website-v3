@@ -3,7 +3,7 @@
 import { useAudio } from "@/context/AudioContext";
 import { Maximize2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useHaptic } from "@/hooks/useHaptic";
+import { useHaptic } from "@/hooks/device/useHaptic";
 import Image from "next/image";
 import { EnhancedAudioVisualizer } from "@/components/EnhancedAudioVisualizer";
 
