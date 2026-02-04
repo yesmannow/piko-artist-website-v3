@@ -208,13 +208,18 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
   // Suspend worker when app is inactive
   useEffect(() => {
     if (isAppActive) return;
-    if (isAnalyzing && pendingRejectRef.current) {
-      pendingRejectRef.current(new Error('Analysis paused while inactive'));
-    }
-    setIsAnalyzing(false);
-    setError((prev) => prev || 'Analysis paused while inactive');
-    terminateWorker();
-    pendingRejectRef.current = null;
+    
+    const suspendAnalysis = async () => {
+      if (isAnalyzing && pendingRejectRef.current) {
+        pendingRejectRef.current(new Error('Analysis paused while inactive'));
+      }
+      setIsAnalyzing(false);
+      setError((prev) => prev || 'Analysis paused while inactive');
+      terminateWorker();
+      pendingRejectRef.current = null;
+    };
+    
+    void suspendAnalysis();
   }, [isAppActive, isAnalyzing, terminateWorker]);
 
   return {

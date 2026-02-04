@@ -13,8 +13,16 @@ interface VideoModalProps {
 }
 
 export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalProps) {
+  // Derive loading state from isOpen and videoId - reset to true whenever they change
   const [isLoading, setIsLoading] = useState(true);
+  const [lastVideoId, setLastVideoId] = useState(videoId);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Reset loading when videoId changes
+  if (videoId !== lastVideoId) {
+    setIsLoading(true);
+    setLastVideoId(videoId);
+  }
 
   // Lock body scroll when modal is open
   useBodyScrollLock(isOpen);
@@ -42,7 +50,6 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
   // Reset loading state and set iframe src when modal opens or video changes
   useEffect(() => {
     if (isOpen && iframeRef.current) {
-      setIsLoading(true);
       // Set credentialless attribute for COEP compatibility
       iframeRef.current.setAttribute('credentialless', 'true');
       // Set iframe src to trigger loading
@@ -67,7 +74,6 @@ export function VideoModal({ isOpen, onClose, videoId, videoTitle }: VideoModalP
     if (!isOpen && iframeRef.current) {
       // Remove src to stop playback and network activity
       iframeRef.current.src = "";
-      setIsLoading(true);
     }
   }, [isOpen]);
 

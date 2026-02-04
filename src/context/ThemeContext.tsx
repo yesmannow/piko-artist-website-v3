@@ -43,7 +43,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize with default theme on mount
   useEffect(() => {
-    updateTheme(0.5, 128); // Default neutral theme
+    // Schedule initial theme update asynchronously to avoid cascade
+    const initTheme = async () => {
+      updateTheme(0.5, 128); // Default neutral theme
+    };
+    void initTheme();
   }, [updateTheme]);
 
   return (

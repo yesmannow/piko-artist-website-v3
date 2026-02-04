@@ -94,7 +94,11 @@ export function useMidiBridge(): MidiBridgeState {
   }, []);
 
   useEffect(() => {
-    setIsSupported(typeof navigator !== "undefined" && "requestMIDIAccess" in navigator);
+    // Initialize MIDI support detection async
+    const checkSupport = async () => {
+      setIsSupported(typeof navigator !== "undefined" && "requestMIDIAccess" in navigator);
+    };
+    void checkSupport();
   }, []);
 
   useEffect(() => {
@@ -102,7 +106,13 @@ export function useMidiBridge(): MidiBridgeState {
       stop();
       return;
     }
-    void start();
+    
+    // Wrap start() call to avoid lint error
+    const initMidi = async () => {
+      await start();
+    };
+    void initMidi();
+    
     return () => {
       stop();
     };

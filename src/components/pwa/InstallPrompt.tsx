@@ -25,24 +25,21 @@ type StandaloneNavigator = Navigator & { standalone?: boolean };
  */
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (globalThis.window === undefined) return false;
+    const navigatorWithStandalone = globalThis.window.navigator as StandaloneNavigator;
+    return (
+      globalThis.window.matchMedia("(display-mode: standalone)").matches ||
+      navigatorWithStandalone.standalone === true
+    );
+  });
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const dismissedRef = useRef(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check if already installed (standalone mode)
-    if (typeof window !== "undefined") {
-      const navigatorWithStandalone = window.navigator as StandaloneNavigator;
-      const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        navigatorWithStandalone.standalone === true;
-
-      if (isStandalone) {
-        setIsInstalled(true);
-        return;
-      }
-    }
+    // Skip if already installed
+    if (isInstalled) return;
 
     // Listen for beforeinstallprompt event (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -57,12 +54,12 @@ export function InstallPrompt() {
       }, 10000); // 10 seconds
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    globalThis.window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // Check if iOS (different install flow)
     const isIOS =
       /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-      !(window as unknown as { MSStream?: unknown }).MSStream;
+      !(globalThis.window as unknown as { MSStream?: unknown }).MSStream;
 
     if (isIOS) {
       // iOS doesn't support beforeinstallprompt, but we can still show instructions
@@ -74,7 +71,7 @@ export function InstallPrompt() {
     }
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      globalThis.window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }

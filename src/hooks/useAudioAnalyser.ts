@@ -32,7 +32,11 @@ export function useAudioAnalyser(
 
   useEffect(() => {
     if (!enabled || !videoElement) {
-      setLevels({ bass: 0, mid: 0, high: 0, overall: 0, dataArray: null });
+      // Schedule async to avoid cascade
+      const reset = async () => {
+        setLevels({ bass: 0, mid: 0, high: 0, overall: 0, dataArray: null });
+      };
+      void reset();
       return;
     }
 

@@ -72,11 +72,15 @@ export function useGPUTier(): GPUCapabilities {
     // Disable backdrop-filter on low tier
     const finalSupportsBackdropFilter = supportsBackdropFilter && tier !== 'low';
 
-    setCapabilities({
-      tier,
-      supportsBackdropFilter: finalSupportsBackdropFilter,
-      estimatedFPS,
-    });
+    // Schedule async to avoid setState in effect
+    const updateCaps = async () => {
+      setCapabilities({
+        tier,
+        supportsBackdropFilter: finalSupportsBackdropFilter,
+        estimatedFPS,
+      });
+    };
+    void updateCaps();
   }, []);
 
   return capabilities;

@@ -12,16 +12,19 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallApp() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIOSPrompt, setShowIOSPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (globalThis.window === undefined) return false;
+    return globalThis.window.matchMedia("(display-mode: standalone)").matches;
+  });
+  const [showIOSPrompt, setShowIOSPrompt] = useState(() => {
+    if (typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(globalThis.window as unknown as { MSStream?: unknown }).MSStream;
+  });
   const { triggerHaptic } = useHaptic();
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-      return;
-    }
+    // Skip if already determined to be installed
+    if (isInstalled) return;
 
     // Listen for beforeinstallprompt event (Android)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -29,18 +32,12 @@ export function InstallApp() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-
-    // Check if iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
-    if (isIOS) {
-      setShowIOSPrompt(true);
-    }
+    globalThis.window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      globalThis.window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [isInstalled]);
 
   const handleInstall = async () => {
     triggerHaptic();

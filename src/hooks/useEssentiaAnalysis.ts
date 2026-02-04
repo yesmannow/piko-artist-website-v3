@@ -30,31 +30,35 @@ export function useEssentiaAnalysis(): UseEssentiaAnalysisReturn {
 
   // Initialize worker
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof globalThis.window === 'undefined') return;
 
-    try {
-      const worker = new Worker(
-        new URL('../workers/essentia.worker.ts', import.meta.url),
-        { type: 'module' }
-      );
+    const initWorker = async () => {
+      try {
+        const worker = new Worker(
+          new URL('../workers/essentia.worker.ts', import.meta.url),
+          { type: 'module' }
+        );
 
-      workerRef.current = worker;
+        workerRef.current = worker;
 
-      // Handle worker errors
-      worker.onerror = (e) => {
-        console.error('[useEssentiaAnalysis] Worker error:', e);
-        setError('Worker error occurred');
-        setIsAnalyzing(false);
-      };
+        // Handle worker errors
+        worker.onerror = (e) => {
+          console.error('[useEssentiaAnalysis] Worker error:', e);
+          setError('Worker error occurred');
+          setIsAnalyzing(false);
+        };
+      } catch (err) {
+        console.error('[useEssentiaAnalysis] Failed to create worker:', err);
+        setError('Failed to initialize analysis worker');
+      }
+    };
 
-      return () => {
-        worker.terminate();
-        workerRef.current = null;
-      };
-    } catch (err) {
-      console.error('[useEssentiaAnalysis] Failed to create worker:', err);
-      setError('Failed to initialize analysis worker');
-    }
+    void initWorker();
+
+    return () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
   }, []);
 
   const analyzeTrack = useCallback(

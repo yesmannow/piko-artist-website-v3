@@ -29,15 +29,21 @@ export function useDeviceOrientation() {
 
     const nav = (globalThis as unknown as { navigator?: Navigator }).navigator;
     const isIOS = nav ? /iPad|iPhone|iPod/.test(nav.userAgent) : false;
-  const isSupported = (globalThis as unknown as any).DeviceOrientationEvent !== undefined || (isIOS && (globalThis as unknown as any).DeviceOrientationEvent !== undefined);
 
-    setIsSupported(isSupported);
+    const checkSupport = () => {
+      type GlobalWithDeviceOrientation = { DeviceOrientationEvent?: unknown };
+      const global = globalThis as unknown as GlobalWithDeviceOrientation;
+      const isSupported = global.DeviceOrientationEvent !== undefined || (isIOS && global.DeviceOrientationEvent !== undefined);
+      setIsSupported(isSupported);
+      return isSupported;
+    };
 
-    if (!isSupported) return;
+    const supported = checkSupport();
+    if (!supported) return;
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       // iOS uses different property names
-  const alpha = event.alpha ?? ((event as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ?? null);
+      const alpha = event.alpha ?? ((event as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ?? null);
       const beta = event.beta ?? null;
       const gamma = event.gamma ?? null;
 
@@ -46,8 +52,8 @@ export function useDeviceOrientation() {
       // Normalize gamma (left/right tilt) and beta (forward/back tilt) to -1 to 1 range
       // Gamma: -90 to 90 -> -1 to 1
       // Beta: -180 to 180 -> -1 to 1 (clamped to reasonable range)
-  const normalizedX = gamma === null ? 0 : Math.max(-1, Math.min(1, gamma / 90));
-  const normalizedY = beta === null ? 0 : Math.max(-1, Math.min(1, (beta - 90) / 90));
+      const normalizedX = gamma === null ? 0 : Math.max(-1, Math.min(1, gamma / 90));
+      const normalizedY = beta === null ? 0 : Math.max(-1, Math.min(1, (beta - 90) / 90));
 
       setNormalized({ x: normalizedX, y: normalizedY });
     };

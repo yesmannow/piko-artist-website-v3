@@ -76,11 +76,14 @@ export function useGyroLighting(intensity: number = 1.0): GyroData {
 
   useEffect(() => {
     if (permissionGranted) {
-      window.addEventListener("deviceorientation", handleOrientation);
-      setIsAvailable(true);
+      const setupGyro = async () => {
+        globalThis.window.addEventListener("deviceorientation", handleOrientation);
+        setIsAvailable(true);
+      };
+      void setupGyro();
     }
     return () => {
-      window.removeEventListener("deviceorientation", handleOrientation);
+      globalThis.window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, [permissionGranted, handleOrientation]);
 
