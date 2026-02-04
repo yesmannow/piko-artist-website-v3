@@ -3,6 +3,8 @@
 /**
  * useAudioEngine.ts - High-Performance Audio Engine for Studio V3
  *
+ * Phase 1.1 Days 3-4: Migrating to DeckEngine architecture
+ *
  * Uses Tone.js with Master Bus chain:
  * Channel -> CrossFade -> Compressor -> Limiter -> Destination
  *
@@ -17,6 +19,7 @@ import { useEssentiaAnalysis } from './useEssentiaAnalysis';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { applyCrossfaderCurve, normalizeCrossfaderValue } from '@/audio/mixer/crossfaderCurves';
 import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2
+import { DeckEngine } from '@/audio/engines/DeckEngine'; // Phase 1.1: Engine-first architecture
 
 type PlaybackRateParam = Tone.Param<"number"> & {
   value?: number;
@@ -78,6 +81,8 @@ type StemGainNodes = {
 };
 
 type EngineState = {
+  // Phase 1.1: DeckEngine instances
+  deckEngines: { current: { A: DeckEngine | null; B: DeckEngine | null } };
   players: { current: { A: Tone.Player | null; B: Tone.Player | null } };
   stemPlayers: {
     current: {
@@ -124,6 +129,8 @@ type EngineState = {
 };
 
 const createEngineState = (): EngineState => ({
+  // Phase 1.1: DeckEngine instances
+  deckEngines: { current: { A: null, B: null } },
   players: { current: { A: null, B: null } },
   stemPlayers: {
     current: {
@@ -429,6 +436,78 @@ export const useAudioEngine = (): AudioEngineControls => {
       filters.current = { A: filterA, B: filterB };
       pitchShift.current = { A: pitchA, B: pitchB };
 
+      // Phase 1.1: Create DeckEngine instances
+      const deckEngineA = new DeckEngine({
+        deckId: 'A',
+        context: Tone.getContext(),
+      });
+      const deckEngineB = new DeckEngine({
+        deckId: 'B',
+        context: Tone.getContext(),
+      });
+
+      // Connect DeckEngine outputs to crossfader
+      deckEngineA.getOutputNode().connect(crossfade.a);
+      deckEngineB.getOutputNode().connect(crossfade.b);
+
+      engine.deckEngines.current = { A: deckEngineA, B: deckEngineB };
+
+      // Phase 1.1 Batch 4: Subscribe to DeckEngine events for state sync
+      deckEngineA.on('trackLoaded', (event) => {
+        const data = event.data as Partial<import('@/audio/engines/DeckEngine').DeckState>;
+        if (data.duration !== undefined) {
+          useStudioStore.getState().setDeckDuration('deckA', data.duration);
+        }
+      });
+
+      deckEngineA.on('playbackStart', () => {
+        useStudioStore.setState((state) => ({
+          deckA: { ...state.deckA, isPlaying: true },
+        }));
+      });
+
+      deckEngineA.on('playbackStop', () => {
+        useStudioStore.setState((state) => ({
+          deckA: { ...state.deckA, isPlaying: false },
+        }));
+      });
+
+      deckEngineA.on('stateChange', (event) => {
+        const data = event.data as Partial<import('@/audio/engines/DeckEngine').DeckState>;
+        if (data.currentTime !== undefined) {
+          useStudioStore.getState().updateDeckTime('deckA', data.currentTime);
+        }
+      });
+
+      deckEngineB.on('trackLoaded', (event) => {
+        const data = event.data as Partial<import('@/audio/engines/DeckEngine').DeckState>;
+        if (data.duration !== undefined) {
+          useStudioStore.getState().setDeckDuration('deckB', data.duration);
+        }
+      });
+
+      deckEngineB.on('playbackStart', () => {
+        useStudioStore.setState((state) => ({
+          deckB: { ...state.deckB, isPlaying: true },
+        }));
+      });
+
+      deckEngineB.on('playbackStop', () => {
+        useStudioStore.setState((state) => ({
+          deckB: { ...state.deckB, isPlaying: false },
+        }));
+      });
+
+      deckEngineB.on('stateChange', (event) => {
+        const data = event.data as Partial<import('@/audio/engines/DeckEngine').DeckState>;
+        if (data.currentTime !== undefined) {
+          useStudioStore.getState().updateDeckTime('deckB', data.currentTime);
+        }
+      });
+
+      console.log('[AudioEngine] DeckEngine instances created and connected');
+      console.log('[AudioEngine] Event subscriptions established for state sync');
+
       isInitialized.current = true;
       engine.isReady.current = true;
       setAudioReady(true);
@@ -559,7 +638,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [analyzeTrack, setDeckTrack]);
 
-  // Load track on deck
+  // Phase 1.1: Load track on deck using DeckEngine
   const loadTrack = useCallback(async (deck: 'A' | 'B', url: string, bpm: number, skipAnalysis = false) => {
     if (!isInitialized.current) {
       await init();
@@ -570,54 +649,23 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
 
     try {
-      console.log(`[AudioEngine] Loading track to Deck ${deck}: ${url}`);
+      console.log(`[AudioEngine Phase 1.1] Loading track via DeckEngine to Deck ${deck}: ${url}`);
+
+      // Get DeckEngine instance
+      const deckEngine = engine.deckEngines.current[deck];
+      if (!deckEngine) {
+        throw new Error(`[AudioEngine] DeckEngine for Deck ${deck} not initialized`);
+      }
+
+      // Clear old stems (Phase 1.1: engines handle their own stems now)
       Object.values(stemPlayers.current[deck]).forEach((player) => {
         player?.dispose();
       });
       stemPlayers.current[deck] = { vocals: null, drums: null, bass: null, other: null };
       stemMutes.current[deck] = { vocals: false, drums: false, bass: false, other: false };
 
-      const player = new Tone.Player({
-        url,
-        autostart: false,
-        onload: () => {
-          console.log(`[AudioEngine] Track loaded on Deck ${deck}`);
-          updateDeck(deck, { isLoaded: true });
-        },
-        onerror: (error) => {
-          failedTracksRef.current.add(url);
-          console.error(`[AudioEngine] Error loading track on Deck ${deck}:`, error);
-        },
-      } as Tone.PlayerOptions);
-
-      // Connect player to processing chain
-      const channel = channels.current[deck];
-      const eq = eqs.current[deck];
-      const filter = filters.current[deck];
-      const pitchNode = pitchShift.current[deck];
-
-      if (!channel || !eq || !filter) {
-        throw new Error(`[AudioEngine] Deck ${deck} not initialized`);
-      }
-
-      // Disconnect old player if exists
-      if (players.current[deck]) {
-        players.current[deck]?.dispose();
-      }
-
-      // Connect: Player -> EQ -> Filter -> Channel
-      if (pitchNode) {
-        player.connect(pitchNode);
-      } else {
-        player.connect(eq);
-      }
-
-      // Calculate sync rate based on master BPM
-      const syncRate = masterBpm / bpm;
-      player.playbackRate = syncRate;
-      updateKeyLockComp(deck, syncRate);
-
-      players.current[deck] = player;
+      // Load track into DeckEngine
+      await deckEngine.loadTrack(url, bpm);
 
       // Update store with track data
       setDeckTrack(deck, {
@@ -628,7 +676,9 @@ export const useAudioEngine = (): AudioEngineControls => {
         artist: 'Unknown',
       });
 
-      console.log(`[AudioEngine] Track loaded on Deck ${deck}, sync rate: ${syncRate.toFixed(2)}`);
+      updateDeck(deck, { isLoaded: true });
+
+      console.log(`[AudioEngine Phase 1.1] Track loaded on Deck ${deck} via DeckEngine`);
 
       // Perform Essentia.js analysis if not skipped
       if (!skipAnalysis) {
@@ -636,49 +686,32 @@ export const useAudioEngine = (): AudioEngineControls => {
       }
     } catch (error) {
       console.error(`[AudioEngine] Failed to load track on Deck ${deck}:`, error);
+      failedTracksRef.current.add(url);
       throw error;
     }
   }, [
-     masterBpm,
      setDeckTrack,
-     analyzeTrack,
      performTrackAnalysis,
-     deckA,
-     deckB,
      updateDeck,
      init,
-     updateKeyLockComp,
      isInitialized,
      failedTracksRef,
-     channels,
-     eqs,
-     filters,
-     pitchShift,
      stemPlayers,
      stemMutes,
-     players,
+     engine,
    ]);
 
-  // Seek to position
+  // Phase 1.1: Seek to position using DeckEngine
   const seekTo = useCallback((deck: 'A' | 'B', timeInSeconds: number) => {
-    const stemSet = stemPlayers.current[deck];
-    const hasStems = Object.values(stemSet).some((player) => player !== null);
-    if (hasStems) {
-      Object.values(stemSet).forEach((player) => {
-        if (player?.loaded) {
-          player.seek(timeInSeconds);
-        }
-      });
-      console.log(`[AudioEngine] Deck ${deck} seeked to ${timeInSeconds}s (stems)`);
+    const deckEngine = engine.deckEngines.current[deck];
+    if (!deckEngine) {
+      console.warn(`[AudioEngine] DeckEngine for Deck ${deck} not initialized`);
       return;
     }
 
-    const player = players.current[deck];
-    if (player?.loaded) {
-      player.seek(timeInSeconds);
-      console.log(`[AudioEngine] Deck ${deck} seeked to ${timeInSeconds}s`);
-    }
-  }, [players, stemPlayers]);
+    deckEngine.seekTo(timeInSeconds);
+    console.log(`[AudioEngine Phase 1.1] Deck ${deck} seeked to ${timeInSeconds}s via DeckEngine`);
+  }, [engine]);
 
   const syncToBpm = useCallback((deck: 'A' | 'B') => {
     const currentDeck = deck === 'A' ? deckA : deckB;
@@ -1299,96 +1332,41 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [applyPlaybackRate, deckA, deckB, updateDeck, players, stemPlayers]);
 
-  // Play deck (handles both regular tracks and stems)
+  // Phase 1.1: Play deck using DeckEngine
   const play = useCallback((deck: 'A' | 'B') => {
-    const stateDeck = deck === 'A' ? deckA : deckB;
-    const player = players.current[deck];
-    const beatGrid = stateDeck.trackData?.beatGrid;
-
-    // If quantization possible, schedule to next beat using Tone.Transport
-    if (player?.loaded && beatGrid && beatGrid.length > 0) {
-      const secondsPerBeat = 60 / masterBpm;
-      const currentTime = Tone.getContext().transport.seconds;
-      const nextBeatOffset = secondsPerBeat - (currentTime % secondsPerBeat);
-      const startAt = Tone.now() + nextBeatOffset;
-      player.start(startAt);
-      console.log(`[AudioEngine] Deck ${deck} quantized start in ${nextBeatOffset.toFixed(3)}s`);
+    const deckEngine = engine.deckEngines.current[deck];
+    if (!deckEngine) {
+      console.warn(`[AudioEngine] DeckEngine for Deck ${deck} not initialized`);
       return;
     }
 
-    // Check if stems are loaded
-    const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
+    deckEngine.play();
+    console.log(`[AudioEngine Phase 1.1] Deck ${deck} playing via DeckEngine`);
+  }, [engine]);
 
-    if (hasStems) {
-      const startAt = Tone.getContext().transport.seconds + 0.05;
-      if (Tone.getContext().transport.state !== 'started') {
-        Tone.getContext().transport.start();
-      }
-      // Play all unmuted stems aligned to shared transport time
-      Object.entries(stemPlayers.current[deck]).forEach(([stemType, player]) => {
-        if (player?.loaded && !stemMutes.current[deck][stemType as keyof typeof stemMutes.current['A']]) {
-          player.stop(); // clear any pending
-          player.start(startAt);
-        }
-      });
-      console.log(`[AudioEngine] Deck ${deck} playing (stems)`);
-    } else {
-      // Fallback to main player
-      const player = players.current[deck];
-      if (player?.loaded) {
-        player.start();
-        console.log(`[AudioEngine] Deck ${deck} playing`);
-      } else {
-        console.warn(`[AudioEngine] Cannot play Deck ${deck} - track not loaded`);
-      }
-    }
-  }, [deckA, deckB, masterBpm, players, stemPlayers, stemMutes]);
-
-  // Pause deck (handles both regular tracks and stems)
+  // Phase 1.1: Pause deck using DeckEngine
   const pause = useCallback((deck: 'A' | 'B') => {
-    // Check if stems are loaded
-    const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
-
-    if (hasStems) {
-      // Stop all stem players
-      Object.values(stemPlayers.current[deck]).forEach(player => {
-        player?.stop(Tone.getContext().transport.seconds);
-      });
-      console.log(`[AudioEngine] Deck ${deck} paused (stems)`);
+    const deckEngine = engine.deckEngines.current[deck];
+    if (!deckEngine) {
+      console.warn(`[AudioEngine] DeckEngine for Deck ${deck} not initialized`);
       return;
     }
 
-    // Fallback to main player
-    const player = players.current[deck];
-    if (player?.loaded) {
-      player.stop(Tone.getContext().transport.seconds);
-      console.log(`[AudioEngine] Deck ${deck} paused`);
-    }
-  }, [players, stemPlayers]);
+    deckEngine.pause();
+    console.log(`[AudioEngine Phase 1.1] Deck ${deck} paused via DeckEngine`);
+  }, [engine]);
 
-  // Stop deck (handles both regular tracks and stems)
+  // Phase 1.1: Stop deck using DeckEngine
   const stop = useCallback((deck: 'A' | 'B') => {
-    // Check if stems are loaded
-    const hasStems = Object.values(stemPlayers.current[deck]).some(p => p !== null);
-
-    if (hasStems) {
-      // Stop and seek all stem players
-      Object.values(stemPlayers.current[deck]).forEach(player => {
-        player?.stop(Tone.getContext().transport.seconds);
-        player.seek(0);
-      });
-      console.log(`[AudioEngine] Deck ${deck} stopped (stems)`);
+    const deckEngine = engine.deckEngines.current[deck];
+    if (!deckEngine) {
+      console.warn(`[AudioEngine] DeckEngine for Deck ${deck} not initialized`);
       return;
     }
 
-    // Fallback to main player
-    const player = players.current[deck];
-    if (player) {
-      player.stop();
-      player.seek(0);
-      console.log(`[AudioEngine] Deck ${deck} stopped`);
-    }
-  }, [players, stemPlayers]);
+    deckEngine.stop();
+    console.log(`[AudioEngine Phase 1.1] Deck ${deck} stopped via DeckEngine`);
+  }, [engine]);
 
   // Get deck channel for level metering
   const getDeckChannel = (deck: 'A' | 'B') => {

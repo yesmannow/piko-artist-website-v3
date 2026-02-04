@@ -3,7 +3,6 @@ import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed, Inter, Lexend 
 import "./globals.css";
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import { DevResetButton } from "@/components/DevResetButton";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -87,7 +86,6 @@ export default function RootLayout({
       >
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />
-        <DevResetButton />
         {children}
       </body>
     </html>
