@@ -7,7 +7,7 @@ import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { useComplexityMode } from '@/contexts/ComplexityModeContext';
 import { useGestures } from "@/hooks/device/useGestures";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useMediaQuery } from "@/hooks/ui/useMediaQuery";
 import { useOrientation } from "@/hooks/device/useOrientation";
 import { StudioGrid } from "./StudioGrid";
 import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";

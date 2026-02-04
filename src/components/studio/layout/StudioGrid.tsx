@@ -47,7 +47,7 @@ import { DeckWaveformWS } from "@/components/studio/deck/DeckWaveformWS"; // Pha
 import { PerformanceRow } from "./PerformanceRow";
 import { LibraryRow } from "./LibraryRow";
 import { useStudioStore } from "@/store/useStudioStore";
-import { useMobileLandscape } from "@/hooks/useMobileLandscape";
+import { useMobileLandscape } from "@/hooks/ui/useMobileLandscape";
 import { MobileLandscapeWorkstation } from "./MobileLandscapeWorkstation";
 import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";
 

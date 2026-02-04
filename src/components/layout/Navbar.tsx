@@ -7,9 +7,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useLenis } from "lenis/react";
 import { useHaptic } from "@/hooks/device/useHaptic";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
-import { useScrollDirection } from "@/hooks/useScrollDirection";
-import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useBodyScrollLock } from "@/hooks/ui/useBodyScrollLock";
+import { useScrollDirection } from "@/hooks/ui/useScrollDirection";
+import { useFocusTrap } from "@/hooks/ui/useFocusTrap";
 
 const navItems = [
   { name: "Home", path: "/", anchor: "home" },

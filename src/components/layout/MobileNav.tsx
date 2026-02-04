@@ -8,8 +8,8 @@ import { useHaptic } from "@/hooks/device/useHaptic";
 import { useState, useEffect, useRef } from "react";
 import Logo from "@/components/branding/Logo";
 import { useAudio } from "@/context/AudioContext";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
-import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useBodyScrollLock } from "@/hooks/ui/useBodyScrollLock";
+import { useFocusTrap } from "@/hooks/ui/useFocusTrap";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
