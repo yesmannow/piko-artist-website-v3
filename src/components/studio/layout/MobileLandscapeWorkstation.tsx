@@ -11,8 +11,8 @@
  * Phase S6: Migrated to DeckWaveformWS for consistency with desktop
  */
 
-import { DeckWaveformWS } from "@/components/studio/ui/DeckWaveformWS";
-import { Deck } from "@/components/studio/ui/Deck";
+import { DeckWaveformWS } from "@/components/studio/deck/DeckWaveformWS";
+import { Deck } from "@/components/studio/deck/Deck";
 import { LibraryRow } from "./LibraryRow";
 import { MixerCenter } from "./MixerCenter";
 import { useStudioStore } from "@/store/useStudioStore";

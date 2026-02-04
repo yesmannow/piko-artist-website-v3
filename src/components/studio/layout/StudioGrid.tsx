@@ -43,7 +43,7 @@
 
 import type * as Tone from "tone";
 import { useState, useEffect } from "react";
-import { DeckWaveformWS } from "@/components/studio/ui/DeckWaveformWS"; // Phase 6: WaveSurfer integration
+import { DeckWaveformWS } from "@/components/studio/deck/DeckWaveformWS"; // Phase 6: WaveSurfer integration
 import { PerformanceRow } from "./PerformanceRow";
 import { LibraryRow } from "./LibraryRow";
 import { useStudioStore } from "@/store/useStudioStore";

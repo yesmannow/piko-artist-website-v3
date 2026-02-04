@@ -12,7 +12,7 @@ import { useOrientation } from "@/hooks/useOrientation";
 import { StudioGrid } from "./StudioGrid";
 import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";
 import { MobileLandscapeWorkstation } from "./MobileLandscapeWorkstation";
-import { Deck } from "@/components/studio/ui/Deck";
+import { Deck } from "@/components/studio/deck/Deck";
 import { MainWaveform } from "@/components/studio/ui/MainWaveform";
 import { StemMeters } from "@/components/studio/ui/StemMeters";
 import { StemControls } from "@/components/studio/ui/StemControls";

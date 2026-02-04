@@ -15,7 +15,7 @@
 
 import { Crossfader } from "@/components/studio/ui/Crossfader";
 import { LevelMeter } from "@/components/studio/ui/LevelMeter";
-import { DeckEQ } from "@/components/studio/ui/DeckEQ";
+import { DeckEQ } from "@/components/studio/deck/DeckEQ";
 import { ChannelFader } from "@/components/studio/ui/ChannelFader";
 
 export function MixerCenter() {

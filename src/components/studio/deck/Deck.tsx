@@ -14,12 +14,12 @@ import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyani
 import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
 import { db } from '@/lib/db';
 import { Loader2 } from 'lucide-react';
-import { RecommendationsPopover } from './RecommendationsPopover';
-import { StemRack } from './StemRack';
-import { StemPerformancePads } from './StemPerformancePads';
+import { RecommendationsPopover } from '../ui/RecommendationsPopover';
+import { StemRack } from '../ui/StemRack';
+import { StemPerformancePads } from '../ui/StemPerformancePads';
 import { JogWheel } from './JogWheel';
-import { WaveformMini } from './WaveformMini';
-import { EnergyIndicator } from './EnergyIndicator';
+import { WaveformMini } from '../ui/WaveformMini';
+import { EnergyIndicator } from '../ui/EnergyIndicator';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';
@@ -31,8 +31,8 @@ import { useDeckWaveformSync } from '@/hooks/deck/useDeckWaveformSync';
 import { useDeckStems } from '@/hooks/deck/useDeckStems';
 
 // Phase S3: Extracted components
-import { DeckHeader } from './deck/DeckHeader';
-import { DeckTransportControls } from './deck/DeckTransportControls';
+import { DeckHeader } from './DeckHeader';
+import { DeckTransportControls } from './DeckTransportControls';
 
 interface DeckProps {
   readonly deckId: 'A' | 'B';
@@ -51,14 +51,14 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const setKeyLock = useStore((state) => state.setKeyLock);
   const focusedDeckId = useStudioStore((state) => state.focusedDeckId);
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
-  
+
   // Phase 3.3: Stem Performance Pads
   const mutedStems = useStudioStore((state) => state.mutedStems[deckId]);
   const soloStem = useStudioStore((state) => state.soloStem[deckId]);
   const toggleStemMute = useStudioStore((state) => state.toggleStemMute);
   const activateSoloStem = useStudioStore((state) => state.activateSoloStem);
   const clearSolo = useStudioStore((state) => state.clearSolo);
-  
+
   const { getRecommendations, loading: recommendationsLoading } = useCyaniteRecommendations();
   const { analyzeIfNeeded } = useSmartTrackAnalysis();
 

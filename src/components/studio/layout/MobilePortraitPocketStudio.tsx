@@ -12,8 +12,8 @@
  */
 
 import { useState } from "react";
-import { DeckWaveformWS } from "@/components/studio/ui/DeckWaveformWS";
-import { Deck } from "@/components/studio/ui/Deck";
+import { DeckWaveformWS } from "@/components/studio/deck/DeckWaveformWS";
+import { Deck } from "@/components/studio/deck/Deck";
 import { TrackLibrary } from "@/components/studio/ui/TrackLibrary";
 import { MixerCenter } from "./MixerCenter";
 

@@ -14,9 +14,9 @@
  * Phase 3: FX moved to deck-level controls (removed master FX rack)
  */
 
-import { DeckControls } from "@/components/studio/ui/DeckControls";
+import { DeckControls } from "@/components/studio/deck/DeckControls";
 import { DeckFXRack } from "@/components/studio/core/DeckFXRack";
-import { DeckDropZone } from "@/components/studio/ui/DeckDropZone";
+import { DeckDropZone } from "@/components/studio/deck/DeckDropZone";
 import { MixerCenter } from "./MixerCenter";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
 import { useStore } from "@/store/useStore";

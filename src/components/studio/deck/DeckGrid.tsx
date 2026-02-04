@@ -8,10 +8,10 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Deck } from './Deck';
-import { Crossfader } from './Crossfader';
+import { Crossfader } from '../ui/Crossfader';
 import { Knob } from '@/components/studio/ui/controls/Knob';
 import { Fader } from '@/components/studio/ui/controls/Fader';
-import { LevelMeter } from './LevelMeter';
+import { LevelMeter } from '../ui/LevelMeter';
 import { useStore } from '@/store/useStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useExporter } from '@/hooks/useExporter';
