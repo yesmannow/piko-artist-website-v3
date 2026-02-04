@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
-import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyaniteRecommendations';
+import { useCyaniteRecommendations, type Recommendation } from '@/hooks/integrations/useCyaniteRecommendations';
 import { useSmartTrackAnalysis } from '@/hooks/tracks/useSmartTrackAnalysis';
 import { db } from '@/lib/db';
 import { Loader2 } from 'lucide-react';

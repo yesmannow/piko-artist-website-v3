@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Activity, ArrowLeft, Cpu, Music2, Wifi, WifiOff } from "lucide-react";
-import { useMidiBridge } from "@/hooks/useMidiBridge";
+import { useMidiBridge } from "@/hooks/integrations/useMidiBridge";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { useState, useEffect, useRef } from "react";
