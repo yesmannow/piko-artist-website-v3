@@ -1,20 +1,34 @@
 "use client";
 
 /**
- * StudioGrid - 2026 Iron-Clad Single-Viewport Workstation
+ * StudioGrid - Phase 2: Desktop Pro "Mixer-First" Workstation
  *
  * Professional DJ mixer layout based on CDJ/DJM setup:
- * - Desktop (md+): Fixed 3-row layout with zero scroll
- *   - Row 1 (Top): Deck Waveforms & Track Info
- *   - Row 2 (Middle): Performance Controls & Mixer (flex-1 expansion)
- *   - Row 3 (Bottom): Track Library & Browser
  *
- * - Mobile (<md): Tab-based view switcher
- *   - DECKS | MIXER | LIBRARY navigation tabs
- *   - Single active view at a time
+ * DESKTOP (≥768px / Pro Mode):
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │ Row 1: Dual Waveforms + Rhythm Stripe (beatmatching focus) │ Fixed 140px
+ * ├─────────────────────────────────────────────────────────────┤
+ * │ Row 2: Deck A | Mixer Center | Deck B (hardware layout)    │ Flex-1
+ * ├─────────────────────────────────────────────────────────────┤
+ * │ Row 3: Library (search + load + drag/drop)                 │ Fixed 280px or 48px collapsed
+ * └─────────────────────────────────────────────────────────────┘
  *
- * Design System: Expert Desaturated Palette with 8-point grid spacing
- * Constraint: ZERO vertical scrolling on desktop (1080p+)
+ * KEY FEATURES:
+ * - Zero vertical scrolling (locked viewport)
+ * - Mixer always visible and centered
+ * - Symmetrical deck layout (muscle memory)
+ * - Library scrolls internally (not page)
+ *
+ * MOBILE (<768px / Pocket Studio):
+ * - Tab-based view switcher (DECKS | MIXER | LIBRARY)
+ * - Single active view at a time
+ * - Existing behavior preserved
+ *
+ * Design Philosophy: djay/VirtualDJ inspired
+ * - Ergonomics over gimmicks
+ * - View modes / progressive disclosure
+ * - Modular architecture (skins/add-ons)
  */
 
 import type * as Tone from "tone";
@@ -44,36 +58,47 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
 
   return (
     <>
-      {/* DESKTOP: Fixed 3-Row Workstation (md+) - ZERO SCROLL */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          DESKTOP PRO: Fixed 3-Row Workstation (md+) - ZERO PAGE SCROLL
+          ═══════════════════════════════════════════════════════════════════ */}
       <div
-        className="hidden md:flex fixed inset-0 h-screen w-screen overflow-hidden flex-col bg-(--bg-primary)"
+        className="hidden md:grid fixed inset-0 h-[100dvh] w-screen overflow-hidden bg-gradient-to-b from-[#151530] to-[#050510]"
+        style={{
+          gridTemplateRows: '140px 1fr auto',  // Row1: Fixed | Row2: Flex | Row3: Auto (height set on wrapper)
+        }}
       >
-        {/* Row 1: Deck Waveforms (Fixed Height) */}
+        {/* ─────────────────────────────────────────────────────────────────
+            ROW 1: WAVEFORMS & RHYTHM STRIPE (Beatmatching Focus)
+            ───────────────────────────────────────────────────────────────── */}
         <section
-          className="relative flex gap-4 p-4 border-b border-white/5 h-35 min-h-35"
+          className="flex gap-3 p-3 border-b border-white/5 min-h-0 overflow-hidden"
           aria-label="Deck Waveforms"
         >
           {/* Deck A Waveform */}
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary) px-2">
+          <div className="flex-1 flex flex-col gap-2 min-w-0">
+            <div className="text-xs font-mono uppercase tracking-wider text-white/50 px-2">
               Deck A
             </div>
-            <DeckWaveform deckId="A" />
+            <div className="flex-1 min-h-0">
+              <DeckWaveform deckId="A" />
+            </div>
           </div>
 
           {/* Deck B Waveform */}
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary) px-2">
+          <div className="flex-1 flex flex-col gap-2 min-w-0">
+            <div className="text-xs font-mono uppercase tracking-wider text-white/50 px-2">
               Deck B
             </div>
-            <DeckWaveform deckId="B" />
+            <div className="flex-1 min-h-0">
+              <DeckWaveform deckId="B" />
+            </div>
           </div>
         </section>
 
-        {/* Global Transport / Progress Strip (Desktop Pro Workstation) */}
-        <div className="hidden md:block px-4 py-2 border-b border-white/5 bg-(--bg-secondary)">
+        {/* Global Transport / Progress Strip (Subtle, Non-Intrusive) */}
+        <div className="hidden md:block px-3 py-2 border-b border-white/5 bg-black/20">
           <div
-            className="relative h-2 rounded bg-white/10 overflow-hidden border border-white/10"
+            className="relative h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/10"
             role="progressbar"
             aria-label="Master progress"
             aria-valuenow={Math.round(progressClamped * 100)}
@@ -82,43 +107,53 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
           >
             {/* Progress fill */}
             <div
-              className="h-full bg-(--color-accent) transition-[width] duration-100 ease-linear"
+              className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-[width] duration-100 ease-linear"
               style={{ width: `${progressClamped * 100}%` }}
             />
             {/* Playhead marker */}
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-white/80 shadow-[0_0_4px_rgba(255,255,255,0.5)]"
+              className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.6)]"
               style={{ left: `${progressClamped * 100}%` }}
             />
           </div>
         </div>
 
-        {/* Row 2: Performance & Mixer (Flex-1 - Expands to fill) */}
-        <div className="flex-1 overflow-hidden">
+        {/* ─────────────────────────────────────────────────────────────────
+            ROW 2: PERFORMANCE CONTROLS (Deck A | Mixer Center | Deck B)
+            ───────────────────────────────────────────────────────────────── */}
+        <div className="min-h-0 overflow-hidden">
           <PerformanceRow masterBus={masterBus} masterPostFx={masterPostFx} />
         </div>
 
-        {/* Row 3: Library & Browser (Fixed or Collapsed) */}
-        <div className={libraryOpen ? "h-75 min-h-75" : "h-12 min-h-12"}>
+        {/* ─────────────────────────────────────────────────────────────────
+            ROW 3: LIBRARY & BROWSER (Collapsible with Smooth Transition)
+            ───────────────────────────────────────────────────────────────── */}
+        <div
+          className={`min-h-0 overflow-hidden transition-[height] duration-200 ease-out ${
+            libraryOpen ? 'h-[280px]' : 'h-[48px]'
+          }`}
+        >
           <LibraryRow />
         </div>
       </div>
 
-      {/* MOBILE: Tab-Based View Switcher (<md) */}
-      <div className="flex md:hidden flex-col h-screen overflow-hidden bg-(--bg-primary)">
+      {/* ═══════════════════════════════════════════════════════════════════
+          MOBILE: Tab-Based View Switcher (<md) - POCKET STUDIO MODE
+          ═══════════════════════════════════════════════════════════════════ */}
+      <div className="flex md:hidden flex-col h-screen overflow-hidden bg-gradient-to-b from-[#151530] to-[#050510]">
         {/* Active View Content */}
         <div className="flex-1 overflow-hidden">
           {mobileTab === 'DECKS' && (
             <div className="h-full overflow-y-auto p-4 space-y-4">
               <div className="space-y-2">
-                <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary)">
+                <div className="text-xs font-mono uppercase tracking-wider text-white/50">
                   Deck A
                 </div>
                 <DeckWaveform deckId="A" />
                 <DeckControls deckId="A" />
               </div>
               <div className="space-y-2">
-                <div className="text-xs font-mono uppercase tracking-wider text-(--text-secondary)">
+                <div className="text-xs font-mono uppercase tracking-wider text-white/50">
                   Deck B
                 </div>
                 <DeckWaveform deckId="B" />
@@ -144,13 +179,13 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
         </div>
 
         {/* Bottom Navigation Tabs */}
-        <nav className="h-16 min-h-16 border-t border-white/10 flex justify-around items-center bg-(--bg-secondary)">
+        <nav className="h-16 min-h-16 border-t border-white/10 flex justify-around items-center bg-black/40 backdrop-blur-sm">
           <button
             onClick={() => setMobileTab('DECKS')}
             className={`flex-1 h-full flex items-center justify-center text-xs font-mono uppercase tracking-wider transition-colors ${
               mobileTab === 'DECKS'
-                ? 'text-(--accent-color) bg-white/5'
-                : 'text-(--text-secondary) hover:text-(--text-primary)'
+                ? 'text-purple-400 bg-white/5 border-t-2 border-purple-400'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
             Decks
@@ -159,8 +194,8 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
             onClick={() => setMobileTab('MIXER')}
             className={`flex-1 h-full flex items-center justify-center text-xs font-mono uppercase tracking-wider transition-colors ${
               mobileTab === 'MIXER'
-                ? 'text-(--accent-color) bg-white/5'
-                : 'text-(--text-secondary) hover:text-(--text-primary)'
+                ? 'text-purple-400 bg-white/5 border-t-2 border-purple-400'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
             Mixer
@@ -169,8 +204,8 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
             onClick={() => setMobileTab('LIBRARY')}
             className={`flex-1 h-full flex items-center justify-center text-xs font-mono uppercase tracking-wider transition-colors ${
               mobileTab === 'LIBRARY'
-                ? 'text-(--accent-color) bg-white/5'
-                : 'text-(--text-secondary) hover:text-(--text-primary)'
+                ? 'text-purple-400 bg-white/5 border-t-2 border-purple-400'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
             Library
@@ -180,3 +215,4 @@ export function StudioGrid({ masterBus, masterPostFx, masterProgress }: Readonly
     </>
   );
 }
+

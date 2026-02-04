@@ -31,12 +31,13 @@ export function LibraryRow() {
     return (
       <button
         type="button"
-        className="w-full flex items-center justify-center border-t border-white/5 bg-(--bg-secondary) cursor-pointer hover:bg-(--bg-tertiary) transition-colors"
+        className="w-full h-full flex items-center justify-center border-t border-white/5 bg-black/20 hover:bg-black/30 transition-colors cursor-pointer"
         onClick={handleOpenLibrary}
         onKeyDown={handleKeyDown}
         aria-label="Open track library"
+        aria-expanded={false}
       >
-        <div className="text-xs font-mono uppercase tracking-[0.3em] text-(--text-secondary)">
+        <div className="text-xs font-mono uppercase tracking-[0.3em] text-white/50 hover:text-white/70 transition-colors">
           Click to open library
         </div>
       </button>
@@ -45,17 +46,18 @@ export function LibraryRow() {
 
   return (
     <section
-      className="flex flex-col min-h-0 border-t border-white/5 bg-(--bg-secondary) overflow-hidden h-full"
+      className="flex flex-col min-h-0 border-t border-white/5 bg-black/20 overflow-hidden h-full"
       aria-label="Track Library"
     >
       {/* Library Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
-        <h2 className="text-xs font-mono uppercase tracking-[0.3em] text-(--text-secondary)">
+        <h2 className="text-xs font-mono uppercase tracking-[0.3em] text-white/50">
           Track Library
         </h2>
         <button
           onClick={() => setLibraryOpen(false)}
-          className="text-xs font-mono uppercase tracking-wider text-(--text-secondary) hover:text-(--text-primary) transition-colors px-2 py-1 rounded border border-white/5 hover:border-white/10"
+          className="text-xs font-mono uppercase tracking-wider text-white/50 hover:text-white/90 transition-colors px-2 py-1 rounded border border-white/5 hover:border-white/10"
+          aria-label="Close library"
         >
           Close
         </button>

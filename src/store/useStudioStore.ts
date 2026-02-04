@@ -144,9 +144,9 @@ export const useStudioStore = create<StudioState>()(
     fxPanelOpen: false,
     settingsOpen: false,
     performanceMode: 'balanced',
-    show3D: true,
-    showStemWaveforms: true,
-    autoStem: false,
+    show3D: false, // Clean Pro default: visuals opt-in
+    showStemWaveforms: false, // Clean Pro default: reduce visual clutter
+    autoStem: false, // Clean Pro default: stems on-demand only
     stemGenerationRequest: null,
     stemsCache: {},
     onboardingStep: 'welcome',

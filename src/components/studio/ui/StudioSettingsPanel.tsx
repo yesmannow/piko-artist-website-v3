@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 
 const ONBOARDING_STORAGE_KEY = "piko-studio-onboarding-seen";
@@ -57,6 +57,9 @@ export function StudioSettingsPanel() {
   const setAutoStem = useStudioStore((state) => state.setAutoStem);
   const startOnboarding = useStudioStore((state) => state.startOnboarding);
 
+  // Advanced section collapsed by default (Clean Pro approach)
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   useEffect(() => {
     if (!settingsOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
@@ -85,67 +88,107 @@ export function StudioSettingsPanel() {
           </button>
         </div>
 
-        <label className="studio-setting-row">
-          <span>3D visuals</span>
-          <input type="checkbox" checked={show3D} onChange={(e) => setShow3D(e.target.checked)} />
-        </label>
+        {/* MIXING SECTION - Core controls, always visible */}
+        <div className="studio-settings-section">
+          <h4 className="studio-settings-section-title">Mixing</h4>
 
-        <label className="studio-setting-row">
-          <span>Per-stem waveforms</span>
-          <input
-            type="checkbox"
-            checked={showStemWaveforms}
-            onChange={(e) => setShowStemWaveforms(e.target.checked)}
-          />
-        </label>
+          <label className="studio-setting-row">
+            <span>Performance mode</span>
+            <select value={performanceMode} onChange={(e) => setPerformanceMode(e.target.value as typeof performanceMode)}>
+              <option value="high">High</option>
+              <option value="balanced">Balanced</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
 
-        <label className="studio-setting-row">
-          <span>Auto-generate stems</span>
-          <input type="checkbox" checked={autoStem} onChange={(e) => setAutoStem(e.target.checked)} />
-        </label>
-
-        <label className="studio-setting-row">
-          <span>Performance mode</span>
-          <select value={performanceMode} onChange={(e) => setPerformanceMode(e.target.value as typeof performanceMode)}>
-            <option value="high">High</option>
-            <option value="balanced">Balanced</option>
-            <option value="low">Low</option>
-          </select>
-        </label>
-
-        <div className="studio-setting-row">
-          <span>Onboarding tour</span>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-              }
-              startOnboarding();
-              setSettingsOpen(false);
-            }}
-          >
-            Restart
-          </button>
+          <p className="studio-settings-hint">
+            Piko Studio defaults to "Clean Pro" mode for optimal performance and clarity.
+          </p>
         </div>
 
-        <div className="studio-setting-row">
-          <span>Reset App</span>
+        {/* ADVANCED / VISUALS SECTION - Collapsed by default */}
+        <div className="studio-settings-section">
           <button
             type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              if (confirm("Clear all caches and reload? This will help fix stale content issues.")) {
-                resetApp();
-              }
-            }}
-            title="Unregister service workers, clear caches, and reload"
+            className="studio-settings-section-toggle"
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+            aria-expanded={advancedOpen}
           >
-            Reset
+            <span className="studio-settings-section-title">Advanced / Visuals</span>
+            <span className="studio-settings-section-icon">{advancedOpen ? '▼' : '▶'}</span>
           </button>
+
+          {advancedOpen && (
+            <div className="studio-settings-section-content">
+              <p className="studio-settings-hint">
+                These features add visual richness but increase CPU/GPU load. Enable only when needed.
+              </p>
+
+              <label className="studio-setting-row">
+                <span>3D visuals</span>
+                <input type="checkbox" checked={show3D} onChange={(e) => setShow3D(e.target.checked)} />
+              </label>
+
+              <label className="studio-setting-row">
+                <span>Per-stem waveforms</span>
+                <input
+                  type="checkbox"
+                  checked={showStemWaveforms}
+                  onChange={(e) => setShowStemWaveforms(e.target.checked)}
+                />
+              </label>
+
+              <label className="studio-setting-row">
+                <span>Auto-generate stems</span>
+                <input type="checkbox" checked={autoStem} onChange={(e) => setAutoStem(e.target.checked)} />
+              </label>
+
+              <p className="studio-settings-hint">
+                💡 Auto-stems uses significant CPU. Enable when performing stem-heavy sets.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* SYSTEM SECTION - Utilities */}
+        <div className="studio-settings-section">
+          <h4 className="studio-settings-section-title">System</h4>
+
+          <div className="studio-setting-row">
+            <span>Onboarding tour</span>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+                }
+                startOnboarding();
+                setSettingsOpen(false);
+              }}
+            >
+              Restart
+            </button>
+          </div>
+
+          <div className="studio-setting-row">
+            <span>Reset App</span>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                if (confirm("Clear all caches and reload? This will help fix stale content issues.")) {
+                  resetApp();
+                }
+              }}
+              title="Unregister service workers, clear caches, and reload"
+            >
+              Reset
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
