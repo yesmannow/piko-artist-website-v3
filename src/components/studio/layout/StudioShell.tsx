@@ -12,8 +12,8 @@ import { useEffect, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { ComplexityModeProvider } from "@/contexts/ComplexityModeContext";
-import { usePerformanceHeuristics } from "@/hooks/usePerformanceHeuristics";
-import { usePerformanceMode } from "@/hooks/usePerformanceMode";
+import { usePerformanceHeuristics } from "@/hooks/studio/usePerformanceHeuristics";
+import { usePerformanceMode } from "@/hooks/studio/usePerformanceMode";
 
 // Lazy-load heavy modules to reduce first-load JS
 const Scene3D = dynamic(
