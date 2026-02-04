@@ -31,7 +31,7 @@ export function usePerformanceHeuristics() {
     if (lastTimeRef.current === 0) {
       lastTimeRef.current = performance.now();
     }
-    
+
     const measurePerformance = () => {
       const now = performance.now();
       const deltaTime = now - lastTimeRef.current;

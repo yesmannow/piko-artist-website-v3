@@ -96,8 +96,8 @@ const itemsWithIds = rawItems.map((item, i) => ({ ...item, _key: `${item.name}-$
 
 **After:**
 ```tsx
-<iframe 
-  src="https://youtube.com/embed/..." 
+<iframe
+  src="https://youtube.com/embed/..."
   title="Piko Official Music Video - Track Name"
 />
 ```
@@ -129,7 +129,7 @@ function handleSubmit(data) {
   if (!data?.email) return;
   if (!validateEmail(data.email)) return;
   if (!data.terms) return;
-  
+
   processValidSubmission(data);
 }
 

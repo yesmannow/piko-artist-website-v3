@@ -142,7 +142,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                 })
                 .catch((error) => {
                   if (process.env.NODE_ENV === "development") {
-                     
+
                     console.error("Error playing audio:", error);
                   }
                   setIsPlaying(false);
