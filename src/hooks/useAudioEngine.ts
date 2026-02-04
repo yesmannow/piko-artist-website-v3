@@ -15,6 +15,8 @@ import { useStore } from '../store/useStore';
 import { useStudioStore } from '../store/useStudioStore';
 import { useEssentiaAnalysis } from './useEssentiaAnalysis';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
+import { applyCrossfaderCurve, normalizeCrossfaderValue } from '@/audio/mixer/crossfaderCurves';
+import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2
 
 type PlaybackRateParam = Tone.Param<"number"> & {
   value?: number;
@@ -62,6 +64,10 @@ export interface AudioEngineControls {
   getTransportSeconds: () => number;
   getDeckChannel: (deck: 'A' | 'B') => Tone.Channel | null;
   getMasterChannel: () => Tone.Gain | null;
+  // Phase S9: Loop Controls
+  setLoopPoints: (deck: 'A' | 'B', startSec: number, endSec: number) => void;
+  clearLoopPoints: (deck: 'A' | 'B') => void;
+  enableLoop: (deck: 'A' | 'B', enabled: boolean) => void;
 }
 
 type StemGainNodes = {
@@ -459,13 +465,29 @@ export const useAudioEngine = (): AudioEngineControls => {
     reverbSend,
   ]);
 
-  // Equal Power Crossfade: Tone.CrossFade uses cosine/sine curves for smooth transitions
+  // Phase S7: Crossfade with configurable curves
+  // Note: Tone.CrossFade has built-in equal-power curve.
+  // For custom curves, we adjust the input position to achieve similar feel.
   const updateCrossfade = useCallback((value: number) => {
     if (!crossFade.current) return;
+
     const clamped = Math.max(-1, Math.min(1, value));
-    const normalized = (clamped + 1) / 2;
+    const normalized = normalizeCrossfaderValue(clamped);
+
+    // Get current mixer settings from store
+    const mixerSettings = useStore.getState().mixerSettings;
+
+    // Map normalized position through selected curve
+    // Then extract the effective fade position for Tone.CrossFade
+    const { gainA, gainB } = applyCrossfaderCurve(normalized, mixerSettings.crossfaderCurve);
+
+    // Calculate effective fade value for Tone.CrossFade
+    // This is an approximation that maps custom curves to Tone's internal curve
+    const totalGain = gainA + gainB + 0.0001; // Avoid div by zero
+    const effectiveFade = gainB / totalGain;
+
     if (crossFade.current.fade && typeof crossFade.current.fade.rampTo === 'function') {
-      crossFade.current.fade.rampTo(normalized, 0.05);
+      crossFade.current.fade.rampTo(effectiveFade, 0.05);
     }
   }, [crossFade]);
 
@@ -599,6 +621,7 @@ export const useAudioEngine = (): AudioEngineControls => {
 
       // Update store with track data
       setDeckTrack(deck, {
+        trackKey: deriveTrackKey({ url }), // Phase S11.2: Canonical track identity
         url,
         bpm,
         title: 'Loading...',
@@ -800,18 +823,41 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, [channels]);
 
   // Set deck EQ
+  // Phase S7: Set Deck EQ with isolator mode support
   const setDeckEQ = useCallback((deck: 'A' | 'B', eq: { low: number; mid: number; high: number }) => {
     const eqNode = eqs.current[deck];
-    if (eqNode && eqNode.low && eqNode.mid && eqNode.high) {
-      if (typeof eqNode.low.rampTo === 'function') {
-        eqNode.low.rampTo(eq.low, 0.05);
-        eqNode.mid.rampTo(eq.mid, 0.05);
-        eqNode.high.rampTo(eq.high, 0.05);
+    if (!eqNode || !eqNode.low || !eqNode.mid || !eqNode.high) return;
+
+    // Get current mixer settings from store
+    const mixerSettings = useStore.getState().mixerSettings;
+    const isIsolator = mixerSettings.eqType === 'isolator';
+
+    // Map EQ values based on type
+    const mapEQ = (value: number): number => {
+      if (!isIsolator) return value; // Classic mode: pass through
+
+      // Isolator mode: aggressive kill curve
+      if (value < -20) {
+        return -60; // Kill zone (-inf dB effectively)
+      } else if (value < -10) {
+        return value * 2; // Steeper slope in lower range
       } else {
-        eqNode.low.value = eq.low;
-        eqNode.mid.value = eq.mid;
-        eqNode.high.value = eq.high;
+        return value; // Normal boost range
       }
+    };
+
+    const lowDb = mapEQ(eq.low);
+    const midDb = mapEQ(eq.mid);
+    const highDb = mapEQ(eq.high);
+
+    if (typeof eqNode.low.rampTo === 'function') {
+      eqNode.low.rampTo(lowDb, 0.05);
+      eqNode.mid.rampTo(midDb, 0.05);
+      eqNode.high.rampTo(highDb, 0.05);
+    } else {
+      eqNode.low.value = lowDb;
+      eqNode.mid.value = midDb;
+      eqNode.high.value = highDb;
     }
   }, [eqs]);
 
@@ -1354,6 +1400,39 @@ export const useAudioEngine = (): AudioEngineControls => {
     return masterBus.current;
   }, [masterBus]);
 
+  // Phase S9: Loop Controls
+  const setLoopPoints = useCallback((deck: 'A' | 'B', startSec: number, endSec: number) => {
+    const player = players.current[deck];
+    if (!player) {
+      console.warn(`[AudioEngine] No player for deck ${deck}`);
+      return;
+    }
+
+    // Set loop boundaries on Tone.Player
+    player.loopStart = startSec;
+    player.loopEnd = endSec;
+    console.log(`[AudioEngine] Deck ${deck} loop set: ${startSec.toFixed(2)}s - ${endSec.toFixed(2)}s`);
+  }, [players]);
+
+  const clearLoopPoints = useCallback((deck: 'A' | 'B') => {
+    const player = players.current[deck];
+    if (!player) return;
+
+    player.loop = false;
+    console.log(`[AudioEngine] Deck ${deck} loop cleared`);
+  }, [players]);
+
+  const enableLoop = useCallback((deck: 'A' | 'B', enabled: boolean) => {
+    const player = players.current[deck];
+    if (!player) {
+      console.warn(`[AudioEngine] No player for deck ${deck}`);
+      return;
+    }
+
+    player.loop = enabled;
+    console.log(`[AudioEngine] Deck ${deck} loop ${enabled ? 'enabled' : 'disabled'}`);
+  }, [players]);
+
   return {
     init,
     isReady,
@@ -1385,5 +1464,9 @@ export const useAudioEngine = (): AudioEngineControls => {
     triggerTapeStop,
     getDeckChannel,
     getMasterChannel,
+    // Phase S9: Loop Controls
+    setLoopPoints,
+    clearLoopPoints,
+    enableLoop,
   };
 };

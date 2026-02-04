@@ -1,51 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 
 /**
  * useOrientation - Detects device orientation (portrait vs landscape)
  *
  * Returns true for landscape, false for portrait.
- * Uses window.matchMedia for reliable detection across devices.
+ * Uses useSyncExternalStore for proper SSR handling.
  *
  * @returns {boolean} isLandscape - true if landscape, false if portrait
  */
 export function useOrientation(): boolean {
-  const [isLandscape, setIsLandscape] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const subscribe = (callback: () => void) => {
+    if (globalThis.window === undefined) return () => {};
 
-  useEffect(() => {
-    setIsMounted(true);
-
-    if (typeof window === "undefined") return;
-
-    // Check initial orientation
-    const checkOrientation = () => {
-      // Use matchMedia for reliable detection
-      const landscapeQuery = window.matchMedia("(orientation: landscape)");
-      setIsLandscape(landscapeQuery.matches);
-    };
-
-    checkOrientation();
-
-    // Listen for orientation changes
-    const landscapeQuery = window.matchMedia("(orientation: landscape)");
-    const handleOrientationChange = (e: MediaQueryListEvent) => {
-      setIsLandscape(e.matches);
-    };
-
-    landscapeQuery.addEventListener("change", handleOrientationChange);
-    window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
+    const landscapeQuery = globalThis.matchMedia("(orientation: landscape)");
+    landscapeQuery.addEventListener("change", callback);
+    globalThis.addEventListener("resize", callback);
+    globalThis.addEventListener("orientationchange", callback);
 
     return () => {
-      landscapeQuery.removeEventListener("change", handleOrientationChange);
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
+      landscapeQuery.removeEventListener("change", callback);
+      globalThis.removeEventListener("resize", callback);
+      globalThis.removeEventListener("orientationchange", callback);
     };
-  }, []);
+  };
 
-  // Return false during SSR to prevent hydration mismatches
-  return isMounted ? isLandscape : false;
+  const getSnapshot = () => {
+    if (globalThis.window === undefined) return false;
+    return globalThis.matchMedia("(orientation: landscape)").matches;
+  };
+
+  const getServerSnapshot = () => false;
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
-

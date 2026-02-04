@@ -8,24 +8,17 @@
  * - Channel Faders with Level Meters
  * - Crossfader
  * - Master Level Meter
- * - Per-Deck FX Sends
  *
  * Professional DJ mixer layout with hardware-style visual hierarchy
+ * Phase 3: FX moved to deck-level controls (DeckFXRack)
  */
 
-import type * as Tone from "tone";
-import { FXRack } from "@/components/studio/core/FXRack";
 import { Crossfader } from "@/components/studio/ui/Crossfader";
 import { LevelMeter } from "@/components/studio/ui/LevelMeter";
 import { DeckEQ } from "@/components/studio/ui/DeckEQ";
 import { ChannelFader } from "@/components/studio/ui/ChannelFader";
 
-interface MixerCenterProps {
-  masterBus?: Tone.Gain | null;
-  masterPostFx?: Tone.Gain | null;
-}
-
-export function MixerCenter({ masterBus, masterPostFx }: Readonly<MixerCenterProps>) {
+export function MixerCenter() {
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Header */}
@@ -79,11 +72,6 @@ export function MixerCenter({ masterBus, masterPostFx }: Readonly<MixerCenterPro
         <div className="flex-1">
           <LevelMeter deckId="master" orientation="horizontal" accentColor="#009688" />
         </div>
-      </div>
-
-      {/* FX Rack (Global for now, will be per-deck later) */}
-      <div className="mt-auto">
-        <FXRack masterBus={masterBus} masterPostFx={masterPostFx} />
       </div>
     </div>
   );

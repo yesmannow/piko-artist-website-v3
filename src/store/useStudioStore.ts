@@ -48,6 +48,7 @@ interface StudioState {
   focusedDeckId: DeckFocusId;
   stemModeEnabled: boolean;
   libraryOpen: boolean;
+  /** @deprecated Phase 3: FX moved to deck-level controls. This toggle is no longer used. */
   fxPanelOpen: boolean;
   settingsOpen: boolean;
   performanceMode: PerformanceMode;
@@ -80,6 +81,7 @@ interface StudioState {
   setFocusedDeckId: (deck: DeckFocusId) => void;
   setStemModeEnabled: (enabled: boolean) => void;
   setLibraryOpen: (open: boolean) => void;
+  /** @deprecated Phase 3: FX moved to deck-level controls. Use DeckFXRack instead. */
   setFxPanelOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setPerformanceMode: (mode: PerformanceMode) => void;

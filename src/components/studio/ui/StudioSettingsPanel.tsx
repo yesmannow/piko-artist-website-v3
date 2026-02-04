@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
+import { useStore } from "@/store/useStore";
 
 const ONBOARDING_STORAGE_KEY = "piko-studio-onboarding-seen";
 
@@ -44,6 +45,7 @@ async function resetApp() {
   }
 }
 
+// eslint-disable-next-line max-lines-per-function -- Settings panel with many sections
 export function StudioSettingsPanel() {
   const settingsOpen = useStudioStore((state) => state.settingsOpen);
   const setSettingsOpen = useStudioStore((state) => state.setSettingsOpen);
@@ -57,8 +59,14 @@ export function StudioSettingsPanel() {
   const setAutoStem = useStudioStore((state) => state.setAutoStem);
   const startOnboarding = useStudioStore((state) => state.startOnboarding);
 
+  // Phase S7: Mixer settings
+  const mixerSettings = useStore((state) => state.mixerSettings);
+  const setMixerSettings = useStore((state) => state.setMixerSettings);
+
   // Advanced section collapsed by default (Clean Pro approach)
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  // Phase S7: Mixer settings section collapsed by default
+  const [mixerSettingsOpen, setMixerSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -104,6 +112,74 @@ export function StudioSettingsPanel() {
           <p className="studio-settings-hint">
             Piko Studio defaults to "Clean Pro" mode for optimal performance and clarity.
           </p>
+        </div>
+
+        {/* PHASE S7: MIXER SETTINGS - Professional DJ mixer configuration */}
+        <div className="studio-settings-section">
+          <button
+            type="button"
+            className="studio-settings-section-toggle"
+            onClick={() => setMixerSettingsOpen(!mixerSettingsOpen)}
+            aria-expanded={mixerSettingsOpen}
+          >
+            <span className="studio-settings-section-title">Mixer Settings</span>
+            <span className="studio-settings-section-icon">{mixerSettingsOpen ? '▼' : '▶'}</span>
+          </button>
+
+          {mixerSettingsOpen && (
+            <div className="studio-settings-section-content">
+              <p className="studio-settings-hint">
+                Professional DJ mixer settings for customizing crossfader feel and EQ behavior.
+              </p>
+
+              {/* Crossfader Curve */}
+              <label className="studio-setting-row">
+                <span>Crossfader curve</span>
+                <select
+                  value={mixerSettings.crossfaderCurve}
+                  onChange={(e) => setMixerSettings({ crossfaderCurve: e.target.value as typeof mixerSettings.crossfaderCurve })}
+                >
+                  <option value="constantPower">Constant Power</option>
+                  <option value="linear">Linear</option>
+                  <option value="dip">Dip (-3dB center)</option>
+                  <option value="cut">Cut (Scratch)</option>
+                </select>
+              </label>
+              <p className="studio-settings-hint">
+                Constant power maintains volume during transitions. Cut is sharper for scratching.
+              </p>
+
+              {/* EQ Type */}
+              <label className="studio-setting-row">
+                <span>EQ type</span>
+                <select
+                  value={mixerSettings.eqType}
+                  onChange={(e) => setMixerSettings({ eqType: e.target.value as typeof mixerSettings.eqType })}
+                >
+                  <option value="classic">Classic (3-band)</option>
+                  <option value="isolator">Isolator (Kill mode)</option>
+                </select>
+              </label>
+              <p className="studio-settings-hint">
+                Isolator enables aggressive band kills (-60dB) for dramatic drops.
+              </p>
+
+              {/* FX Routing */}
+              <label className="studio-setting-row">
+                <span>FX routing</span>
+                <select
+                  value={mixerSettings.fxRouting}
+                  onChange={(e) => setMixerSettings({ fxRouting: e.target.value as typeof mixerSettings.fxRouting })}
+                >
+                  <option value="postFader">Post-Fader (Standard)</option>
+                  <option value="preFader">Pre-Fader (Advanced)</option>
+                </select>
+              </label>
+              <p className="studio-settings-hint">
+                Pre-fader routing affects cue/headphone monitoring style. Most DJs use post-fader.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ADVANCED / VISUALS SECTION - Collapsed by default */}

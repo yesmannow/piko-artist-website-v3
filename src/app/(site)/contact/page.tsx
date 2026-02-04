@@ -85,24 +85,30 @@ function hashToBars(seed: string, count: number) {
 function Barcode({ seed }: { seed: string }) {
   const bars = useMemo(() => hashToBars(seed, 48), [seed]);
   const total = bars.reduce((a, b) => a + (b === 0 ? 1 : b), 0);
-  let x = 0;
+
+  const rects = useMemo(() => {
+    return bars.reduce<Array<{ key: number; x: number; y: number; width: number; height: number; fill: string }>>((acc, w, i) => {
+      const width = w === 0 ? 1 : w;
+      const xPos = acc.length > 0 ? acc[acc.length - 1].x + acc[acc.length - 1].width : 0;
+
+      acc.push({
+        key: i,
+        x: xPos,
+        y: 0,
+        width,
+        height: 24,
+        fill: i % 3 === 0 ? "rgba(255,215,0,0.85)" : "rgba(224,224,224,0.85)",
+      });
+
+      return acc;
+    }, []);
+  }, [bars]);
+
   return (
     <svg viewBox={`0 0 ${total} 24`} className="w-full h-6" aria-hidden="true">
-      {bars.map((w, i) => {
-        const width = w === 0 ? 1 : w;
-        const rect = (
-          <rect
-            key={i}
-            x={x}
-            y={0}
-            width={width}
-            height={24}
-            fill={i % 3 === 0 ? "rgba(255,215,0,0.85)" : "rgba(224,224,224,0.85)"}
-          />
-        );
-        x += width;
-        return rect;
-      })}
+      {rects.map((rectProps) => (
+        <rect {...rectProps} key={rectProps.key} />
+      ))}
     </svg>
   );
 }

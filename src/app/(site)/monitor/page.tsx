@@ -30,16 +30,17 @@ interface TrackMetadata {
 
 export default function MonitorPage() {
   const [metadata, setMetadata] = useState<TrackMetadata | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [channelSupported] = useState(() => {
+    return globalThis.window !== undefined && 'BroadcastChannel' in globalThis;
+  });
 
   useEffect(() => {
-    if (globalThis.window === undefined || !('BroadcastChannel' in globalThis)) {
+    if (!channelSupported) {
       console.warn('[Monitor] BroadcastChannel not supported');
       return;
     }
 
     const channel = new BroadcastChannel('piko_studio_sync');
-    setIsConnected(true);
 
     channel.onmessage = (event) => {
       if (event.data.type === 'track_update') {
@@ -49,11 +50,10 @@ export default function MonitorPage() {
 
     return () => {
       channel.close();
-      setIsConnected(false);
     };
-  }, []);
+  }, [channelSupported]);
 
-  if (!isConnected) {
+  if (!channelSupported) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-8">
         <div className="text-center">

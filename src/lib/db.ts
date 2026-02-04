@@ -35,11 +35,56 @@ export interface Track {
   stemUrls?: string[]; // Array of stem URLs if available
 }
 
+// Phase S11.3: Waveform Peaks Cache
+export interface WaveformPeaks {
+  trackKey: string; // Primary key - canonical track identifier
+  durationSec: number;
+  peaks: number[][]; // Array of channel peak arrays
+  channels: number;
+  algoVersion: number;
+  updatedAt: Date;
+}
+
+// Phase S11.3: Per-Track Hot Cues
+export interface TrackCue {
+  slot: number; // 0-7
+  timeSec: number;
+  label?: string;
+  color?: string;
+}
+
+export interface TrackCues {
+  trackKey: string; // Primary key - canonical track identifier
+  cues: TrackCue[];
+  updatedAt: Date;
+}
+
+// Phase S11.3: Per-Track Loop
+export interface TrackLoop {
+  trackKey: string; // Primary key - canonical track identifier
+  startSec: number;
+  endSec: number;
+  enabled: boolean;
+  quantized?: boolean;
+  updatedAt: Date;
+}
+
 export class PikoDatabase extends Dexie {
   tracks!: Table<Track, number>;
+  waveformPeaks!: Table<WaveformPeaks, string>; // Phase S11.3
+  trackCues!: Table<TrackCues, string>; // Phase S11.3
+  trackLoops!: Table<TrackLoop, string>; // Phase S11.3
 
   constructor() {
     super('PikoDJ');
+
+    // Version 3: Phase S11.3 - Precomputed peaks + per-track cues/loops
+    this.version(3).stores({
+      tracks: '++id, url, title, artist, bpm, key, energy, status, dateAdded, genre, mood',
+      waveformPeaks: 'trackKey, updatedAt',
+      trackCues: 'trackKey, updatedAt',
+      trackLoops: 'trackKey, updatedAt'
+    });
 
     // Version 2: Added energy field for Phase IX
     this.version(2).stores({

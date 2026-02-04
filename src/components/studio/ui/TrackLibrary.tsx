@@ -23,6 +23,7 @@ import { TrackListing, Track as TrackListingInterface } from './TrackListing';
 import { db } from '@/lib/db';
 import { useLibrarySync } from '@/hooks/useLibrarySync';
 import { useStudioStore } from '@/store/useStudioStore';
+import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2 - Canonical track identity
 import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
 import { useStore } from '@/store/useStore';
 
@@ -75,7 +76,9 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
       }
 
       return {
-        trackId: dbTrack.url, // Use URL as unique ID
+        trackKey: deriveTrackKey(dbTrack), // Phase S11.2: Canonical track ID (URL-agnostic)
+        url: dbTrack.url, // Keep URL separate for audio fetching
+        trackId: dbTrack.url, // DEPRECATED - kept for backward compatibility during migration
         title: dbTrack.title,
         artist: dbTrack.artist,
         bpm: dbTrack.bpm || 0,

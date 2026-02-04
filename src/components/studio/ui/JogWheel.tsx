@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
 import { beatsToSeconds } from "@/lib/utils/audioMath";
 
 interface JogWheelProps {
@@ -15,6 +14,7 @@ interface JogWheelProps {
   readonly accent?: string;
   readonly energy?: number;
   readonly loading?: boolean;
+  readonly playDirection?: 'forward' | 'reverse'; // Phase 4: Reverse playback support
   readonly onPointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
   readonly onPointerMove?: (event: React.PointerEvent<HTMLDivElement>) => void;
   readonly onPointerUp?: (event: React.PointerEvent<HTMLDivElement>) => void;
@@ -26,190 +26,141 @@ interface JogWheelProps {
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
 // Extract cursor class logic to reduce complexity
-const getCursorClass = (disabled: boolean, artworkUrl?: string, loading?: boolean): string => {
+const getCursorClass = (disabled: boolean, artworkUrl?: string): string => {
   if (disabled) return "cursor-not-allowed";
   if (artworkUrl) return "cursor-grab active:cursor-grabbing";
   return "cursor-pointer";
 };
 
-// Extract beat flash animation config to reduce complexity
-const getBeatFlashAnimation = (isPlaying: boolean, tealAccent: string) => {
-  if (!isPlaying) return {};
+// Phase 4: Outer ring glow animation based on state
+const getOuterRingAnimation = (isPlaying: boolean, accent: string) => {
+  if (isPlaying) {
+    return {
+      boxShadow: [
+        `0 0 15px ${accent}40, inset 0 0 20px ${accent}20`,
+        `0 0 25px ${accent}60, inset 0 0 30px ${accent}30`,
+        `0 0 15px ${accent}40, inset 0 0 20px ${accent}20`,
+      ],
+    };
+  }
   return {
-    filter: [
-      `drop-shadow(0 0 10px ${tealAccent}66)`,
-      `drop-shadow(0 0 20px ${tealAccent}dd)`,
-      `drop-shadow(0 0 10px ${tealAccent}66)`,
-    ],
+    boxShadow: `0 0 8px ${accent}20, inset 0 0 12px ${accent}10`,
   };
 };
 
-// Extract rotation animation config
-const getRotationAnimation = (isPlaying: boolean, rotationSeconds: number) => {
-  if (isPlaying) {
-    return { repeat: Infinity, ease: "linear", duration: rotationSeconds };
-  }
-  return { ease: "easeOut", duration: 0.4 };
-};
-
-// Extract BPM badge animation config
-const getBPMBadgeAnimation = (isSynced: boolean, accent: string) => ({
-  color: isSynced ? "#fff" : "rgba(255,255,255,0.72)",
-  boxShadow: isSynced
-    ? `0 0 20px ${accent}66, 0 8px 24px rgba(0,0,0,0.5)`
-    : "0 8px 24px rgba(0,0,0,0.55)",
-});
-
-export function JogWheel({
+// Phase 4: Extract artwork/placeholder content
+const ArtworkContent = ({
   artworkUrl,
   title,
-  progress,
   isPlaying,
-  bpm,
-  isSynced = false,
-  accent = "#22d3ee",
-  energy = 0,
-  loading = false,
+  rotationSeconds,
+  playDirection
+}: {
+  artworkUrl?: string;
+  title?: string;
+  isPlaying: boolean;
+  rotationSeconds: number;
+  playDirection: 'forward' | 'reverse';
+}) => {
+  if (artworkUrl) {
+    return (
+      <motion.div
+        className="absolute inset-0"
+        animate={getRotationAnimation(isPlaying, rotationSeconds, playDirection)}
+        style={{ originX: "50%", originY: "50%" }}
+      >
+        <Image
+          src={artworkUrl}
+          alt={title || "Track artwork"}
+          fill
+          className="object-cover"
+          unoptimized
+        />
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-[#090b12] via-[#0c0d15] to-[#05060b]">
+      <div className="w-20 h-20 rounded-full border border-dashed border-white/10 flex items-center justify-center">
+        <div className="text-xs font-mono uppercase tracking-[0.3em] text-white/40">Load</div>
+      </div>
+    </div>
+  );
+};
+
+// Phase 4: Extract reverse indicator
+const ReverseIndicator = ({ playDirection, isPlaying, accent }: { playDirection: 'forward' | 'reverse'; isPlaying: boolean; accent: string }) => {
+  if (playDirection !== 'reverse' || !isPlaying) return null;
+
+  return (
+    <motion.div
+      className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-widest"
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: [0.6, 1, 0.6], y: 0 }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+      style={{ color: accent }}
+    >
+      ⏪
+    </motion.div>
+  );
+};
+
+// Phase 4: Extract BPM badge
+const BPMBadge = ({ bpm, bpmText, isSynced, accent }: { bpm?: number; bpmText: string; isSynced: boolean; accent: string }) => {
+  if (bpm === undefined) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
+      <motion.div
+        initial={false}
+        animate={getBPMBadgeAnimation(isSynced, accent)}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className="px-4 py-2 rounded-full bg-black/65 backdrop-blur-md border border-white/12"
+        style={{ fontFamily: "var(--font-inter)" }}
+      >
+        <motion.span
+          initial={false}
+          animate={{ fontWeight: isSynced ? 800 : 400 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="text-sm tracking-[0.22em] uppercase"
+        >
+          {bpmText} <span className="text-[10px]">BPM</span>
+        </motion.span>
+      </motion.div>
+    </div>
+  );
+};
+
+// Phase 4: Interactive wrapper component
+const InteractiveWrapper = ({
+  onClick,
+  disabled,
+  cursorClass,
+  title,
   onPointerDown,
   onPointerMove,
   onPointerUp,
   onPointerCancel,
-  onClick,
-  disabled = false,
-}: Readonly<JogWheelProps>) {
-  const circumference = 2 * Math.PI * 46;
-  const dash = clamp01(progress) * circumference;
-  const ringGradientId = useMemo(() => {
-    const key = (title || accent || "jog").toString().replaceAll(/[^a-z0-9-]/gi, "-").toLowerCase();
-    return `jog-ring-${key}`;
-  }, [title, accent]);
-  const glowIntensity = Math.min(1, Math.max(0, energy));
-  const glowColor = accent;
-  const bpmText = typeof bpm === "number" ? bpm.toFixed(2) : "--.--";
-  const rotationSeconds = bpm && bpm > 0 ? beatsToSeconds(4, bpm) : 7;
-
-  // Beat flash: Pulse on every beat (Quarter notes)
-  const beatFlashDuration = bpm && bpm > 0 ? (60 / bpm) : 1;
-  const tealAccent = "#009688"; // 2026 Expert Teal
-
-  const cursorClass = getCursorClass(disabled, artworkUrl, loading);
-  const loadingClass = loading ? "animate-pulse" : "";
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement | HTMLButtonElement>) => {
+  children
+}: {
+  onClick?: () => void;
+  disabled: boolean;
+  cursorClass: string;
+  title?: string;
+  onPointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerMove?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerUp?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerCancel?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  children: React.ReactNode;
+}) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (onClick && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
       onClick();
     }
   };
 
-  const wheelContent = (
-    <div
-      className={`relative w-full max-w-90 aspect-square rounded-full ${loadingClass}`}
-      data-no-swipe="true"
-    >
-      <div className="absolute inset-0 rounded-full bg-linear-to-br from-[#050507] via-[#0b0c11] to-[#050507] border border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]" />
-      <div className="absolute inset-2 rounded-full border border-white/5 bg-linear-to-b from-[#0f1016] via-[#090a0f] to-[#0f1016] shadow-[inset_0_12px_32px_rgba(0,0,0,0.55)]" />
-      <div
-        className="absolute inset-4 rounded-full bg-[#040507]"
-        style={{
-          boxShadow: `inset 0 0 25px rgba(0,0,0,0.9), 0 0 ${10 + glowIntensity * 12}px ${glowIntensity * 0.4}px ${glowColor}`,
-          transition: "box-shadow 150ms ease",
-        }}
-      />
-
-      <svg className="absolute inset-4" viewBox="0 0 120 120">
-        <defs>
-          <linearGradient id={ringGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={accent} stopOpacity="0.8" />
-            <stop offset="100%" stopColor={accent} stopOpacity="1" />
-          </linearGradient>
-        </defs>
-        {/* Background ring */}
-        <circle
-          cx="60"
-          cy="60"
-          r="46"
-          fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth="6"
-          strokeDasharray={`${circumference} ${circumference}`}
-          transform="rotate(-120 60 60)"
-        />
-        {/* Progress ring with beat flash */}
-        <motion.circle
-          cx="60"
-          cy="60"
-          r="46"
-          fill="none"
-          stroke={`url(#${ringGradientId})`}
-          strokeWidth="6"
-          strokeDasharray={`${dash} ${circumference}`}
-          transform="rotate(-120 60 60)"
-          strokeLinecap="round"
-          animate={getBeatFlashAnimation(isPlaying, tealAccent)}
-          transition={{
-            duration: beatFlashDuration,
-            repeat: isPlaying ? Infinity : 0,
-            ease: "easeInOut",
-          }}
-        />
-      </svg>
-
-      <div className="absolute inset-9 rounded-full border border-white/5 bg-linear-to-br from-[#0e1118] via-[#0a0b12] to-[#07070c] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
-        {artworkUrl ? (
-          <motion.div
-            className="absolute inset-0"
-            animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-            transition={getRotationAnimation(isPlaying, rotationSeconds)}
-            style={{ originX: "50%", originY: "50%" }}
-          >
-            <Image
-              src={artworkUrl}
-              alt={title || "Track artwork"}
-              fill
-              className="object-cover"
-              unoptimized
-            />
-          </motion.div>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-[#090b12] via-[#0c0d15] to-[#05060b]">
-            <div className="w-20 h-20 rounded-full border border-dashed border-white/10 flex items-center justify-center">
-              <div className="text-xs font-mono uppercase tracking-[0.3em] text-white/40">Load</div>
-            </div>
-          </div>
-        )}
-        <div className="absolute inset-4 rounded-full border border-black/40 shadow-[inset_0_6px_18px_rgba(0,0,0,0.65)]" />
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08),transparent_45%)]" />
-      </div>
-
-      <div className="absolute inset-16 rounded-full border border-white/5 bg-linear-to-br from-[#0a0c12] to-[#05060a] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 14px ${accent}` }} />
-      </div>
-      {bpm !== undefined && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
-          <motion.div
-            initial={false}
-            animate={getBPMBadgeAnimation(isSynced, accent)}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="px-4 py-2 rounded-full bg-black/65 backdrop-blur-md border border-white/12"
-            style={{ fontFamily: "var(--font-inter)" }}
-          >
-            <motion.span
-              initial={false}
-              animate={{ fontWeight: isSynced ? 800 : 400 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="text-sm tracking-[0.22em] uppercase"
-            >
-              {bpmText} <span className="text-[10px]">BPM</span>
-            </motion.span>
-          </motion.div>
-        </div>
-      )}
-    </div>
-  );
-
-  // Wrap in button if interactive
   if (onClick && !disabled) {
     return (
       <button
@@ -226,11 +177,227 @@ export function JogWheel({
           onPointerCancel={onPointerCancel}
           onPointerLeave={onPointerCancel}
         >
-          {wheelContent}
+          {children}
         </div>
       </button>
     );
   }
 
-  return wheelContent;
+  return <>{children}</>;
+};
+
+// Phase 4: Extract progress rings
+const ProgressRings = ({
+  ringGradientId,
+  accent,
+  circumference,
+  dash,
+  isPlaying,
+  beatFlashDuration
+}: {
+  ringGradientId: string;
+  accent: string;
+  circumference: number;
+  dash: number;
+  isPlaying: boolean;
+  beatFlashDuration: number;
+}) => {
+  const tealAccent = "#009688";
+  return (
+    <svg className="absolute inset-4" viewBox="0 0 120 120">
+      <defs>
+        <linearGradient id={ringGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.8" />
+          <stop offset="100%" stopColor={accent} stopOpacity="1" />
+        </linearGradient>
+      </defs>
+      <circle
+        cx="60"
+        cy="60"
+        r="46"
+        fill="none"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth="6"
+        strokeDasharray={`${circumference} ${circumference}`}
+        transform="rotate(-120 60 60)"
+      />
+      <motion.circle
+        cx="60"
+        cy="60"
+        r="46"
+        fill="none"
+        stroke={`url(#${ringGradientId})`}
+        strokeWidth="6"
+        strokeDasharray={`${dash} ${circumference}`}
+        transform="rotate(-120 60 60)"
+        strokeLinecap="round"
+        animate={getBeatFlashAnimation(isPlaying, tealAccent)}
+        transition={{
+          duration: beatFlashDuration,
+          repeat: isPlaying ? Infinity : 0,
+          ease: "easeInOut",
+        }}
+      />
+    </svg>
+  );
+};// Extract beat flash animation config to reduce complexity
+const getBeatFlashAnimation = (isPlaying: boolean, tealAccent: string) => {
+  if (!isPlaying) return {};
+  return {
+    filter: [
+      `drop-shadow(0 0 10px ${tealAccent}66)`,
+      `drop-shadow(0 0 20px ${tealAccent}dd)`,
+      `drop-shadow(0 0 10px ${tealAccent}66)`,
+    ],
+  };
+};
+
+// Extract rotation animation config - Phase 4: Enhanced with reverse support
+const getRotationAnimation = (isPlaying: boolean, rotationSeconds: number, playDirection: 'forward' | 'reverse') => {
+  if (isPlaying) {
+    const targetRotation = playDirection === 'reverse' ? -360 : 360;
+    return {
+      rotate: targetRotation,
+      repeat: Infinity,
+      ease: "linear",
+      duration: rotationSeconds
+    };
+  }
+  return { rotate: 0, ease: "easeOut", duration: 0.4 };
+};
+
+// Extract BPM badge animation config
+const getBPMBadgeAnimation = (isSynced: boolean, accent: string) => ({
+  color: isSynced ? "#fff" : "rgba(255,255,255,0.72)",
+  boxShadow: isSynced
+    ? `0 0 20px ${accent}66, 0 8px 24px rgba(0,0,0,0.5)`
+    : "0 8px 24px rgba(0,0,0,0.55)",
+});
+
+// Phase 4: Calculate jog wheel display values
+const calculateJogWheelValues = (progress: number, energy: number, bpm?: number, title?: string, accent?: string) => {
+  const circumference = 2 * Math.PI * 46;
+  const dash = clamp01(progress) * circumference;
+  const ringGradientId = `jog-ring-${(title || accent || "jog").toString().replaceAll(/[^a-z0-9-]/gi, "-").toLowerCase()}`;
+  const glowIntensity = Math.min(1, Math.max(0, energy));
+  const bpmText = typeof bpm === "number" ? bpm.toFixed(2) : "--.--";
+  const rotationSeconds = bpm && bpm > 0 ? beatsToSeconds(4, bpm) : 7;
+  const beatFlashDuration = bpm && bpm > 0 ? (60 / bpm) : 1;
+
+  return { circumference, dash, ringGradientId, glowIntensity, bpmText, rotationSeconds, beatFlashDuration };
+};
+
+export function JogWheel({
+  artworkUrl,
+  title,
+  progress,
+  isPlaying,
+  bpm,
+  isSynced = false,
+  accent = "#22d3ee",
+  energy = 0,
+  loading = false,
+  playDirection = 'forward', // Phase 4: Default to forward
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onClick,
+  disabled = false,
+}: Readonly<JogWheelProps>) {
+  const { circumference, dash, ringGradientId, glowIntensity, bpmText, rotationSeconds, beatFlashDuration } =
+    calculateJogWheelValues(progress, energy, bpm, title, accent);
+  const glowColor = accent;
+
+  const cursorClass = getCursorClass(disabled, artworkUrl);
+  const loadingClass = loading ? "animate-pulse" : "";
+
+  const wheelContent = (
+    <div
+      className={`relative w-full max-w-90 aspect-square rounded-full ${loadingClass}`}
+      data-no-swipe="true"
+    >
+      {/* Phase 4: Enhanced outer ring with animated glow */}
+      <motion.div
+        className="absolute inset-0 rounded-full bg-linear-to-br from-[#050507] via-[#0b0c11] to-[#050507] border border-white/10"
+        animate={getOuterRingAnimation(isPlaying, accent)}
+        transition={{
+          duration: 2,
+          repeat: isPlaying ? Infinity : 0,
+          ease: "easeInOut",
+        }}
+        style={{
+          boxShadow: "0 18px 45px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)",
+        }}
+      />
+
+      <div className="absolute inset-2 rounded-full border border-white/5 bg-linear-to-b from-[#0f1016] via-[#090a0f] to-[#0f1016] shadow-[inset_0_12px_32px_rgba(0,0,0,0.55)]" />
+      <div
+        className="absolute inset-4 rounded-full bg-[#040507]"
+        style={{
+          boxShadow: `inset 0 0 25px rgba(0,0,0,0.9), 0 0 ${10 + glowIntensity * 12}px ${glowIntensity * 0.4}px ${glowColor}`,
+          transition: "box-shadow 150ms ease",
+        }}
+      />
+
+      {/* Phase 4: Playhead marker at 12 o'clock */}
+      <motion.div
+        className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-6 rounded-full pointer-events-none"
+        animate={{
+          backgroundColor: isPlaying ? accent : 'rgba(255,255,255,0.3)',
+          boxShadow: isPlaying ? `0 0 12px ${accent}` : '0 0 4px rgba(255,255,255,0.2)',
+        }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      />
+
+      <ProgressRings
+        ringGradientId={ringGradientId}
+        accent={accent}
+        circumference={circumference}
+        dash={dash}
+        isPlaying={isPlaying}
+        beatFlashDuration={beatFlashDuration}
+      />      <div className="absolute inset-9 rounded-full border border-white/5 bg-linear-to-br from-[#0e1118] via-[#0a0b12] to-[#07070c] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
+        <ArtworkContent
+          artworkUrl={artworkUrl}
+          title={title}
+          isPlaying={isPlaying}
+          rotationSeconds={rotationSeconds}
+          playDirection={playDirection}
+        />
+        <div className="absolute inset-4 rounded-full border border-black/40 shadow-[inset_0_6px_18px_rgba(0,0,0,0.65)]" />
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08),transparent_45%)]" />
+      </div>
+
+      <div className="absolute inset-16 rounded-full border border-white/5 bg-linear-to-br from-[#0a0c12] to-[#05060a] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
+
+      {/* Phase 4: Center dot with reverse indicator */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="relative">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 14px ${accent}` }} />
+          <ReverseIndicator playDirection={playDirection} isPlaying={isPlaying} accent={accent} />
+        </div>
+      </div>
+
+
+      {bpm !== undefined && (
+        <BPMBadge bpm={bpm} bpmText={bpmText} isSynced={isSynced} accent={accent} />
+      )}
+    </div>
+  );
+
+  return (
+    <InteractiveWrapper
+      onClick={onClick}
+      disabled={disabled}
+      cursorClass={cursorClass}
+      title={title}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+    >
+      {wheelContent}
+    </InteractiveWrapper>
+  );
 }

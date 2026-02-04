@@ -39,10 +39,6 @@ export function LogoIntro() {
       return;
     }
 
-    // Show intro
-    setShouldRender(true);
-    setIsActive(true);
-
     // Calculate target position after first paint
     const calculateTarget = () => {
       // Find all anchors (mobile and desktop both have the same ID, but we'll find the visible one)
@@ -97,6 +93,14 @@ export function LogoIntro() {
         scale: Math.max(scale, 0.3), // Minimum scale
       });
     };
+
+    // Show intro - setState moved after all calculations
+    const initIntro = () => {
+      setShouldRender(true);
+      setIsActive(true);
+    };
+
+    initIntro();
 
     // Wait for DOM to be ready
     const timeoutId = setTimeout(() => {

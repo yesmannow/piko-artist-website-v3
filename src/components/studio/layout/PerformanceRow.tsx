@@ -5,15 +5,15 @@
  *
  * 3-Column Layout:
  * - Left: Deck A Controls (Jog Wheel, Transport, StemRack) + Per-Deck FX
- * - Center: Mixer (EQ, Faders, Level Meters, FX)
+ * - Center: Mixer (EQ, Faders, Level Meters)
  * - Right: Deck B Controls (Jog Wheel, Transport, StemRack) + Per-Deck FX
  *
  * Professional DJ layout with tactile hardware-emulated controls
  * Phase V-B: Added per-deck FX racks for independent effect processing
  * Phase 3.2A: Added drag & drop zones for track loading
+ * Phase 3: FX moved to deck-level controls (removed master FX rack)
  */
 
-import type * as Tone from "tone";
 import { DeckControls } from "@/components/studio/ui/DeckControls";
 import { DeckFXRack } from "@/components/studio/core/DeckFXRack";
 import { DeckDropZone } from "@/components/studio/ui/DeckDropZone";
@@ -23,13 +23,9 @@ import { useStore } from "@/store/useStore";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { deriveTrackKey } from "@/lib/trackKey"; // Phase S11.2
 
-interface PerformanceRowProps {
-  masterBus?: Tone.Gain | null;
-  masterPostFx?: Tone.Gain | null;
-}
-
-export function PerformanceRow({ masterBus, masterPostFx }: PerformanceRowProps) {
+export function PerformanceRow() {
   const { loadTrack } = useAudioEngine();
   const { setDeckTrack } = useStore();
   const setStems = useStudioStore((state) => state.setStems);
@@ -66,7 +62,8 @@ export function PerformanceRow({ masterBus, masterPostFx }: PerformanceRowProps)
 
       // Update store with track data
       setDeckTrack(deckId, {
-        trackId: dbTrack.url,
+        trackKey: deriveTrackKey(dbTrack), // Phase S11.2: Canonical track identity
+        trackId: dbTrack.url, // DEPRECATED: Kept for backward compatibility
         url,
         bpm: dbTrack.bpm || 120,
         title: dbTrack.title,
@@ -117,7 +114,7 @@ export function PerformanceRow({ masterBus, masterPostFx }: PerformanceRowProps)
       {/* Center Column: Mixer (Slightly Elevated) */}
       <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
         <div className="min-h-0 overflow-y-auto bg-(--bg-secondary) rounded-lg border border-white/5 p-4 shadow-lg">
-          <MixerCenter masterBus={masterBus} masterPostFx={masterPostFx} />
+          <MixerCenter />
         </div>
       </div>
 

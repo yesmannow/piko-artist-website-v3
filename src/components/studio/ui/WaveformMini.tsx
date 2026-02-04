@@ -9,6 +9,8 @@ interface WaveformMiniProps {
   beatGrid?: number[];
   playhead?: number;
   durationSeconds?: number;
+  precomputedPeaks?: number[][]; // Phase S11.3: Instant render from cache
+  onPeaksComputed?: (peaks: number[][], durationSec: number) => void; // Phase S11.3: Callback to cache peaks
   onSeek?: (seconds: number) => void;
 }
 
@@ -74,6 +76,8 @@ export function WaveformMini({
   beatGrid = [],
   playhead = 0,
   durationSeconds,
+  precomputedPeaks, // Phase S11.3
+  onPeaksComputed, // Phase S11.3
   onSeek,
 }: Readonly<WaveformMiniProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -164,6 +168,25 @@ export function WaveformMini({
     setIsLoading(true);
     setDuration(0);
 
+    // Phase S11.3: Instant render from precomputed peaks
+    if (precomputedPeaks && precomputedPeaks.length > 0 && durationSeconds && durationSeconds > 0) {
+      const peaks = new Float32Array(precomputedPeaks[0]); // Use first channel (mono)
+      if (!cancelled) {
+        worker.postMessage({
+          type: "render",
+          peaks,
+          duration: durationSeconds,
+          beatGrid,
+          color,
+          coverage: 1,
+          isComplete: true,
+        } satisfies WaveformWorkerMessage);
+        setDuration(durationSeconds);
+        setIsLoading(false);
+      }
+      return;
+    }
+
     const decodeAndRender = async () => {
       const fetchHead = async () => {
         try {
@@ -201,6 +224,11 @@ export function WaveformMini({
             setDuration(audioBuffer.duration);
           }
           const peaks = buildPeaks(audioBuffer, SAMPLE_POINTS);
+
+          // Phase S11.3: Report peaks to MainWaveform for caching
+          if (isComplete && onPeaksComputed) {
+            onPeaksComputed([Array.from(peaks)], audioBuffer.duration);
+          }
 
           worker.postMessage(
             {
@@ -288,7 +316,7 @@ export function WaveformMini({
     return () => {
       cancelled = true;
     };
-  }, [url, color, beatGrid]);
+  }, [url, color, beatGrid, precomputedPeaks, durationSeconds, onPeaksComputed]);
 
   useEffect(() => {
     const worker = workerRef.current;

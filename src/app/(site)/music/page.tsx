@@ -48,7 +48,6 @@ function useTrackDuration(track: MediaItem): number {
 
   useEffect(() => {
     if (track.type !== "audio") {
-      setDuration(0);
       return;
     }
 
@@ -65,7 +64,8 @@ function useTrackDuration(track: MediaItem): number {
     };
   }, [track.src, track.type]);
 
-  return duration;
+  // Return 0 for non-audio tracks
+  return track.type === "audio" ? duration : 0;
 }
 
 // Cover Art Component

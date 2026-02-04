@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, Sliders, Library, Settings2 } from "lucide-react";
+import { Pause, Play, Library, Settings2 } from "lucide-react";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useStore } from "@/store/useStore";
@@ -23,10 +23,8 @@ export function StudioControlBar() {
   const crossfaderPos = useStudioStore((state) => state.crossfaderPos);
   const setCrossfader = useStudioStore((state) => state.setCrossfader);
   const libraryOpen = useStudioStore((state) => state.libraryOpen);
-  const fxPanelOpen = useStudioStore((state) => state.fxPanelOpen);
   const settingsOpen = useStudioStore((state) => state.settingsOpen);
   const setLibraryOpen = useStudioStore((state) => state.setLibraryOpen);
-  const setFxPanelOpen = useStudioStore((state) => state.setFxPanelOpen);
   const setSettingsOpen = useStudioStore((state) => state.setSettingsOpen);
   const seek = useStudioStore((state) => state.seek);
   const performanceMode = useStudioStore((state) => state.performanceMode);
@@ -121,21 +119,6 @@ export function StudioControlBar() {
       </div>
 
       <div className="control-cluster">
-        <button
-          type="button"
-          className={`btn ${fxPanelOpen ? "btn-active" : ""}`}
-          onClick={() => {
-            triggerHaptic(6);
-            setFxPanelOpen(!fxPanelOpen);
-          }}
-          aria-pressed={fxPanelOpen}
-          aria-controls="studio-side-panel"
-          data-testid="fx-toggle"
-          aria-label="Toggle FX panel"
-        >
-          <Sliders className="h-4 w-4" />
-          FX
-        </button>
         <button
           type="button"
           className={`btn ${libraryOpen ? "btn-active" : ""}`}

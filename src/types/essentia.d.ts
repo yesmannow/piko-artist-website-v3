@@ -15,26 +15,52 @@ declare module 'essentia.js/dist/essentia-wasm.web.wasm?url' {
 }
 
 declare module 'essentia.js' {
-  export namespace EssentiaWASM {
-    const EssentiaWASMInterfaced: (options: { locateFile?: (path: string) => string }) => Promise<{
-      EssentiaJs: new () => EssentiaJs;
-    }>;
-  }
-
-  export type EssentiaJs = {
-    arrayToVector(data: Float32Array | number[]): { delete: () => void };
-    vectorToArray(vec: { delete: () => void }): number[];
-    RhythmExtractor2013(vec: { delete: () => void }): {
-      bpm: number;
-      ticks?: { delete: () => void };
-    };
-    KeyExtractor(vec: { delete: () => void }): {
-      key: string;
-      scale: string;
-    };
-    Danceability(vec: { delete: () => void }): { danceability: number };
-    RMS(vec: { delete: () => void }): { rms: number };
+  export type EssentiaVector = {
+    delete?: () => void;
+    [key: string]: unknown;
   };
+
+  export type EssentiaRhythmResult = {
+    bpm?: number;
+    danceability?: number;
+    ticks?: EssentiaVector;
+    delete?: () => void;
+    [key: string]: unknown;
+  };
+
+  export type EssentiaKeyResult = {
+    key?: string;
+    scale?: string;
+    strength?: number;
+    delete?: () => void;
+    [key: string]: unknown;
+  };
+
+  export type EssentiaRmsResult =
+    | number
+    | {
+        rms?: number;
+        delete?: () => void;
+        [key: string]: unknown;
+      };
+
+  export type EssentiaApi = {
+    arrayToVector(data: Float32Array | number[]): EssentiaVector;
+    vectorToArray?(vec: EssentiaVector): number[];
+    RhythmExtractor2013(vector: EssentiaVector, sampleRate?: number): EssentiaRhythmResult;
+    KeyExtractor(vector: EssentiaVector, sampleRate?: number): EssentiaKeyResult;
+    Danceability?(vector: EssentiaVector): { danceability?: number; delete?: () => void };
+    RMS(vector: EssentiaVector): EssentiaRmsResult;
+    delete(object: unknown): void;
+    [key: string]: unknown;
+  };
+
+  export type EssentiaWasmModule = {
+    EssentiaJs: EssentiaApi;
+    [key: string]: unknown;
+  };
+
+  export type EssentiaJsModule = EssentiaWasmModule | EssentiaApi;
 }
 
 declare module 'essentia.js/dist/essentia.js-core.es.js' {
@@ -54,27 +80,6 @@ declare module 'essentia.js/dist/essentia.js-core.es.js' {
       strength?: number;
     };
     RMS(signal: unknown): { rms?: number } | number;
-    delete(object: unknown): void;
-    shutdown(): void;
-  }
-}
-
-declare module 'essentia.js' {
-  export class EssentiaWASM {
-    constructor();
-    arrayToVector(array: Float32Array | number[]): unknown;
-    RhythmExtractor2013(signal: unknown, sampleRate: number): {
-      bpm: number;
-      confidence?: number;
-      beats?: number[];
-      bpmIntervals?: number[];
-    };
-    KeyExtractor(signal: unknown, sampleRate: number): {
-      key: string;
-      scale: string;
-      strength?: number;
-    };
-    RMS(signal: unknown): { rms: number };
     delete(object: unknown): void;
     shutdown(): void;
   }

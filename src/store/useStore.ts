@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2
 
 // Phase V-B: Per-Deck FX State
 export interface DeckFXState {
@@ -12,11 +13,28 @@ export interface DeckFXState {
   distortion: number;    // 0-1 (drive amount)
 }
 
+// Phase S9: Hot Cue
+export interface HotCue {
+  id: number;           // 0-7 (8 slots)
+  timeSec: number;      // Position in track (seconds)
+  label?: string;       // Optional label
+  color?: string;       // Optional color (for visual differentiation)
+}
+
+// Phase S9: Loop Region
+export interface LoopRegion {
+  startSec: number;     // Loop start time (seconds)
+  endSec: number;       // Loop end time (seconds)
+  enabled: boolean;     // Whether loop is active
+  quantized?: boolean;  // Whether loop was quantized to beat grid
+}
+
 // Define the shape of a single Deck's state
 export interface DeckState {
-  trackId: string | null;
+  trackKey: string | null; // Phase S11.2: Canonical track identifier (normalized slug)
   trackData: {
-    trackId?: string;
+    trackKey?: string; // Phase S11.2: Canonical track identifier (stable across environments)
+    trackId?: string; // Deprecated: Use trackKey instead
     url: string;
     bpm: number;
     title: string;
@@ -55,6 +73,9 @@ export interface DeckState {
   isKeyLockActive: boolean;
   // Phase V-B: Per-Deck FX
   fx: DeckFXState;
+  // Phase S9: Hot Cues + Loops
+  hotCues: HotCue[];     // 8 hot cue slots
+  activeLoop: LoopRegion | null;  // Current loop region (only one active at a time)
 }
 
 // Legacy global FX rack (being phased out in favor of per-deck FX)
@@ -68,6 +89,13 @@ export interface FxRackState {
   reverbDecay: number;
 }
 
+// Phase S7: Mixer Settings
+export interface MixerSettings {
+  crossfaderCurve: 'linear' | 'constantPower' | 'dip' | 'cut';
+  eqType: 'classic' | 'isolator';
+  fxRouting: 'postFader' | 'preFader';
+}
+
 // Define the global Mixer state
 export interface MixerState {
   isAudioReady: boolean;
@@ -77,6 +105,7 @@ export interface MixerState {
   crossfadeValue: number; // Range: -1 (A) to 1 (B)
   crossfaderMode: 'normal' | 'stem-balance'; // Crossfader mode
   mode: 'simple' | 'studio'; // Progressive disclosure mode
+  mixerSettings: MixerSettings; // Phase S7: Professional mixer settings
   deckA: DeckState;
   deckB: DeckState;
   fxRack: FxRackState;
@@ -103,6 +132,13 @@ export interface MixerState {
   // Phase V-B: Per-Deck FX Actions
   setDeckFX: (deck: 'A' | 'B', effect: keyof DeckFXState, value: number) => void;
   updateDeckFX: (deck: 'A' | 'B', updates: Partial<DeckFXState>) => void;
+  // Phase S7: Mixer Settings Actions
+  setMixerSettings: (updates: Partial<MixerSettings>) => void;
+  // Phase S9: Hot Cue & Loop Actions
+  setHotCue: (deck: 'A' | 'B', slot: number, timeSec: number, label?: string, color?: string) => void;
+  clearHotCue: (deck: 'A' | 'B', slot: number) => void;
+  setActiveLoop: (deck: 'A' | 'B', region: LoopRegion | null) => void;
+  toggleLoop: (deck: 'A' | 'B') => void;
 }
 
 const initialDeckFXState: DeckFXState = {
@@ -116,7 +152,7 @@ const initialDeckFXState: DeckFXState = {
 };
 
 const initialDeckState: DeckState = {
-  trackId: null,
+  trackKey: null, // Phase S11.2: Canonical track identifier
   trackData: null,
   isPlaying: false,
   isLoaded: false,
@@ -127,6 +163,8 @@ const initialDeckState: DeckState = {
   stems: { vocals: true, inst: true }, // Both stems enabled by default
   isKeyLockActive: false,
   fx: { ...initialDeckFXState },
+  hotCues: [], // Phase S9: Initialize empty cue array
+  activeLoop: null, // Phase S9: No active loop by default
 };
 
 const initialFxRackState: FxRackState = {
@@ -139,8 +177,15 @@ const initialFxRackState: FxRackState = {
   reverbDecay: 0.35,
 };
 
+const initialMixerSettings: MixerSettings = {
+  crossfaderCurve: 'constantPower',
+  eqType: 'classic',
+  fxRouting: 'postFader',
+};
+
 export const useStore = create<MixerState>()(
   persist(
+    // eslint-disable-next-line max-lines-per-function -- Zustand store with many actions
     (set, _get) => ({
       isAudioReady: false,
       isAudioStarted: false,
@@ -149,6 +194,7 @@ export const useStore = create<MixerState>()(
       crossfadeValue: 0, // Center (-1 = A, 0 = center, 1 = B)
       crossfaderMode: 'normal', // Default to normal crossfade
       mode: 'studio', // Default to studio mode
+      mixerSettings: { ...initialMixerSettings }, // Phase S7
       deckA: { ...initialDeckState },
       deckB: { ...initialDeckState },
       fxRack: { ...initialFxRackState },
@@ -165,11 +211,13 @@ export const useStore = create<MixerState>()(
         set((state) => {
           const deckKey = `deck${deck}`;
           const currentDeck = state[deckKey];
+          // Phase S11.2: Derive canonical trackKey from trackData
+          const trackKey = trackData ? deriveTrackKey(trackData) : null;
           return {
             [deckKey]: {
               ...currentDeck,
               trackData: trackData,
-              trackId: trackData?.trackId ?? trackData?.url ?? null,
+              trackKey, // Canonical identifier for DB lookups
               playbackRate: trackData?.bpm ? state.masterBpm / trackData.bpm : 1, // Auto-calc initial sync rate
               isLoaded: false,
             },
@@ -325,6 +373,71 @@ export const useStore = create<MixerState>()(
             },
           };
         }),
+
+      // Phase S7: Mixer Settings Actions
+      setMixerSettings: (updates) =>
+        set((state) => ({
+          mixerSettings: {
+            ...state.mixerSettings,
+            ...updates,
+          },
+        })),
+
+      // Phase S9: Hot Cue & Loop Actions
+      setHotCue: (deck, slot, timeSec, label, color) =>
+        set((state) => {
+          const deckKey = `deck${deck}`;
+          const currentDeck = state[deckKey];
+          const existingCues = currentDeck.hotCues;
+          const updatedCues = existingCues.filter((c) => c.id !== slot);
+          updatedCues.push({ id: slot, timeSec, label, color });
+          return {
+            [deckKey]: {
+              ...currentDeck,
+              hotCues: updatedCues.sort((a, b) => a.id - b.id),
+            },
+          };
+        }),
+
+      clearHotCue: (deck, slot) =>
+        set((state) => {
+          const deckKey = `deck${deck}`;
+          const currentDeck = state[deckKey];
+          return {
+            [deckKey]: {
+              ...currentDeck,
+              hotCues: currentDeck.hotCues.filter((c) => c.id !== slot),
+            },
+          };
+        }),
+
+      setActiveLoop: (deck, region) =>
+        set((state) => {
+          const deckKey = `deck${deck}`;
+          const currentDeck = state[deckKey];
+          return {
+            [deckKey]: {
+              ...currentDeck,
+              activeLoop: region,
+            },
+          };
+        }),
+
+      toggleLoop: (deck) =>
+        set((state) => {
+          const deckKey = `deck${deck}`;
+          const currentDeck = state[deckKey];
+          if (!currentDeck.activeLoop) return state; // No loop to toggle
+          return {
+            [deckKey]: {
+              ...currentDeck,
+              activeLoop: {
+                ...currentDeck.activeLoop,
+                enabled: !currentDeck.activeLoop.enabled,
+              },
+            },
+          };
+        }),
     }),
     {
       name: 'piko-studio-state',
@@ -335,6 +448,7 @@ export const useStore = create<MixerState>()(
         fxRack: state.fxRack,
         masterBpm: state.masterBpm,
         crossfadeValue: state.crossfadeValue,
+        mixerSettings: state.mixerSettings, // Phase S7: Persist mixer settings
       }),
     }
   )

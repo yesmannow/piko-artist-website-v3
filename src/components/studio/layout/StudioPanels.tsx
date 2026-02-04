@@ -7,12 +7,16 @@ import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { useComplexityMode } from '@/contexts/ComplexityModeContext';
 import { useGestures } from "@/hooks/useGestures";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useOrientation } from "@/hooks/useOrientation";
 import { StudioGrid } from "./StudioGrid";
+import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";
+import { MobileLandscapeWorkstation } from "./MobileLandscapeWorkstation";
 import { Deck } from "@/components/studio/ui/Deck";
 import { MainWaveform } from "@/components/studio/ui/MainWaveform";
 import { StemMeters } from "@/components/studio/ui/StemMeters";
 import { StemControls } from "@/components/studio/ui/StemControls";
-import { FXRack } from "@/components/studio/core/FXRack";
+
 
 // Lazy-load heavy stem components to reduce first-load JS
 const StemWaveforms = dynamic(
@@ -38,7 +42,6 @@ type StudioPanelsProps = {
 
 export function StudioPanels({ masterBus, masterPostFx, masterProgress }: Readonly<StudioPanelsProps>) {
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
-  const fxPanelOpen = useStudioStore((state) => state.fxPanelOpen);
   const performanceMode = useStudioStore((state) => state.performanceMode);
   const focusedDeckId = useStudioStore((state) => state.focusedDeckId);
   const setFocusedDeckId = useStudioStore((state) => state.setFocusedDeckId);
@@ -49,6 +52,10 @@ export function StudioPanels({ masterBus, masterPostFx, masterProgress }: Readon
   const deckA = useStore((state) => state.deckA);
   const deckB = useStore((state) => state.deckB);
   const dragDeltaRef = useRef(0);
+
+  // Phase 5: Mobile detection (avoid keyboard-triggered flips)
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isLandscape = useOrientation();
 
   // Always call hooks before any conditional returns
   const gestureConfig = useMemo(
@@ -78,7 +85,16 @@ export function StudioPanels({ masterBus, masterPostFx, masterProgress }: Readon
 
   const gestureHandlers = useGestures(gestureConfig);
 
-  // Phase V: Use new 3-row grid layout
+  // Phase 5: Mobile layouts (portrait/landscape)
+  if (!isDesktop) {
+    if (isLandscape) {
+      return <MobileLandscapeWorkstation />;
+    } else {
+      return <MobilePortraitPocketStudio />;
+    }
+  }
+
+  // Phase V: Use new 3-row grid layout for desktop
   if (useGridLayout && complexityMode === 'pro') {
     return <StudioGrid masterBus={masterBus} masterPostFx={masterPostFx} masterProgress={masterProgress ?? 0} />;
   }
@@ -117,7 +133,7 @@ export function StudioPanels({ masterBus, masterPostFx, masterProgress }: Readon
       </section>
 
       <aside
-        className={`studio-side-panel ${stemModeEnabled || fxPanelOpen ? "is-open" : ""}`}
+        className={`studio-side-panel ${stemModeEnabled ? "is-open" : ""}`}
         id="studio-side-panel"
       >
         {stemModeEnabled && (
@@ -129,15 +145,6 @@ export function StudioPanels({ masterBus, masterPostFx, masterProgress }: Readon
             <StemControls deckId={focusedDeckId ?? "A"} />
             <StemMeters deckId={focusedDeckId ?? "A"} />
             <StemDebugPanel />
-          </div>
-        )}
-
-        {fxPanelOpen && (
-          <div className="studio-panel-block">
-            <div className="studio-panel-header">
-              <span>FX Rack</span>
-            </div>
-            <FXRack masterBus={masterBus} masterPostFx={masterPostFx} />
           </div>
         )}
       </aside>

@@ -14,9 +14,13 @@ import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Loader2 } from 'lucide-react';
+import { MatchBadge as MatchBadgeComponent } from './MatchBadge';
+import type { MatchBadge } from '@/features/insights/matchScoring';
 
 export interface Track {
-  trackId: string;
+  trackKey: string; // Phase S11.2: Canonical track ID (stable across environments)
+  url?: string; // Phase S11.2: URL for audio fetching (may change between local/R2)
+  trackId: string; // DEPRECATED - Use trackKey instead. Kept for backward compatibility
   title: string;
   artist: string;
   bpm: number;
@@ -29,6 +33,8 @@ export interface Track {
   src?: string;
   status?: 'unanalyzed' | 'analyzing' | 'analyzed' | 'error';
   isCompatible?: boolean; // Phase IX.5: Harmonic matching indicator
+  matchBadge?: MatchBadge; // Phase S8: Match quality
+  matchTooltip?: string; // Phase S8: Match explanation
   stems?: {
     full?: string;
     vocals?: string;
@@ -59,7 +65,8 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
   };
 
   const getLocalUrl = () => {
-    const candidate = track.src || track.trackId;
+    // Phase S11.2: Use url field first, fallback to src
+    const candidate = track.url || track.src || track.trackKey;
     const safeFile = normalizeFileName(candidate || '');
     if (!safeFile) {
       throw new Error('Missing track filename');
@@ -79,7 +86,8 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
 
       // Update store with track data
       setDeckTrack(deck, {
-        trackId: track.trackId,
+        trackKey: track.trackKey, // Phase S11.2: Canonical track identity
+        trackId: track.trackId, // DEPRECATED: Kept for backward compatibility
         url,
         bpm: track.bpm,
         title: track.title,
@@ -95,7 +103,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
         },
       });
       setStems(deck, emptyStems);
-      markStemsReady(track.trackId, false);
+      markStemsReady(track.trackKey, false); // Phase S11.2: Use canonical trackKey
 
       console.log(`[TrackListing] Loaded ${track.title} on Deck ${deck}`);
 
@@ -130,8 +138,8 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
 
     // Set track ID for drop handler
     e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('application/x-piko-track-id', track.trackId);
-    e.dataTransfer.setData('text/plain', track.trackId); // Fallback
+    e.dataTransfer.setData('application/x-piko-track-id', track.trackKey); // Phase S11.2: Use canonical trackKey
+    e.dataTransfer.setData('text/plain', track.trackKey); // Fallback
   };
 
   const handleDragEnd = () => {
@@ -145,7 +153,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
           ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]' // Cyber Lime glow
           : 'border-white/10'
       } ${isDragging ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}`}
-      data-track-id={track.trackId}
+      data-track-key={track.trackKey} // Phase S11.2: Use canonical trackKey
       draggable={true}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -187,6 +195,13 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
       </div>
 
       <div className="flex items-center gap-4 mb-4 text-sm flex-wrap">
+        {track.matchBadge && track.matchTooltip && (
+          <MatchBadgeComponent
+            badge={track.matchBadge}
+            tooltip={track.matchTooltip}
+            className="mr-2"
+          />
+        )}
         <div className="flex items-center gap-2">
           <span className="text-white/60">BPM:</span>
           <span className={`font-mono font-bold ${track.bpm > 0 ? 'text-white' : 'text-white/40'}`}>

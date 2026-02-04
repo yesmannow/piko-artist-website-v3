@@ -21,7 +21,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Validate track references
         run: npm run validate:tracks
@@ -30,7 +30,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Lint
-        run: npm run lint --if-present
+        run: npm run lint
 
       - name: Studio Audit
         run: npm run audit:studio

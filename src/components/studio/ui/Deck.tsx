@@ -1,106 +1,81 @@
 "use client";
 
 /**
- * Deck Component
+ * Deck Component (Refactored - Phase S3)
  *
  * Displays track information, transport controls, and deck status
+ * Now using extracted hooks and presentational components
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
-import { useStore, type DeckState } from '@/store/useStore';
+import { useStore } from '@/store/useStore';
 import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyaniteRecommendations';
-import { useStemWorker } from '@/hooks/useStemWorker';
 import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
 import { db } from '@/lib/db';
-import { Play, Pause, Square, SkipBack, SkipForward, Wand2, Loader2, Scissors } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { RecommendationsPopover } from './RecommendationsPopover';
 import { StemRack } from './StemRack';
-import { StemPerformancePads } from './StemPerformancePads'; // Phase 3.3
+import { StemPerformancePads } from './StemPerformancePads';
 import { JogWheel } from './JogWheel';
 import { WaveformMini } from './WaveformMini';
 import { EnergyIndicator } from './EnergyIndicator';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';
-import { decodeStemsToAudioBuffers } from '@/utils/stems/decodeStems';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
 
-// complexity mode is passed as a prop; keep the prop shape immutable
+// Phase S3: Extracted hooks
+import { useDeckTransport } from '@/hooks/deck/useDeckTransport';
+import { useDeckWaveformSync } from '@/hooks/deck/useDeckWaveformSync';
+import { useDeckStems } from '@/hooks/deck/useDeckStems';
+
+// Phase S3: Extracted components
+import { DeckHeader } from './deck/DeckHeader';
+import { DeckTransportControls } from './deck/DeckTransportControls';
+
 interface DeckProps {
   readonly deckId: 'A' | 'B';
   readonly showMiniWaveform?: boolean;
   readonly complexityMode?: 'simple' | 'pro';
 }
 
-const UI_UPDATE_INTERVAL_MS = 50;
-const STORE_UPDATE_INTERVAL_MS = 33;
-const PROGRESS_EPSILON = 0.005;
-
-type StemKey = 'vocals' | 'drums' | 'bass' | 'other';
-type StemBufferMap = Record<StemKey, AudioBuffer | null>;
-
 type DeckWindow = Window & {
   __PIKO_TEST_HELPERS__?: PikoTestHelpers;
 };
 
-
 export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }: DeckProps) {
-  const { play, pause, stop, seekTo, getPlaybackPosition, getDeckDuration, loadStems, syncToBpm, triggerTapeStop } = useAudioEngine();
+  const { syncToBpm, triggerTapeStop, getPlaybackPosition } = useAudioEngine();
   const deckKey: 'deckA' | 'deckB' = deckId === 'A' ? 'deckA' : 'deckB';
-  const deck = useStore((state) => state[deckKey]) as DeckState;
-  const isAppActive = useStore((state) => state.isAppActive);
-  const masterBpm = useStore((state) => state.masterBpm);
-  const setDeckPlaying = useStore((state) => state.setDeckPlaying);
+  const deck = useStore((state) => state[deckKey]);
   const setKeyLock = useStore((state) => state.setKeyLock);
-  const updateDeckTime = useStudioStore((state) => state.updateDeckTime);
-  const setDeckDurationStore = useStudioStore((state) => state.setDeckDuration);
-  const stemsForDeck = useStudioStore((state) => state.stems[deckId]);
-  const setStems = useStudioStore((state) => state.setStems);
-  const markStemsReady = useStudioStore((state) => state.markStemsReady);
   const focusedDeckId = useStudioStore((state) => state.focusedDeckId);
-  const stemGenerationRequest = useStudioStore((state) => state.stemGenerationRequest);
-  const autoStem = useStudioStore((state) => state.autoStem);
   const stemModeEnabled = useStudioStore((state) => state.stemModeEnabled);
+  
   // Phase 3.3: Stem Performance Pads
   const mutedStems = useStudioStore((state) => state.mutedStems[deckId]);
   const soloStem = useStudioStore((state) => state.soloStem[deckId]);
   const toggleStemMute = useStudioStore((state) => state.toggleStemMute);
   const activateSoloStem = useStudioStore((state) => state.activateSoloStem);
   const clearSolo = useStudioStore((state) => state.clearSolo);
+  
   const { getRecommendations, loading: recommendationsLoading } = useCyaniteRecommendations();
-  const { analyzeIfNeeded } = useSmartTrackAnalysis(); // Phase IX.5: Auto-analysis
-  const stemModelUrl = process.env.NEXT_PUBLIC_STEM_MODEL_URL ?? '/models/stems.onnx';
-  const {
-    init: initStemWorker,
-    initializing: stemInitializing,
-    error: stemWorkerError,
-    separate: separateStems,
-  } = useStemWorker(stemModelUrl);
+  const { analyzeIfNeeded } = useSmartTrackAnalysis();
+
+  // Phase S3: Use extracted hooks
+  const transport = useDeckTransport({ deckId });
+  const { progress, deckDuration } = useDeckWaveformSync({ deckId });
+  const stems = useDeckStems({
+    deckId,
+    trackUrl: deck.trackData?.url,
+    trackId: deck.trackData?.trackId,
+  });
 
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [isGeneratingStems, setIsGeneratingStems] = useState(false);
-  const [stemError, setStemError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [deckDuration, setDeckDuration] = useState(0);
   const [deckReady, setDeckReady] = useState(false);
-  const lastUiUpdateRef = useRef(0);
-  const lastStoreUpdateRef = useRef(0);
-  const progressRef = useRef(0);
-  const durationRef = useRef(0);
-  const decodeContextRef = useRef<AudioContext | null>(null);
-  const autoStemRef = useRef(false);
   const deckRef = useRef<HTMLDivElement | null>(null);
   const deckReadyRef = useRef(false);
-  const scratchState = useRef<{
-    centerX: number;
-    centerY: number;
-    lastAngle: number;
-    wasPlaying: boolean;
-    position: number;
-  } | null>(null);
 
   const deckColor = deckId === 'A' ? 'bg-studio-cyan' : 'bg-studio-purple';
   const jogAccent = deckId === 'A' ? '#22d3ee' : '#a855f7';
@@ -108,21 +83,17 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const trackData = deck.trackData ?? null;
   const pitchDelta = (deck.playbackRate || 1) - 1;
   const currentBpm = trackData ? calculateNewBpm(trackData.bpm, pitchDelta) : null;
-  const isSynced =
-    currentBpm !== null && Math.abs(currentBpm - masterBpm) < 0.5;
+  const isSynced = currentBpm !== null && Math.abs(currentBpm - (useStore.getState().masterBpm)) < 0.5;
   const isKeyLockActive = deck.isKeyLockActive;
   const energy = trackData?.energy ?? 0;
-  const energyLevel = Math.min(1, Math.max(0, energy / 1.2));
   const isLoaded = deck.isLoaded;
   const fallbackBpm = trackData ? trackData.bpm : undefined;
-  const hasStems = Object.values(stemsForDeck).some(Boolean);
-  const canGenerateStems = Boolean(trackData?.url) && !isGeneratingStems && !hasStems && !stemInitializing;
   const isFocused = focusedDeckId === deckId;
-  const showInlineStemControls = hasStems && !stemModeEnabled;
+  const showInlineStemControls = stems.hasStems && !stemModeEnabled;
 
+  // Deck ready detection
   useEffect(() => {
-    // guard for SSR / missing browser APIs
-  const Global = typeof globalThis === 'undefined' ? undefined : (globalThis as unknown as Window & { ResizeObserver?: typeof ResizeObserver });
+    const Global = typeof globalThis === 'undefined' ? undefined : (globalThis as unknown as Window & { ResizeObserver?: typeof ResizeObserver });
     if (Global?.ResizeObserver === undefined) return;
     const el = deckRef.current;
     if (!el) return;
@@ -136,7 +107,6 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
       }
       deckReadyRef.current = ready;
       setDeckReady(ready);
-      // prefer dataset for data-* attributes
       el.dataset.deckReady = ready ? 'true' : 'false';
     };
 
@@ -162,6 +132,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
     };
   }, [deckId]);
 
+  // Magic wand - get recommendations
   const handleMagicWand = async () => {
     if (!trackData) return;
 
@@ -175,100 +146,8 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   };
 
   const handleLoadRecommendation = async (targetDeck: 'A' | 'B', rec: { id: string; title: string; artist: string; bpm: number; key: string; mood: { aggressive: number; chill: number } }) => {
-    // For now, we'll just show a message since we don't have the actual track URL
-    // In a real implementation, you'd need to map Cyanite IDs to your track URLs
     console.log(`[Deck] Would load recommendation: ${rec.title} to Deck ${targetDeck}`);
-  // Mapping Cyanite recommendation to an actual track URL requires backend support.
   };
-
-  const handleSplitStems = useCallback(async () => {
-    if (!trackData?.url) return;
-    setStemError(null);
-    setIsGeneratingStems(true);
-
-    try {
-      await initStemWorker();
-
-      const response = await fetch(trackData.url);
-      const arrayBuffer = await response.arrayBuffer();
-    const LocalGlobal = globalThis as any;
-    const AudioContextCtor = LocalGlobal.AudioContext ?? LocalGlobal.webkitAudioContext;
-      if (!AudioContextCtor) {
-        throw new Error('AudioContext is not supported in this browser');
-      }
-      const decodeContext = decodeContextRef.current ?? new AudioContextCtor();
-      decodeContextRef.current = decodeContext;
-      const decoded = await decodeContext.decodeAudioData(arrayBuffer.slice(0));
-
-      const channels = Math.min(decoded.numberOfChannels, 2);
-      const length = decoded.length;
-      const mono = new Float32Array(new ArrayBuffer(length * Float32Array.BYTES_PER_ELEMENT));
-      for (let ch = 0; ch < channels; ch++) {
-        const data = decoded.getChannelData(ch);
-        for (let i = 0; i < length; i++) {
-          mono[i] += data[i] / channels;
-        }
-      }
-
-      const stemJobId = deck.trackId ?? trackData.url;
-      const stems = await separateStems(stemJobId, mono.buffer, 1);
-      if (!stems || Object.keys(stems).length === 0) {
-        throw new Error('Stem separation returned no data');
-      }
-
-      const decodedBuffers = decodeStemsToAudioBuffers(stems, decodeContext);
-      const stemBuffers: StemBufferMap = {
-        vocals: decodedBuffers.vocals ?? null,
-        drums: decodedBuffers.drums ?? null,
-        bass: decodedBuffers.bass ?? null,
-        other: decodedBuffers.other ?? null,
-      };
-
-      if (!stemBuffers || Object.keys(stemBuffers).length === 0 || !Object.values(stemBuffers).some(Boolean)) {
-        console.warn('[Deck] No stem buffers available, skipping loadStems');
-      } else {
-        await loadStems(deckId, stemBuffers);
-        setStems(deckId, stemBuffers);
-        if (trackData?.trackId) {
-          markStemsReady(trackData.trackId, true);
-        }
-        console.log('[Deck] Stems loaded into audio engine');
-      }
-    } catch (error) {
-      console.error('[Deck] Failed to generate stems:', error);
-      setStemError(error instanceof Error ? error.message : 'Stem generation failed');
-    } finally {
-      setIsGeneratingStems(false);
-    }
-  }, [
-    deck.trackId,
-    deckId,
-    initStemWorker,
-    loadStems,
-    markStemsReady,
-    separateStems,
-    setStems,
-    trackData?.trackId,
-    trackData?.url,
-  ]);
-
-  useEffect(() => {
-    // prefer optional chain for concision
-    if (stemGenerationRequest?.deck !== deckId) return;
-    if (canGenerateStems) {
-      handleSplitStems();
-    }
-  }, [canGenerateStems, deckId, handleSplitStems, stemGenerationRequest]);
-
-  useEffect(() => {
-    if (!autoStem || !trackData?.url || !deck.isLoaded) {
-      autoStemRef.current = false;
-      return;
-    }
-    if (autoStemRef.current || hasStems || !canGenerateStems) return;
-    autoStemRef.current = true;
-    handleSplitStems();
-  }, [autoStem, canGenerateStems, deck.isLoaded, handleSplitStems, hasStems, trackData?.url]);
 
   // Phase IX.5: Auto-analyze track if not already analyzed
   useEffect(() => {
@@ -292,149 +171,15 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
     performAnalysis();
   }, [trackData?.url, trackData?.title, deck.isLoaded, deckId, analyzeIfNeeded]);
 
-  const handlePlay = () => {
-    play(deckId);
-    setDeckPlaying(deckId, true);
-  };
-
-  const handlePause = () => {
-    pause(deckId);
-    setDeckPlaying(deckId, false);
-  };
-
-  const handleStop = () => {
-    stop(deckId);
-    setDeckPlaying(deckId, false);
-  };
-
-  const handleSeek = (seconds: number) => {
-    const currentPos = getPlaybackPosition(deckId);
-    seekTo(deckId, Math.max(0, currentPos + seconds));
-  };
-
-  const handleScratchStart = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!trackData) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
-
-    scratchState.current = {
-      centerX,
-      centerY,
-      lastAngle: angle,
-      wasPlaying: deck.isPlaying,
-      position: getPlaybackPosition(deckId),
-    };
-
-    if (deck.isPlaying) {
-      pause(deckId);
-      setDeckPlaying(deckId, false);
-    }
-
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handleScratchMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!scratchState.current) return;
-    const { centerX, centerY } = scratchState.current;
-    const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
-    let delta = angle - scratchState.current.lastAngle;
-
-    if (delta > Math.PI) delta -= 2 * Math.PI;
-    if (delta < -Math.PI) delta += 2 * Math.PI;
-
-    scratchState.current.lastAngle = angle;
-
-    const duration = getDeckDuration(deckId);
-    const scratchScale = 0.6; // seconds per radian of platter travel
-    const nextPosition = Math.max(
-      0,
-      Math.min(duration, scratchState.current.position + delta * scratchScale)
-    );
-
-    scratchState.current.position = nextPosition;
-    seekTo(deckId, nextPosition);
-  };
-
-  const handleScratchEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    const state = scratchState.current;
-    if (!state) return;
-    scratchState.current = null;
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-
-    if (state.wasPlaying) {
-      play(deckId);
-      setDeckPlaying(deckId, true);
-    }
-  };
-
-  useEffect(() => {
-    let frameId: number;
-    const Global = globalThis as any;
-    const studioDeckKey = deckId === 'A' ? 'deckA' : 'deckB';
-    const tick = (time: number) => {
-      if (!isAppActive) {
-        frameId = Global.requestAnimationFrame(tick);
-        return;
-      }
-      const duration = getDeckDuration(deckId);
-      const position = getPlaybackPosition(deckId);
-      const nextProgress = duration > 0 ? Math.min(1, position / duration) : 0;
-
-      if (time - lastStoreUpdateRef.current >= STORE_UPDATE_INTERVAL_MS) {
-        updateDeckTime(studioDeckKey, position);
-        if (Math.abs(duration - durationRef.current) > 0.1) {
-          setDeckDurationStore(studioDeckKey, duration);
-        }
-        lastStoreUpdateRef.current = time;
-      }
-
-      const progressDelta = Math.abs(nextProgress - progressRef.current);
-      const durationDelta = Math.abs(duration - durationRef.current);
-      if (
-        time - lastUiUpdateRef.current >= UI_UPDATE_INTERVAL_MS ||
-        progressDelta >= PROGRESS_EPSILON ||
-        durationDelta >= 0.1
-      ) {
-        progressRef.current = nextProgress;
-        durationRef.current = duration;
-        setProgress(nextProgress);
-        setDeckDuration(duration);
-        lastUiUpdateRef.current = time;
-      }
-
-        frameId = Global.requestAnimationFrame(tick);
-    };
-    frameId = Global.requestAnimationFrame(tick);
-    return () => {
-      Global.cancelAnimationFrame(frameId);
-    };
-  }, [deckId, getDeckDuration, getPlaybackPosition, isAppActive, setDeckDurationStore, updateDeckTime]);
-
-  // compute a few derived classNames/titles to avoid nested ternaries in JSX
-  const keyLockClass = (() => {
-    if (isKeyLockActive) {
-      if (deckId === 'A') return 'bg-studio-cyan/20 border-studio-cyan text-studio-cyan shadow-[0_0_10px_rgba(34,211,238,0.5)]';
-      return 'bg-studio-purple/20 border-studio-purple text-studio-purple shadow-[0_0_10px_rgba(168,85,247,0.5)]';
-    }
-    return 'bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white';
-  })();
-
-  const energyFilledClass = (filled: boolean) => {
-    if (!filled) return 'bg-white/10';
-    return deckId === 'A' ? 'bg-studio-cyan shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'bg-studio-purple shadow-[0_0_8px_rgba(168,85,247,0.6)]';
-  };
-
   let stemButtonTitle = 'Split track into stems';
-  if (stemWorkerError) stemButtonTitle = `Stem worker error: ${stemWorkerError}`;
-  else if (stemInitializing) stemButtonTitle = 'Loading stem model...';
+  if (stems.stemWorkerError) stemButtonTitle = `Stem worker error: ${stems.stemWorkerError}`;
+  else if (stems.stemInitializing) stemButtonTitle = 'Loading stem model...';
 
   return (
     <div
       ref={deckRef}
       className={`deck deck-full h-full ${isFocused ? 'deck-focused' : ''}`}
-      data-stems-ready={hasStems ? 'true' : 'false'}
+      data-stems-ready={stems.hasStems ? 'true' : 'false'}
       data-deck-id={deckId}
       data-deck-ready={deckReady ? 'true' : 'false'}
     >
@@ -444,323 +189,198 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         accentColor={deckId === 'A' ? '#22d3ee' : '#a855f7'}
         className="h-full flex flex-col bg-obsidian-900/80 rounded-lg p-6"
       >
-      {/* Deck Header */}
-          <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${deckColor}`} />
-          <h2 className="text-lg font-black uppercase font-mono">{deckLabel}</h2>
-          <span className={`text-xs px-2 py-1 rounded ${deck.isPlaying ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/60'}`}>
-            {deck.isPlaying ? 'PLAYING' : 'IDLE'}
-          </span>
-        </div>
-        {trackData && (
-          <div
-            className={`text-xs font-mono flex items-center gap-4 ${
-              isSynced ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.65)]' : 'text-white/60'
-            }`}
-          >
-            {/* Phase IX.5: Prominent Camelot Key Display */}
-            {trackData.key && (
-              <div className="px-3 py-1.5 rounded-lg bg-lime-400/10 border border-lime-400/30">
-                <span className="text-[10px] uppercase text-lime-400/70 tracking-wider mr-2">Key</span>
-                <span className="text-sm font-bold text-lime-400">{trackData.key}</span>
-              </div>
-            )}
+        {/* Deck Header */}
+        <DeckHeader
+          deckId={deckId}
+          deckLabel={deckLabel}
+          isPlaying={deck.isPlaying}
+          trackData={trackData}
+          currentBpm={currentBpm}
+          isSynced={isSynced}
+          isKeyLockActive={isKeyLockActive}
+          energy={energy}
+          complexityMode={complexityMode}
+          recommendationsLoading={recommendationsLoading}
+          canGenerateStems={stems.canGenerateStems}
+          isGeneratingStems={stems.isGeneratingStems}
+          stemButtonTitle={stemButtonTitle}
+          stemModeEnabled={stemModeEnabled}
+          onMagicWand={handleMagicWand}
+          onSplitStems={stems.handleSplitStems}
+          onToggleKeyLock={() => setKeyLock(deckId, !isKeyLockActive)}
+        />
 
-            {/* BPM Display */}
-            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-              <span className="text-[10px] uppercase text-white/60 tracking-wider mr-2">BPM</span>
-              <span className="text-sm font-bold text-white">{currentBpm?.toFixed(1)}</span>
-              {isSynced && <span className="ml-1 text-[10px] text-lime-400">(SYNC)</span>}
-            </div>
+        {/* Deck Body */}
+        {trackData ? (
+          <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
+            <div className="flex items-center justify-center gap-4">
+              {/* Phase IX.5: Energy Indicator */}
+              {complexityMode === 'pro' && (
+                <EnergyIndicator energy={trackData.energy || 0} />
+              )}
 
-            <button
-              onClick={() => setKeyLock(deckId, !isKeyLockActive)}
-              className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-[0.2em] border transition-all ${keyLockClass}`}
-              title="Master Tempo / Key Lock"
-            >
-              MT
-            </button>
-            <div className="flex items-center gap-1">
-              {[0, 1, 2, 3, 4].map((i) => {
-                const filled = energyLevel * 5 > i;
-                return (
-                  <span
-                    key={i}
-                    className={`w-1.5 h-3 rounded-sm transition-all duration-300 ${energyFilledClass(filled)}`}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Deck Body */}
-      {trackData ? (
-        <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
-          <div className="flex items-center justify-center gap-4">
-            {/* Phase IX.5: Energy Indicator */}
-            {complexityMode === 'pro' && (
-              <EnergyIndicator energy={trackData.energy || 0} />
-            )}
-
-            <div className="flex flex-col items-center gap-5">
-              <JogWheel
-                artworkUrl={trackData.cover || trackData.artUrl}
-                title={trackData.title}
-                progress={progress}
-                isPlaying={deck.isPlaying}
-                bpm={currentBpm ?? undefined}
-                isSynced={isSynced}
-                accent={jogAccent}
-                loading={!isLoaded}
-                onPointerDown={handleScratchStart}
-                onPointerMove={handleScratchMove}
-                onPointerUp={handleScratchEnd}
-                onPointerCancel={handleScratchEnd}
-              />
-              <div className="grid grid-cols-2 gap-3 w-full">
-                {['HOT CUE 1', 'HOT CUE 2', 'HOT CUE 3', 'HOT CUE 4'].map((pad) => (
-                  <button
-                    key={pad}
-                    className="py-3 rounded-lg bg-linear-to-b from-[#0f1118] to-[#07080e] border border-white/10 text-xs font-mono uppercase tracking-[0.24em] hover:border-studio-cyan/50 transition-colors"
-                  >
-                    {pad}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-bold text-white truncate">{trackData.title}</h3>
-                <p className="text-sm text-white/60">{trackData.artist}</p>
-                <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-white/60">
-                  <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
-                    <span>BPM</span>
-                    <span className="text-white">{Math.round(trackData.bpm)}</span>
-                  </div>
-                  {complexityMode === 'pro' && (
-                    <>
-                      <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
-                        <span>Key</span>
-                        <span className="text-white">{trackData.key || '---'}</span>
-                      </div>
-                      <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
-                        <span>Energy</span>
-                        <span className="text-white">{trackData.energy ? Math.round(trackData.energy * 100) : '--'}%</span>
-                      </div>
-                    </>
-                  )}
+              <div className="flex flex-col items-center gap-5">
+                <JogWheel
+                  artworkUrl={trackData.cover || trackData.artUrl}
+                  title={trackData.title}
+                  progress={progress}
+                  isPlaying={deck.isPlaying}
+                  bpm={currentBpm ?? undefined}
+                  isSynced={isSynced}
+                  accent={jogAccent}
+                  loading={!isLoaded}
+                  onPointerDown={transport.handleScratchStart}
+                  onPointerMove={transport.handleScratchMove}
+                  onPointerUp={transport.handleScratchEnd}
+                  onPointerCancel={transport.handleScratchEnd}
+                />
+                <div className="grid grid-cols-2 gap-3 w-full">
+                  {['HOT CUE 1', 'HOT CUE 2', 'HOT CUE 3', 'HOT CUE 4'].map((pad) => (
+                    <button
+                      key={pad}
+                      className="py-3 rounded-lg bg-linear-to-b from-[#0f1118] to-[#07080e] border border-white/10 text-xs font-mono uppercase tracking-[0.24em] hover:border-studio-cyan/50 transition-colors"
+                    >
+                      {pad}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {complexityMode === 'pro' && (
-                  <motion.button
-                    onClick={handleMagicWand}
-                    disabled={recommendationsLoading}
-                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    title="Get similar track recommendations"
-                  >
-                    {recommendationsLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-studio-cyan" />
-                    ) : (
-                      <Wand2 className="w-4 h-4 text-studio-cyan" />
-                    )}
-                  </motion.button>
-                )}
-                {!stemModeEnabled && complexityMode === 'pro' && (
-                  <motion.button
-                    onClick={handleSplitStems}
-                    disabled={!canGenerateStems}
-                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
-                    whileHover={canGenerateStems ? { scale: 1.05 } : {}}
-                    whileTap={canGenerateStems ? { scale: 0.95 } : {}}
-                    title={stemButtonTitle}
-                    data-testid="generate-stems"
-                  >
-                    {isGeneratingStems ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-studio-purple" />
-                    ) : (
-                      <Scissors className={`w-4 h-4 ${canGenerateStems ? 'text-studio-purple' : 'text-white/30'}`} />
-                    )}
-                  </motion.button>
-                )}
-              </div>
             </div>
 
-            {isGeneratingStems && (
-              <div className="mb-2 flex items-center gap-2 text-xs text-white/60">
-                <Loader2 className="h-3 w-3 animate-spin text-studio-purple" />
-                <span>Generating stems...</span>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-bold text-white truncate">{trackData.title}</h3>
+                  <p className="text-sm text-white/60">{trackData.artist}</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-white/60">
+                    <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
+                      <span>BPM</span>
+                      <span className="text-white">{Math.round(trackData.bpm)}</span>
+                    </div>
+                    {complexityMode === 'pro' && (
+                      <>
+                        <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
+                          <span>Key</span>
+                          <span className="text-white">{trackData.key || '---'}</span>
+                        </div>
+                        <div className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 flex items-center justify-between">
+                          <span>Energy</span>
+                          <span className="text-white">{trackData.energy ? Math.round(trackData.energy * 100) : '--'}%</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
 
-            {(stemError || stemWorkerError) && (
-              <div className="mb-2 text-xs text-red-400">
-                {stemError ?? stemWorkerError}
-              </div>
-            )}
-
-            {showInlineStemControls && <StemRack deckId={deckId} compact={false} />}
-
-            {/* Phase 3.3: Stem Performance Pads (Pro mode only) */}
-            {complexityMode === 'pro' && hasStems && (
-              <StemPerformancePads
-                deckId={deckId}
-                disabled={false}
-                mutedStems={mutedStems}
-                soloStem={soloStem}
-                onToggle={(stem) => toggleStemMute(deckId, stem)}
-                onSolo={(stem) => activateSoloStem(deckId, stem)}
-                onClearSolo={() => clearSolo(deckId)}
-              />
-            )}
-
-            {/* Show disabled pads with CTA when stems not ready */}
-            {complexityMode === 'pro' && !hasStems && canGenerateStems && (
-              <StemPerformancePads
-                deckId={deckId}
-                disabled={true}
-                mutedStems={mutedStems}
-                soloStem={null}
-                onToggle={handleSplitStems}
-                onSolo={() => {}}
-                onClearSolo={() => {}}
-              />
-            )}
-
-            <div className="flex items-center justify-center gap-3 mt-auto flex-wrap">
-              <motion.button
-                onClick={() => handleSeek(-10)}
-                className="p-3 rounded-xl bg-linear-to-b from-[#1f1f1f] to-obsidian-900 border border-white/10 hover:border-studio-cyan/40 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <SkipBack className="w-4 h-4" />
-              </motion.button>
-
-              {deck.isPlaying ? (
-                <motion.button
-                  onClick={handlePause}
-                  className="p-5 rounded-2xl bg-linear-to-b from-studio-purple to-[#3b0f6e] text-white font-black uppercase shadow-[0_0_20px_rgba(168,85,247,0.4)]"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Pause className="w-6 h-6" />
-                </motion.button>
-              ) : (
-                <motion.button
-                  onClick={handlePlay}
-                  className="p-5 rounded-2xl bg-linear-to-b from-studio-cyan to-[#0b5d66] text-white font-black uppercase shadow-[0_0_20px_rgba(34,211,238,0.4)]"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Play className="w-6 h-6" />
-                </motion.button>
+              {stems.isGeneratingStems && (
+                <div className="mb-2 flex items-center gap-2 text-xs text-white/60">
+                  <Loader2 className="h-3 w-3 animate-spin text-studio-purple" />
+                  <span>Generating stems...</span>
+                </div>
               )}
 
-              <motion.button
-                onClick={() => syncToBpm(deckId)}
-                disabled={!trackData?.bpm}
-                className={`px-4 py-3 rounded-xl border text-xs font-mono uppercase tracking-widest transition-colors ${
-                  isSynced
-                    ? 'border-white/80 text-white shadow-[0_0_12px_rgba(255,255,255,0.5)]'
-                    : 'border-white/10 text-white/60 hover:border-white/40 hover:text-white'
-                } disabled:opacity-40 disabled:cursor-not-allowed`}
-                whileHover={trackData?.bpm ? { scale: 1.05 } : {}}
-                whileTap={trackData?.bpm ? { scale: 0.95 } : {}}
-              >
-                SYNC
-              </motion.button>
-
-              <motion.button
-                onClick={handleStop}
-                className="p-3 rounded-xl bg-linear-to-b from-[#1f1f1f] to-obsidian-900 border border-white/10 hover:border-studio-purple/40 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Square className="w-4 h-4" />
-              </motion.button>
-
-              {complexityMode === 'pro' && (
-                <motion.button
-                  onClick={() => triggerTapeStop(deckId)}
-                  disabled={!deck.isLoaded}
-                  className="px-4 py-3 rounded-xl border border-white/12 bg-[#0c0c0f] text-xs font-mono uppercase tracking-[0.22em] text-white/80 hover:border-studio-purple/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  whileHover={deck.isLoaded ? { scale: 1.05 } : {}}
-                  whileTap={deck.isLoaded ? { scale: 0.95 } : {}}
-                >
-                  Tape Stop
-                </motion.button>
+              {(stems.stemError || stems.stemWorkerError) && (
+                <div className="mb-2 text-xs text-red-400">
+                  {stems.stemError ?? stems.stemWorkerError}
+                </div>
               )}
 
-              <motion.button
-                onClick={() => handleSeek(10)}
-                className="p-3 rounded-xl bg-linear-to-b from-[#1f1f1f] to-obsidian-900 border border-white/10 hover:border-studio-cyan/40 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <SkipForward className="w-4 h-4" />
-              </motion.button>
-            </div>
+              {showInlineStemControls && <StemRack deckId={deckId} compact={false} />}
 
-            <div className="mt-2">
-              <div className="flex items-center justify-between text-xs text-white/60 mb-2">
-                <span>Volume</span>
-                <span className="font-mono">{Math.round(deck.volume * 100)}%</span>
-              </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${deckColor} transition-all`}
-                  style={{ width: `${deck.volume * 100}%` }}
+              {/* Phase 3.3: Stem Performance Pads (Pro mode only) */}
+              {complexityMode === 'pro' && stems.hasStems && (
+                <StemPerformancePads
+                  deckId={deckId}
+                  disabled={false}
+                  mutedStems={mutedStems}
+                  soloStem={soloStem}
+                  onToggle={(stem) => toggleStemMute(deckId, stem)}
+                  onSolo={(stem) => activateSoloStem(deckId, stem)}
+                  onClearSolo={() => clearSolo(deckId)}
                 />
-              </div>
-            </div>
+              )}
 
-            {/* Mini Timeline */}
-            {showMiniWaveform && trackData?.url && (
-              <div className="mt-4">
-              <WaveformMini
-                url={trackData.url}
-                color={deckId === 'A' ? '#22d3ee' : '#a855f7'}
-                beatGrid={trackData.beatGrid}
-                playhead={progress * deckDuration}
-                durationSeconds={deckDuration}
-                onSeek={(seconds) => handleSeek(seconds - getPlaybackPosition(deckId))}
+              {/* Show disabled pads with CTA when stems not ready */}
+              {complexityMode === 'pro' && !stems.hasStems && stems.canGenerateStems && (
+                <StemPerformancePads
+                  deckId={deckId}
+                  disabled={true}
+                  mutedStems={mutedStems}
+                  soloStem={null}
+                  onToggle={stems.handleSplitStems}
+                  onSolo={() => {}}
+                  onClearSolo={() => {}}
+                />
+              )}
+
+              <DeckTransportControls
+                isPlaying={deck.isPlaying}
+                isSynced={isSynced}
+                isLoaded={isLoaded}
+                hasBpm={Boolean(trackData?.bpm)}
+                complexityMode={complexityMode}
+                onPlay={transport.handlePlay}
+                onPause={transport.handlePause}
+                onStop={transport.handleStop}
+                onSync={() => syncToBpm(deckId)}
+                onSeekBack={() => transport.handleSeek(-10)}
+                onSeekForward={() => transport.handleSeek(10)}
+                onTapeStop={() => triggerTapeStop(deckId)}
               />
-            </div>
-          )}
-        </div>
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6">
-          <JogWheel
-            progress={0}
-            isPlaying={false}
-            bpm={fallbackBpm}
-            isSynced={false}
-            accent={jogAccent}
-            onClick={() => {
-              (globalThis as any).dispatchEvent(new CustomEvent('studio:open-library'));
-            }}
-          />
-          <p className="font-mono text-xs text-white/60 uppercase tracking-[0.3em]">Tap the wheel to load Deck {deckId}</p>
-        </div>
-      )}
 
-      {/* Recommendations Popover */}
-      <RecommendationsPopover
-        recommendations={recommendations}
-        isOpen={showRecommendations}
-        onClose={() => setShowRecommendations(false)}
-        onLoadTrack={handleLoadRecommendation}
-      />
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-xs text-white/60 mb-2">
+                  <span>Volume</span>
+                  <span className="font-mono">{Math.round(deck.volume * 100)}%</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${deckColor} transition-all`}
+                    style={{ width: `${deck.volume * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Mini Timeline */}
+              {showMiniWaveform && trackData?.url && (
+                <div className="mt-4">
+                  <WaveformMini
+                    url={trackData.url}
+                    color={deckId === 'A' ? '#22d3ee' : '#a855f7'}
+                    beatGrid={trackData.beatGrid}
+                    playhead={progress * deckDuration}
+                    durationSeconds={deckDuration}
+                    onSeek={(seconds) => transport.handleSeek(seconds - getPlaybackPosition(deckId))}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center gap-6">
+            <JogWheel
+              progress={0}
+              isPlaying={false}
+              bpm={fallbackBpm}
+              isSynced={false}
+              accent={jogAccent}
+              onClick={() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (globalThis as any).dispatchEvent(new CustomEvent('studio:open-library'));
+              }}
+            />
+            <p className="font-mono text-xs text-white/60 uppercase tracking-[0.3em]">Tap the wheel to load Deck {deckId}</p>
+          </div>
+        )}
+
+        {/* Recommendations Popover */}
+        <RecommendationsPopover
+          recommendations={recommendations}
+          isOpen={showRecommendations}
+          onClose={() => setShowRecommendations(false)}
+          onLoadTrack={handleLoadRecommendation}
+        />
       </GlassPanel>
     </div>
   );
