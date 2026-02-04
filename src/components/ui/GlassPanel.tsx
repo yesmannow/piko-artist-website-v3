@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { useGPUTier } from '@/hooks/useGPUTier';
+import { useGPUTier } from '@/hooks/performance/useGPUTier';
 
 /**
  * GlassPanel - Glassmorphic panel component with adaptive intensity
