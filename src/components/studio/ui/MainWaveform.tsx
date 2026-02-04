@@ -4,9 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
 import { WaveformMini } from "./WaveformMini";
 import { useStore } from "@/store/useStore";
-import { deriveTrackKey } from "@/lib/trackKey";
 import { db } from "@/lib/db";
-import { computePeaks } from "@/audio/waveform/computePeaks";
 import type { WaveformPeaks } from "@/lib/db";
 
 type MainWaveformProps = {
@@ -69,14 +67,18 @@ export function MainWaveform({ deckId, title, url, beatGrid }: MainWaveformProps
 
   // Phase S11.3: Load peaks on track change
   useEffect(() => {
-    const trackKey = deck.trackKey;
-    if (!trackKey) {
-      setCachedPeaks(null);
-      setPeaksCacheStatus('none');
-      return;
-    }
+    const loadPeaksAsync = async () => {
+      const trackKey = deck.trackKey;
+      if (!trackKey) {
+        setCachedPeaks(null);
+        setPeaksCacheStatus('none');
+        return;
+      }
 
-    loadPeaks(trackKey);
+      await loadPeaks(trackKey);
+    };
+
+    void loadPeaksAsync();
   }, [deck.trackKey, loadPeaks]);
 
   useEffect(() => {

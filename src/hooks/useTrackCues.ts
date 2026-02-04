@@ -51,17 +51,17 @@ export function useTrackCues(trackKey: string | null) {
       color: DEFAULT_CUE_COLORS[i],
     }));
 
-    if (!trackKey) {
-      // Reset to empty cues when no track
-      setCueSlots(defaultSlots);
-      setIsLoading(false);
-      return;
-    }
+    const loadCues = async () => {
+      if (!trackKey) {
+        // Reset to empty cues when no track
+        setCueSlots(defaultSlots);
+        setIsLoading(false);
+        return;
+      }
 
-    setIsLoading(true);
-    db.trackCues
-      .get(trackKey)
-      .then((savedCues) => {
+      setIsLoading(true);
+      try {
+        const savedCues = await db.trackCues.get(trackKey);
         if (savedCues) {
           // Merge saved cues with default slots
           const merged = defaultSlots.map((defaultCue) => {
@@ -81,13 +81,15 @@ export function useTrackCues(trackKey: string | null) {
           setCueSlots(defaultSlots);
         }
         setIsLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('[useTrackCues] Failed to load cues:', err);
         // Fallback to empty cues on error
         setCueSlots(defaultSlots);
         setIsLoading(false);
-      });
+      }
+    };
+
+    void loadCues();
   }, [trackKey]);
 
   /**

@@ -41,25 +41,25 @@ export function BeatGrid({ deckId }: Readonly<BeatGridProps>) {
 
   // Load beat data when track changes
   useEffect(() => {
-    if (!trackId) {
-      setBeatTimestamps([]);
-      return;
-    }
-
     let mounted = true;
 
     const loadBeatData = async () => {
+      if (!trackId) {
+        if (mounted) setBeatTimestamps([]);
+        return;
+      }
+
       try {
         const insights = await getInsights(trackId);
         if (!mounted || !insights || !insights.bpm || !insights.firstBeatOffsetSec) {
-          setBeatTimestamps([]);
+          if (mounted) setBeatTimestamps([]);
           return;
         }
 
         // Get duration from audio engine
         const duration = getDeckDuration(deckId);
         if (duration <= 0) {
-          setBeatTimestamps([]);
+          if (mounted) setBeatTimestamps([]);
           return;
         }
 
@@ -69,10 +69,10 @@ export function BeatGrid({ deckId }: Readonly<BeatGridProps>) {
           duration
         );
 
-        setBeatTimestamps(beats);
+        if (mounted) setBeatTimestamps(beats);
       } catch (error) {
         console.warn("[BeatGrid] Failed to load beat data:", error);
-        setBeatTimestamps([]);
+        if (mounted) setBeatTimestamps([]);
       }
     };
 
