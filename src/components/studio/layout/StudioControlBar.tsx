@@ -6,7 +6,7 @@ import { useAudioEngine } from "@/hooks/useAudioEngine";
 import { useHaptic } from "@/hooks/useHaptic";
 import { useStore } from "@/store/useStore";
 import { useStudioStore } from "@/store/useStudioStore";
-import { StemModeToggle } from "@/components/studio/ui/StemModeToggle";
+import { StemModeToggle } from "@/components/studio/stems/StemModeToggle";
 
 const formatTime = (value: number) => {
   if (!Number.isFinite(value)) return "0:00";

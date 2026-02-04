@@ -13,7 +13,7 @@
  */
 
 import { Deck } from "./Deck";
-import { StemRack } from "../ui/StemRack";
+import { StemRack } from "../stems/StemRack";
 import { useStudioStore } from "@/store/useStudioStore";
 
 interface DeckControlsProps {

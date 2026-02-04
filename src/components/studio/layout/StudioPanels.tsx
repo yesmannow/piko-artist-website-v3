@@ -14,23 +14,23 @@ import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";
 import { MobileLandscapeWorkstation } from "./MobileLandscapeWorkstation";
 import { Deck } from "@/components/studio/deck/Deck";
 import { MainWaveform } from "@/components/studio/ui/MainWaveform";
-import { StemMeters } from "@/components/studio/ui/StemMeters";
-import { StemControls } from "@/components/studio/ui/StemControls";
+import { StemMeters } from "@/components/studio/stems/StemMeters";
+import { StemControls } from "@/components/studio/stems/StemControls";
 
 
 // Lazy-load heavy stem components to reduce first-load JS
 const StemWaveforms = dynamic(
-  () => import("@/components/studio/ui/StemWaveforms").then(m => ({ default: m.StemWaveforms })),
+  () => import("@/components/studio/stems/StemWaveforms").then(m => ({ default: m.StemWaveforms })),
   { ssr: false }
 );
 
 const StemGenerator = dynamic(
-  () => import("@/components/studio/ui/StemGenerator").then(m => ({ default: m.StemGenerator })),
+  () => import("@/components/studio/stems/StemGenerator").then(m => ({ default: m.StemGenerator })),
   { ssr: false }
 );
 
 const StemDebugPanel = dynamic(
-  () => import("@/components/studio/ui/StemDebugPanel").then(m => ({ default: m.StemDebugPanel })),
+  () => import("@/components/studio/stems/StemDebugPanel").then(m => ({ default: m.StemDebugPanel })),
   { ssr: false }
 );
 
