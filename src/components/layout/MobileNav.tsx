@@ -65,10 +65,13 @@ export function MobileNav() {
   const { currentTrack, isPlaying } = useAudio();
 
   // Check for reduced motion preference
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mediaQuery.matches);
-
     const handleChange = (e: MediaQueryListEvent) => {
       setReducedMotion(e.matches);
     };
@@ -85,8 +88,11 @@ export function MobileNav() {
 
   // Close mobile menu drawer on route change
   useEffect(() => {
-    setIsMoreOpen(false);
-    setIsAboutOpen(false);
+    const closeDrawers = () => {
+      setIsMoreOpen(false);
+      setIsAboutOpen(false);
+    };
+    closeDrawers();
   }, [pathname]);
 
   const handleClick = () => {

@@ -89,13 +89,14 @@ export function Navbar() {
   const lenis = useLenis();
   const { triggerHaptic } = useHaptic();
   const scrollDirection = useScrollDirection(50);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
   // Check for reduced motion preference
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mediaQuery.matches);
-
     const handleChange = (e: MediaQueryListEvent) => {
       setReducedMotion(e.matches);
     };
@@ -126,7 +127,8 @@ export function Navbar() {
 
   // Close menu when route changes
   useEffect(() => {
-    setIsOpen(false);
+    const closeMenu = () => setIsOpen(false);
+    closeMenu();
   }, [pathname]);
 
   // Prevent scrolling when menu is open (using centralized hook)
@@ -208,9 +210,10 @@ export function Navbar() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
-    // For non-home pages, check if we're on the current route
+    // For non-home pages, reset active section
     if (pathname !== "/") {
-      setActiveSection(null);
+      const resetSection = () => setActiveSection(null);
+      resetSection();
       return;
     }
 
