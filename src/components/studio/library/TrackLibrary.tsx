@@ -21,10 +21,10 @@ import { X, Music, Cloud, Database, RefreshCw, AlertCircle } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks';
 import { TrackListing, Track as TrackListingInterface } from './TrackListing';
 import { db } from '@/lib/db';
-import { useLibrarySync } from '@/hooks/useLibrarySync';
+import { useLibrarySync } from '@/hooks/tracks/useLibrarySync';
 import { useStudioStore } from '@/store/useStudioStore';
 import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2 - Canonical track identity
-import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
+import { useSmartTrackAnalysis } from '@/hooks/tracks/useSmartTrackAnalysis';
 import { useStore } from '@/store/useStore';
 
 interface TrackLibraryProps {

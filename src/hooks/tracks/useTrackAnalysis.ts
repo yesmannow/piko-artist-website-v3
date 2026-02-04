@@ -13,7 +13,7 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/store/useStore';
-import type { AnalysisResult } from '../workers/analysis.worker';
+import type { AnalysisResult } from '../../workers/analysis.worker';
 
 export interface UseTrackAnalysisReturn {
   analyze: (url: string) => Promise<AnalysisResult>;
@@ -40,7 +40,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
     if (!workerRef.current) {
       // Create worker using Next.js worker loader
       workerRef.current = new Worker(
-        new URL('../workers/analysis.worker.ts', import.meta.url),
+        new URL('../../workers/analysis.worker.ts', import.meta.url),
         { type: 'module' }
       );
       console.log('[useTrackAnalysis] Worker initialized');

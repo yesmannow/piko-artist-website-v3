@@ -25,7 +25,7 @@
 import { useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useAudioEngine } from "@/hooks/audio/useAudioEngine";
-import { useTrackCues } from "@/hooks/useTrackCues";
+import { useTrackCues } from "@/hooks/tracks/useTrackCues";
 
 interface HotCuePanelProps {
   readonly deckId: "A" | "B";

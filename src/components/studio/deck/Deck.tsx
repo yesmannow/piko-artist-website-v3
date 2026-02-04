@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useCyaniteRecommendations, type Recommendation } from '@/hooks/useCyaniteRecommendations';
-import { useSmartTrackAnalysis } from '@/hooks/useSmartTrackAnalysis';
+import { useSmartTrackAnalysis } from '@/hooks/tracks/useSmartTrackAnalysis';
 import { db } from '@/lib/db';
 import { Loader2 } from 'lucide-react';
 import { RecommendationsPopover } from '../library/RecommendationsPopover';
