@@ -6,7 +6,7 @@ import { StudioHeader } from "./StudioHeader";
 import { StudioControlBar } from "./StudioControlBar";
 import { StudioPanels } from "./StudioPanels";
 import { LibraryDrawer } from "@/components/studio/library/LibraryDrawer";
-import { StudioSettingsPanel } from "@/components/studio/ui/StudioSettingsPanel";
+import { StudioSettingsPanel } from "@/components/studio/modals/StudioSettingsPanel";
 import { StudioOnboarding } from "@/components/studio/controls/StudioOnboarding";
 import { useEffect, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
