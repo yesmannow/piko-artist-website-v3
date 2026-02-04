@@ -51,7 +51,7 @@ function useReducedMotionFlag() {
     if (typeof window === 'undefined') return false;
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
-  
+
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);

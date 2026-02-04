@@ -73,8 +73,8 @@ interface TrackCardProps {
 function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
   const { triggerHaptic } = useHaptic();
   const [isLoaded, setIsLoaded] = useState(false);
-  // Random rotation between -1deg and 1deg for pasted-on-wall effect
-  const rotation = (Math.random() * 2 - 1).toFixed(2);
+  // Random rotation between -1deg and 1deg for pasted-on-wall effect (compute once on mount)
+  const [rotation] = useState(() => (Math.random() * 2 - 1).toFixed(2));
 
   // 3D Tilt Physics
   const cardRef = useRef<HTMLButtonElement>(null);

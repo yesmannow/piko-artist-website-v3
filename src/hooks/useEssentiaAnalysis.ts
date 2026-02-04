@@ -2,7 +2,7 @@
 
 /**
  * useEssentiaAnalysis Hook
- * 
+ *
  * Manages Essentia.js worker lifecycle and provides analysis function
  */
 
@@ -99,7 +99,7 @@ export function useEssentiaAnalysis(): UseEssentiaAnalysisReturn {
         // Extract channel data and send to worker
         // We can't transfer AudioBuffer directly, so extract Float32Array
         const channelData = audioBuffer.getChannelData(0);
-        
+
         worker.postMessage({
           audioBuffer: channelData, // Send Float32Array instead
           trackId,

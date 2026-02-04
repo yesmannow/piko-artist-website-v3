@@ -1,8 +1,8 @@
 /**
  * useTrackAnalysis.ts - Hook for Audio Analysis using Web Workers
- * 
+ *
  * Phase VI: Advanced Signal Processing
- * 
+ *
  * This hook manages the lifecycle of the Analysis Worker and provides
  * a clean interface for analyzing audio tracks. It handles:
  * - Worker initialization and termination
@@ -23,7 +23,7 @@ export interface UseTrackAnalysisReturn {
 
 /**
  * Hook for analyzing audio tracks using Essentia.js in a Web Worker
- * 
+ *
  * @returns Analysis controls and state
  */
 export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
@@ -62,7 +62,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
   /**
    * Decode audio file to AudioBuffer using OfflineAudioContext
    * This runs off the main thread and doesn't block the UI
-   * 
+   *
    * @param url - URL of the audio file to decode
    * @returns Decoded AudioBuffer
    */
@@ -81,14 +81,14 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
 
     // Decode the audio data
     const audioBuffer = await offlineContext.decodeAudioData(arrayBuffer);
-    
+
     return audioBuffer;
   }, []);
 
   /**
    * Convert stereo AudioBuffer to mono Float32Array
    * MIR algorithms typically work better with mono audio
-   * 
+   *
    * @param audioBuffer - Decoded audio buffer
    * @returns Mono audio data as Float32Array
    */
@@ -111,7 +111,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
 
   /**
    * Analyze an audio track
-   * 
+   *
    * @param url - URL of the audio file to analyze
    * @returns Analysis results (BPM, Key, Energy)
    */
@@ -208,7 +208,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
   // Suspend worker when app is inactive
   useEffect(() => {
     if (isAppActive) return;
-    
+
     const suspendAnalysis = async () => {
       if (isAnalyzing && pendingRejectRef.current) {
         pendingRejectRef.current(new Error('Analysis paused while inactive'));
@@ -218,7 +218,7 @@ export const useTrackAnalysis = (): UseTrackAnalysisReturn => {
       terminateWorker();
       pendingRejectRef.current = null;
     };
-    
+
     void suspendAnalysis();
   }, [isAppActive, isAnalyzing, terminateWorker]);
 

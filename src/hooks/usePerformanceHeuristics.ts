@@ -22,11 +22,16 @@ export function usePerformanceHeuristics() {
     memoryPressure: 0,
   });
   const frameRef = useRef<number | undefined>(undefined);
-  const lastTimeRef = useRef<number>(performance.now());
+  const lastTimeRef = useRef<number>(0);
   const frameCountRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
 
   useEffect(() => {
+    // Initialize on mount instead of during render
+    if (lastTimeRef.current === 0) {
+      lastTimeRef.current = performance.now();
+    }
+    
     const measurePerformance = () => {
       const now = performance.now();
       const deltaTime = now - lastTimeRef.current;

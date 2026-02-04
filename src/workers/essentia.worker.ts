@@ -106,8 +106,8 @@ const initEssentia = async () => {
     try {
       log.debug('Starting Essentia.js initialization');
 
-      const module = await import('essentia.js');
-      const api = extractEssentiaApi(module);
+      const essentiaModule = await import('essentia.js');
+      const api = extractEssentiaApi(essentiaModule);
 
       if (!api) {
         throw new Error('Could not extract Essentia API from module');

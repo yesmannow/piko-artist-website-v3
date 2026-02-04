@@ -106,13 +106,13 @@ export function useMidiBridge(): MidiBridgeState {
       stop();
       return;
     }
-    
+
     // Wrap start() call to avoid lint error
     const initMidi = async () => {
       await start();
     };
     void initMidi();
-    
+
     return () => {
       stop();
     };

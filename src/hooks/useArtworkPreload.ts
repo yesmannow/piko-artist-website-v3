@@ -30,7 +30,7 @@ export function useArtworkPreload(src?: string, thumbSize = 256) {
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.src = src;
-    
+
     const loadImage = async () => {
       await new Promise<void>((resolve, reject) => {
         image.onload = () => {
@@ -52,13 +52,13 @@ export function useArtworkPreload(src?: string, thumbSize = 256) {
           }
           resolve();
         };
-        image.onerror = (_err) => { 
-          if (!cancelled) setError(true); 
+        image.onerror = (_err) => {
+          if (!cancelled) setError(true);
           reject(_err);
         };
       });
     };
-    
+
     void loadImage();
     return () => { cancelled = true; };
   }, [src, thumbSize]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback, useMemo } from "react";
 import { MediaItem, tracks } from "@/lib/data";
 
 type WebkitWindow = Window & typeof globalThis & { webkitAudioContext?: typeof window.AudioContext };
@@ -142,7 +142,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                 })
                 .catch((error) => {
                   if (process.env.NODE_ENV === "development") {
-                    // eslint-disable-next-line no-console
+                     
                     console.error("Error playing audio:", error);
                   }
                   setIsPlaying(false);
@@ -305,34 +305,59 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     };
   }, [currentTrack, isPlaying, skipNext, skipPrevious]);
 
+  // Memoize context value to avoid accessing refs during render
+  // Note: analyserNode is NOT included here since it's a ref value
+  // Use ensureAnalyser() to get the analyser node instead
+  const contextValue = useMemo(() => ({
+    currentTrack,
+    isPlaying,
+    audioRef,
+    currentTime,
+    togglePlay,
+    playTrack,
+    skipNext,
+    skipPrevious,
+    volume,
+    setVolume,
+    isMuted,
+    toggleMute,
+    progress,
+    setProgress,
+    seek,
+    duration,
+    stop,
+    analyserNode: null as AnalyserNode | null, // Always null - use ensureAnalyser() instead
+    ensureAnalyser,
+    immersiveOpen,
+    setImmersiveOpen,
+    playbackError,
+    clearPlaybackError: () => setPlaybackError(null),
+  }), [
+    currentTrack,
+    isPlaying,
+    audioRef,
+    currentTime,
+    togglePlay,
+    playTrack,
+    skipNext,
+    skipPrevious,
+    volume,
+    setVolume,
+    isMuted,
+    toggleMute,
+    progress,
+    setProgress,
+    seek,
+    duration,
+    stop,
+    ensureAnalyser,
+    immersiveOpen,
+    setImmersiveOpen,
+    playbackError,
+  ]);
+
   return (
-    <AudioPlayerContext.Provider
-      value={{
-        currentTrack,
-        isPlaying,
-        audioRef,
-        currentTime,
-        togglePlay,
-        playTrack,
-        skipNext,
-        skipPrevious,
-        volume,
-        setVolume,
-        isMuted,
-        toggleMute,
-        progress,
-        setProgress,
-        seek,
-        duration,
-        stop,
-        analyserNode: analyserNodeRef.current,
-        ensureAnalyser,
-        immersiveOpen,
-        setImmersiveOpen,
-        playbackError,
-        clearPlaybackError: () => setPlaybackError(null),
-      }}
-    >
+    <AudioPlayerContext.Provider value={contextValue}>
       {children}
       {/* Hidden audio element */}
       <audio
