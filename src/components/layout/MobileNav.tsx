@@ -58,7 +58,6 @@ export function MobileNav() {
   const { triggerHaptic } = useHaptic();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
   const logoRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const drawerContentRef = useRef<HTMLDivElement>(null);
@@ -66,12 +65,12 @@ export function MobileNav() {
 
   // Check for reduced motion preference
   const [reducedMotion, setReducedMotion] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof globalThis.window === 'undefined') return false;
+    return globalThis.window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mediaQuery = globalThis.window.matchMedia("(prefers-reduced-motion: reduce)");
     const handleChange = (e: MediaQueryListEvent) => {
       setReducedMotion(e.matches);
     };
