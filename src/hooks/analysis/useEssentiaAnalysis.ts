@@ -35,7 +35,7 @@ export function useEssentiaAnalysis(): UseEssentiaAnalysisReturn {
     const initWorker = async () => {
       try {
         const worker = new Worker(
-          new URL('../workers/essentia.worker.ts', import.meta.url),
+          new URL('../../workers/essentia.worker.ts', import.meta.url),
           { type: 'module' }
         );
 
