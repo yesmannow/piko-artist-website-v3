@@ -7,6 +7,7 @@ import { useMidiBridge } from "@/hooks/integrations/useMidiBridge";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
 import { useState, useEffect, useRef } from "react";
+import { StudioThemeSwitcher } from "../controls/StudioThemeSwitcher";
 
 type StudioHeaderProps = {
   readonly masterProgress: number;
@@ -169,6 +170,8 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
             <Cpu className="h-3.5 w-3.5" />
             {performanceMode}
           </div>
+
+          <StudioThemeSwitcher />
         </div>
       </div>
 
