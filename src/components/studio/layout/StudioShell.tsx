@@ -8,6 +8,7 @@ import { StudioPanels } from "./StudioPanels";
 import { LibraryDrawer } from "@/components/studio/library/LibraryDrawer";
 import { StudioSettingsPanel } from "@/components/studio/modals/StudioSettingsPanel";
 import { StudioOnboarding } from "@/components/studio/controls/StudioOnboarding";
+import { OrientationCoach } from "@/components/studio/controls/OrientationCoach";
 import { useEffect, useRef } from "react";
 import { useStudioStore } from "@/store/useStudioStore";
 import { useStore } from "@/store/useStore";
@@ -95,6 +96,7 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
 
         <StudioSettingsPanel />
         <StudioOnboarding />
+        <OrientationCoach />
 
         {process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true' ? <DiagnosticsPanel /> : null}
       </main>
