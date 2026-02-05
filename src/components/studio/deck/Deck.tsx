@@ -5,6 +5,7 @@
  *
  * Displays track information, transport controls, and deck status
  * Now using extracted hooks and presentational components
+ * Phase 1: Added Performance Pads integration
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,6 +25,7 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { calculateNewBpm } from '@/lib/utils/audioMath';
 import { useStudioStore } from '@/store/useStudioStore';
 import type { PikoTestHelpers } from '@/utils/testHelpers';
+import { deriveTrackKey } from '@/lib/trackKey';
 
 // Phase S3: Extracted hooks
 import { useDeckTransport } from '@/hooks/deck/useDeckTransport';
@@ -33,6 +35,9 @@ import { useDeckStems } from '@/hooks/deck/useDeckStems';
 // Phase S3: Extracted components
 import { DeckHeader } from './DeckHeader';
 import { DeckTransportControls } from './DeckTransportControls';
+
+// Phase 1: Performance Pads
+import { PerformancePadGrid } from '../pads/PerformancePadGrid';
 
 interface DeckProps {
   readonly deckId: 'A' | 'B';
@@ -45,7 +50,7 @@ type DeckWindow = Window & {
 };
 
 export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }: DeckProps) {
-  const { syncToBpm, triggerTapeStop, getPlaybackPosition } = useAudioEngine();
+  const { syncToBpm, triggerTapeStop, getPlaybackPosition, getPlayer } = useAudioEngine();
   const deckKey: 'deckA' | 'deckB' = deckId === 'A' ? 'deckA' : 'deckB';
   const deck = useStore((state) => state[deckKey]);
   const setKeyLock = useStore((state) => state.setKeyLock);
@@ -311,6 +316,16 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                   onToggle={stems.handleSplitStems}
                   onSolo={() => {}}
                   onClearSolo={() => {}}
+                />
+              )}
+
+              {/* Phase 1: Performance Pads - Hot Cues, Loops, Slicer, Beat Jump */}
+              {complexityMode === 'pro' && trackData && (
+                <PerformancePadGrid
+                  deckId={deckId}
+                  trackKey={deriveTrackKey({ trackId: trackData.trackId, url: trackData.url })}
+                  player={getPlayer(deckId)}
+                  bpm={trackData.bpm}
                 />
               )}
 

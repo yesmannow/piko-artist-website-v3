@@ -71,6 +71,8 @@ export interface AudioEngineControls {
   setLoopPoints: (deck: 'A' | 'B', startSec: number, endSec: number) => void;
   clearLoopPoints: (deck: 'A' | 'B') => void;
   enableLoop: (deck: 'A' | 'B', enabled: boolean) => void;
+  // Phase 1: Performance Pads
+  getPlayer: (deck: 'A' | 'B') => Tone.Player | null;
 }
 
 type StemGainNodes = {
@@ -1411,6 +1413,11 @@ export const useAudioEngine = (): AudioEngineControls => {
     console.log(`[AudioEngine] Deck ${deck} loop ${enabled ? 'enabled' : 'disabled'}`);
   }, [players]);
 
+  // Phase 1: Performance Pads - Get player for pad controls
+  const getPlayer = useCallback((deck: 'A' | 'B'): Tone.Player | null => {
+    return players.current[deck];
+  }, [players]);
+
   return {
     init,
     isReady,
@@ -1446,5 +1453,7 @@ export const useAudioEngine = (): AudioEngineControls => {
     setLoopPoints,
     clearLoopPoints,
     enableLoop,
+    // Phase 1: Performance Pads
+    getPlayer,
   };
 };

@@ -14,8 +14,10 @@
     "lint": "next lint",
     "check:tracks": "node scripts/check-tracks.js",
     "check:case": "node scripts/check-import-case.mjs",
+    "check:phase1": "node scripts/check-phase1-status.mjs",
     "validate:tracks": "node scripts/validate-tracks.js",
     "validate:vercel": "node scripts/validate-vercel-deploy.js",
+    "validate:arch": "node scripts/validate-architecture.mjs",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "studio:validate": "bash scripts/studio-validate.sh",
@@ -26,7 +28,9 @@
     "audit:complexity": "eslint src/ --ext .ts,.tsx --format json > audit/complexity-report.json",
     "audit:studio": "eslint src/components/studio/ --ext .ts,.tsx",
     "audit:all": "npm run audit:unused && npm run audit:circular && npm run lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "generate:phase": "node scripts/generate-phase.mjs",
+    "generate:issues": "node scripts/create-github-issues.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",
