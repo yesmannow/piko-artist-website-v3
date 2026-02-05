@@ -23,11 +23,27 @@ export interface TrackInsights {
 }
 
 /**
+ * Phase 5: Beatgrid data for quantize and sync features
+ * Stores detected beat positions and tempo information
+ */
+export interface BeatGridData {
+  trackKey: string;          // Primary key (normalized track identifier)
+  bpm: number;               // Detected tempo
+  confidence: number;        // Detection confidence (0-1)
+  firstBeatOffset: number;   // Seconds from start to first downbeat
+  timeSignature: string;     // e.g., "4/4", "3/4" (stored as string for Dexie)
+  beatsJson: string;         // JSON-serialized beat markers array
+  detectedAt: number;        // Unix timestamp of detection
+  analysisVersion: string;   // Algorithm version for cache invalidation
+}
+
+/**
  * Studio database class
  * Uses Dexie for IndexedDB with TypeScript support
  */
 export class StudioDatabase extends Dexie {
   insights!: EntityTable<TrackInsights, 'trackId'>;
+  beatgrids!: EntityTable<BeatGridData, 'trackKey'>;
 
   constructor() {
     super('pikoStudio');
@@ -35,6 +51,12 @@ export class StudioDatabase extends Dexie {
     // Version 1: Initial schema
     this.version(1).stores({
       insights: 'trackId, key, bpm, energy, analyzedAt',
+    });
+
+    // Version 2: Phase 5 - Beatgrid storage for quantize and sync
+    this.version(2).stores({
+      insights: 'trackId, key, bpm, energy, analyzedAt',
+      beatgrids: 'trackKey, bpm, confidence, detectedAt',
     });
   }
 }
@@ -175,5 +197,81 @@ export async function getInsightsStats(): Promise<{
   } catch (error) {
     console.error('[StudioDB] Failed to get stats:', error);
     return { total: 0, failed: 0, analyzed: 0 };
+  }
+}
+
+// --- Phase 5: Beatgrid Functions ---
+
+/**
+ * Get beatgrid for a specific track
+ * @param trackKey Normalized track identifier
+ * @returns Beatgrid data or undefined if not found
+ */
+export async function getBeatGrid(trackKey: string): Promise<BeatGridData | undefined> {
+  try {
+    return await studioDb.beatgrids.get(trackKey);
+  } catch (error) {
+    console.error('[StudioDB] Failed to get beatgrid:', error);
+    return undefined;
+  }
+}
+
+/**
+ * Save or update beatgrid data
+ * @param beatGrid Beatgrid data to save
+ */
+export async function saveBeatGrid(beatGrid: BeatGridData): Promise<void> {
+  try {
+    await studioDb.beatgrids.put(beatGrid);
+  } catch (error) {
+    console.error('[StudioDB] Failed to save beatgrid:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get beatgrids by BPM range (for tempo matching)
+ * @param minBPM Minimum BPM
+ * @param maxBPM Maximum BPM
+ * @returns Beatgrids within BPM range
+ */
+export async function getBeatGridsByBPM(
+  minBPM: number,
+  maxBPM: number
+): Promise<BeatGridData[]> {
+  try {
+    return await studioDb.beatgrids
+      .where('bpm')
+      .between(minBPM, maxBPM, true, true)
+      .toArray();
+  } catch (error) {
+    console.error('[StudioDB] Failed to get beatgrids by BPM:', error);
+    return [];
+  }
+}
+
+/**
+ * Delete beatgrid for a track
+ * @param trackKey Normalized track identifier
+ */
+export async function deleteBeatGrid(trackKey: string): Promise<void> {
+  try {
+    await studioDb.beatgrids.delete(trackKey);
+  } catch (error) {
+    console.error('[StudioDB] Failed to delete beatgrid:', error);
+    throw error;
+  }
+}
+
+/**
+ * Clear all beatgrids (for testing or reset)
+ */
+export async function clearAllBeatGrids(): Promise<void> {
+  try {
+    await studioDb.beatgrids.clear();
+    console.log('[StudioDB] Cleared all beatgrids');
+  } catch (error) {
+    console.error('[StudioDB] Failed to clear beatgrids:', error);
+    throw error;
   }
 }

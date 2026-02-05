@@ -5,7 +5,7 @@ import { Palette } from "lucide-react";
 
 /**
  * Phase 2: Studio Theme Switcher
- * 
+ *
  * Allows users to switch between hip-hop inspired Studio themes.
  * Persists theme choice to localStorage.
  * Sets data-studio-theme attribute on .studio-shell element.
