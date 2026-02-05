@@ -1,7 +1,7 @@
 # Unused Assets Report
 
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Scope**: Public assets (3D models, audio, images) + unused npm packages
 
 ---
@@ -32,7 +32,7 @@
 
 ### UNUSED: `public/3d/music-2252.glb`
 
-**Size**: 6.90 MB  
+**Size**: 6.90 MB
 **Status**: 🔴 **NOT REFERENCED IN SOURCE CODE**
 
 **Proof of zero usage**:
@@ -153,9 +153,9 @@ grep -r "audio/tracks/" src/components/
 
 ### Analysis
 
-**Package**: `@supabase/supabase-js`  
-**Purpose**: Supabase client SDK  
-**Size**: ~200 KB  
+**Package**: `@supabase/supabase-js`
+**Purpose**: Supabase client SDK
+**Size**: ~200 KB
 **Status**: 🔴 **UNUSED** (database migrated to Dexie)
 
 **Proof of zero usage**:

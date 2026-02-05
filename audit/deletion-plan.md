@@ -1,7 +1,7 @@
 # Deletion Plan
 
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Scope**: Consolidated deletion candidates from all audit reports
 
 ---
@@ -22,8 +22,8 @@
 
 #### 1. `src/audio/AnalysisWorker.ts`
 
-**Size**: ~2 KB  
-**Reason**: Unused stub implementation, marked TODO  
+**Size**: ~2 KB
+**Reason**: Unused stub implementation, marked TODO
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -48,8 +48,8 @@ grep -r "import\(.*AnalysisWorker" src/
 
 #### 2. `src/audio/Engine.ts`
 
-**Size**: ~8 KB  
-**Reason**: Legacy audio engine, superseded by `useAudioEngine` hook  
+**Size**: ~8 KB
+**Reason**: Legacy audio engine, superseded by `useAudioEngine` hook
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -74,8 +74,8 @@ grep -r "import\(.*Engine" src/
 
 #### 3. `src/audio/FXChain.ts`
 
-**Size**: ~5 KB  
-**Reason**: Legacy FX chain, replaced by `DeckFXChain` in deck-fx-chain.ts  
+**Size**: ~5 KB
+**Reason**: Legacy FX chain, replaced by `DeckFXChain` in deck-fx-chain.ts
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -100,8 +100,8 @@ grep -r "new FXChain" src/
 
 #### 4. `src/audio/MasterBus.ts`
 
-**Size**: ~3 KB  
-**Reason**: Unused legacy audio class  
+**Size**: ~3 KB
+**Reason**: Unused legacy audio class
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -156,8 +156,8 @@ git restore src/audio/AnalysisWorker.ts src/audio/Engine.ts src/audio/FXChain.ts
 
 #### 5. `src/components/ErrorBoundary.tsx`
 
-**Size**: ~3 KB  
-**Reason**: Next.js uses built-in error.tsx for error boundaries  
+**Size**: ~3 KB
+**Reason**: Next.js uses built-in error.tsx for error boundaries
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -182,8 +182,8 @@ grep -r "ErrorBoundary" src/app/**/layout.tsx
 
 #### 6. `src/context/ThemeContext.tsx`
 
-**Size**: ~5 KB  
-**Reason**: Theme management moved to Zustand store (`useStore`)  
+**Size**: ~5 KB
+**Reason**: Theme management moved to Zustand store (`useStore`)
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -236,8 +236,8 @@ git restore src/components/ErrorBoundary.tsx src/context/ThemeContext.tsx
 
 #### 7. `public/3d/music-2252.glb`
 
-**Size**: 6.90 MB  
-**Reason**: Not referenced in any source files, only in service worker cache  
+**Size**: 6.90 MB
+**Reason**: Not referenced in any source files, only in service worker cache
 **Risk**: 🟢 LOW
 
 **Proof of zero usage**:
@@ -356,7 +356,7 @@ grep -r "TrackLibrarySkeleton" src/ --include="*.tsx" --exclude="components/Load
 
 ### Batch 4 - Manual Edits Required
 
-**Option A**: Use @StudioImplementer agent to edit files  
+**Option A**: Use @StudioImplementer agent to edit files
 **Option B**: Manual editing in IDE
 
 **After edits**:
@@ -375,7 +375,7 @@ Move to `/archive/` for potential future use:
 
 #### 11. `src/utils/smartSuggestions.ts`
 
-**Reason**: AI recommendation system, incomplete  
+**Reason**: AI recommendation system, incomplete
 **Risk**: 🟡 MEDIUM (may implement later)
 
 **Command**:
@@ -388,7 +388,7 @@ mv src/utils/smartSuggestions.ts archive/ai-features/
 
 #### 12. `src/lib/audioshake.ts`
 
-**Reason**: Paid API integration, not currently enabled  
+**Reason**: Paid API integration, not currently enabled
 **Risk**: 🔴 HIGH (may enable when budget allows)
 
 **Command**:
@@ -401,7 +401,7 @@ mv src/lib/audioshake.ts archive/paid-integrations/
 
 #### 13. `src/audio/waveform/computePeaks.ts`
 
-**Reason**: Custom peak computation, not used (WaveSurfer built-in used)  
+**Reason**: Custom peak computation, not used (WaveSurfer built-in used)
 **Risk**: 🟡 MEDIUM (may need for custom waveforms)
 
 **Command**:
@@ -414,7 +414,7 @@ mv src/audio/waveform/computePeaks.ts archive/legacy-audio/
 
 #### 14. `src/components/GlitchText.tsx`
 
-**Reason**: Cool visual effect, not currently used  
+**Reason**: Cool visual effect, not currently used
 **Risk**: 🟢 LOW (nice-to-have effect)
 
 **Command**:

@@ -1,7 +1,7 @@
 # Circular Dependencies Report
 
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Scope**: All TypeScript/TSX files via `madge`
 
 ---

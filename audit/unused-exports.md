@@ -1,7 +1,7 @@
 # Unused Exports Report
 
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Scope**: All TypeScript/TSX exports via `ts-prune`
 
 ---
@@ -75,7 +75,7 @@
 **`src/utils/audioUtils.ts`** - Partial cleanup ⚠️
 - `reverseAudioBuffer` (line 10) - UNUSED
 - `calculateBeatPositions` (line 36) - UNUSED
-- `snapToBeat` (line 56) - UNUSED  
+- `snapToBeat` (line 56) - UNUSED
 - `quantizeLoop` (line 80) - UNUSED
 - **Proof**:
   ```bash

@@ -1,6 +1,6 @@
 # Largest Files Report
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Scope**: All source files in `src/` and `public/`
 
 ---
@@ -92,8 +92,8 @@ See full output for complete listing. All files below 10 KB are within acceptabl
 
 ### ✅ Track Audio Files (30+ files, ~120 MB total)
 
-Average track size: 4 MB  
-Range: 3.7 MB - 5.4 MB  
+Average track size: 4 MB
+Range: 3.7 MB - 5.4 MB
 All tracks appear to be used in music catalog.
 
 ---

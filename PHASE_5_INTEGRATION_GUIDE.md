@@ -1,6 +1,6 @@
 # Phase 5 Integration Guide
 
-**Status**: ✅ All Phase 5 batches complete (4/4)  
+**Status**: ✅ All Phase 5 batches complete (4/4)
 **Ready for**: UI Integration
 
 ---
@@ -11,7 +11,7 @@
 - ✅ `src/lib/audio/beatDetection.ts` (464 lines)
 - ✅ `src/db/studioDb.ts` (Dexie v2 schema upgrade)
 
-### Batch 2: Beatgrid Visualization  
+### Batch 2: Beatgrid Visualization
 - ✅ `src/components/studio/deck/BeatGridOverlay.tsx` (265 lines)
 - ✅ `src/components/studio/mixer/PhaseMeter.tsx` (238 lines)
 - ✅ `src/hooks/audio/useBeatGrid.ts` (143 lines)
@@ -190,7 +190,7 @@ const tempoSync = useTempoSync();
 // Helper function to convert deck track data to DB Track type
 function adaptTrackData(deckTrack: DeckState['trackData']): Track | null {
   if (!deckTrack) return null;
-  
+
   return {
     ...deckTrack,
     artwork: deckTrack.artUrl || deckTrack.cover || '',

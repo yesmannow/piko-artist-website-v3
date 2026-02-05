@@ -1,7 +1,7 @@
 # Repository Audit Summary
 
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Audit Type**: Full repository scan (code + assets + dependencies)
 
 ---
@@ -339,6 +339,6 @@ All audit reports saved to `/audit/`:
 
 *Audit complete. Ready for implementation.*
 
-**Agent**: RepoAuditor (Read-only)  
-**Next Agent**: StudioImplementer (Execution)  
+**Agent**: RepoAuditor (Read-only)
+**Next Agent**: StudioImplementer (Execution)
 **Date**: February 4, 2026

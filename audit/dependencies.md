@@ -1,7 +1,7 @@
 # Dependencies Report
 
-**Generated**: February 4, 2026  
-**Agent**: RepoAuditor  
+**Generated**: February 4, 2026
+**Agent**: RepoAuditor
 **Scope**: All npm dependencies via `depcheck`
 
 ---
@@ -21,8 +21,8 @@
 
 ### 1. **@serwist/sw** - UNUSED ⚠️
 
-**Package**: `@serwist/sw`  
-**Purpose**: Service Worker toolkit (Serwist)  
+**Package**: `@serwist/sw`
+**Purpose**: Service Worker toolkit (Serwist)
 **Status**: ⚠️ **Potentially unused** (SW disabled in dev)
 
 **Evidence**:
@@ -38,15 +38,15 @@ grep -r "@serwist/sw" src/
 - May be used in `src/app/sw.ts` for production
 - Not imported directly in source files (build-time only)
 
-**Recommendation**: **KEEP** (required for production SW builds)  
+**Recommendation**: **KEEP** (required for production SW builds)
 **Risk**: HIGH if removed (breaks PWA in production)
 
 ---
 
 ### 2. **@supabase/supabase-js** - INVESTIGATE 🔍
 
-**Package**: `@supabase/supabase-js`  
-**Purpose**: Supabase client SDK  
+**Package**: `@supabase/supabase-js`
+**Purpose**: Supabase client SDK
 **Status**: 🔍 **Review usage**
 
 **Evidence**:
@@ -62,7 +62,7 @@ grep -r "supabase" src/ --include="*.ts" --include="*.tsx"
 - May be used in server-side code only
 - Check if database migrated away from Supabase to Dexie
 
-**Recommendation**: **INVESTIGATE**  
+**Recommendation**: **INVESTIGATE**
 **Action**:
 1. Search for Supabase usage in `src/app/api/`
 2. If zero usage → DELETE
@@ -74,8 +74,8 @@ grep -r "supabase" src/ --include="*.ts" --include="*.tsx"
 
 ### 3. **@tailwindcss/postcss** - BUILD DEPENDENCY ✅
 
-**Package**: `@tailwindcss/postcss`  
-**Purpose**: Tailwind CSS PostCSS plugin  
+**Package**: `@tailwindcss/postcss`
+**Purpose**: Tailwind CSS PostCSS plugin
 **Status**: ✅ **KEEP** (build-time dependency)
 
 **Analysis**:
@@ -84,15 +84,15 @@ grep -r "supabase" src/ --include="*.ts" --include="*.tsx"
 - depcheck doesn't detect build config usage
 - **False positive** (required for Tailwind)
 
-**Recommendation**: **KEEP**  
+**Recommendation**: **KEEP**
 **Risk**: CRITICAL if removed (breaks CSS build)
 
 ---
 
 ### 4. **autoprefixer** - BUILD DEPENDENCY ✅
 
-**Package**: `autoprefixer`  
-**Purpose**: PostCSS plugin for vendor prefixes  
+**Package**: `autoprefixer`
+**Purpose**: PostCSS plugin for vendor prefixes
 **Status**: ✅ **KEEP** (build-time dependency)
 
 **Analysis**:
@@ -101,15 +101,15 @@ grep -r "supabase" src/ --include="*.ts" --include="*.tsx"
 - Essential for cross-browser CSS
 - **False positive**
 
-**Recommendation**: **KEEP**  
+**Recommendation**: **KEEP**
 **Risk**: CRITICAL if removed (breaks CSS prefixing)
 
 ---
 
 ### 5. **postcss** - BUILD DEPENDENCY ✅
 
-**Package**: `postcss`  
-**Purpose**: CSS transformation tool  
+**Package**: `postcss`
+**Purpose**: CSS transformation tool
 **Status**: ✅ **KEEP** (build-time dependency)
 
 **Analysis**:
@@ -118,15 +118,15 @@ grep -r "supabase" src/ --include="*.ts" --include="*.tsx"
 - Used in build pipeline
 - **False positive**
 
-**Recommendation**: **KEEP**  
+**Recommendation**: **KEEP**
 **Risk**: CRITICAL if removed (breaks CSS build)
 
 ---
 
 ### 6. **tailwindcss** - BUILD DEPENDENCY ✅
 
-**Package**: `tailwindcss`  
-**Purpose**: Utility-first CSS framework  
+**Package**: `tailwindcss`
+**Purpose**: Utility-first CSS framework
 **Status**: ✅ **KEEP** (entire UI depends on it)
 
 **Analysis**:
@@ -135,7 +135,7 @@ grep -r "supabase" src/ --include="*.ts" --include="*.tsx"
 - Referenced in `tailwind.config.ts`
 - **False positive** (depcheck doesn't detect config usage)
 
-**Recommendation**: **KEEP**  
+**Recommendation**: **KEEP**
 **Risk**: CRITICAL if removed (entire UI breaks)
 
 ---
