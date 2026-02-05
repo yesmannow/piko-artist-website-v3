@@ -2,13 +2,13 @@
 
 /**
  * OrientationCoach - First-visit overlay explaining mobile orientation behavior
- * 
+ *
  * Phase 1: Performance Surface Layout
- * 
+ *
  * Shows once per browser session to teach users:
  * - Landscape = Performance mode (full mixer controls)
  * - Portrait = Pocket mode (tab-based views)
- * 
+ *
  * Dismisses after 5 seconds or on user interaction
  */
 

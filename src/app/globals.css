@@ -644,6 +644,11 @@
   --gap: 16px;
 }
 
+/* ============================================================
+   PHASE 2: HIPHOP STYLE SYSTEM - CSS Token Architecture
+   Studio-only theming via data-studio-theme attribute
+   ============================================================ */
+
 .studio-shell {
   position: fixed;
   inset: 0;
@@ -656,6 +661,42 @@
   font-family: var(--font-lexend), var(--font-inter), system-ui, sans-serif;
   overflow: hidden;
   cursor: default;
+  
+  /* Phase 2: Studio Theme Tokens (Default: Midnight Studio) */
+  /* Background System */
+  --studio-bg-primary: #0a0a12;           /* Deep canvas */
+  --studio-bg-secondary: #12121a;         /* Elevated panels */
+  --studio-bg-tertiary: #1a1a24;          /* Hover states */
+  --studio-bg-glass: rgba(18, 18, 26, 0.8); /* Glass panels */
+  
+  /* Text System */
+  --studio-text-primary: #e8e8e8;         /* Main text */
+  --studio-text-secondary: #a0a0a8;       /* Muted text */
+  --studio-text-tertiary: #707078;        /* Disabled text */
+  
+  /* Accent Colors */
+  --studio-accent-primary: #00d4ff;       /* Cyan glow */
+  --studio-accent-secondary: #a855f7;     /* Purple highlights */
+  
+  /* Deck Identity Colors */
+  --studio-deck-a: #10b981;               /* Emerald green */
+  --studio-deck-b: #f59e0b;               /* Amber orange */
+  
+  /* Signal Colors */
+  --studio-signal-error: #ef4444;         /* Red alert */
+  --studio-signal-warning: #f59e0b;       /* Orange warning */
+  --studio-signal-success: #10b981;       /* Green success */
+  --studio-signal-info: #00d4ff;          /* Cyan info */
+  
+  /* Glow Effects */
+  --studio-glow-primary: rgba(0, 212, 255, 0.4);
+  --studio-glow-deck-a: rgba(16, 185, 129, 0.3);
+  --studio-glow-deck-b: rgba(245, 158, 11, 0.3);
+  
+  /* Border System */
+  --studio-border-subtle: rgba(255, 255, 255, 0.06);
+  --studio-border-normal: rgba(255, 255, 255, 0.12);
+  --studio-border-strong: rgba(255, 255, 255, 0.20);
 }
 
 .studio-shell * {
