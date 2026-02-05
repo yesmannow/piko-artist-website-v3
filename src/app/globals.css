@@ -699,6 +699,104 @@
   --studio-border-strong: rgba(255, 255, 255, 0.20);
 }
 
+/* Phase 2: Theme Variants (Hip-Hop Inspired Palettes) */
+
+/* Theme: Boom-Bap (Warm Vinyl Grit) */
+.studio-shell[data-studio-theme="boom-bap"] {
+  --studio-bg-primary: #1a1410;           /* Dusty brown canvas */
+  --studio-bg-secondary: #2a2218;         /* Warm panel */
+  --studio-bg-tertiary: #352a20;          /* Hover state */
+  --studio-bg-glass: rgba(42, 34, 24, 0.85);
+  
+  --studio-text-primary: #f5e6d3;         /* Warm off-white */
+  --studio-text-secondary: #c4a87c;       /* Sepia muted */
+  --studio-text-tertiary: #8b7355;        /* Dusty tertiary */
+  
+  --studio-accent-primary: #d4a574;       /* Vintage gold */
+  --studio-accent-secondary: #b8860b;     /* Dark goldenrod */
+  
+  --studio-deck-a: #cd853f;               /* Peru (warm deck A) */
+  --studio-deck-b: #d2691e;               /* Chocolate (warm deck B) */
+  
+  --studio-glow-primary: rgba(212, 165, 116, 0.35);
+  --studio-glow-deck-a: rgba(205, 133, 63, 0.3);
+  --studio-glow-deck-b: rgba(210, 105, 30, 0.3);
+  
+  background: radial-gradient(circle at top, #2a2218 0, #1a1410 60%);
+}
+
+/* Theme: Trap Neon (Cyan/Magenta Glow) */
+.studio-shell[data-studio-theme="trap-neon"] {
+  --studio-bg-primary: #0a0a14;           /* Deep violet-black */
+  --studio-bg-secondary: #141420;         /* Electric panel */
+  --studio-bg-tertiary: #1e1e2c;          /* Neon hover */
+  --studio-bg-glass: rgba(20, 20, 32, 0.85);
+  
+  --studio-text-primary: #f0f0ff;         /* Bright white */
+  --studio-text-secondary: #b8b8e8;       /* Lavender muted */
+  --studio-text-tertiary: #7878a0;        /* Dim purple */
+  
+  --studio-accent-primary: #00f2ff;       /* Electric cyan */
+  --studio-accent-secondary: #ff00ff;     /* Magenta */
+  
+  --studio-deck-a: #00ff9f;               /* Neon green */
+  --studio-deck-b: #ff1493;               /* Deep pink */
+  
+  --studio-glow-primary: rgba(0, 242, 255, 0.5);
+  --studio-glow-deck-a: rgba(0, 255, 159, 0.4);
+  --studio-glow-deck-b: rgba(255, 20, 147, 0.4);
+  
+  background: radial-gradient(circle at top, #1e1e2c 0, #0a0a14 55%);
+}
+
+/* Theme: Noir (Minimal Dark) */
+.studio-shell[data-studio-theme="noir"] {
+  --studio-bg-primary: #0c0c0c;           /* Pure black */
+  --studio-bg-secondary: #1a1a1a;         /* Charcoal panel */
+  --studio-bg-tertiary: #252525;          /* Gray hover */
+  --studio-bg-glass: rgba(26, 26, 26, 0.9);
+  
+  --studio-text-primary: #eeeeee;         /* Clean white */
+  --studio-text-secondary: #aaaaaa;       /* Neutral gray */
+  --studio-text-tertiary: #666666;        /* Dark gray */
+  
+  --studio-accent-primary: #ffffff;       /* Pure white accent */
+  --studio-accent-secondary: #cccccc;     /* Light gray */
+  
+  --studio-deck-a: #888888;               /* Deck A gray */
+  --studio-deck-b: #444444;               /* Deck B dark */
+  
+  --studio-glow-primary: rgba(255, 255, 255, 0.2);
+  --studio-glow-deck-a: rgba(136, 136, 136, 0.25);
+  --studio-glow-deck-b: rgba(68, 68, 68, 0.25);
+  
+  background: radial-gradient(circle at top, #1a1a1a 0, #0c0c0c 70%);
+}
+
+/* Theme: Street Tech (Asphalt + Lime) */
+.studio-shell[data-studio-theme="street-tech"] {
+  --studio-bg-primary: #101418;           /* Asphalt dark */
+  --studio-bg-secondary: #1a1f26;         /* Concrete panel */
+  --studio-bg-tertiary: #242a32;          /* Gravel hover */
+  --studio-bg-glass: rgba(26, 31, 38, 0.88);
+  
+  --studio-text-primary: #e8f4e8;         /* Fresh white */
+  --studio-text-secondary: #98c898;       /* Lime muted */
+  --studio-text-tertiary: #5a7a5a;        /* Forest tertiary */
+  
+  --studio-accent-primary: #a3ff12;       /* Electric lime */
+  --studio-accent-secondary: #7ed321;     /* Green accent */
+  
+  --studio-deck-a: #00ff00;               /* Pure green */
+  --studio-deck-b: #ffa500;               /* Orange contrast */
+  
+  --studio-glow-primary: rgba(163, 255, 18, 0.4);
+  --studio-glow-deck-a: rgba(0, 255, 0, 0.35);
+  --studio-glow-deck-b: rgba(255, 165, 0, 0.35);
+  
+  background: radial-gradient(circle at top, #242a32 0, #101418 60%);
+}
+
 .studio-shell * {
   border-radius: var(--radius-md) !important;
 }
