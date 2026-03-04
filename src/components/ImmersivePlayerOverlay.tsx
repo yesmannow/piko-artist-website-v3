@@ -475,7 +475,7 @@ export function ImmersivePlayerOverlay() {
                     <motion.div
                       className="absolute inset-0"
                       animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-                      transition={isPlaying ? { duration: 10, ease: "linear", repeat: Infinity } : { duration: 0.4 }}
+                      transition={isPlaying ? { duration: 10, ease: "linear", repeat: Infinity } : { duration: 0.4, ease: "easeOut" }}
                       style={{
                         transformOrigin: "50% 50%",
                       }}

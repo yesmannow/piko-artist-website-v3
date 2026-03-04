@@ -17,6 +17,7 @@ const navItems = [
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
   { name: "Studio", path: "/studio", anchor: null },
+  { name: "Studio V2", path: "/studio-v2", anchor: null },
   { name: "Contact", path: "/contact", anchor: null },
 ];
 
@@ -67,8 +68,9 @@ const AnimatedLogo = ({
             alt="Piko Logo"
             width={48}
             height={48}
-            className="w-12 h-12 md:w-14 md:h-14 transition-all duration-300 drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]"
-            style={{ width: 'auto', height: 'auto' }}
+            className="transition-all duration-300 drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]"
+            style={{ width: 'auto', height: '48px' }}
+            sizes="48px"
             priority
           />
         </Link>

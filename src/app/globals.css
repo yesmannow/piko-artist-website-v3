@@ -21,41 +21,42 @@
   --spacing-lg: 24px;  /* 3 units */
   --spacing-xl: 32px;  /* 4 units */
 
-  /* Liquid Obsidian Palette - Optimized for OLED (Legacy) */
+  /* Liquid Obsidian Palette - Optimized for OLED (2026 Refined) */
   --color-obsidian-950: #050505;
-  --color-obsidian-900: #0a0a0a;
-  --color-obsidian-800: #121212;
-  --color-obsidian-700: #1a1a1a;
+  --color-obsidian-900: #080808;
+  --color-obsidian-800: #0c0c0c;
+  --color-obsidian-700: #121212;
 
-  /* Studio Signal Colors - High-luminance for dark backgrounds */
+  /* Studio Signal Colors - 2026 High-luminance accents */
   --color-studio-cyan: #00F2FF;
   --color-studio-purple: #9333ea;
   --color-studio-crimson: #ef4444;
   --color-studio-gold: #f59e0b;
+  --color-studio-magenta: #ff00ff;
 
-  /* Legacy glass colors */
-  --color-glass-surface: oklch(20% 0.05 260 / 0.1);
+  /* Premium glass colors */
+  --color-glass-surface: rgba(10, 10, 10, 0.4);
   --color-neon-primary: oklch(60% 0.2 300);
-  --blur-glass-md: 12px;
+  --blur-glass-md: 24px;
   --color-brushed-gold: oklch(80% 0.2 90);
   --font-family-industrial: var(--font-barlow), system-ui, sans-serif;
 
   /* Liquid Mesh Background Gradient */
-  --background-image-liquid-mesh: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%);
+  --background-image-liquid-mesh: radial-gradient(at 0% 0%, hsla(253,16%,4%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,10%,0.1) 0, transparent 50%);
 
   /* Glass Gradient */
-  --background-image-glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+  --background-image-glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
 
   /* Studio Glow Shadow */
-  --shadow-studio-glow: 0 0 20px -5px var(--color-studio-cyan);
-  --shadow-depth-1: 0 28px 88px rgba(0, 0, 0, 0.55), 0 18px 52px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --shadow-depth-2: 0 18px 48px rgba(0, 0, 0, 0.42), 0 0 28px rgba(0, 242, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-depth-3: 0 14px 36px rgba(0, 0, 0, 0.55), 0 10px 22px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-studio-glow: 0 0 25px -5px var(--color-studio-cyan);
+  --shadow-depth-1: 0 32px 96px rgba(0, 0, 0, 0.7), 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-depth-2: 0 20px 52px rgba(0, 0, 0, 0.6), 0 0 32px rgba(0, 242, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-depth-3: 0 16px 40px rgba(0, 0, 0, 0.7), 0 12px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   /* Phase 3 Animations */
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-  --animate-liquid-move: liquid-move 18s ease-in-out infinite;
-  --animate-spin-slow: spin-slow 3s linear infinite;
+  --animate-pulse-glow: pulse-glow 2.5s ease-in-out infinite;
+  --animate-liquid-move: liquid-move 20s ease-in-out infinite;
+  --animate-spin-slow: spin-slow 4s linear infinite;
 
   /* DJ Studio Custom Breakpoints - Mobile-First Responsive */
   --breakpoint-xs: 375px;    /* Small phones: Compact single-deck */
@@ -73,43 +74,43 @@
   --z-index-201: 201;        /* Studio Nav Menu content */
   --z-index-300: 300;        /* Video Modal overlay */
 
-  /* Max Width Constraints (using container namespace for max-w-* utilities) */
-  --container-studio: 1600px; /* Studio Performance Row max width */
+  /* Max Width Constraints */
+  --container-studio: 1600px;
 }
 
-/* Glassmorphism Utilities - Phase 3 Liquid Obsidian Spec */
+/* Glassmorphism Utilities - Phase 3 Liquid Obsidian Spec (2026 Refined) */
 @utility glass-panel {
-  background: linear-gradient(140deg, rgba(12, 12, 16, 0.7), rgba(6, 6, 10, 0.82));
-  backdrop-filter: blur(26px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(140deg, rgba(8, 8, 12, 0.6), rgba(4, 4, 8, 0.8));
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: var(--shadow-depth-1);
 }
 
 @utility glass-panel-high {
-  backdrop-filter: blur(32px);
-  background: linear-gradient(135deg, rgba(24, 26, 32, 0.6), rgba(10, 11, 16, 0.86));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--shadow-depth-1), 0 0 30px rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(48px);
+  background: linear-gradient(135deg, rgba(16, 18, 24, 0.5), rgba(6, 7, 12, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-depth-1), 0 0 40px rgba(0, 242, 255, 0.03);
 }
 
 @utility glass-panel-low {
-  backdrop-filter: blur(10px);
-  background: rgba(12, 14, 18, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  background: rgba(8, 10, 14, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: var(--shadow-depth-3);
 }
 
 @utility glass-depth-2 {
-  backdrop-filter: blur(18px);
-  background: linear-gradient(135deg, rgba(14, 16, 22, 0.82), rgba(9, 10, 16, 0.86));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px);
+  background: linear-gradient(135deg, rgba(12, 14, 20, 0.7), rgba(6, 8, 14, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow-depth-2);
 }
 
 @utility glass-depth-3 {
-  backdrop-filter: blur(14px);
-  background: rgba(8, 9, 14, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px);
+  background: rgba(6, 8, 12, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow-depth-3);
 }
 

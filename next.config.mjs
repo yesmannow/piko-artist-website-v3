@@ -97,14 +97,16 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
-          },
-          {
-            key: 'Cross-Origin-Resource-Policy',
-            value: 'same-origin',
-          },
+          // COEP/CORP DISABLED for development - these headers block audio loading in Studio
+          // TODO: Re-enable in production with proper CORP headers on all assets
+          // {
+          //   key: 'Cross-Origin-Embedder-Policy',
+          //   value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
+          // },
+          // {
+          //   key: 'Cross-Origin-Resource-Policy',
+          //   value: 'same-origin',
+          // },
         ],
       },
     ];

@@ -73,13 +73,14 @@ export function Crossfader() {
         <motion.div
           drag="x"
           dragConstraints={{ left: 0, right: 200 }}
-          dragElastic={0.1}
-          dragMomentum={false}
+          dragElastic={0.05}
+          dragMomentum={true}
+          dragTransition={{ power: 0.2, timeConstant: 200 }}
           style={{ x, touchAction: 'none' }} // Phase X: Prevent scrolling
           onDrag={handleDrag}
           onPointerDown={(e) => e.stopPropagation()} // Phase X: Multi-touch isolation
-          className="absolute w-8 h-8 bg-linear-to-br from-studio-cyan to-studio-purple rounded-full shadow-lg cursor-grab active:cursor-grabbing select-none flex items-center justify-center"
-          whileHover={{ scale: 1.1 }}
+          className="absolute w-8 h-8 bg-linear-to-br from-studio-cyan to-studio-purple rounded-full shadow-lg cursor-grab active:cursor-grabbing select-none flex items-center justify-center border border-white/20"
+          whileHover={{ scale: 1.1, boxShadow: "0 0 15px var(--color-studio-cyan)" }}
           whileTap={{ scale: 0.95 }}
         >
           <div className="w-2 h-2 bg-white rounded-full" />

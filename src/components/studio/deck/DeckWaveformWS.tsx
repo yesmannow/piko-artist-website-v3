@@ -61,18 +61,32 @@ export function DeckWaveformWS({ deckId }: Readonly<DeckWaveformWSProps>) {
   // CRITICAL: useMemo prevents WaveSurfer from mutating plugin instances
   const regionsPlugin = useMemo(() => RegionsPlugin.create(), []);
 
+  // Phase 11: Create a vertical gradient for semantic coloring (Frequency-based look)
+  // [2026 UI]: Red/Crimson for lows (bottom), Cyan/Magenta for highs (top)
+  const getSemanticGradient = useCallback((ctx: CanvasRenderingContext2D) => {
+    const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+    gradient.addColorStop(0, deckId === "A" ? "#ff00ff" : "#9333ea");    // Highs (Magenta/Purple)
+    gradient.addColorStop(0.5, deckId === "A" ? "#00F2FF" : "#00d4ff");  // Mids (Cyan)
+    gradient.addColorStop(1, deckId === "A" ? "#ef4444" : "#dc2626");    // Lows (Red)
+    return gradient;
+  }, [deckId]);
+
   // Memoize WaveSurfer options to prevent unnecessary re-creation
   const wavesurferOptions = useMemo(() => ({
     container: containerRef,
     url: url,
-    waveColor: deckId === "A" ? "#4af2c566" : "#7c8dff66",
-    progressColor: deckId === "A" ? "#4af2c5" : "#7c8dff",
-    cursorColor: deckId === "A" ? "#4af2c5" : "#7c8dff",
+    waveColor: (ctx: CanvasRenderingContext2D) => getSemanticGradient(ctx),
+    progressColor: (ctx: CanvasRenderingContext2D) => {
+      const gradient = getSemanticGradient(ctx);
+      // Brighter version for progress
+      return gradient;
+    },
+    cursorColor: deckId === "A" ? "#00F2FF" : "#9333ea",
     cursorWidth: 2,
     barWidth: 2,
     barGap: 1,
-    barRadius: 2,
-    height: 80,
+    barRadius: 4,
+    height: 100,
     normalize: true,
     backend: "WebAudio" as const,
     // CRITICAL: Disable WaveSurfer audio playback
@@ -81,10 +95,10 @@ export function DeckWaveformWS({ deckId }: Readonly<DeckWaveformWSProps>) {
     autoCenter: false,
     fillParent: true,
     plugins: [regionsPlugin], // Phase S9: Add Regions plugin
-  }), [url, deckId, regionsPlugin]);
+  }), [url, deckId, regionsPlugin, getSemanticGradient]);
 
   // WaveSurfer setup with audio disabled (visuals only)
-  const { wavesurfer, isReady } = useWavesurfer(wavesurferOptions);
+  const { wavesurfer, isReady } = useWavesurfer(wavesurferOptions as any);
 
   // Phase 6.1: Track document visibility to stop RAF when tab hidden
   useEffect(() => {

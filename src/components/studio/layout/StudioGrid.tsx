@@ -50,6 +50,7 @@ import { useStudioStore } from "@/store/useStudioStore";
 import { useMobileLandscape } from "@/hooks/ui/useMobileLandscape";
 import { MobileLandscapeWorkstation } from "./MobileLandscapeWorkstation";
 import { MobilePortraitPocketStudio } from "./MobilePortraitPocketStudio";
+import { Zap, Layout } from "lucide-react";
 
 interface StudioGridProps {
   readonly masterBus?: Tone.Gain | null;
@@ -63,6 +64,8 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
   const libraryOpen = useStudioStore((state) => state.libraryOpen);
   const setLibraryOpen = useStudioStore((state) => state.setLibraryOpen);
   const settingsOpen = useStudioStore((state) => state.settingsOpen);
+  const layoutMode = useStudioStore((state) => state.layoutMode);
+  const setLayoutMode = useStudioStore((state) => state.setLayoutMode);
   const [mobileTab, setMobileTab] = useState<MobileTab>('DECKS');
 
   // Phase 5: Detect mobile landscape mode
@@ -142,9 +145,22 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
             Phase 6: Using WaveSurfer for visuals-only rendering
             ───────────────────────────────────────────────────────────────── */}
         <section
-          className="flex gap-3 p-3 border-b border-white/5 min-h-0 overflow-hidden"
+          className={`flex gap-3 p-3 border-b border-white/5 min-h-0 overflow-hidden transition-all duration-500 ${layoutMode === 'Performance' ? 'h-[100px]' : 'h-[140px]'
+            }`}
           aria-label="Deck Waveforms"
         >
+          {/* Performance Mode Toggle (Floating) */}
+          <div className="absolute top-4 right-4 z-50 flex gap-2">
+            <button
+              onClick={() => setLayoutMode(layoutMode === 'Performance' ? 'Library-Heavy' : 'Performance')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-tighter transition-all glass-panel-high hover:scale-105 active:scale-95 ${layoutMode === 'Performance' ? 'text-[#00F2FF] border-[#00F2FF]/40' : 'text-white/40'
+                }`}
+            >
+              {layoutMode === 'Performance' ? <Zap size={12} fill="currentColor" /> : <Layout size={12} />}
+              {layoutMode} Mode
+            </button>
+          </div>
+
           {/* Deck A Waveform */}
           <div className="flex-1 flex flex-col gap-2 min-w-0">
             <div className="text-xs font-mono uppercase tracking-wider text-white/50 px-2">
@@ -167,29 +183,31 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
         </section>
 
         {/* Global Transport / Progress Strip (Subtle, Non-Intrusive) */}
-        <div className="hidden md:block px-3 py-2 border-b border-white/5 bg-black/20">
-          <progress
-            className="sr-only"
-            value={Math.round(progressClamped * 100)}
-            max={100}
-            aria-label="Master progress"
-          />
-          <div
-            className="relative h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/10"
-            aria-hidden="true"
-          >
-            {/* Progress fill */}
-            <div
-              className="h-full bg-linear-to-r from-purple-500 to-cyan-400 transition-[width] duration-100 ease-linear"
-              style={{ width: `${progressClamped * 100}%` }}
+        {layoutMode !== 'Performance' && (
+          <div className="hidden md:block px-3 py-2 border-b border-white/5 bg-black/20 animate-in fade-in slide-in-from-top-1 duration-500">
+            <progress
+              className="sr-only"
+              value={Math.round(progressClamped * 100)}
+              max={100}
+              aria-label="Master progress"
             />
-            {/* Playhead marker */}
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.6)]"
-              style={{ left: `${progressClamped * 100}%` }}
-            />
+              className="relative h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/10"
+              aria-hidden="true"
+            >
+              {/* Progress fill */}
+              <div
+                className="h-full bg-linear-to-r from-purple-500 to-cyan-400 transition-[width] duration-100 ease-linear"
+                style={{ width: `${progressClamped * 100}%` }}
+              />
+              {/* Playhead marker */}
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.6)]"
+                style={{ left: `${progressClamped * 100}%` }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ─────────────────────────────────────────────────────────────────
             ROW 2: PERFORMANCE CONTROLS (Deck A | Mixer Center | Deck B)
@@ -202,9 +220,8 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
             ROW 3: LIBRARY & BROWSER (Collapsible with Smooth Transition)
             ───────────────────────────────────────────────────────────────── */}
         <div
-          className={`min-h-0 overflow-hidden transition-[height] duration-200 ease-out ${
-            libraryOpen ? 'h-70' : 'h-12'
-          }`}
+          className={`min-h-0 overflow-hidden transition-all duration-500 ease-out ${layoutMode === 'Performance' ? 'h-0 opacity-0' : (libraryOpen ? 'h-70 opacity-100' : 'h-12 opacity-100')
+            }`}
         >
           <LibraryRow />
         </div>
