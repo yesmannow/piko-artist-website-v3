@@ -387,6 +387,12 @@ export class DeckEngine {
 
     this.state.currentTime = clampedTime;
     this.emit('stateChange', { currentTime: clampedTime });
+
+    // FIX: Restart position tracking from the new offset if already playing
+    if (this.state.isPlaying) {
+      this.stopPositionTracking();
+      this.startPositionTracking();
+    }
   }
 
   /**
