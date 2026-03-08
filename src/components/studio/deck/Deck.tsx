@@ -38,6 +38,7 @@ import { DeckTransportControls } from './DeckTransportControls';
 
 // Phase 1: Performance Pads
 import { PerformancePadGrid } from '../pads/PerformancePadGrid';
+import { StemOverlay } from '../stems/StemOverlay';
 
 interface DeckProps {
   readonly deckId: 'A' | 'B';
@@ -195,25 +196,28 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
         className="h-full flex flex-col bg-obsidian-900/80 rounded-lg p-6"
       >
         {/* Deck Header */}
-        <DeckHeader
-          deckId={deckId}
-          deckLabel={deckLabel}
-          isPlaying={deck.isPlaying}
-          trackData={trackData}
-          currentBpm={currentBpm}
-          isSynced={isSynced}
-          isKeyLockActive={isKeyLockActive}
-          energy={energy}
-          complexityMode={complexityMode}
-          recommendationsLoading={recommendationsLoading}
-          canGenerateStems={stems.canGenerateStems}
-          isGeneratingStems={stems.isGeneratingStems}
-          stemButtonTitle={stemButtonTitle}
-          stemModeEnabled={stemModeEnabled}
-          onMagicWand={handleMagicWand}
-          onSplitStems={stems.handleSplitStems}
-          onToggleKeyLock={() => setKeyLock(deckId, !isKeyLockActive)}
-        />
+        <div className="relative">
+          <DeckHeader
+            deckId={deckId}
+            deckLabel={deckLabel}
+            isPlaying={deck.isPlaying}
+            trackData={trackData}
+            currentBpm={currentBpm}
+            isSynced={isSynced}
+            isKeyLockActive={isKeyLockActive}
+            energy={energy}
+            complexityMode={complexityMode}
+            recommendationsLoading={recommendationsLoading}
+            canGenerateStems={stems.canGenerateStems}
+            isGeneratingStems={stems.isGeneratingStems}
+            stemButtonTitle={stemButtonTitle}
+            stemModeEnabled={stemModeEnabled}
+            onMagicWand={handleMagicWand}
+            onSplitStems={stems.handleSplitStems}
+            onToggleKeyLock={() => setKeyLock(deckId, !isKeyLockActive)}
+          />
+          {stemModeEnabled && <StemOverlay deckId={deckId} />}
+        </div>
 
         {/* Deck Body */}
         {trackData ? (

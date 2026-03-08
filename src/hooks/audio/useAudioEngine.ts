@@ -441,7 +441,9 @@ export const useAudioEngine = (): AudioEngineControls => {
     const normalized = normalizeCrossfaderValue(clamped);
 
     // Get current mixer settings from store
-    const mixerSettings = useStore.getState().mixerSettings;
+    const storeState = useStore.getState();
+    const mixerSettings = storeState.mixerSettings;
+    const mode = storeState.crossfaderMode || 'normal';
 
     // Map normalized position through selected curve
     // Then extract the effective fade position for Tone.CrossFade
@@ -452,10 +454,38 @@ export const useAudioEngine = (): AudioEngineControls => {
     const totalGain = gainA + gainB + 0.0001; // Avoid div by zero
     const effectiveFade = gainB / totalGain;
 
+    if (mode === 'stem-balance') {
+      // CROSSFADER FUSION LOGIC:
+      // When entering stem-balance mode, we prioritize preserving beats (drums+bass)
+      // or vocals based on proximity to the center or edges.
+      // E.g., at crossfader center, duck vocals of Deck B slightly while keeping beat synced.
+      
+      const stemSetsA = stemGains.current.A;
+      const stemSetsB = stemGains.current.B;
+
+      if (stemSetsA && stemSetsB) {
+        // Simple Fusion math:
+        // Deck A vocals fade out slightly faster than drums.
+        // Deck B drums fade in faster than vocals.
+        const fusionGainA_Vocals = gainA * (1 - normalized * 0.5);
+        const fusionGainA_Drums = gainA * (1 + normalized * 0.2);
+        
+        const fusionGainB_Vocals = gainB * (1 - (1 - normalized) * 0.5);
+        const fusionGainB_Drums = gainB * (1 + (1 - normalized) * 0.2);
+
+        // Apply ramps if nodes exist (stemGains exist in `applyStemMix` pattern)
+        if (stemSetsA.vocals) stemSetsA.vocals.gain.rampTo(Math.max(0, Math.min(1, fusionGainA_Vocals)), 0.05);
+        if (stemSetsA.drums) stemSetsA.drums.gain.rampTo(Math.max(0, Math.min(1, fusionGainA_Drums)), 0.05);
+        
+        if (stemSetsB.vocals) stemSetsB.vocals.gain.rampTo(Math.max(0, Math.min(1, fusionGainB_Vocals)), 0.05);
+        if (stemSetsB.drums) stemSetsB.drums.gain.rampTo(Math.max(0, Math.min(1, fusionGainB_Drums)), 0.05);
+      }
+    }
+
     if (crossFade.current.fade && typeof crossFade.current.fade.rampTo === 'function') {
       crossFade.current.fade.rampTo(effectiveFade, 0.05);
     }
-  }, [crossFade]);
+  }, [crossFade, stemGains]);
 
   useEffect(() => {
     return useStudioStore.subscribe(

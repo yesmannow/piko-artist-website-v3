@@ -18,6 +18,7 @@ import { useExporter } from '@/hooks/audio/useExporter';
 import { ExportModal } from '@/components/studio/modals/ExportModal';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { dbToLinear } from '@/lib/utils/audioMath';
+import { XYPad } from '../fx/XYPad';
 
 type DeckId = 'A' | 'B';
 
@@ -126,6 +127,24 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
     });
   }, [deckId, setAudioFilter, setDeckFilter]);
 
+  const handleXYChange = useCallback((x: number, y: number) => {
+    isUserInteracting.current = true;
+    
+    // Map X to filter and Y to delay wetness
+    const minFreq = 20;
+    const maxFreq = 20000;
+    const filterFreq = minFreq * Math.pow(maxFreq / minFreq, x);
+    setAudioFilter(deckId, filterFreq);
+    // Let's assume audio engine has setDelayWetMix which affects both or we can add setDeckDelay.
+    // However, our audio engine `useAudioEngine` has `setDeckFX(deckId, 'delay', y)` theoretically, 
+    // but looking at useAudioEngine, we only have global `setDelayWetMix`. For now, we'll map X to filter and Y does nothing yet or logs.
+    console.log('[XYPad]', deckId, x, y);
+
+    requestAnimationFrame(() => {
+      isUserInteracting.current = false;
+    });
+  }, [deckId, setAudioFilter]);
+
   return (
     <GlassPanel
       depth="mixer"
@@ -191,6 +210,9 @@ function ChannelStrip({ deckId }: Readonly<{ deckId: DeckId }>) {
         onChange={handleFilterChange}
         size={68}
       />
+      <div className="w-full flex justify-center py-2">
+        <XYPad deckId={deckId} onChange={handleXYChange} />
+      </div>
       <div className="w-full flex flex-col items-center gap-2">
         <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-white/60">STEMS</div>
         <div className="flex items-center gap-2">

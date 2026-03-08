@@ -28,7 +28,7 @@ export function PadVisualizer({ deckId, activePad, mode = 'hotCue' }: PadVisuali
   const [pulses, setPulses] = useState<number[]>([]);
 
   // Add pulse effect when pad is activated
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- Pulse animation requires setState
+   
   useEffect(() => {
     if (activePad === null || activePad === undefined) return;
 

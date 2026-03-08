@@ -10,7 +10,7 @@ export function haptic(type: 'weak' | 'medium' | 'strong' = 'weak') {
     // iOS native haptics via WebHID/WebUSB not standard — leave hook for native wrappers
   } catch (error_) {
     // ignore haptic errors
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const _ = error_;
   }
 }
