@@ -71,6 +71,7 @@ export interface DeckState {
   filter: number; // 0..1 bipolar filter position (DEPRECATED - moved to fx.filter)
   stems: { vocals: boolean; inst: boolean }; // Phase VI: Stem toggle state
   isKeyLockActive: boolean;
+  hasStems: boolean;      // Phase 3.3B: Track if stems are loaded
   // Phase V-B: Per-Deck FX
   fx: DeckFXState;
   // Phase S9: Hot Cues + Loops
@@ -162,6 +163,7 @@ const initialDeckState: DeckState = {
   filter: 0.5, // DEPRECATED - use fx.filter instead
   stems: { vocals: true, inst: true }, // Both stems enabled by default
   isKeyLockActive: false,
+  hasStems: false,
   fx: { ...initialDeckFXState },
   hotCues: [], // Phase S9: Initialize empty cue array
   activeLoop: null, // Phase S9: No active loop by default

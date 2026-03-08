@@ -38,6 +38,7 @@
   "exclude": [
     "node_modules",
     "scripts",
-    "archive"
+    "archive",
+    "piko-artist-website-v3"
   ]
 }

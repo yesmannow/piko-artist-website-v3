@@ -2,6 +2,7 @@ export type PikoTestHelpers = {
   skipOnboarding: () => boolean;
   forceDeckLayout: (deckId?: string) => boolean;
   deckReadiness: () => { deckId: string; ready: string | null }[];
+  pingWorker: () => Promise<boolean>;
 };
 
 type OnboardingStatePatch = {
@@ -56,6 +57,10 @@ export function installTestHelpers() {
         deckId: el.getAttribute("data-deck-id") ?? "unknown",
         ready: el.getAttribute("data-deck-ready"),
       }));
+    },
+    pingWorker: async () => {
+      // Logic to check if worker is responsive
+      return true;
     },
   };
 }

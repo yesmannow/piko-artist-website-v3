@@ -105,10 +105,6 @@ type EngineState = {
       B: { vocals: boolean; drums: boolean; bass: boolean; other: boolean };
     };
   };
-  channels: { current: { A: Tone.Channel | null; B: Tone.Channel | null } };
-  eqs: { current: { A: Tone.EQ3 | null; B: Tone.EQ3 | null } };
-  filters: { current: { A: Tone.Filter | null; B: Tone.Filter | null } };
-  pitchShift: { current: { A: Tone.PitchShift | null; B: Tone.PitchShift | null } };
   crossFade: { current: Tone.CrossFade | null };
   masterBus: { current: Tone.Gain | null };
   postFxBus: { current: Tone.Gain | null };
@@ -158,10 +154,6 @@ const createEngineState = (): EngineState => ({
       B: { vocals: false, drums: false, bass: false, other: false },
     },
   },
-  channels: { current: { A: null, B: null } },
-  eqs: { current: { A: null, B: null } },
-  filters: { current: { A: null, B: null } },
-  pitchShift: { current: { A: null, B: null } },
   crossFade: { current: null },
   masterBus: { current: null },
   postFxBus: { current: null },
@@ -187,73 +179,13 @@ const engineSingletonRef: { current: EngineState | null } = { current: null };
 const engineRefCount = { current: 0 };
 
 const disposeEngine = (engine: EngineState) => {
-  const playersToDispose = { ...engine.players.current };
-  const channelsToDispose = { ...engine.channels.current };
-  const eqsToDispose = { ...engine.eqs.current };
-  const filtersToDispose = { ...engine.filters.current };
-  const pitchShiftToDispose = { ...engine.pitchShift.current };
+  const deckEnginesToDispose = { ...engine.deckEngines.current };
   const crossFadeToDispose = engine.crossFade.current;
-  const masterBusToDispose = engine.masterBus.current;
-  const postFxBusToDispose = engine.postFxBus.current;
-  const fxMergeToDispose = engine.fxMerge.current;
-  const dryFxGainToDispose = engine.dryFxGain.current;
-  const delayNodeToDispose = engine.delayNode.current;
-  const delaySendToDispose = engine.delaySend.current;
-  const reverbNodeToDispose = engine.reverbNode.current;
-  const reverbSendToDispose = engine.reverbSend.current;
-  const compressorToDispose = engine.compressor.current;
-  const limiterToDispose = engine.limiter.current;
-  const stemPlayersToDispose = engine.stemPlayers.current;
-  const stemGainsToDispose = engine.stemGains.current; // Phase 3.3B
 
-  playersToDispose.A?.dispose();
-  playersToDispose.B?.dispose();
-  channelsToDispose.A?.dispose();
-  channelsToDispose.B?.dispose();
-  eqsToDispose.A?.dispose();
-  eqsToDispose.B?.dispose();
-  filtersToDispose.A?.dispose();
-  filtersToDispose.B?.dispose();
-  pitchShiftToDispose.A?.dispose();
-  pitchShiftToDispose.B?.dispose();
-  crossFadeToDispose?.dispose();
-  masterBusToDispose?.dispose();
-  postFxBusToDispose?.dispose();
-  fxMergeToDispose?.dispose();
-  dryFxGainToDispose?.dispose();
-  delayNodeToDispose?.dispose();
-  delaySendToDispose?.dispose();
-  reverbNodeToDispose?.dispose();
-  reverbSendToDispose?.dispose();
-  compressorToDispose?.dispose();
-  limiterToDispose?.dispose();
-  Object.values(stemPlayersToDispose.A).forEach((player) => player?.dispose());
-  Object.values(stemPlayersToDispose.B).forEach((player) => player?.dispose());
-  // Phase 3.3B: Dispose stem gain nodes
-  Object.values(stemGainsToDispose.A).forEach((gain) => gain?.dispose());
-  Object.values(stemGainsToDispose.B).forEach((gain) => gain?.dispose());
+  deckEnginesToDispose.A?.dispose();
+  deckEnginesToDispose.B?.dispose();
 
-  engine.players.current = { A: null, B: null };
-  engine.stemPlayers.current = {
-    A: { vocals: null, drums: null, bass: null, other: null },
-    B: { vocals: null, drums: null, bass: null, other: null },
-  };
-  engine.stemGains.current = {
-    A: { vocals: null, drums: null, bass: null, other: null },
-    B: { vocals: null, drums: null, bass: null, other: null },
-  };
-  engine.stemMutes.current = {
-    A: { vocals: false, drums: false, bass: false, other: false },
-    B: { vocals: false, drums: false, bass: false, other: false },
-  };
-  engine.userMuteState.current = {
-    A: { vocals: false, drums: false, bass: false, other: false },
-    B: { vocals: false, drums: false, bass: false, other: false },
-  };
-  engine.channels.current = { A: null, B: null };
-  engine.eqs.current = { A: null, B: null };
-  engine.filters.current = { A: null, B: null };
-  engine.pitchShift.current = { A: null, B: null };
+  engine.deckEngines.current = { A: null, B: null };
   engine.crossFade.current = null;
   engine.masterBus.current = null;
   engine.postFxBus.current = null;
@@ -289,10 +221,6 @@ export const useAudioEngine = (): AudioEngineControls => {
   const stemGains = engine.stemGains; // Phase 3.3B: Per-stem gain nodes
   const stemMutes = engine.stemMutes;
   const userMuteState = engine.userMuteState; // Phase 3.3B: User toggle state
-  const channels = engine.channels;
-  const eqs = engine.eqs;
-  const filters = engine.filters;
-  const pitchShift = engine.pitchShift;
   const crossFade = engine.crossFade;
   const masterBus = engine.masterBus;
   const postFxBus = engine.postFxBus;
@@ -413,30 +341,7 @@ export const useAudioEngine = (): AudioEngineControls => {
       compressor.current = comp;
       limiter.current = lim;
 
-      // Initialize decks
-      const channelA = new Tone.Channel({ volume: 0 });
-      const channelB = new Tone.Channel({ volume: 0 });
-      const eqA = new Tone.EQ3({ low: 0, mid: 0, high: 0 });
-      const eqB = new Tone.EQ3({ low: 0, mid: 0, high: 0 });
-      const filterA = new Tone.Filter({ type: 'lowpass', frequency: 20000 });
-      const filterB = new Tone.Filter({ type: 'lowpass', frequency: 20000 });
-      const pitchA = new Tone.PitchShift({ pitch: 0, wet: 0 });
-      const pitchB = new Tone.PitchShift({ pitch: 0, wet: 0 });
-
-      // Connect: Player -> EQ -> Filter -> Channel -> CrossFade
-      pitchA.connect(eqA);
-      pitchB.connect(eqB);
-      eqA.connect(filterA);
-      eqB.connect(filterB);
-      filterA.connect(channelA);
-      filterB.connect(channelB);
-      channelA.connect(crossfade.a);
-      channelB.connect(crossfade.b);
-
-      channels.current = { A: channelA, B: channelB };
-      eqs.current = { A: eqA, B: eqB };
-      filters.current = { A: filterA, B: filterB };
-      pitchShift.current = { A: pitchA, B: pitchB };
+      limiter.current = lim;
 
       // Phase 1.1: Create DeckEngine instances
       const deckEngineA = new DeckEngine({
@@ -523,26 +428,6 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
   }, [
     setAudioReady,
-    channels,
-    compressor,
-    crossFade,
-    delayFeedbackRef,
-    delayNode,
-    delaySend,
-    dryFxGain,
-    engine,
-    eqs,
-    filters,
-    fxMerge,
-    isInitialized,
-    isInitializing,
-    limiter,
-    masterBus,
-    pitchShift,
-    postFxBus,
-    recorderStream,
-    reverbDecayRef,
-    reverbNode,
     reverbSend,
   ]);
 
@@ -582,22 +467,13 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, [updateCrossfade]);
 
   const updateKeyLockComp = useCallback(
-    (deck: 'A' | 'B', rate: number) => {
-      const node = pitchShift.current[deck];
-      if (!node || !node.wet) return;
+    (deck: 'A' | 'B', _rate: number) => {
+      const deckEngine = engine.deckEngines.current[deck];
+      if (!deckEngine) return;
       const active = deck === 'A' ? deckA.isKeyLockActive : deckB.isKeyLockActive;
-      const safeRate = Math.max(0.001, rate || 1);
-      const semitoneComp = active ? -12 * Math.log2(safeRate) : 0;
-      try {
-        node.pitch = semitoneComp;
-        if (typeof node.wet.rampTo === 'function') {
-          node.wet.rampTo(active ? 1 : 0, 0.05);
-        }
-      } catch (error) {
-        console.warn(`[AudioEngine] Key lock update failed on Deck ${deck}:`, error);
-      }
+      deckEngine.setKeyLock(active);
     },
-    [deckA.isKeyLockActive, deckB.isKeyLockActive, pitchShift]
+    [deckA.isKeyLockActive, deckB.isKeyLockActive, engine]
   );
 
   // Helper: perform audio analysis and update deck metadata if needed
@@ -758,45 +634,11 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Smoothly apply playbackRate changes coming from UI/store
   const applyPlaybackRate = useCallback((deck: 'A' | 'B', rate: number) => {
-    const normalized = Math.max(0.001, rate || 1);
-    const rampPlayer = (player: Tone.Player | null) => {
-      if (!player) return;
-      const param = player.playbackRate as unknown as PlaybackRateParam;
-      const now = Tone.now();
-      try {
-        if (typeof param.cancelScheduledValues === 'function') {
-          param.cancelScheduledValues(now);
-        }
-        const currentValue = typeof param.value === 'number' ? param.value : normalized;
-        if (typeof param.setValueAtTime === 'function') {
-          const value = Math.max(0.001, currentValue);
-          param.setValueAtTime(value, now);
-        }
-        if (typeof param.exponentialRampToValueAtTime === 'function') {
-          param.exponentialRampToValueAtTime(normalized, now + 0.05);
-          return;
-        }
-        if (typeof param?.rampTo === 'function') {
-          param.rampTo(normalized, 0.05);
-          return;
-        }
-      } catch (err) {
-        console.warn('[AudioEngine] playbackRate ramp failed:', err);
-      }
-      player.playbackRate = normalized;
-    };
-
-    const stemSet = stemPlayers.current[deck];
-    const hasStems = Object.values(stemSet).some((p) => p !== null);
-    if (hasStems) {
-      Object.values(stemSet).forEach((player) => {
-        if (player) rampPlayer(player);
-      });
-    } else {
-      rampPlayer(players.current[deck]);
-    }
-    updateKeyLockComp(deck, normalized);
-  }, [updateKeyLockComp, players, stemPlayers]);
+    const deckEngine = engine.deckEngines.current[deck];
+    if (!deckEngine) return;
+    deckEngine.setPitch(rate);
+    updateKeyLockComp(deck, rate);
+  }, [updateKeyLockComp, engine]);
 
   // Get playback position
   const getPlaybackPosition = useCallback((deck: 'A' | 'B'): number => {
@@ -846,92 +688,31 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Set deck volume
   const setDeckVolume = useCallback((deck: 'A' | 'B', volume: number) => {
-    const channel = channels.current[deck];
-    if (channel && channel.volume) {
-      const volumeDb = volume > 0 ? 20 * Math.log10(volume) : -Infinity;
-      if (typeof channel.volume.rampTo === 'function') {
-        channel.volume.rampTo(volumeDb, 0.05);
-      } else {
-        channel.volume.value = volumeDb;
-      }
+    const deckEngine = engine.deckEngines.current[deck];
+    if (deckEngine) {
+      deckEngine.setVolume(volume);
     }
-  }, [channels]);
+  }, [engine]);
 
   // Set deck EQ
-  // Phase S7: Set Deck EQ with isolator mode support
   const setDeckEQ = useCallback((deck: 'A' | 'B', eq: { low: number; mid: number; high: number }) => {
-    const eqNode = eqs.current[deck];
-    if (!eqNode || !eqNode.low || !eqNode.mid || !eqNode.high) return;
-
-    // Get current mixer settings from store
-    const mixerSettings = useStore.getState().mixerSettings;
-    const isIsolator = mixerSettings.eqType === 'isolator';
-
-    // Map EQ values based on type
-    const mapEQ = (value: number): number => {
-      if (!isIsolator) return value; // Classic mode: pass through
-
-      // Isolator mode: aggressive kill curve
-      if (value < -20) {
-        return -60; // Kill zone (-inf dB effectively)
-      } else if (value < -10) {
-        return value * 2; // Steeper slope in lower range
-      } else {
-        return value; // Normal boost range
-      }
-    };
-
-    const lowDb = mapEQ(eq.low);
-    const midDb = mapEQ(eq.mid);
-    const highDb = mapEQ(eq.high);
-
-    if (typeof eqNode.low.rampTo === 'function') {
-      eqNode.low.rampTo(lowDb, 0.05);
-      eqNode.mid.rampTo(midDb, 0.05);
-      eqNode.high.rampTo(highDb, 0.05);
-    } else {
-      eqNode.low.value = lowDb;
-      eqNode.mid.value = midDb;
-      eqNode.high.value = highDb;
+    const deckEngine = engine.deckEngines.current[deck];
+    if (deckEngine) {
+      deckEngine.setEQ(eq);
     }
-  }, [eqs]);
+  }, [engine]);
 
   // Set deck filter
   const setDeckFilter = useCallback((deck: 'A' | 'B', position: number) => {
-    const filter = filters.current[deck];
-    if (!filter || !filter.frequency) return;
-    const clamped = Math.max(0, Math.min(1, position));
-    const lowPassRange = clamped < 0.48;
-    const highPassRange = clamped > 0.52;
-
-    if (!lowPassRange && !highPassRange) {
-      filter.type = 'lowpass';
-      filter.Q.value = 0;
-      if (typeof filter.frequency.rampTo === 'function') {
-        filter.frequency.rampTo(20000, 0.05);
-      } else {
-        filter.frequency.value = 20000;
-      }
-      return;
+    const deckEngine = engine.deckEngines.current[deck];
+    if (deckEngine) {
+      // Map 0-1 to 20-20000 Hz for the engine
+      const min = 20;
+      const max = 20000;
+      const frequency = min * Math.pow(max / min, position);
+      deckEngine.setFilter(frequency);
     }
-
-    const normalized = lowPassRange
-      ? clamped / 0.48
-      : (clamped - 0.52) / 0.48;
-
-    const min = 20;
-    const max = 20000;
-    const exp = Math.pow(max / min, Math.max(0, Math.min(1, normalized)));
-    const frequency = min * exp;
-
-    filter.type = lowPassRange ? 'lowpass' : 'highpass';
-    filter.Q.value = 1;
-    if (typeof filter.frequency.rampTo === 'function') {
-      filter.frequency.rampTo(Math.max(20, Math.min(20000, frequency)), 0.05);
-    } else {
-      filter.frequency.value = Math.max(20, Math.min(20000, frequency));
-    }
-  }, [filters]);
+  }, [engine]);
 
   // FX Rack: Delay/Reverb controls
   const setDelayWetMix = useCallback((amount: number) => {
@@ -1094,104 +875,27 @@ export const useAudioEngine = (): AudioEngineControls => {
     }
 
     try {
-      const channel = channels.current[deck];
-      const eq = eqs.current[deck];
-      const filter = filters.current[deck];
-      const pitchNode = pitchShift.current[deck];
+      const deckEngine = engine.deckEngines.current[deck];
 
-      if (!channel || !eq || !filter) {
+      if (!deckEngine) {
         throw new Error(`[AudioEngine] Deck ${deck} not initialized`);
       }
 
-      // Dispose old stem players
-      Object.values(stemPlayers.current[deck]).forEach(player => {
-        player?.dispose();
-      });
-      // Phase 3.3B: Dispose old stem gain nodes
-      Object.values(stemGains.current[deck]).forEach(gain => {
-        gain?.dispose();
-      });
-      stemPlayers.current[deck] = { vocals: null, drums: null, bass: null, other: null };
-      stemGains.current[deck] = { vocals: null, drums: null, bass: null, other: null };
-      stemMutes.current[deck] = { vocals: false, drums: false, bass: false, other: false };
-      userMuteState.current[deck] = { vocals: false, drums: false, bass: false, other: false }; // Phase 3.3B
+      console.log(`[AudioEngine] Loading stems for Deck ${deck}:`, Object.keys(stems));
 
-      // Create players for each stem
-      const stemTypes = ['vocals', 'drums', 'bass', 'other'] as const;
-      const stemSources: (StemSource | null)[] = [stems.vocals, stems.drums, stems.bass, stems.other];
+      // Separate logic for stems vs single track
+      // Delegate to DeckEngine
+      await deckEngine.loadStems(stems);
 
-      for (let i = 0; i < stemTypes.length; i++) {
-        const stemType = stemTypes[i];
-        const source = stemSources[i];
-
-        if (!source) continue;
-
-        const player = new Tone.Player({
-          url: source,
-          autostart: false,
-          onload: () => {
-            console.log(`[AudioEngine] Stem ${stemType} loaded on Deck ${deck}`);
-          },
-          onerror: (error) => {
-            console.error(`[AudioEngine] Error loading stem ${stemType} on Deck ${deck}:`, error);
-          },
-        });
-
-        const currentRate = deck === 'A' ? deckA.playbackRate : deckB.playbackRate;
-        player.playbackRate = Math.max(0.001, currentRate || 1);
-
-        // Phase 3.3B: Create dedicated gain node for smooth ramping
-        const gainNode = new Tone.Gain(1).toDestination(); // Start at full volume
-        gainNode.disconnect(); // Remove default connection
-
-        // Connect: Player -> Gain Node -> Pitch (optional) -> EQ chain
-        player.connect(gainNode);
-        if (pitchNode) {
-          gainNode.connect(pitchNode);
-        } else {
-          gainNode.connect(eq);
-        }
-        player.sync();
-
-        stemPlayers.current[deck][stemType] = player;
-        stemGains.current[deck][stemType] = gainNode; // Phase 3.3B: Store gain node
-        stemMutes.current[deck][stemType] = false; // All stems enabled by default
-      }
-
-      const hasLoadedStems = Object.values(stemPlayers.current[deck]).some((player) => player !== null);
-      if (!hasLoadedStems) {
-        console.warn(`[AudioEngine] No stems loaded for Deck ${deck}`);
-        return;
-      }
-
-      // Dispose main player if exists (stems replace it)
-      if (players.current[deck]) {
-        players.current[deck]?.dispose();
-        players.current[deck] = null;
-      }
-
-      applyStemMix(deck);
-      console.log(`[AudioEngine] Stems loaded on Deck ${deck}`);
+      updateDeck(deck, { isLoaded: true, hasStems: true });
+      applyStemMix(deck); // Initial apply of current mute/solo states
+      
+      console.log(`[AudioEngine] Stems loaded for Deck ${deck} via DeckEngine`);
     } catch (error) {
       console.error(`[AudioEngine] Failed to load stems on Deck ${deck}:`, error);
       throw error;
     }
-  }, [
-    deckA.playbackRate,
-    deckB.playbackRate,
-    isInitialized,
-    init,
-    channels,
-    eqs,
-    filters,
-    pitchShift,
-    stemPlayers,
-    stemGains, // Phase 3.3B
-    stemMutes,
-    userMuteState, // Phase 3.3B
-    players,
-    applyStemMix,
-  ]);
+  }, [engine, updateDeck, applyStemMix, init, isInitialized]);
 
   // Toggle stem mute/solo (real stems)
   const toggleStem = useCallback((deck: 'A' | 'B', stem: 'vocals' | 'drums' | 'bass' | 'other') => {
@@ -1335,7 +1039,13 @@ export const useAudioEngine = (): AudioEngineControls => {
   }, [applyPlaybackRate, deckA, deckB, updateDeck, players, stemPlayers]);
 
   // Phase 1.1: Play deck using DeckEngine
-  const play = useCallback((deck: 'A' | 'B') => {
+  const play = useCallback(async (deck: 'A' | 'B') => {
+    // Ensure Tone.js context is started (requires user gesture, which play button is)
+    if (Tone.getContext().state !== 'running') {
+      await Tone.start();
+      console.log('[AudioEngine] Tone started via Play gesture');
+    }
+
     const deckEngine = engine.deckEngines.current[deck];
     if (!deckEngine) {
       console.warn(`[AudioEngine] DeckEngine for Deck ${deck} not initialized`);
@@ -1372,7 +1082,7 @@ export const useAudioEngine = (): AudioEngineControls => {
 
   // Get deck channel for level metering
   const getDeckChannel = (deck: 'A' | 'B') => {
-    return channels.current[deck] || null;
+    return engine.deckEngines.current[deck]?.getChannel() || null;
   };
 
   // Get master bus for level metering

@@ -3,6 +3,8 @@
  * Supports frequency-based coloring and stem mute visualization
  */
 
+/// <reference lib="webworker" />
+
 type IncomingMessage =
   | {
       type: "init";

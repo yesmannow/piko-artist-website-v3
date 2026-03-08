@@ -13,7 +13,7 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/store/useStore';
-import type { AnalysisResult } from '../../workers/analysis.worker';
+import type { AnalysisResult } from '../../workers/essentia.types';
 
 export interface UseTrackAnalysisReturn {
   analyze: (url: string) => Promise<AnalysisResult>;

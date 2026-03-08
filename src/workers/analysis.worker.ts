@@ -1,35 +1,11 @@
-/**
- * Audio Analysis Worker
- * Performs BPM, key, and energy analysis using Essentia.js
- *
- * IMPORTANT: Uses dynamic import to avoid SSR/build-time WASM loading issues
- */
-
 import { freqToMidi } from '@/lib/utils/audioMath';
-
-type Deletable = { delete?: () => void };
-
-type EssentiaVector = Deletable & Record<string, unknown>;
-
-type RhythmResult = Deletable & {
-  bpm?: number;
-  ticks?: EssentiaVector;
-};
-
-type KeyResult = Deletable & {
-  key?: string;
-  scale?: string;
-};
-
-type EssentiaApi = {
-  arrayToVector: (data: Float32Array) => EssentiaVector;
-  vectorToArray?: (vec: EssentiaVector) => number[];
-  RhythmExtractor2013: (vec: EssentiaVector) => RhythmResult;
-  KeyExtractor: (vec: EssentiaVector) => KeyResult;
-  Danceability?: (vec: EssentiaVector) => Deletable & { danceability?: number };
-  RMS: (vec: EssentiaVector) => number | (Deletable & { rms?: number });
-  delete: (obj: unknown) => void;
-};
+import type { 
+  EssentiaApi, 
+  EssentiaVector, 
+  RhythmResult, 
+  KeyResult, 
+  AnalysisResult 
+} from './essentia.types';
 
 const hasEssentiaApi = (candidate: unknown): candidate is EssentiaApi =>
   !!candidate &&
@@ -43,33 +19,25 @@ const hasEssentiaApi = (candidate: unknown): candidate is EssentiaApi =>
 const extractEssentiaApi = (candidate: unknown): EssentiaApi | null => {
   if (!candidate || typeof candidate !== 'object') return null;
 
-  const record = candidate as Record<string, unknown>;
-  if (
-    'EssentiaJs' in record &&
-    record.EssentiaJs &&
-    typeof record.EssentiaJs === 'object' &&
-    hasEssentiaApi(record.EssentiaJs)
-  ) {
-    return record.EssentiaJs as EssentiaApi;
-  }
+  const record = candidate as Record<string, any>;
+  
+  // Try various common export patterns for Essentia.js
+  const potentialApis = [
+    record.EssentiaWASM,
+    record.EssentiaJs,
+    record.default,
+    record.default?.EssentiaWASM,
+    record.default?.EssentiaJs,
+    candidate
+  ];
 
-  if (hasEssentiaApi(candidate)) {
-    return candidate as EssentiaApi;
+  for (const api of potentialApis) {
+    if (hasEssentiaApi(api)) return api as EssentiaApi;
   }
 
   return null;
 };
 
-export interface AnalysisResult {
-  bpm: number;
-  key: string;
-  scale: string;
-  energy: number;
-  danceability: number;
-  beatGrid: number[];
-  keyNoteNumber?: number;
-  keyFrequencyHz?: number;
-}
 
 let essentia: EssentiaApi | null = null;
 
@@ -111,51 +79,34 @@ const keyToFrequency = (key: string) => {
 const initEssentia = async (): Promise<void> => {
   if (essentia) return;
 
-  // Dynamic import to avoid SSR/build-time evaluation
-  const importedModuleRaw = await import('essentia.js');
-  const importedModule = importedModuleRaw as Record<string, unknown>;
-  const moduleDefault = (importedModuleRaw as { default?: unknown }).default ?? null;
-  const moduleWasm = (importedModuleRaw as { EssentiaWASM?: unknown }).EssentiaWASM ?? null;
-  const defaultWasm =
-    (moduleDefault as { EssentiaWASM?: unknown } | null)?.EssentiaWASM ?? null;
-
-  if (process.env.NODE_ENV !== 'production') {
-    console.debug(
-      '[analysis.worker] imported module keys',
-      Object.keys(importedModule ?? {}),
-    );
+  let resolvedEssentia: EssentiaApi | null = null;
+  try {
+    const importedModuleRaw = await import('essentia.js');
+    resolvedEssentia = extractEssentiaApi(importedModuleRaw);
+    if (resolvedEssentia) {
+      console.log('[analysis.worker] Primary import success');
+    }
+  } catch (e) {
+    console.warn('[analysis.worker] Primary import failed, trying fallback...', e);
   }
 
-  const candidateEntries: Array<[string, unknown]> = [
-    ['imported module', importedModule],
-    ['imported module default', moduleDefault],
-    ['imported module EssentiaWASM', moduleWasm],
-    ['default EssentiaWASM', defaultWasm],
-  ];
-
-  let resolvedEssentia: EssentiaApi | null = null;
-
-  for (const [label, candidate] of candidateEntries) {
-    if (process.env.NODE_ENV !== 'production') {
-      const describe =
-        candidate && typeof candidate === 'object'
-          ? Object.keys(candidate as Record<string, unknown>)
-          : typeof candidate;
-      console.debug('[analysis.worker] candidate', label, describe);
-    }
-
-    const api = extractEssentiaApi(candidate);
-    if (api) {
-      resolvedEssentia = api;
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[analysis.worker] resolved Essentia from', label);
+  if (!resolvedEssentia) {
+    try {
+      console.log('[analysis.worker] Attempting fallback with direct dist imports...');
+      const wasm = await import('essentia.js/dist/essentia-wasm.web.js') as any;
+      const core = await import('essentia.js/dist/essentia.js-core.es.js') as any;
+      const api = core.Essentia ? new core.Essentia(wasm.EssentiaWASM) : (wasm.EssentiaWASM || wasm.EssentiaJs);
+      if (hasEssentiaApi(api)) {
+        resolvedEssentia = api;
+        console.log('[analysis.worker] Fallback import success');
       }
-      break;
+    } catch (e) {
+      console.error('[analysis.worker] Fallback import failed:', e);
     }
   }
 
   if (!resolvedEssentia) {
-    throw new Error('[analysis.worker] EssentiaJs API object unavailable');
+    throw new Error('[analysis.worker] EssentiaJs API object unavailable after all attempts');
   }
 
   essentia = resolvedEssentia;
@@ -171,7 +122,21 @@ globalThis.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32
   try {
     await initEssentia();
     if (!essentia) {
-      throw new Error('Essentia initialization failed');
+      // Fallback: try direct import of core and wasm
+      try {
+        const wasm = await import('essentia.js/dist/essentia-wasm.web.js') as any;
+        const core = await import('essentia.js/dist/essentia.js-core.es.js') as any;
+        const api = core.Essentia ? new core.Essentia(wasm.EssentiaWASM) : (wasm.EssentiaWASM || wasm.EssentiaJs);
+        if (hasEssentiaApi(api)) {
+          essentia = api;
+        }
+      } catch (e) {
+        console.error('[analysis.worker] Fallback failed:', e);
+      }
+    }
+
+    if (!essentia) {
+      throw new Error('Essentia initialization failed - API unavailable');
     }
 
     const vectorAudio = essentia.arrayToVector(audioBuffer);

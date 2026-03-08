@@ -1,0 +1,346 @@
+/* DJ Studio - Bespoke Styles */
+/* Supplements Tailwind for specialized DJ hardware elements */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+.studio-root {
+  font-family: 'Space Grotesk', sans-serif;
+  background: #0d0f14;
+  color: #ffffff;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Knob ---- */
+.knob-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.knob {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2a2d3e, #12141f);
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.knob:hover {
+  border-color: rgba(0, 245, 212, 0.7);
+}
+
+.knob-indicator {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 10px;
+  background: #00f5d4;
+  border-radius: 2px;
+  transform-origin: center top;
+}
+
+.knob-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+}
+
+/* ---- Fader ---- */
+.fader-track {
+  position: relative;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.fader-track:hover .fader-thumb {
+  background: #00f5d4;
+}
+
+.fader-thumb {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 10px;
+  background: rgba(255,255,255,0.85);
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  cursor: grab;
+  transition: background 0.15s;
+}
+
+/* ---- JogWheel ---- */
+.jog-wheel {
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #1e2235, #0d0f18);
+  border: 2px solid rgba(0, 245, 212, 0.2);
+  position: relative;
+  box-shadow: 0 0 20px rgba(0, 245, 212, 0.08), 0 4px 20px rgba(0,0,0,0.8);
+  overflow: hidden;
+}
+
+.jog-wheel-inner {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #262a3d, #0a0c12);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.jog-wheel-needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 35%;
+  background: linear-gradient(to bottom, #00f5d4, transparent);
+  transform-origin: bottom center;
+  border-radius: 2px;
+}
+
+.jog-spin-ring {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,245,212,0.12);
+  animation: jog-spin 3s linear infinite paused;
+}
+
+.jog-spin-ring.playing {
+  animation-play-state: running;
+}
+
+@keyframes jog-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Transport Buttons ---- */
+.btn-transport {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid;
+  user-select: none;
+}
+
+.btn-cue {
+  width: 52px;
+  height: 52px;
+  border-color: rgba(255,255,255,0.3);
+  background: transparent;
+  color: #fff;
+}
+
+.btn-cue:hover {
+  border-color: #00f5d4;
+  color: #00f5d4;
+}
+
+.btn-play {
+  width: 64px;
+  height: 64px;
+  border-color: #00f5d4;
+  background: rgba(0, 245, 212, 0.12);
+  color: #00f5d4;
+}
+
+.btn-play.playing {
+  background: rgba(0, 245, 212, 0.25);
+  box-shadow: 0 0 16px rgba(0,245,212,0.4);
+}
+
+.btn-play:hover {
+  background: rgba(0, 245, 212, 0.2);
+  box-shadow: 0 0 12px rgba(0,245,212,0.3);
+}
+
+/* ---- Stem Toggles ---- */
+.stem-toggle {
+  width: 28px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stem-toggle.active {
+  background: rgba(0,245,212,0.15);
+  border-color: #00f5d4;
+  color: #00f5d4;
+}
+
+.stem-toggle:hover {
+  border-color: rgba(0,245,212,0.5);
+}
+
+/* ---- VU Meter ---- */
+.vu-bar {
+  border-radius: 2px;
+  transition: height 0.05s linear;
+}
+
+/* ---- Library Redesign (Cards) ---- */
+.library-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 16px;
+}
+
+@media (min-width: 1024px) {
+  .library-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.track-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.track-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(0, 245, 212, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.track-card.active-a { border-color: #00f5d4; background: rgba(0, 245, 212, 0.07); }
+.track-card.active-b { border-color: #a855f7; background: rgba(168, 85, 247, 0.07); }
+
+.track-card-artwork {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.track-card-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+}
+
+.track-card-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.track-card-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  font-size: 10px;
+}
+
+.track-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.track-card:hover .track-card-actions {
+  opacity: 1;
+}
+
+.btn-card-action {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transition: all 0.15s;
+}
+
+.btn-card-action:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.library-panel {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.library-panel.collapsed {
+  max-height: 48px;
+  border-top-color: transparent;
+}
+
+.sort-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.15s;
+}
+
+.sort-button:hover, .sort-button.active {
+  color: #00f5d4;
+  background: rgba(0, 245, 212, 0.1);
+}

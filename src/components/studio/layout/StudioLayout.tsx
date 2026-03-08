@@ -129,52 +129,70 @@ export function StudioLayout() {
     };
   }, [setAppActive]);
 
-  // Auto-initialize audio on mount
-  useEffect(() => {
-    const initializeAudio = async () => {
-      if (audioInitialized || initInFlight.current) return;
-      initInFlight.current = true;
-      try {
-        await Tone.start();
-        await init();
-        setAudioInitialized(true);
-        setAudioStarted(true);
-        setMasterBusNodes(getMasterBus());
-        console.log('[StudioLayout] Audio initialized');
+  // Removed auto-initialize (requires button click)
+  const initializeAudio = async () => {
+    if (audioInitialized || initInFlight.current) return;
+    initInFlight.current = true;
+    try {
+      console.log('[StudioLayout] Starting Tone context...');
+      await Tone.start();
+      console.log('[StudioLayout] Tone context started, state:', Tone.getContext().state);
+      
+      await init();
+      setAudioInitialized(true);
+      setAudioStarted(true);
+      setMasterBusNodes(getMasterBus());
+      console.log('[StudioLayout] Engine initialized');
 
-        // Recover any persisted tracks after audio is ready
-        const { deckA, deckB } = useStore.getState();
-        const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckA) => {
-          const data = deckState.trackData;
-          if (data && data.url && data.bpm) {
-            try {
-              await loadTrack(deckId, data.url, data.bpm, true);
-            } catch (err) {
-              console.warn(`[StudioLayout] Failed to recover Deck ${deckId}:`, err);
-            }
+      // Recover any persisted tracks
+      const { deckA, deckB } = useStore.getState();
+      const recoverDeck = async (deckId: 'A' | 'B', deckState: typeof deckA) => {
+        const data = deckState.trackData;
+        if (data && data.url && data.bpm) {
+          try {
+            await loadTrack(deckId, data.url, data.bpm, true);
+          } catch (err) {
+            console.warn(`[StudioLayout] Failed to recover Deck ${deckId}:`, err);
           }
-        };
+        }
+      };
 
-        await recoverDeck('A', deckA);
-        await recoverDeck('B', deckB);
-      } catch (error) {
-        console.error('[StudioLayout] Failed to initialize audio:', error);
-        // Don't show alert - just log the error
-      } finally {
-        initInFlight.current = false;
-      }
-    };
-
-    initializeAudio();
-  }, [audioInitialized, init, getMasterBus, loadTrack, setAudioStarted]);
+      await recoverDeck('A', deckA);
+      await recoverDeck('B', deckB);
+    } catch (error) {
+      console.error('[StudioLayout] Failed to initialize audio:', error);
+    } finally {
+      initInFlight.current = false;
+    }
+  };
 
   // Show loading state while initializing
   if (!audioInitialized) {
     return (
       <main className="studio-shell">
-        <div className="studio-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div className="studio-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0a0a0f' }}>
           <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <p>Initializing audio engine...</p>
+            <h1 style={{ color: '#fff', marginBottom: '1rem', fontSize: '1.5rem' }}>Piko Studio</h1>
+            <p style={{ marginBottom: '2rem' }}>Ready to start the session?</p>
+            <button 
+              onClick={() => initializeAudio()}
+              disabled={initInFlight.current}
+              style={{
+                background: 'var(--color-studio-cyan, #22d3ee)',
+                color: '#000',
+                border: 'none',
+                padding: '12px 32px',
+                borderRadius: '99px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                opacity: initInFlight.current ? 0.5 : 1,
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              {initInFlight.current ? 'Initializing...' : 'Start Studio'}
+            </button>
           </div>
         </div>
       </main>

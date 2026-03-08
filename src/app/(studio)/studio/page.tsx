@@ -1,14 +1,13 @@
 "use client";
 
 /**
- * Studio Page - Main entry point for DJ Studio
- *
- * Uses StudioLayout which handles all audio persistence and view management
- * Phase IX.5: "Masterpiece" Horizontal Layout
+ * Studio Page - Stitch DJ Mixer Studio
+ * Redesigned from Google Stitch project: DJ Mixer Studio (4676984920919970174)
+ * Uses Web Audio API for reliable dual-deck playback with all real tracks.
  */
 
-import { StudioLayout } from '@/components/studio/layout/StudioLayout';
+import { DjStudio } from '@/app/studio/DjStudio';
 
 export default function Studio() {
-  return <StudioLayout />;
+  return <DjStudio />;
 }

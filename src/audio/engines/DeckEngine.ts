@@ -144,6 +144,8 @@ export class DeckEngine {
     trackUrl: null,
   };
 
+  private lastRate = 1.0;
+
   // Event listeners
   private listeners: Map<DeckEventType, Set<(event: DeckEvent) => void>> = new Map();
 
@@ -167,11 +169,11 @@ export class DeckEngine {
    */
   private initAudioGraph(): void {
     // Create output chain (right to left in signal flow)
-    this.outputNode = new Tone.Gain(1.0);
-    this.channel = new Tone.Channel({ volume: 0, pan: 0 });
-    this.pitchShift = new Tone.PitchShift({ pitch: 0 });
-    this.filter = new Tone.Filter({ frequency: 20000, type: 'lowpass' });
-    this.eq = new Tone.EQ3({ low: 0, mid: 0, high: 0 });
+    this.outputNode = new Tone.Gain({ context: this.context, gain: 1.0 });
+    this.channel = new Tone.Channel({ context: this.context, volume: 0, pan: 0 });
+    this.pitchShift = new Tone.PitchShift({ context: this.context, pitch: 0 });
+    this.filter = new Tone.Filter({ context: this.context, frequency: 20000, type: 'lowpass' });
+    this.eq = new Tone.EQ3({ context: this.context, low: 0, mid: 0, high: 0 });
 
     // Connect chain
     this.eq.connect(this.filter);
@@ -202,35 +204,31 @@ export class DeckEngine {
       this.disposeStems();
 
       // Create new player
-      this.player = new Tone.Player({
-        url,
-        loop: false,
-        onload: () => {
-          if (!this.player) return;
+      const buffer = await new Promise<Tone.ToneAudioBuffer>((resolve, reject) => {
+        const b = new Tone.ToneAudioBuffer(
+          url,
+          () => resolve(b),
+          (err) => reject(err as Error)
+        );
+      });
 
-          this.state.duration = this.player.buffer.duration;
-          this.state.bpm = bpm;
-          this.state.trackUrl = url;
+      console.log(`[DeckEngine ${this.deckId}] Buffer loaded, duration: ${buffer.duration.toFixed(2)}s`);
+      
+      this.player = new Tone.Player(buffer);
+      this.player.loop = false;
+      
+      this.state.duration = buffer.duration;
+      this.state.bpm = bpm;
+      this.state.trackUrl = url;
 
-          console.log(`[DeckEngine ${this.deckId}] Track loaded: ${this.state.duration.toFixed(2)}s @ ${bpm} BPM`);
-
-          this.emit('trackLoaded', {
-            duration: this.state.duration,
-            bpm,
-            trackUrl: url,
-          });
-        },
-        onerror: (error) => {
-          console.error(`[DeckEngine ${this.deckId}] Load error:`, error);
-          this.emit('error', { error });
-        },
+      this.emit('trackLoaded', {
+        duration: this.state.duration,
+        bpm,
+        trackUrl: url,
       });
 
       // Connect to audio graph
       this.player.connect(this.eq!);
-
-      // Wait for load
-      await Tone.loaded();
 
     } catch (error) {
       console.error(`[DeckEngine ${this.deckId}] Failed to load track:`, error);
@@ -296,25 +294,36 @@ export class DeckEngine {
    * Start playback
    */
   play(): void {
-    if (!this.player && !this.hasStems()) {
-      console.warn(`[DeckEngine ${this.deckId}] No track loaded`);
+    // Check for player OR stems OR duration (if loaded but player somehow lost)
+    if (!this.player && !this.hasStems() && this.state.duration <= 0) {
+      console.warn(`[DeckEngine ${this.deckId}] No track loaded (player=${!!this.player}, stems=${this.hasStems()}, dur=${this.state.duration})`);
+      return;
+    }
+
+    // Re-create player if duration is known but player is missing (e.g. after faulty dispose)
+    if (!this.player && !this.hasStems() && this.state.trackUrl) {
+      console.warn(`[DeckEngine ${this.deckId}] Player lost but trackUrl exists. Attempting recovery...`);
+      this.loadTrack(this.state.trackUrl, this.state.bpm).then(() => this.play());
       return;
     }
 
     const now = Tone.now();
+    const playbackOffset = this.state.currentTime;
 
     // Start main player or stems
     if (this.player && !this.hasStems()) {
-      this.player.start(now);
+      this.player.start(now, playbackOffset);
     } else {
-      Object.values(this.stemPlayers).forEach(p => p?.start(now));
+      Object.values(this.stemPlayers).forEach(p => {
+        if (p) p.start(now, playbackOffset);
+      });
     }
 
     this.state.isPlaying = true;
     this.startPositionTracking();
     this.emit('playbackStart', { isPlaying: true });
 
-    console.log(`[DeckEngine ${this.deckId}] Playback started`);
+    console.log(`[DeckEngine ${this.deckId}] Playback started at ${playbackOffset.toFixed(2)}s (now=${now.toFixed(2)})`);
   }
 
   /**
@@ -533,6 +542,7 @@ export class DeckEngine {
    */
   setPitch(rate: number): void {
     const clampedRate = Math.max(0.5, Math.min(2.0, rate));
+    this.lastRate = clampedRate;
     this.state.pitch = clampedRate;
 
     // Apply to main player or stems
@@ -542,6 +552,36 @@ export class DeckEngine {
       Object.values(this.stemPlayers).forEach(p => {
         if (p) p.playbackRate = clampedRate;
       });
+    }
+
+    // Update key lock if enabled
+    this.updatePitchShift();
+  }
+
+  /**
+   * Enable/disable key lock (pitch preservation)
+   */
+  setKeyLock(enabled: boolean): void {
+    this.state.keyLockEnabled = enabled;
+    this.updatePitchShift();
+    console.log(`[DeckEngine ${this.deckId}] Key lock ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Update PitchShift node based on current rate and key lock state
+   */
+  private updatePitchShift(): void {
+    if (!this.pitchShift) return;
+
+    if (this.state.keyLockEnabled) {
+      // Calculate semitones needed to counteract pitch change
+      // semitones = 12 * log2(1 / rate)
+      const semitones = -12 * Math.log2(this.lastRate);
+      this.pitchShift.pitch = semitones;
+      this.pitchShift.wet.value = 1;
+    } else {
+      this.pitchShift.pitch = 0;
+      this.pitchShift.wet.value = 0;
     }
   }
 

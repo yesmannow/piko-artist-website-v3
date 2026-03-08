@@ -7,26 +7,15 @@
  * IMPORTANT: Uses dynamic import to avoid SSR/build-time WASM loading issues
  */
 
-type Deletable = { delete?: () => void };
-
-type EssentiaVector = Deletable & Record<string, unknown>;
-
-type RhythmResult = Deletable & { bpm?: number; danceability?: number };
-
-type KeyResult = Deletable & { key?: string; scale?: string; strength?: number };
-
-type RmsObjectResult = Deletable & { rms?: number };
-
-type RmsResult = number | RmsObjectResult;
-
-type EssentiaApi = {
-  arrayToVector: (data: Float32Array) => EssentiaVector;
-  RhythmExtractor2013: (vector: EssentiaVector, sampleRate: number) => RhythmResult;
-  KeyExtractor: (vector: EssentiaVector, sampleRate: number) => KeyResult;
-  Danceability?: (vector: EssentiaVector) => Deletable & { danceability?: number };
-  RMS: (vector: EssentiaVector) => RmsResult;
-  delete: (obj: unknown) => void;
-};
+import type {
+  Deletable,
+  EssentiaVector,
+  RhythmResult,
+  KeyResult,
+  RmsObjectResult,
+  RmsResult,
+  EssentiaApi
+} from './essentia.types';
 
 // Environment-aware logging
 const isDev = () =>
@@ -55,30 +44,23 @@ const extractEssentiaApi = (module: unknown): EssentiaApi | null => {
     return null;
   }
 
-  // Try module.EssentiaJs first (most common case)
-  const record = module as Record<string, unknown>;
-  if ('EssentiaJs' in record && hasEssentiaApi(record.EssentiaJs)) {
-    log.debug('Found API at module.EssentiaJs');
-    return record.EssentiaJs as EssentiaApi;
-  }
+  const record = module as Record<string, any>;
+  
+  // Try various common export patterns for Essentia.js
+  const potentialApis = [
+    record.EssentiaWASM,
+    record.EssentiaJs,
+    record.default,
+    record.default?.EssentiaWASM,
+    record.default?.EssentiaJs,
+    module
+  ];
 
-  // Try module.default.EssentiaWASM
-  const defaultObj = record.default as Record<string, unknown> | undefined;
-  if (defaultObj?.EssentiaWASM && hasEssentiaApi(defaultObj.EssentiaWASM)) {
-    log.debug('Found API at module.default.EssentiaWASM');
-    return defaultObj.EssentiaWASM as EssentiaApi;
-  }
-
-  // Try module.EssentiaWASM
-  if (record.EssentiaWASM && hasEssentiaApi(record.EssentiaWASM)) {
-    log.debug('Found API at module.EssentiaWASM');
-    return record.EssentiaWASM as EssentiaApi;
-  }
-
-  // Direct API (rare but possible)
-  if (hasEssentiaApi(module)) {
-    log.debug('Found API directly on module');
-    return module as EssentiaApi;
+  for (const api of potentialApis) {
+    if (hasEssentiaApi(api)) {
+      log.debug('Found valid Essentia API');
+      return api as EssentiaApi;
+    }
   }
 
   log.warn('Could not find Essentia API in any expected location');
@@ -106,11 +88,30 @@ const initEssentia = async () => {
     try {
       log.debug('Starting Essentia.js initialization');
 
-      const essentiaModule = await import('essentia.js');
-      const api = extractEssentiaApi(essentiaModule);
+      let api: EssentiaApi | null = null;
+      try {
+        const essentiaModule = await import('essentia.js');
+        api = extractEssentiaApi(essentiaModule);
+      } catch (e) {
+        log.warn('Primary import failed, trying fallback...', e);
+      }
 
       if (!api) {
-        throw new Error('Could not extract Essentia API from module');
+        log.warn('Attempting fallback with direct dist imports...');
+        try {
+          const wasm = await import('essentia.js/dist/essentia-wasm.web.js') as any;
+          const core = await import('essentia.js/dist/essentia.js-core.es.js') as any;
+          const fallbackApi = core.Essentia ? new core.Essentia(wasm.EssentiaWASM) : (wasm.EssentiaWASM || wasm.EssentiaJs);
+          if (hasEssentiaApi(fallbackApi)) {
+            api = fallbackApi;
+          }
+        } catch (e) {
+          log.error('Fallback import failed:', e);
+        }
+      }
+
+      if (!api) {
+        throw new Error('Could not extract Essentia API after all attempts');
       }
 
       essentiaInstance = api;
@@ -118,15 +119,10 @@ const initEssentia = async () => {
       log.debug('Initialization successful');
 
     } catch (error) {
-      log.error('Initialization failed:', error);
-
-      // Reset so we can try again on next analysis request
+      log.error('Initialization failed final:', error);
       initializationPromise = null;
       isInitialized = false;
-
-      throw new Error(
-        'Essentia.js failed to load. Audio analysis features will be unavailable.'
-      );
+      throw error;
     }
   })();
 
