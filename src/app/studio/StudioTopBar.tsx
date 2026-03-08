@@ -1,6 +1,7 @@
 'use client';
 
 import type { ViewId } from './DjStudio';
+import Link from 'next/link';
 
 interface StudioTopBarProps {
   activeView: ViewId;
@@ -64,6 +65,9 @@ export function StudioTopBar({ activeView, onViewChange, bpm }: StudioTopBarProp
 
       {/* Actions */}
       <div className="flex items-center gap-3">
+        <Link href="/" className="text-sm font-medium text-white hover:text-[#00f5d4] transition-colors bg-white/5 px-3 py-1.5 rounded-md hover:bg-white/10">
+          Back to Site
+        </Link>
         <button className="opacity-40 hover:opacity-70 transition-opacity">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
             <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
