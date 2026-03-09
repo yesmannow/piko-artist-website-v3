@@ -14,20 +14,18 @@ interface LibraryState {
   seedLibrary: () => Promise<void>;
 }
 
-// Removed mockAnalysis
-
-// Helper to get AudioBuffer
+// Helper to get AudioBuffer — used only for user-uploaded files (addTrack), NOT during seed
 const getAudioBuffer = async (fileOrUrl: File | string): Promise<AudioBuffer> => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   let arrayBuffer: ArrayBuffer;
-  
+
   if (typeof fileOrUrl === 'string') {
     const res = await fetch(fileOrUrl);
     arrayBuffer = await res.arrayBuffer();
   } else {
     arrayBuffer = await (fileOrUrl as File).arrayBuffer();
   }
-  
+
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
   return audioBuffer;
 };
@@ -57,76 +55,55 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     if (isSeeding) return;
     const count = await db.tracks.count();
     if (count > 0) return;
-    
+
     isSeeding = true;
 
-    const seedTracks = trackManifest;
-
     try {
-      for (const track of seedTracks) {
-        const tempId = track.name + Date.now();
-        set(state => ({
-          processingTracks: [...state.processingTracks, { id: tempId, name: track.name }]
-        }));
+      const now = Date.now();
+      const seedRows: Omit<Track, 'id'>[] = trackManifest.map((track, idx) => {
+        const title = track.name.replace(/\.[^/.]+$/, '');
+        const randomImage = TRACK_IMAGE_POOL[idx % TRACK_IMAGE_POOL.length];
 
-      try {
-        const audioBuffer = await getAudioBuffer(track.url);
-        const analysis = await analyzeAudioBuffer(audioBuffer);
-        
-        const mins = Math.floor(audioBuffer.duration / 60);
-        const secs = Math.floor(audioBuffer.duration % 60);
-        const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-        const title = track.name.replace(/\.[^/.]+$/, "");
-        const artist = 'Pre-existing Track';
-
-        const randomImage = TRACK_IMAGE_POOL[Math.floor(Math.random() * TRACK_IMAGE_POOL.length)];
-
-        const newTrack: Track = {
+        return {
           title,
-          artist,
-          bpm: analysis.bpm,
-          key: analysis.key,
-          duration: durationStr,
-          energy: analysis.energy,
-          hasVocal: analysis.hasVocal,
+          artist: 'Pre-existing Track',
+          // Prefer manifest-provided values; fall back to sensible placeholders
+          bpm: track.bpm ?? '124',
+          key: track.key ?? '8A',
+          duration: '00:00',
+          energy: 'Medium',
+          hasVocal: false,
           audioUrl: track.url,
           coverArt: randomImage,
-          createdAt: Date.now(),
+          status: 'ready' as const,
+          createdAt: now - idx, // ensure stable insertion order
         };
+      });
 
-        const id = await db.tracks.add(newTrack);
-        newTrack.id = id;
+      await db.tracks.bulkAdd(seedRows as Track[]);
 
-        set(state => ({
-          tracks: [...state.tracks, newTrack].sort((a, b) => b.createdAt - a.createdAt)
-        }));
-      } catch (error) {
-        console.error(`Failed to seed ${track.name}`, error);
-      } finally {
-        set(state => ({
-          processingTracks: state.processingTracks.filter(t => t.id !== tempId)
-        }));
-      }
-    }
+      // Refresh store state from DB so UI shows all tracks immediately
+      const tracks = await db.tracks.orderBy('createdAt').reverse().toArray();
+      set({ tracks });
     } catch (dbError) {
-      console.error("Database error during seed, triggering rescue reset:", dbError);
+      console.error('Database error during seed, triggering rescue reset:', dbError);
       await db.delete();
       window.location.reload();
+    } finally {
+      isSeeding = false;
     }
-    isSeeding = false;
   },
   addTrack: async (file: File) => {
     const validTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/x-m4a', 'audio/mp4'];
     const validExtensions = /\.(mp3|wav|flac|m4a)$/i;
-    
+
     if (!validTypes.includes(file.type) && !file.name.match(validExtensions)) {
       toast.error(`Unsupported Format: ${file.name}`);
       return;
     }
 
     const tempId = file.name + Date.now();
-    
+
     set(state => ({
       processingTracks: [...state.processingTracks, { id: tempId, name: file.name }]
     }));
@@ -134,13 +111,13 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     try {
       const audioBuffer = await getAudioBuffer(file);
       const analysis = await analyzeAudioBuffer(audioBuffer);
-      
+
       const mins = Math.floor(audioBuffer.duration / 60);
       const secs = Math.floor(audioBuffer.duration % 60);
       const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
       // Try to extract basic info from filename
-      let title = file.name.replace(/\.[^/.]+$/, "");
+      let title = file.name.replace(/\.[^/.]+$/, '');
       let artist = 'Unknown Artist';
       if (title.includes(' - ')) {
         const parts = title.split(' - ');
@@ -191,3 +168,4 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     }
   }
 }));
+

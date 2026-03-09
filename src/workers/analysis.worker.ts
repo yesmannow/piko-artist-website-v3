@@ -1,11 +1,13 @@
-import { freqToMidi } from '@/lib/utils/audioMath';
-import type { 
-  EssentiaApi, 
-  EssentiaVector, 
-  RhythmResult, 
-  KeyResult, 
-  AnalysisResult 
+import type {
+  EssentiaApi,
+  EssentiaVector,
+  RhythmResult,
+  KeyResult,
+  AnalysisResult,
 } from './essentia.types';
+
+// Inlined to avoid relative-import failures in worker context
+const freqToMidi = (freq: number): number => 12 * Math.log2(freq / 440) + 69;
 
 const hasEssentiaApi = (candidate: unknown): candidate is EssentiaApi =>
   !!candidate &&
@@ -20,7 +22,7 @@ const extractEssentiaApi = (candidate: unknown): EssentiaApi | null => {
   if (!candidate || typeof candidate !== 'object') return null;
 
   const record = candidate as Record<string, any>;
-  
+
   // Try various common export patterns for Essentia.js
   const potentialApis = [
     record.EssentiaWASM,
@@ -28,7 +30,7 @@ const extractEssentiaApi = (candidate: unknown): EssentiaApi | null => {
     record.default,
     record.default?.EssentiaWASM,
     record.default?.EssentiaJs,
-    candidate
+    candidate,
   ];
 
   for (const api of potentialApis) {
@@ -37,7 +39,6 @@ const extractEssentiaApi = (candidate: unknown): EssentiaApi | null => {
 
   return null;
 };
-
 
 let essentia: EssentiaApi | null = null;
 
@@ -77,58 +78,30 @@ const keyToFrequency = (key: string) => {
 };
 
 const initEssentia = async (): Promise<void> => {
-  if (essentia) return;
+  // Import from a single, absolute CDN module — no relative paths that could fail in worker context
+  // @ts-expect-error CDN import
+  const mod = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia-wasm.module.js');
 
-  let resolvedEssentia: EssentiaApi | null = null;
+  const candidate = mod.EssentiaWASM ?? mod.default?.EssentiaWASM ?? mod.default;
 
-  // Try CDN first
-  try {
-    // @ts-expect-error CDN import
-    const core = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia.js-core.es.js');
-    // @ts-expect-error CDN import
-    const wasm = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia-wasm.web.js');
-    const api = core.Essentia ? new core.Essentia(wasm.EssentiaWASM) : (wasm.EssentiaWASM || wasm.EssentiaJs);
-    if (hasEssentiaApi(api)) {
-      resolvedEssentia = api;
-      console.log('[analysis.worker] CDN import success');
-    }
-  } catch (e) {
-    console.warn('[analysis.worker] CDN import failed', e);
+  // Await WASM initialisation if the module exposes a ready promise
+  if (candidate?.ready) {
+    await candidate.ready;
   }
 
-  if (!resolvedEssentia) {
-    try {
-      const importedModuleRaw = await import('essentia.js');
-      resolvedEssentia = extractEssentiaApi(importedModuleRaw);
-      if (resolvedEssentia) {
-        console.log('[analysis.worker] Primary import success');
-      }
-    } catch (e) {
-      console.warn('[analysis.worker] Primary import failed, trying fallback...', e);
-    }
+  const api = extractEssentiaApi(candidate);
+  if (!api) {
+    throw new Error('[analysis.worker] EssentiaWASM API not found in CDN module');
   }
 
-  if (!resolvedEssentia) {
-    try {
-      console.log('[analysis.worker] Attempting fallback with direct dist imports...');
-      const wasm = await import('essentia.js/dist/essentia-wasm.web.js') as any;
-      const core = await import('essentia.js/dist/essentia.js-core.es.js') as any;
-      const api = core.Essentia ? new core.Essentia(wasm.EssentiaWASM) : (wasm.EssentiaWASM || wasm.EssentiaJs);
-      if (hasEssentiaApi(api)) {
-        resolvedEssentia = api;
-        console.log('[analysis.worker] Fallback import success');
-      }
-    } catch (e) {
-      console.error('[analysis.worker] Fallback import failed:', e);
-    }
-  }
-
-  if (!resolvedEssentia) {
-    throw new Error('[analysis.worker] EssentiaJs API object unavailable after all attempts');
-  }
-
-  essentia = resolvedEssentia;
+  essentia = api;
+  console.log('[analysis.worker] CDN module init success');
 };
+
+// Begin initialisation immediately so the first real message pays no extra latency
+const initPromise: Promise<void> = initEssentia().catch((err) => {
+  console.error('[analysis.worker] Essentia init failed — will use mock fallback:', err);
+});
 
 globalThis.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32Array }>) => {
   const { id, audioBuffer } = e.data;
@@ -138,29 +111,27 @@ globalThis.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32
   }
 
   try {
-    await initEssentia();
+    // Gate ALL processing behind essentia initialisation
+    await initPromise;
+
     if (!essentia) {
-      console.warn('Essentia initialization failed - falling back to mock analysis');
+      console.warn('[analysis.worker] Essentia unavailable — returning mock analysis');
       const fakeBpms = [120, 124, 126, 128, 130, 140];
       const fakeKeys = ['A major', 'C minor', 'D minor', 'G major', 'E minor', 'B minor', 'F# minor'];
-      
+
       globalThis.postMessage({
         id,
         success: true,
         result: {
-           bpm: fakeBpms[Math.floor(Math.random() * fakeBpms.length)],
-           beatGrid: [],
-           key: fakeKeys[Math.floor(Math.random() * fakeKeys.length)],
-           scale: 'major',
-           energy: Math.random() * 0.5 + 0.5,
-           danceability: Math.random() * 0.5 + 0.5,
-        }
+          bpm: fakeBpms[Math.floor(Math.random() * fakeBpms.length)],
+          beatGrid: [],
+          key: fakeKeys[Math.floor(Math.random() * fakeKeys.length)],
+          scale: 'major',
+          energy: Math.random() * 0.5 + 0.5,
+          danceability: Math.random() * 0.5 + 0.5,
+        },
       });
       return;
-    }
-
-    if ((essentia as any).ready) {
-      await (essentia as any).ready;
     }
 
     const vectorAudio = essentia.arrayToVector(audioBuffer);

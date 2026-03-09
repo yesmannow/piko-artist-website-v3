@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { Track } from '@/lib/db';
+import { db, Track } from '@/lib/db';
 import { AudioEngine } from '@/lib/audioEngine';
+import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 
 export interface DeckState {
   track: Track | null;
@@ -36,6 +37,54 @@ interface DeckStore {
   updateTelemetry: (deckId: 'A' | 'B', telemetry: TelemetryUpdate) => void;
   updateTrackAutomation: (deckId: 'A' | 'B', automation: typeof initialDeckState.track extends { automation?: infer U } ? U : never) => void;
 }
+
+/**
+ * Run analysis in the background after a track is loaded into a deck.
+ * Persists results to Dexie and refreshes the library store so the UI
+ * reflects the analysed bpm/key without blocking audio playback.
+ */
+async function runDeferredAnalysis(track: Track, buffer: AudioBuffer): Promise<void> {
+  try {
+    const result = await analyzeAudioBuffer(buffer);
+
+    // Persist to IndexedDB
+    if (track.id !== undefined) {
+      await db.tracks.update(track.id, {
+        bpm: result.bpm,
+        key: result.key,
+        energy: result.energy,
+        status: 'ready',
+      });
+    } else if (track.audioUrl) {
+      await db.tracks.where('audioUrl').equals(track.audioUrl).modify({
+        bpm: result.bpm,
+        key: result.key,
+        energy: result.energy,
+        status: 'ready',
+      });
+    }
+
+    // Refresh library store so UI reflects the updated values
+    const { useLibraryStore } = await import('@/store/libraryStore');
+    await useLibraryStore.getState().loadTracks();
+  } catch (err) {
+    console.warn('[deckStore] Deferred analysis failed:', err);
+  }
+}
+
+/** Returns true when placeholder values indicate the track hasn't been fully analysed yet. */
+function needsAnalysis(track: Track): boolean {
+  return (
+    !track.bpm ||
+    track.bpm === '124' ||
+    track.bpm === '0' ||
+    !track.key ||
+    track.key === '8A' ||
+    track.key === '??' ||
+    track.status !== 'ready'
+  );
+}
+
 
 const initialDeckState: DeckState = {
   track: null,
@@ -87,6 +136,11 @@ export const useDeckStore = create<DeckStore>((set) => ({
           isPlaying: false
         }
       }));
+
+      // Trigger background analysis if the track has placeholder or missing metadata
+      if (needsAnalysis(track)) {
+        runDeferredAnalysis(track, buffer);
+      }
     } catch (error) {
       console.error(`Failed to load track to Deck ${deckId}:`, error);
       set((state) => ({
