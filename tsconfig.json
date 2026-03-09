@@ -39,6 +39,8 @@
     "node_modules",
     "scripts",
     "archive",
+    "docs",
+    "tests",
     "piko-artist-website-v3"
   ]
 }
