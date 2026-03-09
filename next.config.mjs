@@ -8,21 +8,14 @@ const __dirname = path.dirname(__filename);
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
-  // Serwist does not support Turbopack in dev yet; disable outside production.
-  disable: process.env.NODE_ENV !== 'production',
 });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable Strict Mode to prevent double-initialization of AudioContext and WebGL Canvases
-  reactStrictMode: false,
-  // Exclude scripts directory from Next.js compilation
-  pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  // TypeScript will handle exclusions via tsconfig.json
-  // ESLint configuration - allow warnings but catch errors
+  reactStrictMode: true,
+  // Ignore ESLint warnings during build (warnings are non-blocking)
   eslint: {
-    ignoreDuringBuilds: false, // Keep false to catch real errors
-    // Warnings won't block build, only errors will
+    ignoreDuringBuilds: false, // Keep false to catch real errors, but warnings won't block
   },
   // Ignore TypeScript errors during build (should be false for production)
   typescript: {
@@ -50,18 +43,6 @@ const nextConfig = {
         hostname: '127.0.0.1',
       },
     ],
-    // Configure local image paths for Next.js 15+ compatibility
-    // When localPatterns is defined, all local image paths must be explicitly allowed
-    localPatterns: [
-      {
-        pathname: '/api/image-proxy',
-        // Allow query strings (e.g., ?url=...)
-      },
-      {
-        pathname: '/images/**',
-        // Allow all images in the public/images directory (matches /images/anything)
-      },
-    ],
   },
   async headers() {
     return [
@@ -86,57 +67,21 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            // Studio needs microphone for voiceover recording.
-            // Keep camera/geolocation disabled site-wide.
-            value: 'camera=(), microphone=(self), geolocation=()',
+            value: 'camera=(), microphone=(), geolocation=()',
           },
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
-          },
         ],
       },
     ];
-    // NOTE: COOP/COEP headers require all external resources to have CORP headers.
-    // YouTube images are automatically proxied through /api/image-proxy for compatibility.
-    // All components using YouTube thumbnails have been updated to use the proxy utility.
   },
   experimental: {
     // Vercel deployment configuration
   },
-  // External packages that should not be bundled (for Node.js sidecar scripts)
-  serverExternalPackages: ['prolink-connect'],
-  // Transpile Tailwind v4 packages and ONNX Runtime for Turbopack compatibility
-  transpilePackages: ['@tailwindcss/postcss', '@tailwindcss/node', 'onnxruntime-web'],
   outputFileTracingRoot: __dirname,
   webpack: (config, { isServer }) => {
-    // Enable async WebAssembly
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-      layers: true, // Required for some WASM builds
-    };
-
-    // Rule to handle .wasm files as assets if not automatically handled
-    config.module.rules.push({
-      test: /\.wasm$/,
-      type: "asset/resource",
-    });
-
-    // Fix for Essentia.js "fs" module resolution in browser
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        crypto: false,
-      };
-    }
-
     // Resolve path aliases
     config.resolve.alias = {
       ...config.resolve.alias,

@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * LEGACY COMPONENT (Wavesurfer UI)
- *
- * - Not used by the new `/studio` buildout (Studio must be self-contained).
- * - Kept only in case we need a standalone, music-page-oriented player UI later.
- */
-
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import WaveSurfer from "wavesurfer.js";

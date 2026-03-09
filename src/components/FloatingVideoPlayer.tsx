@@ -5,7 +5,6 @@ import { useVideo } from "@/context/VideoContext";
 import { tracks } from "@/lib/data";
 import { X, ChevronDown, Maximize2 } from "lucide-react";
 import Image from "next/image";
-import { getYouTubeThumbnailProxy } from "@/lib/utils/youtubeImageProxy";
 
 export function FloatingVideoPlayer() {
   const { currentVideoId, isMinimized, closeVideo, toggleMinimize } = useVideo();
@@ -94,7 +93,7 @@ export function FloatingVideoPlayer() {
             {/* Thumbnail */}
             <div className="relative w-24 h-16 flex-shrink-0 rounded overflow-hidden bg-black">
               <Image
-                src={getYouTubeThumbnailProxy(video.id, 'mqdefault')}
+                src={`https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
                 alt={video.title}
                 fill
                 className="object-cover"

@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks } from "@/lib/data";
+import Link from "next/link";
 import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
@@ -49,7 +50,7 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
           fill
           className="object-cover"
           sizes="(max-width: 768px) 40px, 40px"
-          onLoad={() => setIsLoaded(true)}
+          onLoadingComplete={() => setIsLoaded(true)}
         />
         {!isLoaded && (
           <Skeleton className="absolute inset-0" />
@@ -168,7 +169,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                onLoad={() => setIsLoaded(true)}
+                onLoadingComplete={() => setIsLoaded(true)}
               />
               {!isLoaded && (
                 <Skeleton className="absolute inset-0" />

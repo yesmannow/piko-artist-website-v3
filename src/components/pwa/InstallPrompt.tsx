@@ -8,8 +8,6 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-type StandaloneNavigator = Navigator & { standalone?: boolean };
-
 /**
  * InstallPrompt - PWA installation prompt with "Hacker Terminal" aesthetic
  *
@@ -33,10 +31,9 @@ export function InstallPrompt() {
   useEffect(() => {
     // Check if already installed (standalone mode)
     if (typeof window !== "undefined") {
-      const navigatorWithStandalone = window.navigator as StandaloneNavigator;
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
-        navigatorWithStandalone.standalone === true;
+        (window.navigator as any).standalone === true;
 
       if (isStandalone) {
         setIsInstalled(true);
@@ -147,3 +144,4 @@ export function InstallPrompt() {
     </AnimatePresence>
   );
 }
+

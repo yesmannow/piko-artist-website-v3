@@ -1,100 +1,12 @@
-@import "tailwindcss";
-
-/* Tailwind v4 Theme Configuration */
-@theme {
-  /* Liquid Obsidian Palette - Optimized for OLED */
-  --color-obsidian-950: #050505;
-  --color-obsidian-900: #0a0a0a;
-  --color-obsidian-800: #121212;
-  --color-obsidian-700: #1a1a1a;
-  
-  /* Studio Signal Colors - High-luminance for dark backgrounds */
-  --color-studio-cyan: #00F2FF;
-  --color-studio-purple: #9333ea;
-  --color-studio-crimson: #ef4444;
-  
-  /* Legacy glass colors */
-  --color-glass-surface: oklch(20% 0.05 260 / 0.1);
-  --color-neon-primary: oklch(60% 0.2 300);
-  --blur-glass-md: 12px;
-  --color-brushed-gold: oklch(80% 0.2 90);
-  --font-family-industrial: var(--font-barlow), system-ui, sans-serif;
-  
-  /* Liquid Mesh Background Gradient */
-  --background-image-liquid-mesh: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%);
-  
-  /* Phase 3 Animations */
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-  --animate-liquid-move: liquid-move 18s ease-in-out infinite;
-  --animate-spin-slow: spin-slow 3s linear infinite;
-}
-
-/* Glassmorphism Utilities - Phase 3 Liquid Obsidian Spec */
-@utility glass-panel {
-  background: rgba(10, 10, 10, 0.4); /* obsidian-900 at 40% opacity */
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-@utility glass-panel-high {
-  backdrop-filter: blur(24px);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-@utility glass-panel-low {
-  backdrop-filter: blur(8px);
-  background: rgba(17, 24, 39, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-
-/* Phase 3: Liquid Obsidian Animations */
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    filter: blur(0px);
-  }
-  50% {
-    opacity: 0.8;
-    filter: blur(4px);
-  }
-}
-
-@keyframes liquid-move {
-  0%, 100% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-}
-
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   html,
   body {
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  /*
-    Next.js injects a <nextjs-portal> element for dev tooling overlays.
-    In-browser edits removed `top/left: 0px`; CSS can't "delete" properties,
-    so we override them back to their initial value (auto) via `unset`.
-  */
-  nextjs-portal {
-    top: unset !important;
-    left: 2px !important;
   }
 
   :root {
@@ -128,10 +40,6 @@
     --deep-onyx: 0 0% 2%;
     --charcoal-slate: 0 0% 10%;
     --radius: 0px; /* Brutalist: sharp corners */
-
-    /* Glassmorphism theme for V3 Studio */
-    --color-glass-surface: oklch(20% 0.05 260 / 0.7);
-    --color-neon-accent: oklch(60% 0.2 300);
   }
 
   body {
@@ -264,7 +172,7 @@
   }
 
   p, span, div {
-    font-family: var(--font-barlow), system-ui, sans-serif;
+    @apply font-industrial;
   }
 
   /* Interactive Elements */
@@ -303,47 +211,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 2px hsl(var(--background)),
-      0 0 0 4px hsl(var(--brushed-gold));
-  }
-
-  /* Phase 3: Custom Scrollbars - Liquid Obsidian */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 9999px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  /* Phase 3: Studio Grain Texture - SVG Noise for Analog Warmth */
-  .studio-grain {
-    position: relative;
-  }
-
-  .studio-grain::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 50;
-    mix-blend-mode: overlay;
+    @apply outline-none ring-2 ring-brushed-gold ring-offset-2 ring-offset-background;
   }
 
   /* Torn Paper Effect for Cards */

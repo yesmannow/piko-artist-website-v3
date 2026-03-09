@@ -20,6 +20,3 @@ wrangler.json
 wrangler.jsonc
 tsconfig.tsbuildinfo
 *.tsbuildinfo
-
-# Local-only oversized assets (do not commit)
-public/images/sudio-mixer/

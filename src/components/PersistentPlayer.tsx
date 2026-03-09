@@ -1,10 +1,11 @@
 "use client";
 
 import { useAudio } from "@/context/AudioContext";
-import { Maximize2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHaptic } from "@/hooks/useHaptic";
 import Image from "next/image";
+import { Waveform } from "@/components/dj-ui/Waveform";
 import { EnhancedAudioVisualizer } from "@/components/EnhancedAudioVisualizer";
 
 export function PersistentPlayer() {
@@ -21,9 +22,8 @@ export function PersistentPlayer() {
     toggleMute,
     audioRef,
     progress,
+    seek,
     stop,
-    immersiveOpen,
-    setImmersiveOpen,
   } = useAudio();
 
   const [isMobile, setIsMobile] = useState(false);
@@ -93,7 +93,7 @@ export function PersistentPlayer() {
 
 
   // Show player only when a track is selected
-  if (!currentTrack || immersiveOpen) return null;
+  if (!currentTrack) return null;
 
   return (
     <div
@@ -189,7 +189,17 @@ export function PersistentPlayer() {
               >
                 {/* Frequency Bars */}
                 <EnhancedAudioVisualizer height={40} />
-                {/* Waveform removed - will be rebuilt in Phase 1 */}
+                {/* Waveform */}
+                <Waveform
+                  audioUrl={currentTrack.src}
+                  progress={progress}
+                  isPlaying={isPlaying}
+                  onSeek={(time) => {
+                    triggerHaptic();
+                    seek(time);
+                  }}
+                  height={40}
+                />
               </div>
             )}
 
@@ -206,17 +216,6 @@ export function PersistentPlayer() {
 
           {/* Right: Volume Slider (0-100) and Close Button */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                triggerHaptic();
-                setImmersiveOpen(true);
-              }}
-              className="p-2 hover:bg-zinc-800 rounded transition-colors"
-              aria-label="Open immersive playback"
-              title="Immersive mode"
-            >
-              <Maximize2 className="w-4 h-4 text-white" />
-            </button>
             <button
               onClick={() => {
                 triggerHaptic();
@@ -269,3 +268,4 @@ export function PersistentPlayer() {
     </div>
   );
 }
+

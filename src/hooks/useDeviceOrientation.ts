@@ -38,7 +38,6 @@ export function useDeviceOrientation() {
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       // iOS uses different property names
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const alpha = event.alpha ?? (event as any).webkitCompassHeading ?? null;
       const beta = event.beta ?? null;
       const gamma = event.gamma ?? null;
@@ -55,9 +54,7 @@ export function useDeviceOrientation() {
     };
 
     // Request permission on iOS 13+
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (isIOS && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DeviceOrientationEvent as any)
         .requestPermission()
         .then((response: string) => {

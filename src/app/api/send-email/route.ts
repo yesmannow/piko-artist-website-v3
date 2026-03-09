@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and sanitize inputs
-    if (type !== "booking" && type !== "contact" && type !== "hub") {
+    if (type !== "booking" && type !== "contact") {
       return NextResponse.json(
         { success: false, error: "Invalid form type" },
         { status: 400 }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         venueCapacity: sanitizeInput(formData.venueCapacity || ""),
         budget: sanitizeInput(formData.budget || ""),
       };
-    } else if (type === "contact") {
+    } else {
       // Contact form validation
       if (!formData.email || !isValidEmail(formData.email)) {
         return NextResponse.json(
@@ -131,48 +131,6 @@ export async function POST(request: NextRequest) {
       sanitizedData = {
         name: sanitizeInput(formData.name || ""),
         email: email,
-        message: sanitizeInput(formData.message || ""),
-      };
-    } else {
-      // Unified "business hub" inquiry (pre-qualified contact/booking)
-      if (!formData.email || !isValidEmail(formData.email)) {
-        return NextResponse.json(
-          { success: false, error: "Valid email is required" },
-          { status: 400 }
-        );
-      }
-
-      if (!formData.name || formData.name.trim().length < 2) {
-        return NextResponse.json(
-          { success: false, error: "Name must be at least 2 characters" },
-          { status: 400 }
-        );
-      }
-
-      if (!formData.message || formData.message.trim().length < 10) {
-        return NextResponse.json(
-          { success: false, error: "Message must be at least 10 characters" },
-          { status: 400 }
-        );
-      }
-
-      email = formData.email;
-      sanitizedData = {
-        inquiryType: sanitizeInput(formData.inquiryType || ""),
-        name: sanitizeInput(formData.name || ""),
-        email: email,
-        phone: sanitizeInput(formData.phone || ""),
-        company: sanitizeInput(formData.company || ""),
-        city: sanitizeInput(formData.city || ""),
-        country: sanitizeInput(formData.country || ""),
-        eventType: sanitizeInput(formData.eventType || ""),
-        targetDate: sanitizeInput(formData.targetDate || ""),
-        venue: sanitizeInput(formData.venue || ""),
-        venueCapacity: sanitizeInput(formData.venueCapacity || ""),
-        budget: sanitizeInput(formData.budget || ""),
-        travel: sanitizeInput(formData.travel || ""),
-        preferredContact: sanitizeInput(formData.preferredContact || ""),
-        links: sanitizeInput(formData.links || ""),
         message: sanitizeInput(formData.message || ""),
       };
     }
@@ -216,7 +174,7 @@ Budget / Offer: ${sanitizedData.budget || "N/A"}
 
 Reply to this email to contact the promoter directly.
       `;
-    } else if (type === "contact") {
+    } else {
       // Contact form
       subject = `New Contact Message: ${sanitizedData.name || "Unknown"}`;
 
@@ -249,76 +207,6 @@ Message:
 ${sanitizedData.message || "N/A"}
 
 Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
-      `;
-    } else {
-      // Hub inquiry
-      const iType = sanitizedData.inquiryType || "inquiry";
-      subject = `New ${iType.toUpperCase()} Inquiry: ${sanitizedData.name || "Unknown"}`;
-
-      htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
-          <h2 style="color: #FFD700; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">
-            New Inquiry (Business Hub)
-          </h2>
-          <div style="background: #f5f5f5; padding: 18px; margin: 18px 0; border-left: 4px solid #FFD700;">
-            <p><strong>Inquiry Type:</strong> ${sanitizedData.inquiryType || "N/A"}</p>
-            <p><strong>Name:</strong> ${sanitizedData.name || "N/A"}</p>
-            <p><strong>Email:</strong> ${sanitizedData.email || "N/A"}</p>
-            <p><strong>Phone:</strong> ${sanitizedData.phone || "N/A"}</p>
-            <p><strong>Company / Entity:</strong> ${sanitizedData.company || "N/A"}</p>
-            <p><strong>Location:</strong> ${(sanitizedData.city || "N/A")} ${(sanitizedData.country ? `(${sanitizedData.country})` : "")}</p>
-          </div>
-
-          <h3 style="margin: 18px 0 8px;">Booking Details</h3>
-          <div style="background: #fff; padding: 14px; border: 1px solid #ddd;">
-            <p><strong>Event Type:</strong> ${sanitizedData.eventType || "N/A"}</p>
-            <p><strong>Target Date:</strong> ${sanitizedData.targetDate || "N/A"}</p>
-            <p><strong>Venue:</strong> ${sanitizedData.venue || "N/A"}</p>
-            <p><strong>Venue Capacity:</strong> ${sanitizedData.venueCapacity || "N/A"}</p>
-            <p><strong>Budget / Offer:</strong> ${sanitizedData.budget || "N/A"}</p>
-            <p><strong>Travel / Hospitality:</strong> ${sanitizedData.travel || "N/A"}</p>
-          </div>
-
-          <h3 style="margin: 18px 0 8px;">Links & Message</h3>
-          <div style="background: #fff; padding: 14px; border: 1px solid #ddd;">
-            <p><strong>Preferred Contact:</strong> ${sanitizedData.preferredContact || "N/A"}</p>
-            <p><strong>Links:</strong> ${sanitizedData.links || "N/A"}</p>
-            <p><strong>Message:</strong></p>
-            <p style="white-space: pre-wrap; background: #fafafa; padding: 12px; border: 1px solid #eee;">
-              ${sanitizedData.message || "N/A"}
-            </p>
-          </div>
-
-          <p style="color: #666; font-size: 12px; margin-top: 12px;">
-            Reply to this email to contact ${sanitizedData.name || "the sender"} directly.
-          </p>
-        </div>
-      `;
-
-      textContent = `
-New Inquiry (Business Hub)
-
-Inquiry Type: ${sanitizedData.inquiryType || "N/A"}
-Name: ${sanitizedData.name || "N/A"}
-Email: ${sanitizedData.email || "N/A"}
-Phone: ${sanitizedData.phone || "N/A"}
-Company / Entity: ${sanitizedData.company || "N/A"}
-Location: ${sanitizedData.city || "N/A"} ${sanitizedData.country ? `(${sanitizedData.country})` : ""}
-
-Booking Details
-Event Type: ${sanitizedData.eventType || "N/A"}
-Target Date: ${sanitizedData.targetDate || "N/A"}
-Venue: ${sanitizedData.venue || "N/A"}
-Venue Capacity: ${sanitizedData.venueCapacity || "N/A"}
-Budget / Offer: ${sanitizedData.budget || "N/A"}
-Travel / Hospitality: ${sanitizedData.travel || "N/A"}
-
-Links
-Preferred Contact: ${sanitizedData.preferredContact || "N/A"}
-Links: ${sanitizedData.links || "N/A"}
-
-Message:
-${sanitizedData.message || "N/A"}
       `;
     }
 
