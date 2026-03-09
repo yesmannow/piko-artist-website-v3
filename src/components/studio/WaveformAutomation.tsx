@@ -9,6 +9,14 @@ import React, {
 import { useDeckStore } from '@/store/deckStore';
 import { TrackAutomation } from '@/lib/db';
 
+// ── Bezier worker message types ────────────────────────────────────────────────
+interface CurveReadyMessage {
+  type: 'CURVE_READY';
+  deckId: string;
+  curve: Float32Array;
+  duration: number;
+}
+
 interface WaveformAutomationProps {
   deckId: 'A' | 'B';
   width: number;
@@ -35,6 +43,13 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
   // draw loop and the interaction handlers.
   const pointsRef = useRef<TrackAutomation['points']>([]);
 
+  // ── Bezier worker ──────────────────────────────────────────────────────────
+  // Holds the worker-computed Float32Array for the current automation curve.
+  // Updated asynchronously; the rAF draw loop reads it every frame.
+  const workerRef = useRef<Worker | null>(null);
+  const curveRef = useRef<Float32Array | null>(null);
+  const curveDurationRef = useRef<number>(0);
+
   // ── HiDPI canvas setup ─────────────────────────────────────────────────────
   // Scale the canvas backing-store by devicePixelRatio so the Neon Blue bloom
   // stays razor-sharp on Retina / 4K displays.
@@ -49,6 +64,48 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
   }, [width, height]);
+
+  // ── Bezier worker setup ────────────────────────────────────────────────────
+  // Spawn the bezier worker once; terminate it on unmount.
+  useEffect(() => {
+    const worker = new Worker(
+      new URL('../../workers/bezier.worker.ts', import.meta.url),
+    );
+    worker.onmessage = (e: MessageEvent<CurveReadyMessage>) => {
+      if (e.data.type === 'CURVE_READY' && e.data.deckId === deckId) {
+        curveRef.current = e.data.curve;
+        curveDurationRef.current = e.data.duration;
+      }
+    };
+    workerRef.current = worker;
+    return () => {
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, [deckId]);
+
+  // ── Dispatch to bezier worker ──────────────────────────────────────────────
+  // Called whenever the automation point list or track duration changes.
+  // Uses isVolume=false so the worker returns raw 0-1 values that map directly
+  // to the canvas Y axis — gain-squared values are only needed for audio.
+  const dispatchToWorker = useCallback(
+    (pts: TrackAutomation['points'], duration: number) => {
+      const worker = workerRef.current;
+      if (!worker || pts.length === 0 || duration <= 0) {
+        curveRef.current = null;
+        return;
+      }
+      worker.postMessage({
+        type: 'SAMPLE_CURVE',
+        deckId,
+        points: pts,
+        numSamples: Math.min(4096, Math.ceil(width * 2)),
+        duration,
+        isVolume: false,
+      });
+    },
+    [deckId, width],
+  );
 
   // Coordinate helpers — recreated on prop change via the rAF closure
   const timeToX = useCallback(
@@ -69,13 +126,13 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
     [height],
   );
 
-  // "Rule of 32" snap: quantise to the nearest 32-beat phrase boundary.
-  // 32 beats = 8 bars in 4/4 time — the standard DJ phrase length.
-  // Holding Shift bypasses snapping for free-position adjustments.
-  const getSnappedTime = (timeSec: number, bpm?: string, bypassSnap = false) => {
-    if (bypassSnap || !bpm || Number(bpm) <= 0) return timeSec;
+  // ── "Rule of 32" snap logic ────────────────────────────────────────────────
+  // Snaps to the nearest 32-beat phrase boundary (32 beats = 8 bars in 4/4).
+  // Hold Shift to bypass for free-position adjustments.
+  const getSnappedTime = (timeSec: number, bpm?: string, noSnap?: boolean) => {
+    if (noSnap || !bpm || Number(bpm) <= 0) return timeSec;
     const beatDuration = 60 / Number(bpm);
-    const phraseDuration = beatDuration * 32; // 32 beats = 8 bars
+    const phraseDuration = beatDuration * 32;
     return Math.round(timeSec / phraseDuration) * phraseDuration;
   };
 
@@ -123,36 +180,38 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       ctx.save();
       ctx.scale(dpr, dpr);
 
-      // ── Liquid Glass bloom: neon automation path ───────────────────────
+      // ── Liquid Glass bloom: bezier automation path ─────────────────────
+      // Prefer the worker-computed dense curve (smooth bezier) when available;
+      // fall back to straight line segments between nodes during the first frame
+      // before the worker responds.
       ctx.save();
       ctx.shadowBlur = 10;
-      ctx.shadowColor = stroke; // matches active param tint
+      ctx.shadowColor = stroke;
       ctx.strokeStyle = stroke;
       ctx.lineWidth = 2;
       ctx.globalAlpha = 0.85;
       ctx.beginPath();
-      pts.forEach((p, i) => {
-        const x = timeToX(p.time, duration);
-        const y = valueToY(p.value);
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          const prev = pts[i - 1];
-          const px = timeToX(prev.time, duration);
-          const py = valueToY(prev.value);
-          if (p.curve === 'exponential') {
-            // S-curve matching the ease-in-out shape of CSS cubic-bezier(0.42,0,0.58,1):
-            // cp1 sits 42 % along the segment at the start Y, cp2 at 58 % at the end Y.
-            ctx.bezierCurveTo(
-              px + (x - px) * 0.42, py,
-              px + (x - px) * 0.58, y,
-              x, y,
-            );
-          } else {
-            ctx.lineTo(x, y);
-          }
+
+      const curve = curveRef.current;
+      const curveDur = curveDurationRef.current;
+      if (curve && curve.length > 1 && curveDur > 0) {
+        // Dense Float32Array path — one canvas point per worker sample
+        for (let i = 0; i < curve.length; i++) {
+          const x = (i / (curve.length - 1)) * width;
+          const y = valueToY(curve[i]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
         }
-      });
+      } else {
+        // Fallback: straight lines between nodes (shown before worker responds)
+        pts.forEach((p, i) => {
+          const x = timeToX(p.time, duration);
+          const y = valueToY(p.value);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+      }
+
       ctx.stroke();
       ctx.restore();
 
@@ -187,7 +246,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
   const persistPoints = useCallback(
     (newPoints: TrackAutomation['points']) => {
       const state = useDeckStore.getState();
-      const track = (deckId === 'A' ? state.deckA : state.deckB).track;
+      const deckState = deckId === 'A' ? state.deckA : state.deckB;
+      const track = deckState.track;
       if (!track) return;
 
       const currentAutomation = track.automation ? [...track.automation] : [];
@@ -200,6 +260,9 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
 
       updateTrackAutomation(deckId, currentAutomation);
 
+      // Dispatch to bezier worker so the dense curve is recomputed immediately
+      dispatchToWorker(newPoints, deckState.duration);
+
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('update-automation', {
@@ -208,7 +271,7 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
         );
       }
     },
-    [deckId, activeParam, updateTrackAutomation],
+    [deckId, activeParam, updateTrackAutomation, dispatchToWorker],
   );
 
   // ── Pointer interaction ────────────────────────────────────────────────────
@@ -222,9 +285,6 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      // Shift key bypasses the 32-beat snap for free-position placement/dragging.
-      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm, e.shiftKey);
-      const value = yToValue(y);
 
       const pts = pointsRef.current;
       const clickedIdx = pts.findIndex((p) => {
@@ -232,6 +292,20 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
         const py = valueToY(p.value);
         return Math.hypot(px - x, py - y) < 10;
       });
+
+      // Right-click or double-click removes the node under the cursor
+      if (e.button === 2 || e.detail === 2) {
+        if (clickedIdx !== -1) {
+          const newPts = pts.filter((_, i) => i !== clickedIdx);
+          pointsRef.current = newPts;
+          persistPoints(newPts);
+        }
+        return;
+      }
+
+      // Shift bypasses snap; plain click snaps to 32-beat phrase boundary
+      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm, e.shiftKey);
+      const value = yToValue(y);
 
       if (clickedIdx !== -1) {
         isDraggingRef.current = clickedIdx;
@@ -248,59 +322,6 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
     [deckId, xToTime, yToValue, timeToX, valueToY, persistPoints],
   );
 
-  // Right-click removes the node under the cursor (alternative to double-click).
-  const handleContextMenu = useCallback(
-    (e: ReactMouseEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const state = useDeckStore.getState();
-      const deckState = deckId === 'A' ? state.deckA : state.deckB;
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const pts = pointsRef.current;
-      const clickedIdx = pts.findIndex((p) => {
-        const px = timeToX(p.time, deckState.duration);
-        const py = valueToY(p.value);
-        return Math.hypot(px - x, py - y) < 10;
-      });
-
-      if (clickedIdx !== -1) {
-        const newPts = pts.filter((_, i) => i !== clickedIdx);
-        pointsRef.current = newPts;
-        persistPoints(newPts);
-      }
-    },
-    [deckId, timeToX, valueToY, persistPoints],
-  );
-
-  // Double-click also removes the node (touch-friendly alternative to right-click).
-  const handleDoubleClick = useCallback(
-    (e: ReactMouseEvent<HTMLDivElement>) => {
-      const state = useDeckStore.getState();
-      const deckState = deckId === 'A' ? state.deckA : state.deckB;
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const pts = pointsRef.current;
-      const clickedIdx = pts.findIndex((p) => {
-        const px = timeToX(p.time, deckState.duration);
-        const py = valueToY(p.value);
-        return Math.hypot(px - x, py - y) < 10;
-      });
-
-      if (clickedIdx !== -1) {
-        const newPts = pts.filter((_, i) => i !== clickedIdx);
-        pointsRef.current = newPts;
-        persistPoints(newPts);
-      }
-    },
-    [deckId, timeToX, valueToY, persistPoints],
-  );
-
   const handlePointerMove = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
       if (isDraggingRef.current === null) return;
@@ -312,7 +333,7 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      // Shift bypasses the 32-beat snap during drag as well.
+      // Shift bypasses snap during drag as well
       const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm, e.shiftKey);
       const value = yToValue(y);
 
@@ -345,8 +366,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
-      onContextMenu={handleContextMenu}
-      onDoubleClick={handleDoubleClick}
+      // Prevent the browser context menu so right-click can remove nodes
+      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Canvas is its own GPU-composited layer (will-change: transform).
           Overlays such as the AI Lyric Display should be placed after this
@@ -361,5 +382,3 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
     </div>
   );
 }
-
-
