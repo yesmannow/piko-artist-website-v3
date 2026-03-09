@@ -90,6 +90,12 @@ export class AudioEngine {
   // Stems routing (Phase 8 Multi-track)
   public stems: Record<string, MediaStreamAudioDestinationNode>;
 
+  // ── Bézier automation ──────────────────────────────────────────────────────
+  /** Registry mapping deckId → the GainNode that carries volume automation. */
+  private deckGainRegistry: Map<string, GainNode> = new Map();
+  /** Singleton Bézier worker — initialised once on first getInstance() call. */
+  private bezierWorker: Worker | null = null;
+
   private constructor() {
     this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
     Tone.setContext(this.context);
@@ -165,6 +171,14 @@ export class AudioEngine {
       bass: this.context.createMediaStreamDestination(),
       melody: this.context.createMediaStreamDestination(),
     };
+
+    // ── Bézier worker (runs once per AudioEngine singleton) ────────────────
+    if (typeof window !== 'undefined') {
+      this.bezierWorker = new Worker(
+        new URL('@/workers/bezier.worker', import.meta.url),
+        { type: 'module' },
+      );
+    }
   }
 
   // To easily route tracks to the mastering chain instead of context.destination
@@ -291,5 +305,57 @@ export class AudioEngine {
         // Fallback pass-through
         return new Tone.Gain(1);
     }
+  }
+
+  // ── Bézier automation API ─────────────────────────────────────────────────
+
+  /**
+   * Register the GainNode that controls volume for a deck so that
+   * `applyVolumeAutomation` knows where to route the automation curve.
+   *
+   * Call this once when the GainNode is created in `useDeckAudio`.
+   */
+  public registerDeckGain(deckId: 'A' | 'B', node: GainNode): void {
+    this.deckGainRegistry.set(deckId, node);
+  }
+
+  /**
+   * Schedule a volume automation curve on a deck's GainNode using
+   * `AudioParam.setValueCurveAtTime` with a 100 ms lookahead to prevent
+   * audio artefacts caused by parameter discontinuities.
+   *
+   * The `curveArray` should already contain gain values (i.e. converted
+   * through the `gain = linearValue²` law by the caller / worker).
+   *
+   * @param deckId     Target deck ('A' or 'B').
+   * @param curveArray Pre-sampled Float32Array of gain values (0–1).
+   * @param duration   Duration of the automation window in seconds.
+   */
+  public applyVolumeAutomation(
+    deckId: 'A' | 'B',
+    curveArray: Float32Array,
+    duration: number,
+  ): void {
+    const gainNode = this.deckGainRegistry.get(deckId);
+    if (!gainNode || curveArray.length === 0 || duration <= 0) return;
+
+    const LOOKAHEAD = 0.1; // 100 ms
+    const now = this.context.currentTime;
+    const startTime = now + LOOKAHEAD;
+
+    // Cancel from now (not from the lookahead point) so any curve that is
+    // already playing — but scheduled in the future — is also removed.
+    // This prevents overlapping automation curves from causing zipper noise
+    // or audible clicks during rapid drawing.
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueCurveAtTime(curveArray, startTime, duration);
+  }
+
+  /**
+   * Expose the singleton Bézier worker so consumers (e.g. `useAutomationRunner`)
+   * can post sampling requests without creating duplicate workers.
+   */
+  public getBezierWorker(): Worker | null {
+    return this.bezierWorker;
   }
 }

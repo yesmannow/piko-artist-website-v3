@@ -1,6 +1,11 @@
 'use client';
 
-import React, { useState, MouseEvent as ReactMouseEvent } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useCallback,
+  MouseEvent as ReactMouseEvent,
+} from 'react';
 import { useDeckStore } from '@/store/deckStore';
 import { TrackAutomation } from '@/lib/db';
 
@@ -11,162 +16,278 @@ interface WaveformAutomationProps {
   activeParam: 'volume' | 'hpf' | 'reverb';
 }
 
+// Stroke colours per parameter — used for both path and bloom shadow so all
+// elements share a consistent tint regardless of the active lane.
+const PARAM_COLOR: Record<string, string> = {
+  volume: '#00f2ff',
+  hpf: '#f43f5e',
+  reverb: '#a855f7',
+};
+
 export function WaveformAutomation({ deckId, width, height, activeParam }: WaveformAutomationProps) {
-  const deckState = useDeckStore((state) => (deckId === 'A' ? state.deckA : state.deckB));
   const updateTrackAutomation = useDeckStore((state) => state.updateTrackAutomation);
-  const track = deckState.track;
 
-  // Local state for immediate drawing response
-  const [points, setPoints] = useState<TrackAutomation['points']>([]);
-  const [isDragging, setIsDragging] = useState<number | null>(null);
+  // Mutable refs — avoids re-subscribing the rAF loop to every store change
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const isDraggingRef = useRef<number | null>(null);
+  // Local copy of points kept in sync from the store; used by both the rAF
+  // draw loop and the interaction handlers.
+  const pointsRef = useRef<TrackAutomation['points']>([]);
 
-  const [prevTrack, setPrevTrack] = useState(track);
-  const [prevParam, setPrevParam] = useState(activeParam);
+  // ── HiDPI canvas setup ─────────────────────────────────────────────────────
+  // Scale the canvas backing-store by devicePixelRatio so the Neon Blue bloom
+  // stays razor-sharp on Retina / 4K displays.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    // Physical pixel dimensions
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    // Keep the CSS / logical size unchanged so layout is unaffected
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+  }, [width, height]);
 
-  if (track !== prevTrack || activeParam !== prevParam) {
-    setPrevTrack(track);
-    setPrevParam(activeParam);
-    if (track && track.automation) {
-      const auto = track.automation.find(a => a.param === activeParam);
-      setPoints(auto ? auto.points : []);
-    } else {
-      setPoints([]);
-    }
-  }
+  // Coordinate helpers — recreated on prop change via the rAF closure
+  const timeToX = useCallback(
+    (time: number, duration: number) => (duration > 0 ? (time / duration) * width : 0),
+    [width],
+  );
+  const xToTime = useCallback(
+    (x: number, duration: number) =>
+      duration > 0 ? Math.max(0, Math.min(duration, (x / width) * duration)) : 0,
+    [width],
+  );
+  const valueToY = useCallback(
+    (value: number) => height - value * height,
+    [height],
+  );
+  const yToValue = useCallback(
+    (y: number) => Math.max(0, Math.min(1, 1 - y / height)),
+    [height],
+  );
 
   const getSnappedTime = (timeSec: number, bpm?: string) => {
     if (!bpm || Number(bpm) <= 0) return timeSec;
     const beatDuration = 60 / Number(bpm);
-    const sixteenth = beatDuration / 4;
-    return Math.round(timeSec / sixteenth) * sixteenth;
+    return Math.round(timeSec / (beatDuration / 4)) * (beatDuration / 4);
   };
 
-  const timeToX = (time: number) => {
-    if (!track || !deckState.duration) return 0;
-    return (time / deckState.duration) * width;
-  };
+  // ── rAF draw loop ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const xToTime = (x: number) => {
-    if (!deckState.duration) return 0;
-    return Math.max(0, Math.min(deckState.duration, (x / width) * deckState.duration));
-  };
+    // Per-param tint applied to both stroke and bloom shadow so the glow colour
+    // always matches the active automation lane.
+    const stroke = PARAM_COLOR[activeParam] ?? '#00f2ff';
 
-  const valueToY = (value: number) => {
-    return height - (value * height);
-  };
+    const draw = () => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-  const yToValue = (y: number) => {
-    return Math.max(0, Math.min(1, 1 - (y / height)));
-  };
+      const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 
-  const handlePointerDown = (e: ReactMouseEvent<HTMLDivElement>) => {
-    if (!track) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+      // Read latest state without subscribing (zero-lag pattern)
+      const state = useDeckStore.getState();
+      const deckState = deckId === 'A' ? state.deckA : state.deckB;
+      const track = deckState.track;
+      const duration = deckState.duration;
 
-    const time = getSnappedTime(xToTime(x), track.bpm);
-    const value = yToValue(y);
-
-    // Click on existing point? (threshold 10px)
-    const clickedIndex = points.findIndex(p => {
-      const px = timeToX(p.time);
-      const py = valueToY(p.value);
-      return Math.hypot(px - x, py - y) < 10;
-    });
-
-    if (clickedIndex !== -1) {
-      if (e.shiftKey) {
-        // Delete point
-        const newPoints = points.filter((_, i) => i !== clickedIndex);
-        setPoints(newPoints);
-        updateTrackDb(newPoints);
-      } else {
-        setIsDragging(clickedIndex);
+      // Sync pointsRef when the automation data changes (track / param switch)
+      if (track?.automation) {
+        const lane = track.automation.find((a) => a.param === activeParam);
+        pointsRef.current = lane ? lane.points : [];
+      } else if (!track) {
+        pointsRef.current = [];
       }
-    } else {
-      // Add new point
-      const newPoints = [...points, { time, value, curve: 'linear' as const }].sort((a, b) => a.time - b.time);
-      setPoints(newPoints);
-      setIsDragging(newPoints.findIndex(p => p.time === time));
+
+      const pts = pointsRef.current;
+
+      // Clear the full physical canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (pts.length === 0) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
+
+      // Scale all draw operations into logical-pixel space so coordinate math
+      // above remains device-independent.
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      // ── Liquid Glass bloom: neon automation path ───────────────────────
+      ctx.save();
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = stroke; // matches active param tint
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      pts.forEach((p, i) => {
+        const x = timeToX(p.time, duration);
+        const y = valueToY(p.value);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+
+      // ── Control point circles (bloom matches param tint) ───────────────
+      pts.forEach((p, i) => {
+        const x = timeToX(p.time, duration);
+        const y = valueToY(p.value);
+        const r = isDraggingRef.current === i ? 6 : 4;
+
+        ctx.save();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = stroke; // consistent with path bloom
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.restore();
+      });
+
+      ctx.restore(); // pop DPR scale
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [deckId, activeParam, width, height, timeToX, valueToY]);
+
+  // ── Persist helper ─────────────────────────────────────────────────────────
+  const persistPoints = useCallback(
+    (newPoints: TrackAutomation['points']) => {
+      const state = useDeckStore.getState();
+      const track = (deckId === 'A' ? state.deckA : state.deckB).track;
+      if (!track) return;
+
+      const currentAutomation = track.automation ? [...track.automation] : [];
+      const idx = currentAutomation.findIndex((a) => a.param === activeParam);
+      if (idx !== -1) {
+        currentAutomation[idx] = { ...currentAutomation[idx], points: newPoints };
+      } else {
+        currentAutomation.push({ param: activeParam, points: newPoints });
+      }
+
+      updateTrackAutomation(deckId, currentAutomation);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('update-automation', {
+            detail: { deckId, automation: currentAutomation },
+          }),
+        );
+      }
+    },
+    [deckId, activeParam, updateTrackAutomation],
+  );
+
+  // ── Pointer interaction ────────────────────────────────────────────────────
+  const handlePointerDown = useCallback(
+    (e: ReactMouseEvent<HTMLDivElement>) => {
+      const state = useDeckStore.getState();
+      const deckState = deckId === 'A' ? state.deckA : state.deckB;
+      const track = deckState.track;
+      if (!track) return;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm);
+      const value = yToValue(y);
+
+      const pts = pointsRef.current;
+      const clickedIdx = pts.findIndex((p) => {
+        const px = timeToX(p.time, deckState.duration);
+        const py = valueToY(p.value);
+        return Math.hypot(px - x, py - y) < 10;
+      });
+
+      if (clickedIdx !== -1) {
+        if (e.shiftKey) {
+          const newPts = pts.filter((_, i) => i !== clickedIdx);
+          pointsRef.current = newPts;
+          persistPoints(newPts);
+        } else {
+          isDraggingRef.current = clickedIdx;
+        }
+      } else {
+        const newPts = [...pts, { time, value, curve: 'linear' as const }].sort(
+          (a, b) => a.time - b.time,
+        );
+        pointsRef.current = newPts;
+        isDraggingRef.current = newPts.findIndex((p) => p.time === time);
+        persistPoints(newPts);
+      }
+    },
+    [deckId, xToTime, yToValue, timeToX, valueToY, persistPoints],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: ReactMouseEvent<HTMLDivElement>) => {
+      if (isDraggingRef.current === null) return;
+      const state = useDeckStore.getState();
+      const deckState = deckId === 'A' ? state.deckA : state.deckB;
+      const track = deckState.track;
+      if (!track) return;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm);
+      const value = yToValue(y);
+
+      const pts = [...pointsRef.current];
+      pts[isDraggingRef.current] = { ...pts[isDraggingRef.current], time, value };
+      pts.sort((a, b) => a.time - b.time);
+      // Track new index after sort
+      const newIdx = pts.findIndex((p) => p.time === time && p.value === value);
+      if (newIdx !== -1) isDraggingRef.current = newIdx;
+      pointsRef.current = pts;
+    },
+    [deckId, xToTime, yToValue],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (isDraggingRef.current !== null) {
+      isDraggingRef.current = null;
+      persistPoints(pointsRef.current);
     }
-  };
-
-  const handlePointerMove = (e: ReactMouseEvent<HTMLDivElement>) => {
-    if (isDragging === null || !track) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const time = getSnappedTime(xToTime(x), track.bpm);
-    const value = yToValue(y);
-
-    const newPoints = [...points];
-    newPoints[isDragging] = { ...newPoints[isDragging], time, value };
-    // Sort just in case we dragged past another point
-    newPoints.sort((a, b) => a.time - b.time);
-    
-    // Update dragging index if position changed due to sort
-    const newIndex = newPoints.findIndex(p => p.time === time && p.value === value);
-    if (newIndex !== -1) setIsDragging(newIndex);
-    
-    setPoints(newPoints);
-  };
-
-  const handlePointerUp = () => {
-    if (isDragging !== null) {
-      setIsDragging(null);
-      updateTrackDb(points);
-    }
-  };
-
-  const updateTrackDb = (newPoints: TrackAutomation['points']) => {
-    if (!track || !deckState.duration) return;
-    
-    const currentAutomation = track.automation ? [...track.automation] : [];
-    const existingIndex = currentAutomation.findIndex(a => a.param === activeParam);
-    
-    if (existingIndex !== -1) {
-      currentAutomation[existingIndex] = { ...currentAutomation[existingIndex], points: newPoints };
-    } else {
-      currentAutomation.push({ param: activeParam, points: newPoints });
-    }
-    
-    updateTrackAutomation(deckId, currentAutomation);
-    
-    // Dispatch an event so useDeckAudio can sync with the worker
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('update-automation', { detail: { deckId, automation: currentAutomation } }));
-    }
-  };
+  }, [persistPoints]);
 
   return (
-    <div 
+    // `isolation: isolate` creates a new stacking context so the Phase 8.3 AI
+    // Lyric Display (and any future overlay) can be layered on top via z-index
+    // without affecting the waveform canvas beneath it.
+    <div
       className="absolute inset-0 z-40 touch-none backdrop-blur-[2px] border border-white/10"
+      style={{ isolation: 'isolate' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
     >
-      <svg width={width} height={height} className="pointer-events-none drop-shadow-md">
-        <polyline 
-          points={points.map(p => `${timeToX(p.time)},${valueToY(p.value)}`).join(' ')}
-          fill="none"
-          stroke={activeParam === 'volume' ? '#00f2ff' : activeParam === 'hpf' ? '#f43f5e' : '#a855f7'}
-          strokeWidth="2"
-          className="opacity-70"
-        />
-        {points.map((p, i) => (
-          <circle 
-            key={i}
-            cx={timeToX(p.time)}
-            cy={valueToY(p.value)}
-            r={isDragging === i ? 6 : 4}
-            fill="white"
-            className="transition-all duration-100 ease-out"
-          />
-        ))}
-      </svg>
+      {/* Canvas is its own GPU-composited layer (will-change: transform).
+          Overlays such as the AI Lyric Display should be placed after this
+          element in the DOM with a higher z-index. */}
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="pointer-events-none"
+        style={{ willChange: 'transform' }}
+      />
     </div>
   );
 }
+
+

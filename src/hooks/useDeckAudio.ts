@@ -94,6 +94,9 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       gainRef.current = engine.context.createGain();
       eqChainRef.current = engine.createEQChain();
       
+      // Register the gain node so AudioEngine can route automation curves
+      engine.registerDeckGain(deckId, gainRef.current);
+
       // Connect Gain to master node
       engine.connectToMaster(gainRef.current);
     }
