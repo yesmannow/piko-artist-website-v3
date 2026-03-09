@@ -101,6 +101,11 @@ function sampleAutomationCurve(
       if (nextPt.curve === 'bezier' && nextPt.bezierControlPoints) {
         const cp = nextPt.bezierControlPoints;
         linearValue = evalBezierY(localT, prevPt.value, cp.cp1y, cp.cp2y, nextPt.value);
+      } else if (nextPt.curve === 'exponential') {
+        // S-curve approximation: hold cp1y at the start value and cp2y at the
+        // end value so the curve eases in and out — a close visual match to the
+        // perceptual gain = value² law applied by the isVolume path below.
+        linearValue = evalBezierY(localT, prevPt.value, prevPt.value, nextPt.value, nextPt.value);
       } else {
         linearValue = prevPt.value + localT * (nextPt.value - prevPt.value);
       }

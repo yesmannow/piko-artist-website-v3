@@ -69,10 +69,14 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
     [height],
   );
 
-  const getSnappedTime = (timeSec: number, bpm?: string) => {
-    if (!bpm || Number(bpm) <= 0) return timeSec;
+  // "Rule of 32" snap: quantise to the nearest 32-beat phrase boundary.
+  // 32 beats = 8 bars in 4/4 time — the standard DJ phrase length.
+  // Holding Shift bypasses snapping for free-position adjustments.
+  const getSnappedTime = (timeSec: number, bpm?: string, bypassSnap = false) => {
+    if (bypassSnap || !bpm || Number(bpm) <= 0) return timeSec;
     const beatDuration = 60 / Number(bpm);
-    return Math.round(timeSec / (beatDuration / 4)) * (beatDuration / 4);
+    const phraseDuration = beatDuration * 32; // 32 beats = 8 bars
+    return Math.round(timeSec / phraseDuration) * phraseDuration;
   };
 
   // ── rAF draw loop ──────────────────────────────────────────────────────────
@@ -130,8 +134,24 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       pts.forEach((p, i) => {
         const x = timeToX(p.time, duration);
         const y = valueToY(p.value);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          const prev = pts[i - 1];
+          const px = timeToX(prev.time, duration);
+          const py = valueToY(prev.value);
+          if (p.curve === 'exponential') {
+            // S-curve matching the ease-in-out shape of CSS cubic-bezier(0.42,0,0.58,1):
+            // cp1 sits 42 % along the segment at the start Y, cp2 at 58 % at the end Y.
+            ctx.bezierCurveTo(
+              px + (x - px) * 0.42, py,
+              px + (x - px) * 0.58, y,
+              x, y,
+            );
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
       });
       ctx.stroke();
       ctx.restore();
@@ -202,7 +222,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm);
+      // Shift key bypasses the 32-beat snap for free-position placement/dragging.
+      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm, e.shiftKey);
       const value = yToValue(y);
 
       const pts = pointsRef.current;
@@ -213,15 +234,10 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       });
 
       if (clickedIdx !== -1) {
-        if (e.shiftKey) {
-          const newPts = pts.filter((_, i) => i !== clickedIdx);
-          pointsRef.current = newPts;
-          persistPoints(newPts);
-        } else {
-          isDraggingRef.current = clickedIdx;
-        }
+        isDraggingRef.current = clickedIdx;
       } else {
-        const newPts = [...pts, { time, value, curve: 'linear' as const }].sort(
+        // New points default to `exponential` so volume fades sound musical.
+        const newPts = [...pts, { time, value, curve: 'exponential' as const }].sort(
           (a, b) => a.time - b.time,
         );
         pointsRef.current = newPts;
@@ -230,6 +246,59 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       }
     },
     [deckId, xToTime, yToValue, timeToX, valueToY, persistPoints],
+  );
+
+  // Right-click removes the node under the cursor (alternative to double-click).
+  const handleContextMenu = useCallback(
+    (e: ReactMouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const state = useDeckStore.getState();
+      const deckState = deckId === 'A' ? state.deckA : state.deckB;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const pts = pointsRef.current;
+      const clickedIdx = pts.findIndex((p) => {
+        const px = timeToX(p.time, deckState.duration);
+        const py = valueToY(p.value);
+        return Math.hypot(px - x, py - y) < 10;
+      });
+
+      if (clickedIdx !== -1) {
+        const newPts = pts.filter((_, i) => i !== clickedIdx);
+        pointsRef.current = newPts;
+        persistPoints(newPts);
+      }
+    },
+    [deckId, timeToX, valueToY, persistPoints],
+  );
+
+  // Double-click also removes the node (touch-friendly alternative to right-click).
+  const handleDoubleClick = useCallback(
+    (e: ReactMouseEvent<HTMLDivElement>) => {
+      const state = useDeckStore.getState();
+      const deckState = deckId === 'A' ? state.deckA : state.deckB;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const pts = pointsRef.current;
+      const clickedIdx = pts.findIndex((p) => {
+        const px = timeToX(p.time, deckState.duration);
+        const py = valueToY(p.value);
+        return Math.hypot(px - x, py - y) < 10;
+      });
+
+      if (clickedIdx !== -1) {
+        const newPts = pts.filter((_, i) => i !== clickedIdx);
+        pointsRef.current = newPts;
+        persistPoints(newPts);
+      }
+    },
+    [deckId, timeToX, valueToY, persistPoints],
   );
 
   const handlePointerMove = useCallback(
@@ -243,7 +312,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm);
+      // Shift bypasses the 32-beat snap during drag as well.
+      const time = getSnappedTime(xToTime(x, deckState.duration), track.bpm, e.shiftKey);
       const value = yToValue(y);
 
       const pts = [...pointsRef.current];
@@ -275,6 +345,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
+      onContextMenu={handleContextMenu}
+      onDoubleClick={handleDoubleClick}
     >
       {/* Canvas is its own GPU-composited layer (will-change: transform).
           Overlays such as the AI Lyric Display should be placed after this
