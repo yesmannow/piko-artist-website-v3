@@ -102,7 +102,8 @@ export function Deck({ deckId }: DeckProps) {
     let frame = 0;
     const tick = () => {
       frame++;
-      // Simulate kick transients at ~quarter-note interval (every 8 frames at 60fps ≈ 133ms)
+      // Fixed-rate visual simulation — updates every 8 rAF frames (~133ms at 60fps).
+      // This is a display approximation independent of the track's actual BPM.
       if (frame % 8 === 0) {
         setTransientBars((prev) =>
           prev.map((_, i) => {

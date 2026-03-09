@@ -24,7 +24,10 @@ interface WaveformAutomationProps {
   activeParam: 'volume' | 'hpf' | 'reverb';
 }
 
-// "Rule of 32" default automation curve — exponential (gain = value²) as specified
+// "Rule of 32" default automation curve for new nodes.
+// 'exponential' controls the interpolation shape used by the Bézier worker
+// (visually curved path on the canvas). Audio gain is always squared by the
+// worker when isVolume=true; here isVolume=false so values stay in 0-1 range.
 const DEFAULT_AUTOMATION_CURVE = 'exponential' as const;
 const PARAM_COLOR: Record<string, string> = {
   volume: '#00f2ff',

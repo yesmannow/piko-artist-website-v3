@@ -19,6 +19,8 @@ interface PikoSeedEntry {
   durationEstimate: string;
   hasVocal: boolean;
   status: Track['status'];
+  /** Optional genre/energy tags (e.g. "high-energy", "1k-plays") */
+  tags?: string[];
 }
 
 // Build a lookup map keyed by lowercase filename for O(1) metadata resolution
