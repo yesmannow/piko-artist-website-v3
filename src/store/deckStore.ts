@@ -204,6 +204,14 @@ export const useDeckStore = create<DeckStore>((set) => ({
     set((state) => {
       const currentTrack = state[deckKey].track;
       if (!currentTrack) return state;
+
+      // Persist serialised Bézier points to IndexedDB so automation survives page reload
+      if (currentTrack.id != null) {
+        db.tracks.update(currentTrack.id, { automation }).catch((err: unknown) => {
+          console.warn('[deckStore] Failed to persist automation to IndexedDB:', err);
+        });
+      }
+
       return {
         ...state,
         [deckKey]: {
