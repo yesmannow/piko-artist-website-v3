@@ -16,7 +16,7 @@ const navItems = [
   { name: "About", path: "/", anchor: "rap-sheet" },
   { name: "Music", path: "/music", anchor: null },
   { name: "Videos", path: "/videos", anchor: null },
-  { name: "STUDIO", path: "/studio-v2", anchor: null, isStudio: true },
+  { name: "STUDIO", path: "/studio", anchor: null, isStudio: true },
   { name: "Contact", path: "/contact", anchor: null },
 ];
 
@@ -218,7 +218,10 @@ function DesktopNavItem({
             : "text-[#E0E0E0] hover:text-[#FFD700]"
         }`}
         style={{
-          fontFamily: "var(--font-lexend), system-ui, sans-serif",
+          fontFamily: isStudio
+            ? "'JetBrains Mono', monospace"
+            : "var(--font-lexend), system-ui, sans-serif",
+          letterSpacing: isStudio ? '0.3em' : '0.2em',
           ...(active && isStudio
             ? { textShadow: '0 0 15px #00f2ff, 0 0 30px rgba(0, 242, 255, 0.4)' }
             : {}),

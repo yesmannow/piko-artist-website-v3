@@ -94,6 +94,8 @@ function useProlinkStatus() {
   return { isConnected, error };
 }
 
+const VAULT_MONO = "'JetBrains Mono', monospace";
+
 export function StudioHeader({ masterProgress }: StudioHeaderProps) {
   const { isSupported, isActive, error, toggle } = useMidiBridge();
   const performanceMode = useStudioStore((state) => state.performanceMode);
@@ -103,25 +105,44 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
   const { isConnected: prolinkConnected, error: prolinkError } = useProlinkStatus();
 
   return (
-    <header className="studio-header">
+    <header className="studio-header" style={{
+      background: 'rgba(10,10,12,0.9)',
+      backdropFilter: 'blur(24px) saturate(1.5)',
+      borderBottom: '1px solid rgba(0,242,255,0.08)',
+    }}>
       <div className="studio-header-bar">
         <div className="studio-brand">
-          <Link href="/" className="studio-back-link" aria-label="Back to site">
+          <Link href="/" className="studio-back-link" aria-label="Back to site" style={{
+            border: '1px solid rgba(0,242,255,0.15)',
+            background: 'rgba(0,242,255,0.04)',
+          }}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div className="studio-logo">
-            <Music2 className="h-4 w-4 text-(--color-accent)" />
-            <span>Piko Studio</span>
+          <div className="studio-logo" style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            letterSpacing: '0.15em',
+          }}>
+            <Music2 className="h-4 w-4" style={{ color: '#00f2ff' }} />
+            <span style={{ color: '#e2e8f0' }}>SYNDICATE VAULT</span>
           </div>
           <div className="studio-status">
-            <span className={`studio-chip ${stemModeEnabled ? "is-active" : ""}`}>Stem Mode</span>
-            <span className="studio-chip">{performanceMode}</span>
+            <span className={`studio-chip ${stemModeEnabled ? "is-active" : ""}`}
+              style={{ fontFamily: VAULT_MONO, fontSize: '9px', letterSpacing: '0.15em' }}
+            >STEM MODE</span>
+            <span className="studio-chip"
+              style={{ fontFamily: VAULT_MONO, fontSize: '9px', letterSpacing: '0.15em' }}
+            >{performanceMode}</span>
           </div>
         </div>
 
         <div className="studio-header-controls">
-          <div className="studio-bpm">
-            <span>BPM</span>
+          <div className="studio-bpm" style={{
+            fontFamily: VAULT_MONO,
+            fontSize: '10px',
+            letterSpacing: '0.15em',
+            border: '1px solid rgba(0,242,255,0.12)',
+          }}>
+            <span style={{ color: 'rgba(226,232,240,0.5)' }}>BPM</span>
             <input
               type="number"
               min={60}
@@ -134,6 +155,7 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
                 }
               }}
               aria-label="Master BPM"
+              style={{ fontFamily: VAULT_MONO }}
             />
           </div>
 
@@ -142,6 +164,11 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
             className={`studio-chip ${prolinkConnected ? "is-active" : ""}`}
             title={prolinkConnected ? "ProLink Connected" : (prolinkError || "ProLink Offline")}
             whileHover={{ scale: 1.02 }}
+            style={{
+              fontFamily: VAULT_MONO,
+              fontSize: '9px',
+              letterSpacing: '0.15em',
+            }}
           >
             {prolinkConnected ? (
               <Wifi className="h-3.5 w-3.5" />
@@ -161,12 +188,21 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
             title={error ?? (isSupported ? "Toggle MIDI" : "MIDI not supported")}
             aria-pressed={isActive}
             aria-label="Toggle MIDI"
+            style={{
+              fontFamily: VAULT_MONO,
+              fontSize: '9px',
+              letterSpacing: '0.15em',
+            }}
           >
             <Activity className="h-3.5 w-3.5" />
             MIDI
           </motion.button>
 
-          <div className="studio-chip">
+          <div className="studio-chip" style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '9px',
+            letterSpacing: '0.15em',
+          }}>
             <Cpu className="h-3.5 w-3.5" />
             {performanceMode}
           </div>
@@ -175,8 +211,14 @@ export function StudioHeader({ masterProgress }: StudioHeaderProps) {
         </div>
       </div>
 
-      <div className="studio-progress">
-        <div className="studio-progress-fill" style={{ width: `${masterProgress * 100}%` }} />
+      <div className="studio-progress" style={{
+        background: 'rgba(0,242,255,0.06)',
+        height: '2px',
+      }}>
+        <div className="studio-progress-fill" style={{
+          width: `${masterProgress * 100}%`,
+          background: 'linear-gradient(90deg, #00f2ff, #a855f7)',
+        }} />
       </div>
     </header>
   );

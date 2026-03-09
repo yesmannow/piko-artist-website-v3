@@ -166,32 +166,75 @@ export function StudioLayout() {
     }
   };
 
-  // Show loading state while initializing
+  // Show loading state while initializing — Syndicate Vault Gate
   if (!audioInitialized) {
     return (
-      <main className="studio-shell">
-        <div className="studio-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0a0a0f' }}>
-          <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <h1 style={{ color: '#fff', marginBottom: '1rem', fontSize: '1.5rem' }}>Piko Studio</h1>
-            <p style={{ marginBottom: '2rem' }}>Ready to start the session?</p>
+      <main className="studio-shell" style={{ background: '#0a0a0c' }}>
+        {/* Surveillance Grid Overlay */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundImage:
+              'linear-gradient(rgba(0,242,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,242,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        <div className="studio-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              color: '#e2e8f0',
+              marginBottom: '0.5rem',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+            }}>
+              SYNDICATE VAULT
+            </h1>
+            <p style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '10px',
+              color: 'rgba(226,232,240,0.4)',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              marginBottom: '2.5rem',
+            }}>
+              AUDIO ENGINE STANDBY // AWAITING AUTHORIZATION
+            </p>
             <button 
               onClick={() => initializeAudio()}
               disabled={initInFlight.current}
               style={{
-                background: 'var(--color-studio-cyan, #22d3ee)',
-                color: '#000',
-                border: 'none',
-                padding: '12px 32px',
-                borderRadius: '99px',
-                fontWeight: 'bold',
+                fontFamily: "'JetBrains Mono', monospace",
+                background: 'linear-gradient(145deg, #0f0f14, #080810)',
+                color: '#00f2ff',
+                border: '1px solid rgba(0,242,255,0.3)',
+                padding: '14px 40px',
+                borderRadius: '0',
+                fontWeight: 600,
+                fontSize: '11px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
                 cursor: 'pointer',
                 opacity: initInFlight.current ? 0.5 : 1,
-                transition: 'transform 0.2s',
+                transition: 'all 0.2s',
+                boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.8), 0 0 20px rgba(0,242,255,0.1)',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#00f2ff';
+                e.currentTarget.style.boxShadow = 'inset 2px 2px 5px rgba(0,0,0,0.8), 0 0 30px rgba(0,242,255,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(0,242,255,0.3)';
+                e.currentTarget.style.boxShadow = 'inset 2px 2px 5px rgba(0,0,0,0.8), 0 0 20px rgba(0,242,255,0.1)';
+              }}
             >
-              {initInFlight.current ? 'Initializing...' : 'Start Studio'}
+              {initInFlight.current ? '[ INITIALIZING... ]' : '[ ENTER VAULT ]'}
             </button>
           </div>
         </div>

@@ -135,36 +135,69 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
           DESKTOP PRO: Fixed 3-Row Workstation (md+) - ZERO PAGE SCROLL
           ═══════════════════════════════════════════════════════════════════ */}
       <div
-        className="hidden md:grid fixed inset-0 h-dvh w-screen overflow-hidden bg-linear-to-b from-[#151530] to-[#050510]"
+        className="hidden md:grid fixed inset-0 h-dvh w-screen overflow-hidden"
         style={{
-          gridTemplateRows: '140px 1fr auto',  // Row1: Fixed | Row2: Flex | Row3: Auto (height set on wrapper)
+          gridTemplateRows: '140px 1fr auto',
+          background: '#0a0a0c',
         }}
       >
+        {/* Surveillance Grid Overlay */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundImage:
+              'linear-gradient(rgba(0,242,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,242,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            pointerEvents: 'none',
+            zIndex: 0,
+            animation: 'surveillance-drift 120s linear infinite',
+          }}
+        />
+
         {/* ─────────────────────────────────────────────────────────────────
             ROW 1: WAVEFORMS & RHYTHM STRIPE (Beatmatching Focus)
             Phase 6: Using WaveSurfer for visuals-only rendering
             ───────────────────────────────────────────────────────────────── */}
         <section
-          className={`flex gap-3 p-3 border-b border-white/5 min-h-0 overflow-hidden transition-all duration-500 ${layoutMode === 'Performance' ? 'h-[100px]' : 'h-[140px]'
-            }`}
+          className={`flex gap-3 p-3 border-b min-h-0 overflow-hidden transition-all duration-500`}
+          style={{
+            borderBottomColor: 'rgba(0,242,255,0.06)',
+            height: layoutMode === 'Performance' ? '100px' : '140px',
+          }}
           aria-label="Deck Waveforms"
         >
           {/* Performance Mode Toggle (Floating) */}
           <div className="absolute top-4 right-4 z-50 flex gap-2">
             <button
               onClick={() => setLayoutMode(layoutMode === 'Performance' ? 'Library-Heavy' : 'Performance')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-tighter transition-all glass-panel-high hover:scale-105 active:scale-95 ${layoutMode === 'Performance' ? 'text-[#00F2FF] border-[#00F2FF]/40' : 'text-white/40'
+              className={`flex items-center gap-2 px-3 py-1.5 text-[10px] uppercase tracking-tighter transition-all hover:scale-105 active:scale-95 ${layoutMode === 'Performance' ? 'text-[#00F2FF]' : 'text-white/40'
                 }`}
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                background: 'rgba(15,15,20,0.7)',
+                boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.8)',
+                border: `1px solid ${layoutMode === 'Performance' ? 'rgba(0,242,255,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                letterSpacing: '0.15em',
+              }}
             >
               {layoutMode === 'Performance' ? <Zap size={12} fill="currentColor" /> : <Layout size={12} />}
-              {layoutMode} Mode
+              {layoutMode} MODE
             </button>
           </div>
 
           {/* Deck A Waveform */}
           <div className="flex-1 flex flex-col gap-2 min-w-0">
-            <div className="text-xs font-mono uppercase tracking-wider text-white/50 px-2">
-              Deck A
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '10px',
+              letterSpacing: '0.2em',
+              color: 'rgba(226,232,240,0.4)',
+              textTransform: 'uppercase',
+              padding: '0 8px',
+            }}>
+              DECK A
             </div>
             <div className="flex-1 min-h-0">
               <DeckWaveformWS deckId="A" />
@@ -173,8 +206,15 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
 
           {/* Deck B Waveform */}
           <div className="flex-1 flex flex-col gap-2 min-w-0">
-            <div className="text-xs font-mono uppercase tracking-wider text-white/50 px-2">
-              Deck B
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '10px',
+              letterSpacing: '0.2em',
+              color: 'rgba(226,232,240,0.4)',
+              textTransform: 'uppercase',
+              padding: '0 8px',
+            }}>
+              DECK B
             </div>
             <div className="flex-1 min-h-0">
               <DeckWaveformWS deckId="B" />
@@ -182,9 +222,11 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
           </div>
         </section>
 
-        {/* Global Transport / Progress Strip (Subtle, Non-Intrusive) */}
+        {/* Global Transport / Progress Strip */}
         {layoutMode !== 'Performance' && (
-          <div className="hidden md:block px-3 py-2 border-b border-white/5 bg-black/20 animate-in fade-in slide-in-from-top-1 duration-500">
+          <div className="hidden md:block px-3 py-2 bg-black/20 animate-in fade-in slide-in-from-top-1 duration-500"
+            style={{ borderBottom: '1px solid rgba(0,242,255,0.06)' }}
+          >
             <progress
               className="sr-only"
               value={Math.round(progressClamped * 100)}
@@ -192,27 +234,46 @@ export function StudioGrid({ masterBus: _masterBus, masterPostFx: _masterPostFx,
               aria-label="Master progress"
             />
             <div
-              className="relative h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/10"
+              className="relative h-1.5 overflow-hidden"
+              style={{
+                background: 'rgba(0,242,255,0.05)',
+                border: '1px solid rgba(0,242,255,0.08)',
+              }}
               aria-hidden="true"
             >
               {/* Progress fill */}
               <div
-                className="h-full bg-linear-to-r from-purple-500 to-cyan-400 transition-[width] duration-100 ease-linear"
-                style={{ width: `${progressClamped * 100}%` }}
+                className="h-full transition-[width] duration-100 ease-linear"
+                style={{
+                  width: `${progressClamped * 100}%`,
+                  background: 'linear-gradient(90deg, #00f2ff, #a855f7)',
+                }}
               />
               {/* Playhead marker */}
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.6)]"
-                style={{ left: `${progressClamped * 100}%` }}
+                className="absolute top-0 bottom-0 w-0.5"
+                style={{
+                  left: `${progressClamped * 100}%`,
+                  background: '#e2e8f0',
+                  boxShadow: '0 0 6px rgba(226,232,240,0.6)',
+                }}
               />
             </div>
           </div>
         )}
 
         {/* ─────────────────────────────────────────────────────────────────
-            ROW 2: PERFORMANCE CONTROLS (Deck A | Mixer Center | Deck B)
+            ROW 2: PERFORMANCE CONTROLS — Accordion Layout
+            Scales from 1.0 → 1.25 when library is minimized
             ───────────────────────────────────────────────────────────────── */}
-        <div className="min-h-0 overflow-hidden">
+        <div
+          className="min-h-0 overflow-hidden"
+          style={{
+            transform: (!libraryOpen && layoutMode !== 'Performance') ? 'scale(1.02)' : 'scale(1)',
+            transformOrigin: 'center center',
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
           <PerformanceRow />
         </div>
 

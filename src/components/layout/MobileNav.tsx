@@ -19,7 +19,7 @@ const navItems = [
 
 const moreItems = [
   { href: "/music", label: "Music", icon: Music },
-  { href: "/studio-v2", label: "STUDIO", icon: Radio, isStudio: true },
+  { href: "/studio", label: "STUDIO", icon: Radio, isStudio: true },
   { href: "/contact", label: "Contact", icon: Mail },
 ];
 

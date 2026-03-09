@@ -80,7 +80,21 @@ export function StudioShell({ masterProgress, masterBus, masterPostFx }: StudioS
 
   return (
     <ComplexityModeProvider>
-      <main className="studio-shell" data-performance={performanceMode}>
+      <main className="studio-shell" data-performance={performanceMode} style={{ background: '#0a0a0c' }}>
+        {/* Surveillance Grid Overlay */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundImage:
+              'linear-gradient(rgba(0,242,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,242,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+
         <div className="studio-shell-bg" aria-hidden="true">
           {show3DEffective && <Scene3D className="w-full h-full" isActive={isAppActive} />}
         </div>
