@@ -164,9 +164,10 @@ function drawPhraseMarkers(ctx: CanvasRenderingContext2D, w: number, h: number, 
 function drawPlayhead(ctx: CanvasRenderingContext2D, w: number, h: number, progress: number, color: string = COLORS.playhead) {
   const playheadX = progress * w;
 
-  // Progress fill
+  // Progress fill — 8% opacity tint using the per-deck accent color
+  const PLAYHEAD_FILL_OPACITY = '14'; // hex 0x14 ≈ 8% of 255
   ctx.save();
-  ctx.fillStyle = `${color}14`; // ~8% opacity fill
+  ctx.fillStyle = `${color}${PLAYHEAD_FILL_OPACITY}`;
   ctx.fillRect(0, 0, playheadX, h);
   ctx.restore();
 

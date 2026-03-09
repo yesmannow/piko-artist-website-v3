@@ -233,15 +233,20 @@ export function Deck({ deckId }: DeckProps) {
       className={clsx(
         "col-span-12 lg:col-span-5 shadow-[inset_0_4px_24px_rgba(0,0,0,0.9)] rounded-xl border p-6 flex flex-col gap-4 transition-colors duration-300 relative overflow-hidden",
         "bg-[var(--color-obsidian-900)] backdrop-blur-2xl",
-        isDragOver
-          ? `border-[${accent}] shadow-[0_0_30px_rgba(${accentRgb},0.2)] bg-[${accent}]/10`
-          : "border-slate-800/60"
+        isDragOver ? "" : "border-slate-800/60"
       )}
-      style={track?.coverArt ? {
-        backgroundImage: `url(${track.coverArt})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      } : {}}
+      style={{
+        ...(track?.coverArt ? {
+          backgroundImage: `url(${track.coverArt})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        } : {}),
+        // isDragOver: apply accent border + glow via inline style (Tailwind can't resolve runtime colors)
+        ...(isDragOver ? {
+          borderColor: accent,
+          boxShadow: `inset 0 4px 24px rgba(0,0,0,0.9), 0 0 30px rgba(${accentRgb},0.2)`,
+        } : {}),
+      }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -320,11 +325,14 @@ export function Deck({ deckId }: DeckProps) {
             onClick={() => toggleStem(deckId, 'drums')}
             className={clsx(
               'w-5 h-5 rounded text-[9px] font-bold transition-all border select-none touch-none active:scale-95',
-              stems.drums
-                ? `border-[${accent}]/60 bg-[${accent}]/15 shadow-[0_0_6px_${accent}]`
-                : 'bg-slate-900/80 border-slate-700 text-slate-600 hover:text-slate-400'
+              !stems.drums && 'bg-slate-900/80 border-slate-700 text-slate-600 hover:text-slate-400'
             )}
-            style={stems.drums ? { color: accent } : {}}
+            style={stems.drums ? {
+              color: accent,
+              borderColor: `rgba(${accentRgb},0.6)`,
+              background: `rgba(${accentRgb},0.15)`,
+              boxShadow: `0 0 6px ${accent}`,
+            } : {}}
           >D</button>
           <button
             onClick={() => toggleStem(deckId, 'inst')}

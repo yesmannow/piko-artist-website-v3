@@ -536,15 +536,16 @@ export class AudioEngine {
     subLpf.Q.value         = 0.7;
 
     // Waveshaper: soft-clip generates 2nd/3rd harmonics
-    // Transfer function: f(x) = (π + k)x / (π + k|x|)  where k=200
+    // Transfer function: f(x) = (π + k)x / (π + k|x|)  where k = SUB_DRIVE_AMOUNT
     // This is a rational approximation that saturates gently, producing mainly
     // even harmonics (2nd, 4th) that add perceived warmth and sub-bass body.
-    // k=200 sets the "drive" amount; larger k = more saturation / more harmonics.
+    // Larger SUB_DRIVE_AMOUNT = more saturation / more harmonics.
+    const SUB_DRIVE_AMOUNT = 200;
     const shaper = ctx.createWaveShaper();
     const curve  = new Float32Array(256);
     for (let i = 0; i < 256; i++) {
       const x = (i * 2) / 255 - 1;
-      curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+      curve[i] = (Math.PI + SUB_DRIVE_AMOUNT) * x / (Math.PI + SUB_DRIVE_AMOUNT * Math.abs(x));
     }
     shaper.curve     = curve;
     shaper.oversample = '2x';

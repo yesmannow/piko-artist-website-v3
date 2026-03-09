@@ -16,8 +16,8 @@ interface WaveformAutomationProps {
   activeParam: 'volume' | 'hpf' | 'reverb';
 }
 
-// Stroke colours per parameter — used for both path and bloom shadow so all
-// elements share a consistent tint regardless of the active lane.
+// "Rule of 32" default automation curve — exponential (gain = value²) as specified
+const DEFAULT_AUTOMATION_CURVE = 'exponential' as const;
 const PARAM_COLOR: Record<string, string> = {
   volume: '#00f2ff',
   hpf: '#f43f5e',
@@ -244,7 +244,7 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
           isDraggingRef.current = clickedIdx;
         }
       } else {
-        const newPts = [...pts, { time, value, curve: 'exponential' as const }].sort(
+        const newPts = [...pts, { time, value, curve: DEFAULT_AUTOMATION_CURVE }].sort(
           (a, b) => a.time - b.time,
         );
         pointsRef.current = newPts;

@@ -18,7 +18,7 @@ interface PikoSeedEntry {
   energy: string;
   durationEstimate: string;
   hasVocal: boolean;
-  status: string;
+  status: Track['status'];
 }
 
 // Build a lookup map keyed by lowercase filename for O(1) metadata resolution
@@ -103,7 +103,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
             hasVocal: seed?.hasVocal ?? false,
             audioUrl: track.url,
             coverArt: randomImage,
-            status: (seed?.status as Track['status']) ?? 'ready',
+            status: seed?.status ?? 'ready',
             createdAt: now - idx, // ensure stable insertion order
           };
 
