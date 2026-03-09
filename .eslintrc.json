@@ -1,19 +1,8 @@
 {
   "extends": [
     "next/core-web-vitals",
-    "next/typescript",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:sonarjs/recommended-legacy"
+    "next/typescript"
   ],
-  "plugins": ["@typescript-eslint", "sonarjs"],
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "ecmaVersion": 2021,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true
-    }
-  },
   "rules": {
     "react/no-unescaped-entities": "off",
     "@typescript-eslint/no-explicit-any": "warn",
@@ -23,12 +12,6 @@
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_"
       }
-    ],
-    "complexity": ["warn", 15],
-    "max-lines-per-function": ["warn", { "max": 150, "skipBlankLines": true, "skipComments": true }],
-    "max-depth": ["warn", 4],
-    "sonarjs/cognitive-complexity": ["warn", 20],
-    "sonarjs/no-duplicate-string": ["warn", { "threshold": 5 }],
-    "sonarjs/no-identical-functions": "warn"
+    ]
   }
 }

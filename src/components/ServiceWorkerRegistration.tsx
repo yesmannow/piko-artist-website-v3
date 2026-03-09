@@ -16,11 +16,8 @@ export function ServiceWorkerRegistration() {
       return;
     }
 
-    // Only register when explicitly enabled (kill switch for production safety)
-    if (
-      process.env.NODE_ENV === "production" &&
-      process.env.NEXT_PUBLIC_ENABLE_SW === "true"
-    ) {
+    // Only register in production or when explicitly enabled
+    if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_SW === "true") {
       const registerSW = async () => {
         try {
           const registration = await navigator.serviceWorker.register("/sw.js", {
@@ -51,13 +48,24 @@ export function ServiceWorkerRegistration() {
           // Run cleanup every 24 hours
           setInterval(async () => {
             try {
-              const cacheNames = await caches.keys();
-              await Promise.all(
-                cacheNames.map((cacheName) => caches.delete(cacheName))
-              );
-              console.log("[SW] Cache storage cleared");
+              if ("storage" in navigator && "estimate" in navigator.storage) {
+                const estimate = await navigator.storage.estimate();
+                const usagePercent = estimate.usage && estimate.quota
+                  ? (estimate.usage / estimate.quota) * 100
+                  : 0;
+
+                // If storage is > 80% full, trigger cleanup
+                if (usagePercent > 80) {
+                  console.warn(`[SW] Storage usage at ${usagePercent.toFixed(1)}%, triggering cleanup...`);
+
+                  // Send message to service worker to clean up caches
+                  if (registration.active) {
+                    registration.active.postMessage({ type: "CLEANUP_CACHES" });
+                  }
+                }
+              }
             } catch (error) {
-              console.error("[SW] Cache cleanup failed:", error);
+              console.error("[SW] Storage check failed:", error);
             }
           }, 24 * 60 * 60 * 1000); // 24 hours
 
@@ -67,8 +75,6 @@ export function ServiceWorkerRegistration() {
       };
 
       registerSW();
-    } else {
-      console.warn("[SW] Service Worker not registered: Disabled in development or NEXT_PUBLIC_ENABLE_SW is false.");
     }
   }, []);
 

@@ -20,7 +20,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Only run middleware for /beatmaker routes, not for static assets or API routes
   matcher: ["/beatmaker/:path*"],
 };
 

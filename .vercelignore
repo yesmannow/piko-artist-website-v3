@@ -35,11 +35,3 @@ tmp/
 temp/
 *.tmp
 
-# Build outputs
-.next/
-dist/
-
-# Oversized local assets (breaks Vercel 100MB upload)
-public/images/sudio-mixer/
-public/images/sudio-mixer/**
-

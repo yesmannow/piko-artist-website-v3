@@ -346,7 +346,7 @@ export const tracks: MediaItem[] = [
     title: "Fallé",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/Falle.mp3",
+    src: "/audio/tracks/falle.mp3",
     coverArt: "/images/tracks/abstract-1846847_1280.jpg",
     vibe: "storytelling"
   },
@@ -396,5 +396,76 @@ export const tracks: MediaItem[] = [
     src: "/audio/tracks/12_05.mp3",
     coverArt: "/images/tracks/dj-2581269_1280.jpg",
     vibe: "classic"
+  }
+];
+
+export interface TourDate {
+  id: number | string; // Allow string IDs too just in case
+  city: string;
+  venue: string;
+  date: string;
+  lat: number;
+  lng: number;
+  ticketUrl: string;
+  // NEW FIELDS
+  image?: string;
+  description?: string;
+}
+
+export const tourDates: TourDate[] = [
+  {
+    id: 1,
+    city: "New York",
+    venue: "Terminal 5",
+    date: "OCT 15",
+    lat: 40.7128,
+    lng: -74.0060,
+    ticketUrl: "#",
+    image: "https://images.unsplash.com/photo-1496442226666-8d4a0e29e128?q=80&w=2940&auto=format&fit=crop",
+    description: "The world tour kicks off in the concrete jungle."
+  },
+  {
+    id: 2,
+    city: "London",
+    venue: "O2 Brixton",
+    date: "OCT 22",
+    lat: 51.5074,
+    lng: -0.1278,
+    ticketUrl: "#",
+    image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=2940&auto=format&fit=crop",
+    description: "A legendary night in the heart of London."
+  },
+  {
+    id: 3,
+    city: "Tokyo",
+    venue: "Zepp DiverCity",
+    date: "NOV 05",
+    lat: 35.6762,
+    lng: 139.6503,
+    ticketUrl: "#",
+    image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=2940&auto=format&fit=crop",
+    description: "Neon lights and deep frequencies in Tokyo."
+  },
+  {
+    id: 4,
+    city: "Mexico City",
+    venue: "Auditorio Nacional",
+    date: "NOV 12",
+    lat: 19.4326,
+    lng: -99.1332,
+    ticketUrl: "#",
+    image: "https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=2940&auto=format&fit=crop",
+    description: "Latin American energy meets underground beats."
+  },
+  {
+    id: 5,
+    city: "Los Angeles",
+    venue: "The Wiltern",
+    date: "NOV 20",
+    lat: 34.0522,
+    lng: -118.2437,
+    ticketUrl: "#",
+    image: "https://images.unsplash.com/photo-1534237710431-e2fc698436d0?q=80&w=2940&auto=format&fit=crop",
+    description: "The grand finale on the West Coast."
   }
 ];

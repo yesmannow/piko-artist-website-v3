@@ -1,9 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed, Inter, Lexend } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { AudioProvider } from "@/context/AudioContext";
+import { VideoProvider } from "@/context/VideoContext";
+import { PersistentPlayer } from "@/components/PersistentPlayer";
+import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
+import { PageTransition } from "@/components/PageTransition";
+import { MobileNav } from "@/components/MobileNav";
+import { TacticalBar } from "@/components/navigation/TacticalBar";
+import { InstallApp } from "@/components/InstallApp";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import { ScrollRestorationManager } from "@/components/ScrollRestorationManager";
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
+import { LogoIntro } from "@/components/branding/LogoIntro";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import { Toaster } from "react-hot-toast";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -56,14 +69,29 @@ const lexend = Lexend({
 export const metadata: Metadata = {
   title: "Piko Artist Studio",
   description: "High-performance holographic DJ mixer and artist platform",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Piko Studio",
+    startupImage: [
+      {
+        url: "/icons/apple-touch-startup-image.png",
+        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/icons/apple-touch-startup-image.png",
+        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/icons/apple-touch-startup-image.png",
+        media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
+      },
+    ],
   },
   icons: {
-    icon: "/images/branding/piko-logo.png",
-    apple: "/images/branding/piko-logo.png",
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 
@@ -81,17 +109,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        {/* crossOrigin="use-credentials" bypasses Vercel deployment-protection 401 on preview branches */}
-        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
-      </head>
       <body
-        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased`}
+        className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />
-        {children}
-        <Toaster position="bottom-right" />
+        <LogoIntro />
+        <AudioProvider>
+          <VideoProvider>
+            <Navbar />
+            <SmoothScroll>
+              <ScrollRestorationManager />
+              <PageTransition>{children}</PageTransition>
+            </SmoothScroll>
+            <Footer />
+            <FloatingVideoPlayer />
+            <PersistentPlayer />
+            <MobileNav />
+            <TacticalBar />
+            <InstallApp />
+            <InstallPrompt />
+          </VideoProvider>
+        </AudioProvider>
       </body>
     </html>
   );
