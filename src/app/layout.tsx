@@ -56,7 +56,6 @@ const lexend = Lexend({
 export const metadata: Metadata = {
   title: "Piko Artist Studio",
   description: "High-performance holographic DJ mixer and artist platform",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -82,6 +81,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* crossOrigin="use-credentials" bypasses Vercel deployment-protection 401 on preview branches */}
+        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
+      </head>
       <body
         className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased`}
       >

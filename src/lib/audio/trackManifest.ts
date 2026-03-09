@@ -1,4 +1,11 @@
-export const trackManifest = [
+export interface TrackManifestEntry {
+  name: string;
+  url: string;
+  bpm?: string;
+  key?: string;
+}
+
+export const trackManifest: TrackManifestEntry[] = [
   '12_05.mp3',
   'amor-sincero.mp3',
   'amores-perdidos.mp3',
@@ -9,7 +16,7 @@ export const trackManifest = [
   'el-don.mp3',
   'entre-humos.mp3',
   'f-7.mp3',
-  'falle.mp3',
+  'Falle.mp3',
   'ganja.mp3',
   'gunster.mp3',
   'im-sorry.mp3',

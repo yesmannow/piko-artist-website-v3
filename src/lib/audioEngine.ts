@@ -1,5 +1,55 @@
 import * as Tone from 'tone';
 
+// ── Phase 8: Mastering Chain Infrastructure ──────────────────────────────────
+
+/**
+ * Soft clipper using cubic waveshaping: y = 1.5x − 0.5x³
+ *
+ * This third-order polynomial clips gently below 0 dBFS while preserving
+ * transient detail — it adds ~3 dB of harmonic gain on small signals and
+ * rounds peaks rather than hard-clipping them.  Place before a hard Limiter
+ * to reduce the amount of gain reduction the Limiter needs to apply.
+ */
+export class SoftClipper extends Tone.WaveShaper {
+  constructor() {
+    super((x: number) => {
+      const c = Math.max(-1, Math.min(1, x));
+      return 1.5 * c - 0.5 * c * c * c;
+    }, 4096);
+  }
+}
+
+/**
+ * MasteringChain: SoftClipper → Limiter(-0.1)
+ *
+ * This is the foundation for the Phase 8 Production HUD.
+ * Signal flow:  sources → softClipper → limiter → destination
+ */
+export class MasteringChain {
+  public readonly softClipper: SoftClipper;
+  public readonly limiter: Tone.Limiter;
+
+  constructor() {
+    this.softClipper = new SoftClipper();
+    this.limiter = new Tone.Limiter(-0.1);
+    // Wire: soft-clip → hard limit → speakers
+    this.softClipper.connect(this.limiter);
+    this.limiter.toDestination();
+  }
+
+  /** Entry point — connect upstream nodes here */
+  get input(): Tone.ToneAudioNode {
+    return this.softClipper;
+  }
+
+  /** Final output node — connect side-chain taps (analyser, recorder) here */
+  get output(): Tone.Limiter {
+    return this.limiter;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export class SlipModeManager {
   private ghostStartTime: number = 0;
   private isSlipActive: boolean = false;
@@ -22,7 +72,10 @@ export class AudioEngine {
   private static instance: AudioEngine;
   public context: AudioContext;
   public masterAnalyser: AnalyserNode;
-  public masterOut: Tone.Limiter;
+  /** Phase 8 mastering chain (SoftClipper → Limiter). Use `masterOut` for backward-compat tap. */
+  public masteringChain: MasteringChain;
+  /** Backward-compatible alias: the final Limiter(-0.1) inside the mastering chain. */
+  public get masterOut(): Tone.Limiter { return this.masteringChain.limiter; }
   public stereoWidener: Tone.StereoWidener;
   public masterStreamNode: MediaStreamAudioDestinationNode;
 
@@ -40,10 +93,10 @@ export class AudioEngine {
   private constructor() {
     this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
     Tone.setContext(this.context);
-    
-    // Create Mastering Chain
-    this.masterOut = new Tone.Limiter(-0.1).toDestination();
-    
+
+    // ── Mastering Chain: SoftClipper → Limiter(-0.1) → destination ──
+    this.masteringChain = new MasteringChain();
+
     // Compressor
     const masterCompressor = new Tone.Compressor({
       threshold: -24,
@@ -55,9 +108,9 @@ export class AudioEngine {
     // Pseudo-Stereo Imager / Mid-Side processing would be complex here, using a widening EQ trick
     this.stereoWidener = new Tone.StereoWidener(0.5); // Tone has a StereoWidener!
 
-    // Connect Chain: Widener -> Compressor -> Limiter -> Destination
+    // Connect Chain: Widener -> Compressor -> SoftClipper -> Limiter(-0.1) -> Destination
     this.stereoWidener.connect(masterCompressor);
-    masterCompressor.connect(this.masterOut);
+    masterCompressor.connect(this.masteringChain.input);
 
     // Create stream destination for recording
     this.masterStreamNode = this.context.createMediaStreamDestination();

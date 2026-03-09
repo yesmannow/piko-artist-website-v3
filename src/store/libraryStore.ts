@@ -4,6 +4,7 @@ import { trackManifest } from '@/lib/audio/trackManifest';
 import { TRACK_IMAGE_POOL } from '@/lib/studioTrackImages';
 import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 import { generateFingerprint, lookupMetadata } from '@/lib/acoustid';
+import { PLACEHOLDER_BPM, PLACEHOLDER_KEY } from '@/lib/constants/analysisPlaceholders';
 import toast from 'react-hot-toast';
 
 interface LibraryState {
@@ -14,20 +15,18 @@ interface LibraryState {
   seedLibrary: () => Promise<void>;
 }
 
-// Removed mockAnalysis
-
-// Helper to get AudioBuffer
+// Helper to get AudioBuffer — used only for user-uploaded files (addTrack), NOT during seed
 const getAudioBuffer = async (fileOrUrl: File | string): Promise<AudioBuffer> => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   let arrayBuffer: ArrayBuffer;
-  
+
   if (typeof fileOrUrl === 'string') {
     const res = await fetch(fileOrUrl);
     arrayBuffer = await res.arrayBuffer();
   } else {
     arrayBuffer = await (fileOrUrl as File).arrayBuffer();
   }
-  
+
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
   return audioBuffer;
 };
@@ -57,76 +56,64 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     if (isSeeding) return;
     const count = await db.tracks.count();
     if (count > 0) return;
-    
+
     isSeeding = true;
 
-    const seedTracks = trackManifest;
-
     try {
-      for (const track of seedTracks) {
-        const tempId = track.name + Date.now();
-        set(state => ({
-          processingTracks: [...state.processingTracks, { id: tempId, name: track.name }]
-        }));
+      const now = Date.now();
+      const successRows: Track[] = [];
 
-      try {
-        const audioBuffer = await getAudioBuffer(track.url);
-        const analysis = await analyzeAudioBuffer(audioBuffer);
-        
-        const mins = Math.floor(audioBuffer.duration / 60);
-        const secs = Math.floor(audioBuffer.duration % 60);
-        const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      for (let idx = 0; idx < trackManifest.length; idx++) {
+        const track = trackManifest[idx];
+        try {
+          const title = track.name.replace(/\.[^/.]+$/, '');
+          const randomImage = TRACK_IMAGE_POOL[idx % TRACK_IMAGE_POOL.length];
 
-        const title = track.name.replace(/\.[^/.]+$/, "");
-        const artist = 'Pre-existing Track';
+          const row: Omit<Track, 'id'> = {
+            title,
+            artist: 'Pre-existing Track',
+            // Prefer manifest-provided values; fall back to placeholder constants
+            bpm: track.bpm ?? PLACEHOLDER_BPM,
+            key: track.key ?? PLACEHOLDER_KEY,
+            duration: '00:00',
+            energy: 'Medium',
+            hasVocal: false,
+            audioUrl: track.url,
+            coverArt: randomImage,
+            status: 'ready' as const,
+            createdAt: now - idx, // ensure stable insertion order
+          };
 
-        const randomImage = TRACK_IMAGE_POOL[Math.floor(Math.random() * TRACK_IMAGE_POOL.length)];
-
-        const newTrack: Track = {
-          title,
-          artist,
-          bpm: analysis.bpm,
-          key: analysis.key,
-          duration: durationStr,
-          energy: analysis.energy,
-          hasVocal: analysis.hasVocal,
-          audioUrl: track.url,
-          coverArt: randomImage,
-          createdAt: Date.now(),
-        };
-
-        const id = await db.tracks.add(newTrack);
-        newTrack.id = id;
-
-        set(state => ({
-          tracks: [...state.tracks, newTrack].sort((a, b) => b.createdAt - a.createdAt)
-        }));
-      } catch (error) {
-        console.error(`Failed to seed ${track.name}`, error);
-      } finally {
-        set(state => ({
-          processingTracks: state.processingTracks.filter(t => t.id !== tempId)
-        }));
+          const id = await db.tracks.add(row as Track);
+          successRows.push({ ...row, id } as Track);
+        } catch (trackError) {
+          // Log the failure but continue seeding the remaining tracks
+          console.error(`[seedLibrary] Failed to seed track "${track.name}":`, trackError);
+        }
       }
-    }
+
+      // Refresh store state from DB so UI shows all successfully seeded tracks
+      const tracks = await db.tracks.orderBy('createdAt').reverse().toArray();
+      set({ tracks });
     } catch (dbError) {
-      console.error("Database error during seed, triggering rescue reset:", dbError);
+      console.error('Database error during seed, triggering rescue reset:', dbError);
       await db.delete();
       window.location.reload();
+    } finally {
+      isSeeding = false;
     }
-    isSeeding = false;
   },
   addTrack: async (file: File) => {
     const validTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/x-m4a', 'audio/mp4'];
     const validExtensions = /\.(mp3|wav|flac|m4a)$/i;
-    
+
     if (!validTypes.includes(file.type) && !file.name.match(validExtensions)) {
       toast.error(`Unsupported Format: ${file.name}`);
       return;
     }
 
     const tempId = file.name + Date.now();
-    
+
     set(state => ({
       processingTracks: [...state.processingTracks, { id: tempId, name: file.name }]
     }));
@@ -134,13 +121,13 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     try {
       const audioBuffer = await getAudioBuffer(file);
       const analysis = await analyzeAudioBuffer(audioBuffer);
-      
+
       const mins = Math.floor(audioBuffer.duration / 60);
       const secs = Math.floor(audioBuffer.duration % 60);
       const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
       // Try to extract basic info from filename
-      let title = file.name.replace(/\.[^/.]+$/, "");
+      let title = file.name.replace(/\.[^/.]+$/, '');
       let artist = 'Unknown Artist';
       if (title.includes(' - ')) {
         const parts = title.split(' - ');
@@ -191,3 +178,4 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     }
   }
 }));
+
