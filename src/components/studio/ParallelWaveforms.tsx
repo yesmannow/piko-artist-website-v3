@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { useDeckStore, DeckState } from '@/store/deckStore';
+import { useDeckStore, DECK_COLORS, DeckState } from '@/store/deckStore';
 import { WaveformAutomation } from './WaveformAutomation';
 
 // ── RGB Frequency Colors ────────────────────────────────────────────────
@@ -10,9 +10,9 @@ const COLORS = {
   mid:  { r: 68,  g: 136, b: 255 },  // Blue — Vocals / Mids
   high: { r: 255, g: 255, b: 255 },  // White — Percussion / Highs
   vocal: 'rgba(191, 0, 255, 0.15)',   // Neon Purple — Vocal Zones
-  downbeat: '#00f2ff',                // Neon Blue — Downbeat "1"
+  downbeat: DECK_COLORS.A.hex,
   beatLine: 'rgba(255, 255, 255, 0.08)',
-  playhead: '#00f2ff',
+  playhead: DECK_COLORS.A.hex,
 };
 
 // ── Waveform Peak Extraction ────────────────────────────────────────────
@@ -325,10 +325,10 @@ export function ParallelWaveforms() {
       const dpr = window.devicePixelRatio || 1;
 
       if (canvasARef.current) {
-        renderDeck(canvasARef.current, state.deckA, peaksCacheA, dpr, 'DECK A — NO TRACK LOADED', '#00f2ff');
+        renderDeck(canvasARef.current, state.deckA, peaksCacheA, dpr, 'DECK A — NO TRACK LOADED', DECK_COLORS.A.hex);
       }
       if (canvasBRef.current) {
-        renderDeck(canvasBRef.current, state.deckB, peaksCacheB, dpr, 'DECK B — NO TRACK LOADED', '#ff00f2');
+        renderDeck(canvasBRef.current, state.deckB, peaksCacheB, dpr, 'DECK B — NO TRACK LOADED', DECK_COLORS.B.hex);
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -347,15 +347,26 @@ export function ParallelWaveforms() {
       {/* Automation Controls — Liquid Obsidian glassmorphism */}
       <div className="flex gap-2 items-center px-2 py-1 bg-[var(--color-obsidian-900)]/80 backdrop-blur-[24px] rounded-lg border border-slate-800/40 font-mono text-xs">
         <span className="text-white/40 uppercase tracking-widest mr-2">Auto:</span>
-        {(['off', 'volume', 'hpf', 'reverb'] as const).map(mode => (
-          <button 
-            key={mode}
-            onClick={() => setAutomationMode(mode)}
-            className={`px-3 py-1 rounded transition-colors ${automationMode === mode ? 'bg-[#00f2ff]/20 text-[#00f2ff] border border-[#00f2ff]/30' : 'text-slate-400 hover:text-white'}`}
-          >
-            {mode.toUpperCase()}
-          </button>
-        ))}
+        {(['off', 'volume', 'hpf', 'reverb'] as const).map(mode => {
+          const active = automationMode === mode;
+          return (
+            <button
+              key={mode}
+              onClick={() => setAutomationMode(mode)}
+              className="px-3 py-1 rounded border transition-colors"
+              style={active ? {
+                background: `${DECK_COLORS.A.hex}33`,
+                color: DECK_COLORS.A.hex,
+                borderColor: `${DECK_COLORS.A.hex}4d`,
+              } : {
+                color: 'rgb(148,163,184)',   // slate-400 — inactive label
+                borderColor: 'transparent',
+              }}
+            >
+              {mode.toUpperCase()}
+            </button>
+          );
+        })}
       </div>
 
       <div
@@ -363,11 +374,13 @@ export function ParallelWaveforms() {
         className="parallel-waveforms sticky top-0 z-30 w-full flex flex-col rounded-xl overflow-hidden border border-slate-800/40 backdrop-blur-[24px]"
         style={{ background: 'rgba(5, 5, 7, 0.97)' }}
       >
-        {/* Deck A Lane — Neon Blue (#00f2ff) */}
-        <div className="relative" style={{ borderBottom: '1px solid rgba(0,242,255,0.08)' }}>
+        {/* Deck A Lane */}
+        <div className="relative" style={{ borderBottom: `1px solid ${DECK_COLORS.A.hex}14` }}>
           <canvas ref={canvasARef} className="block w-full" style={{ height: 60 }} />
-          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest bg-black/60 rounded z-50 pointer-events-none"
-            style={{ color: '#00f2ff' }}>
+          <div
+            className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest bg-black/60 rounded z-50 pointer-events-none"
+            style={{ color: DECK_COLORS.A.hex }}
+          >
             A
           </div>
           {automationMode !== 'off' && containerWidth > 0 && (
@@ -376,13 +389,18 @@ export function ParallelWaveforms() {
         </div>
 
         {/* Separator — dual-color gradient */}
-        <div className="h-px bg-gradient-to-r from-[#00f2ff]/20 via-slate-700/30 to-[#ff00f2]/20" />
+        <div
+          className="h-px"
+          style={{ background: `linear-gradient(to right, ${DECK_COLORS.A.hex}33, rgba(100,116,139,0.3), ${DECK_COLORS.B.hex}33)` }}
+        />
 
-        {/* Deck B Lane — Neon Magenta (#ff00f2) */}
+        {/* Deck B Lane */}
         <div className="relative">
           <canvas ref={canvasBRef} className="block w-full" style={{ height: 60 }} />
-          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest bg-black/60 rounded z-50 pointer-events-none"
-            style={{ color: '#ff00f2' }}>
+          <div
+            className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest bg-black/60 rounded z-50 pointer-events-none"
+            style={{ color: DECK_COLORS.B.hex }}
+          >
             B
           </div>
           {automationMode !== 'off' && containerWidth > 0 && (

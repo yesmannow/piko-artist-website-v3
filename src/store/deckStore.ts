@@ -4,6 +4,14 @@ import { AudioEngine } from '@/lib/audioEngine';
 import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 import { PLACEHOLDER_BPM, PLACEHOLDER_KEY } from '@/lib/constants/analysisPlaceholders';
 
+/** Canonical per-deck accent colors — Liquid Obsidian design system.
+ *  Import this wherever deck colors are needed so every component is
+ *  automatically updated when the palette changes. */
+export const DECK_COLORS = {
+  A: { hex: '#00f2ff', rgb: '0,242,255' },   // Neon Blue
+  B: { hex: '#ff00f2', rgb: '255,0,242' },   // Neon Magenta
+} as const;
+
 export interface DeckState {
   track: Track | null;
   isPlaying: boolean;

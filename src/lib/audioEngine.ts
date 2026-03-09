@@ -132,6 +132,12 @@ export class AudioEngine {
   // Stems routing (Phase 8 Multi-track)
   public stems: Record<string, MediaStreamAudioDestinationNode>;
 
+  // ── Per-deck analysers for VU meters ──────────────────────────────────────
+  /** Registry mapping deckId → the AnalyserNode tapped after the deck's GainNode. */
+  private deckAnalyserRegistry: Map<string, AnalyserNode> = new Map();
+  /** Pre-allocated float buffers for each deck — reused every frame to avoid GC churn. */
+  private deckAnalyserBuffers: Map<string, Float32Array<ArrayBuffer>> = new Map();
+
   // ── Bézier automation ──────────────────────────────────────────────────────
   /** Registry mapping deckId → the GainNode that carries volume automation. */
   private deckGainRegistry: Map<string, GainNode> = new Map();
@@ -243,7 +249,12 @@ export class AudioEngine {
     const clamped = Math.max(0, Math.min(1, normalized));
     // Exponential mapping: 20 Hz → 20000 Hz
     const freq = 20 * Math.pow(1000, clamped);
-    this.macroHPF.frequency.setTargetAtTime(freq, this.context.currentTime, 0.05);
+    const now = this.context.currentTime;
+    // Cancel any in-flight automation before scheduling a new ramp to
+    // prevent zipper noise during rapid knob sweeps.
+    this.macroHPF.frequency.cancelScheduledValues(now);
+    this.macroHPF.frequency.setValueAtTime(this.macroHPF.frequency.value, now);
+    this.macroHPF.frequency.setTargetAtTime(freq, now, 0.05);
   }
 
   /**
@@ -254,8 +265,15 @@ export class AudioEngine {
   public setMacroDelay(mix: number, feedback: number): void {
     const clampedMix = Math.max(0, Math.min(1, mix));
     const clampedFb  = Math.max(0, Math.min(0.95, feedback));
-    this.macroDelayGain.gain.setTargetAtTime(clampedMix, this.context.currentTime, 0.05);
-    this.macroFeedbackGain.gain.setTargetAtTime(clampedFb, this.context.currentTime, 0.05);
+    const now = this.context.currentTime;
+    // Cancel any in-flight automation before scheduling a new ramp to
+    // prevent zipper noise during rapid knob sweeps.
+    this.macroDelayGain.gain.cancelScheduledValues(now);
+    this.macroDelayGain.gain.setValueAtTime(this.macroDelayGain.gain.value, now);
+    this.macroDelayGain.gain.setTargetAtTime(clampedMix, now, 0.05);
+    this.macroFeedbackGain.gain.cancelScheduledValues(now);
+    this.macroFeedbackGain.gain.setValueAtTime(this.macroFeedbackGain.gain.value, now);
+    this.macroFeedbackGain.gain.setTargetAtTime(clampedFb, now, 0.05);
   }
 
   public static getInstance(): AudioEngine {
@@ -354,11 +372,37 @@ export class AudioEngine {
   /**
    * Register the GainNode that controls volume for a deck so that
    * `applyVolumeAutomation` knows where to route the automation curve.
+   * Also creates and taps an AnalyserNode for the deck's VU meter.
    *
    * Call this once when the GainNode is created in `useDeckAudio`.
    */
   public registerDeckGain(deckId: 'A' | 'B', node: GainNode): void {
     this.deckGainRegistry.set(deckId, node);
+    // Tap an analyser from this gain node for VU metering (fftSize 256 = light weight).
+    if (!this.deckAnalyserRegistry.has(deckId)) {
+      const analyser = this.context.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0; // raw samples — ballistics applied in UI
+      node.connect(analyser);
+      this.deckAnalyserRegistry.set(deckId, analyser);
+      // Pre-allocate the read buffer once so getDeckLevel never allocates on the hot path.
+      this.deckAnalyserBuffers.set(deckId, new Float32Array(analyser.fftSize) as Float32Array<ArrayBuffer>);
+    }
+  }
+
+  /**
+   * Returns the instantaneous RMS level (0–1) of a deck's output.
+   * Reads the time-domain buffer directly — call from a requestAnimationFrame loop.
+   * Uses a pre-allocated Float32Array to avoid GC pressure at 60 fps.
+   */
+  public getDeckLevel(deckId: 'A' | 'B'): number {
+    const analyser = this.deckAnalyserRegistry.get(deckId);
+    if (!analyser) return 0;
+    const buf = this.deckAnalyserBuffers.get(deckId)!;
+    analyser.getFloatTimeDomainData(buf);
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    return Math.sqrt(sum / buf.length);
   }
 
   /**

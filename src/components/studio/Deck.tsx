@@ -3,7 +3,7 @@
 import { Play } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useCallback, DragEvent, useRef, useEffect } from 'react';
-import { useDeckStore } from '@/store/deckStore';
+import { useDeckStore, DECK_COLORS } from '@/store/deckStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDeckAudio } from '@/hooks/useDeckAudio';
 import { PerformancePads } from './PerformancePads';
@@ -13,16 +13,7 @@ interface DeckProps {
   deckId: 'A' | 'B';
 }
 
-// Phase 8: Per-deck accent colors (Neon Blue = A, Neon Magenta = B)
-const DECK_ACCENT: Record<'A' | 'B', string> = {
-  A: '#00f2ff',  // Neon Blue
-  B: '#ff00f2',  // Neon Magenta
-};
-const DECK_ACCENT_RGB: Record<'A' | 'B', string> = {
-  A: '0,242,255',
-  B: '255,0,242',
-};
-
+// Phase 8: Per-deck accent colors sourced from the canonical DECK_COLORS map.
 // Phase 8: Neon glassmorphic stem button base class
 const stemBtnBase =
   'flex-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border transition-all select-none touch-none active:scale-95';
@@ -44,8 +35,8 @@ const MOCK_LYRIC_PHRASES = [
 
 export function Deck({ deckId }: DeckProps) {
   const isRight = deckId === 'B';
-  const accent = DECK_ACCENT[deckId];
-  const accentRgb = DECK_ACCENT_RGB[deckId];
+  const accent = DECK_COLORS[deckId].hex;
+  const accentRgb = DECK_COLORS[deckId].rgb;
 
   const { loadTrack, toggleSlipMode, toggleStem, toggleSibilance, toggleSub } = useDeckStore();
   const { tracks } = useLibraryStore();
@@ -58,8 +49,6 @@ export function Deck({ deckId }: DeckProps) {
   const [, setTapTimes] = useState<number[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Rotation is sourced from Zustand (updated via updateTelemetry)
-  const rotation = useDeckStore((s) => (deckId === 'A' ? s.deckA : s.deckB).rotation);
   const jogWheelRef = useRef<HTMLDivElement>(null);
   const lastAngleRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
@@ -68,10 +57,12 @@ export function Deck({ deckId }: DeckProps) {
   // Transient Visualizer — per-bar heights for kick-drum pulse simulation
   const [transientBars, setTransientBars] = useState([0.3, 0.6, 0.4, 0.8, 0.35, 0.7, 0.45, 0.9]);
 
-  // Keep rotationRef in sync with store value for the animation loop
+  // Sync rotationRef from store once on mount so the animation loop starts
+  // at the correct position after a component remount.
   useEffect(() => {
-    rotationRef.current = rotation;
-  }, [rotation]);
+    const state = useDeckStore.getState();
+    rotationRef.current = deckId === 'A' ? state.deckA.rotation : state.deckB.rotation;
+  }, [deckId]);
 
   // Auto-rotation when playing
   useEffect(() => {
@@ -258,30 +249,6 @@ export function Deck({ deckId }: DeckProps) {
 
       {/* Waveform row */}
       <div className="waveform-container relative z-10 h-20 bg-black/50 rounded-lg overflow-hidden border border-slate-800/50">
-        <div className="absolute inset-0 flex items-center justify-center opacity-30">
-          <svg height="100%" preserveAspectRatio="none" width="100%">
-            <path
-              d={
-                !isRight
-                  ? 'M0 40 Q 50 10, 100 40 T 200 40 T 300 40 T 400 40 T 500 40'
-                  : 'M0 40 Q 50 70, 100 40 T 200 40 T 300 40 T 400 40 T 500 40'
-              }
-              fill="transparent"
-              stroke={accent}
-              strokeWidth="2"
-            />
-            <path
-              d={
-                !isRight
-                  ? 'M0 45 Q 60 20, 120 45 T 240 45 T 360 45 T 480 45 T 600 45'
-                  : 'M0 35 Q 60 60, 120 35 T 240 35 T 360 35 T 480 35 T 600 35'
-              }
-              fill="transparent"
-              stroke="#f43f5e"
-              strokeWidth="1"
-            />
-          </svg>
-        </div>
         <div
           className="absolute left-1/2 top-0 bottom-0 w-0.5 z-10"
           style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
@@ -380,7 +347,7 @@ export function Deck({ deckId }: DeckProps) {
               className="jog-wheel w-48 h-48 rounded-full border-4 border-[#0a0a0a] flex items-center justify-center relative cursor-pointer active:scale-95 transition-transform touch-none"
               style={{ boxShadow: `inset 0 0 20px rgba(0,0,0,0.9), 0 0 15px rgba(${accentRgb},0.15)` }}
             >
-              <JogWheel3D rotation={rotation} coverArt={track?.coverArt} isLoading={isLoading} slipActive={deckState.slipMode} ghostRotation={ghostTime} />
+              <JogWheel3D deckId={deckId} accentColor={accent} coverArt={track?.coverArt} isLoading={isLoading} slipActive={deckState.slipMode} ghostRotation={ghostTime} />
             </div>
           </div>
         )}
@@ -429,7 +396,7 @@ export function Deck({ deckId }: DeckProps) {
               className="jog-wheel w-48 h-48 rounded-full border-4 border-slate-800 flex items-center justify-center relative cursor-pointer active:scale-95 transition-transform touch-none"
               style={{ boxShadow: `0 0 15px rgba(${accentRgb},0.15)` }}
             >
-              <JogWheel3D rotation={rotation} coverArt={track?.coverArt} isLoading={isLoading} slipActive={deckState.slipMode} ghostRotation={ghostTime} />
+              <JogWheel3D deckId={deckId} accentColor={accent} coverArt={track?.coverArt} isLoading={isLoading} slipActive={deckState.slipMode} ghostRotation={ghostTime} />
             </div>
           </div>
         )}

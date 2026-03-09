@@ -1,11 +1,100 @@
 'use client';
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMixerStore } from '@/store/mixerStore';
 import { clsx } from 'clsx';
 import { FxChainBuilder } from './FxChainBuilder';
 import { ProductionExport } from './ProductionExport';
 import { AudioEngine } from '@/lib/audioEngine';
+import { DECK_COLORS } from '@/store/deckStore';
+
+// ── VU Ballistics constants ───────────────────────────────────────────────
+// Professional analog VU meters use ~300 ms integration; we approximate with
+// a one-pole IIR filter whose coefficients give ~60 ms attack / 400 ms decay.
+const VU_ATTACK_COEFF  = 1 - Math.exp(-1 / (0.06  * 60)); // τ = 60 ms  at 60 fps
+const VU_DECAY_COEFF   = 1 - Math.exp(-1 / (0.40  * 60)); // τ = 400 ms at 60 fps
+// RMS values from a typical mix are much lower than the 0–1 peak range, so we
+// scale up to use the full visual height of the VU column. 3.5 ≈ the reciprocal
+// of the average RMS of a −9 dBFS kick-dominated mix (≈ 0.28 RMS).
+const VU_RMS_SCALE_FACTOR = 3.5;
+
+// ── VuMeter ───────────────────────────────────────────────────────────────
+// Reads the per-deck analyser via requestAnimationFrame and applies ballistic
+// smoothing — zero React state updates inside the animation loop.
+
+function VuMeter({ deckId, color }: { deckId: 'A' | 'B'; color: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const levelRef  = useRef(0); // smoothed RMS, 0–1
+  const rafRef    = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const SEGMENTS = 7;
+    const SEG_H = Math.floor((H - SEGMENTS) / SEGMENTS);
+
+    // Segment colors from bottom (green) to top (red)
+    const segColors = [
+      '#22c55e', '#22c55e', '#22c55e', '#22c55e',
+      '#eab308', '#eab308',
+      '#ef4444',
+    ];
+
+    const draw = () => {
+      let raw: number;
+      try {
+        const engine = AudioEngine.getInstance();
+        raw = engine.getDeckLevel(deckId);
+      } catch {
+        raw = 0;
+      }
+
+      // Ballistic smoothing — attack is faster than decay
+      const prev = levelRef.current;
+      levelRef.current = raw > prev
+        ? prev + VU_ATTACK_COEFF  * (raw - prev)
+        : prev + VU_DECAY_COEFF   * (raw - prev);
+
+      const level = Math.min(1, levelRef.current * VU_RMS_SCALE_FACTOR);
+
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < SEGMENTS; i++) {
+        const segIndex = SEGMENTS - 1 - i; // 0 = bottom (green), 6 = top (red)
+        const threshold = (segIndex + 1) / SEGMENTS;
+        const active = level >= threshold;
+        const y = i * (SEG_H + 1);
+        ctx.fillStyle = active ? segColors[segIndex] : 'rgba(255,255,255,0.06)';
+        if (active) {
+          ctx.shadowColor = segColors[segIndex];
+          ctx.shadowBlur  = 4;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.fillRect(0, y, W, SEG_H);
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [deckId, color]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={6}
+      height={112}
+      className="rounded-sm"
+      style={{ imageRendering: 'pixelated' }}
+    />
+  );
+}
 
 function EQKnob({ label, value, onChange }: { label: string; value: number; onChange: (val: number) => void }) {
   const isDragging = useRef(false);
@@ -135,6 +224,8 @@ export function Mixer() {
 
   const handleCrossfaderDoubleClick = () => {
     setCrossfader(0);
+    // Haptic center-snap confirmation (5 ms pulse = crisp "click" feel)
+    if ('vibrate' in navigator) navigator.vibrate(5);
   };
 
   // Map crossfader value (-1 to 1) to left percentage (0% to 100%)
@@ -160,32 +251,19 @@ export function Mixer() {
           </div>
         </div>
       </div>
-      <div className="flex justify-center gap-6 w-full px-4">
+      <div className="flex justify-center gap-4 w-full px-4">
+        {/* Deck A volume fader (placeholder cap) */}
         <div className="w-6 h-32 fader-track rounded-full border border-slate-800 relative">
           <div className="absolute top-10 left-0 right-0 h-8 bg-slate-400 rounded-sm border border-slate-300 shadow-lg cursor-pointer flex items-center justify-center">
             <div className="w-4 h-0.5 bg-slate-600"></div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <div className="flex flex-col gap-1 justify-between py-2">
-            <div className="w-1.5 h-1 bg-red-500"></div>
-            <div className="w-1.5 h-1 bg-yellow-500"></div>
-            <div className="w-1.5 h-1 bg-yellow-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-          </div>
-          <div className="flex flex-col gap-1 justify-between py-2">
-            <div className="w-1.5 h-1 bg-red-500"></div>
-            <div className="w-1.5 h-1 bg-yellow-500"></div>
-            <div className="w-1.5 h-1 bg-yellow-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-            <div className="w-1.5 h-1 bg-green-500"></div>
-          </div>
+        {/* VU Meters — ballistic canvas, 60ms attack / 400ms decay */}
+        <div className="flex gap-1.5 items-end pb-1">
+          <VuMeter deckId="A" color={DECK_COLORS.A.hex} />
+          <VuMeter deckId="B" color={DECK_COLORS.B.hex} />
         </div>
+        {/* Deck B volume fader (placeholder cap) */}
         <div className="w-6 h-32 fader-track rounded-full border border-slate-800 relative">
           <div className="absolute bottom-4 left-0 right-0 h-8 bg-slate-400 rounded-sm border border-slate-300 shadow-lg cursor-pointer flex items-center justify-center">
             <div className="w-4 h-0.5 bg-slate-600"></div>
