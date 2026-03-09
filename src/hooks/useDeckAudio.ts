@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as Tone from 'tone';
 import { useDeckStore } from '@/store/deckStore';
 import { useMixerStore } from '@/store/mixerStore';
-import { AudioEngine, SlipModeManager } from '@/lib/audioEngine';
+import { AudioEngine, SlipModeManager, DeckRoutingNodes, SibilanceTamerNodes, SubGeneratorNodes } from '@/lib/audioEngine';
 import { ScheduleEvent } from '@/workers/automationWorker';
 
 export function useDeckAudio(deckId: 'A' | 'B') {
@@ -18,6 +18,12 @@ export function useDeckAudio(deckId: 'A' | 'B') {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const eqChainRef = useRef<ReturnType<AudioEngine['createEQChain']> | null>(null);
+
+  // Phase 8: Deck routing (3-path stem crossover + echo tail)
+  const deckRoutingRef = useRef<DeckRoutingNodes | null>(null);
+  // Phase 8: Asymmetric DSP nodes
+  const sibilanceTamerRef = useRef<SibilanceTamerNodes | null>(null);
+  const subGeneratorRef  = useRef<SubGeneratorNodes | null>(null);
   
   const deckFx = deckId === 'A' ? mixerState.fxA : mixerState.fxB;
   const fxNodesRef = useRef<Tone.ToneAudioNode[]>([]);
@@ -97,6 +103,33 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       // Register the gain node so AudioEngine can route automation curves
       engine.registerDeckGain(deckId, gainRef.current);
 
+      // Phase 8: Build the 3-path deck routing and wire it between EQ and master gain
+      const routing = engine.createDeckRouting();
+      deckRoutingRef.current = routing;
+
+      // Connect EQ output → deck routing input (each filter reads from EQ output)
+      eqChainRef.current.output.connect(routing.vocFilter);
+      eqChainRef.current.output.connect(routing.drumFilter);
+      eqChainRef.current.output.connect(routing.instFilter);
+
+      // Routing summing bus → master gain
+      routing.output.connect(gainRef.current);
+
+      // Phase 8: Asymmetric DSP — create the appropriate circuit per deck
+      if (deckId === 'A') {
+        const tamer = engine.createSibilanceTamer();
+        sibilanceTamerRef.current = tamer;
+        // Insert in parallel: EQ output → sibilanceTamer → gain
+        eqChainRef.current.output.connect(tamer.input);
+        tamer.output.connect(gainRef.current);
+      } else {
+        const subGen = engine.createSubGenerator();
+        subGeneratorRef.current = subGen;
+        // Insert in parallel: EQ output → subGenerator → gain
+        eqChainRef.current.output.connect(subGen.input);
+        subGen.output.connect(gainRef.current);
+      }
+
       // Connect Gain to master node
       engine.connectToMaster(gainRef.current);
     }
@@ -169,6 +202,63 @@ export function useDeckAudio(deckId: 'A' | 'B') {
     // Keep internal slip manager sync'd
     slipManagerRef.current.isActive = deckState.slipMode;
   }, [deckState.slipMode]);
+
+  // Phase 8: Smart-Mute Logic — artifact-free 100 ms stem cuts via scheduled ramp
+  useEffect(() => {
+    const routing = deckRoutingRef.current;
+    if (!routing) return;
+    const engine = AudioEngine.getInstance();
+    const now = engine.context.currentTime;
+
+    const applyMute = (node: GainNode, active: boolean) => {
+      node.gain.cancelScheduledValues(now);
+      if (!active) {
+        // Mute: fast exponential ramp to near-zero over 100 ms (artifact-free)
+        node.gain.setValueAtTime(node.gain.value, now);
+        node.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+      } else {
+        // Un-mute: short linear ramp up over 50 ms
+        node.gain.setValueAtTime(node.gain.value, now);
+        node.gain.linearRampToValueAtTime(1.0, now + 0.05);
+      }
+    };
+
+    applyMute(routing.vocGain,  deckState.stems.vocals);
+    applyMute(routing.drumGain, deckState.stems.drums);
+    applyMute(routing.instGain, deckState.stems.inst);
+
+    // Post-Mute Echo Tail: briefly open echo send when vocals are silenced
+    if (!deckState.stems.vocals) {
+      routing.echoSend.gain.cancelScheduledValues(now);
+      routing.echoSend.gain.setValueAtTime(0.7, now);
+      routing.echoSend.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+    } else {
+      routing.echoSend.gain.cancelScheduledValues(now);
+      routing.echoSend.gain.setValueAtTime(routing.echoSend.gain.value, now);
+      routing.echoSend.gain.linearRampToValueAtTime(0, now + 0.1);
+    }
+  }, [deckState.stems]);
+
+  // Phase 8: Sibilance Tamer toggle (Deck A only)
+  useEffect(() => {
+    if (deckId !== 'A' || !sibilanceTamerRef.current) return;
+    const active = deckState.sibilanceTamerActive;
+    // Activate by boosting the peaking filter (+8 dB) to sensitise the compressor
+    sibilanceTamerRef.current.input.gain.value = active ? 8 : 0;
+  }, [deckState.sibilanceTamerActive, deckId]);
+
+  // Phase 8: Sub-Generator toggle (Deck B only)
+  useEffect(() => {
+    if (deckId !== 'B' || !subGeneratorRef.current) return;
+    const engine = AudioEngine.getInstance();
+    const now = engine.context.currentTime;
+    const target = deckState.subGeneratorActive ? 0.4 : 0;
+    subGeneratorRef.current.output.gain.cancelScheduledValues(now);
+    subGeneratorRef.current.output.gain.setValueAtTime(
+      subGeneratorRef.current.output.gain.value, now
+    );
+    subGeneratorRef.current.output.gain.linearRampToValueAtTime(target, now + 0.05);
+  }, [deckState.subGeneratorActive, deckId]);
 
   useEffect(() => {
     const engine = AudioEngine.getInstance();

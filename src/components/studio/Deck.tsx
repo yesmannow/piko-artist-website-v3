@@ -13,9 +13,15 @@ interface DeckProps {
   deckId: 'A' | 'B';
 }
 
+// Phase 8: Neon glassmorphic stem button base class
+const stemBtnBase =
+  'flex-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border transition-all select-none touch-none active:scale-95';
+const stemBtnInactive =
+  'bg-slate-900/60 border-slate-700/50 text-slate-600 hover:text-slate-400';
+
 export function Deck({ deckId }: DeckProps) {
   const isRight = deckId === 'B';
-  const { loadTrack, toggleSlipMode } = useDeckStore();
+  const { loadTrack, toggleSlipMode, toggleStem, toggleSibilance, toggleSub } = useDeckStore();
   const { tracks } = useLibraryStore();
   const { 
     currentTime, ghostTime, deckState, duration, isPlaying, isLoading, track, 
@@ -50,6 +56,7 @@ export function Deck({ deckId }: DeckProps) {
         // 33 1/3 RPM = 33.333 / 60 * 360 = 200 degrees per second
         const newRotation = (rotationRef.current + (200 * dt) / 1000) % 360;
         rotationRef.current = newRotation;
+        // Zero-lag: read/write store via getState() to bypass React re-renders
         useDeckStore.getState().updateTelemetry(deckId, { rotation: newRotation });
       }
       lastTime = time;
@@ -165,11 +172,17 @@ export function Deck({ deckId }: DeckProps) {
   const keySignature = track?.key || '--';
   const timeRemaining = track ? formatTime(duration - currentTime) : '00:00.00';
 
+  // Phase 8: stem / DSP state snapshots
+  const stems = deckState.stems;
+  const sibilanceTamerActive = deckState.sibilanceTamerActive;
+  const subGeneratorActive   = deckState.subGeneratorActive;
+
   return (
     <div 
       className={clsx(
-        "col-span-12 lg:col-span-5 bg-[#0a0a0a] shadow-[inset_0_4px_24px_rgba(0,0,0,0.8)] rounded-xl border p-6 flex flex-col gap-4 transition-colors duration-300 relative overflow-hidden",
-        isDragOver ? "border-accent shadow-[0_0_30px_rgba(0,242,255,0.2)] bg-accent/10" : "border-slate-800/80"
+        "col-span-12 lg:col-span-5 shadow-[inset_0_4px_24px_rgba(0,0,0,0.9)] rounded-xl border p-6 flex flex-col gap-4 transition-colors duration-300 relative overflow-hidden",
+        "bg-[var(--color-obsidian-900)] backdrop-blur-2xl",
+        isDragOver ? "border-accent shadow-[0_0_30px_rgba(0,242,255,0.2)] bg-accent/10" : "border-slate-800/60"
       )}
       style={track?.coverArt ? {
         backgroundImage: `url(${track.coverArt})`,
@@ -181,9 +194,11 @@ export function Deck({ deckId }: DeckProps) {
       onDrop={handleDrop}
     >
       {track?.coverArt && (
-        <div className="absolute inset-0 bg-[#0a0a0a]/70 backdrop-blur-2xl pointer-events-none z-0"></div>
+        <div className="absolute inset-0 bg-[var(--color-obsidian-900)]/80 backdrop-blur-2xl pointer-events-none z-0"></div>
       )}
-      <div className="waveform-container relative z-10 h-20 bg-black/40 rounded-lg overflow-hidden border border-slate-800/50">
+
+      {/* Waveform row */}
+      <div className="waveform-container relative z-10 h-20 bg-black/50 rounded-lg overflow-hidden border border-slate-800/50">
         <div className="absolute inset-0 flex items-center justify-center opacity-30">
           <svg height="100%" preserveAspectRatio="none" width="100%">
             <path
@@ -248,27 +263,51 @@ export function Deck({ deckId }: DeckProps) {
             3
           </div>
         </div>
+        {/* Phase 8: Neon glassmorphic stem quick-access buttons */}
         <div className="absolute top-1 right-2 flex gap-1">
-          <button className="w-5 h-5 bg-slate-900/80 border border-slate-700 rounded text-[9px] font-bold text-accent hover:bg-accent hover:text-primary transition-colors">
+          <button
+            onClick={() => toggleStem(deckId, 'vocals')}
+            className={clsx(
+              'w-5 h-5 rounded text-[9px] font-bold transition-all border select-none touch-none active:scale-95',
+              stems.vocals
+                ? 'text-[#bf00ff] border-[#bf00ff]/60 bg-[#bf00ff]/15 shadow-[0_0_6px_#bf00ff]'
+                : 'bg-slate-900/80 border-slate-700 text-slate-600 hover:text-slate-400'
+            )}
+          >
             V
           </button>
-          <button className="w-5 h-5 bg-slate-900/80 border border-slate-700 rounded text-[9px] font-bold text-accent hover:bg-accent hover:text-primary transition-colors">
+          <button
+            onClick={() => toggleStem(deckId, 'drums')}
+            className={clsx(
+              'w-5 h-5 rounded text-[9px] font-bold transition-all border select-none touch-none active:scale-95',
+              stems.drums
+                ? 'text-[#00f2ff] border-accent/60 bg-accent/15 shadow-[0_0_6px_#00f2ff]'
+                : 'bg-slate-900/80 border-slate-700 text-slate-600 hover:text-slate-400'
+            )}
+          >
             D
           </button>
-          <button className="w-5 h-5 bg-slate-900/80 border border-slate-700 rounded text-[9px] font-bold text-accent hover:bg-accent hover:text-primary transition-colors">
-            B
-          </button>
-          <button className="w-5 h-5 bg-slate-900/80 border border-slate-700 rounded text-[9px] font-bold text-accent hover:bg-accent hover:text-primary transition-colors">
-            M
+          <button
+            onClick={() => toggleStem(deckId, 'inst')}
+            className={clsx(
+              'w-5 h-5 rounded text-[9px] font-bold transition-all border select-none touch-none active:scale-95',
+              stems.inst
+                ? 'text-[#f59e0b] border-[#f59e0b]/60 bg-[#f59e0b]/15 shadow-[0_0_6px_#f59e0b]'
+                : 'bg-slate-900/80 border-slate-700 text-slate-600 hover:text-slate-400'
+            )}
+          >
+            I
           </button>
         </div>
       </div>
+
+      {/* Track info row */}
       <div className="flex items-center justify-between relative z-10">
         <div>
           <h3 className="text-accent font-bold text-lg">{title}</h3>
           <div className="flex items-center gap-2">
             <p className="text-slate-500 text-xs">
-              {artist} • {bpm} BPM • {keySignature}
+              {artist} &bull; {bpm} BPM &bull; {keySignature}
             </p>
             <button
               onClick={handleTap}
@@ -283,6 +322,8 @@ export function Deck({ deckId }: DeckProps) {
           <p className="text-slate-500 text-[10px] uppercase tracking-widest">Remaining</p>
         </div>
       </div>
+
+      {/* Transport + Jog row */}
       <div className="flex justify-between items-center py-4 relative z-10">
         {!isRight && (
           <div className="flex flex-col gap-4 items-center">
@@ -361,7 +402,144 @@ export function Deck({ deckId }: DeckProps) {
           </div>
         )}
       </div>
-      
+
+      {/* Phase 8: Asymmetric Bento HUDs */}
+      {deckId === 'A' ? (
+        /* Deck A — Vocal Presence HUD */
+        <div
+          className="relative z-10 rounded-lg border border-[#bf00ff]/20 bg-[#bf00ff]/5 backdrop-blur-md p-3 flex flex-col gap-2"
+          style={{ boxShadow: '0 0 16px rgba(191,0,255,0.08)' }}
+        >
+          <span className="text-[9px] uppercase tracking-widest text-[#bf00ff]/60 font-bold">
+            Vocal Presence HUD
+          </span>
+          {/* Phase 8: Stem toggles — vocals highlighted in #bf00ff */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => toggleStem('A', 'vocals')}
+              className={clsx(
+                stemBtnBase,
+                stems.vocals
+                  ? 'text-[#bf00ff] border-[#bf00ff]/70 bg-[#bf00ff]/20 shadow-[0_0_10px_#bf00ff]'
+                  : stemBtnInactive
+              )}
+            >
+              VOC
+            </button>
+            <button
+              onClick={() => toggleStem('A', 'drums')}
+              className={clsx(
+                stemBtnBase,
+                stems.drums
+                  ? 'text-[#00f2ff] border-[#00f2ff]/70 bg-[#00f2ff]/15 shadow-[0_0_8px_#00f2ff]'
+                  : stemBtnInactive
+              )}
+            >
+              DRUM
+            </button>
+            <button
+              onClick={() => toggleStem('A', 'inst')}
+              className={clsx(
+                stemBtnBase,
+                stems.inst
+                  ? 'text-[#f59e0b] border-[#f59e0b]/70 bg-[#f59e0b]/15 shadow-[0_0_8px_#f59e0b]'
+                  : stemBtnInactive
+              )}
+            >
+              INST
+            </button>
+          </div>
+          {/* Sibilance Tamer (de-esser) */}
+          <button
+            onClick={() => toggleSibilance('A')}
+            className={clsx(
+              'py-1 rounded text-[9px] font-bold uppercase tracking-widest border transition-all select-none touch-none active:scale-95 w-full',
+              sibilanceTamerActive
+                ? 'text-[#bf00ff] border-[#bf00ff]/60 bg-[#bf00ff]/15 shadow-[0_0_10px_#bf00ff]'
+                : 'bg-slate-900/60 border-slate-700/50 text-slate-500 hover:text-slate-300'
+            )}
+          >
+            {sibilanceTamerActive ? '◉ Sibilance Tamer ON' : '○ Sibilance Tamer'}
+          </button>
+        </div>
+      ) : (
+        /* Deck B — Transient Shaping HUD */
+        <div
+          className="relative z-10 rounded-lg border border-[#00f2ff]/20 bg-[#00f2ff]/5 backdrop-blur-md p-3 flex flex-col gap-2"
+          style={{ boxShadow: '0 0 16px rgba(0,242,255,0.06)' }}
+        >
+          <span className="text-[9px] uppercase tracking-widest text-[#00f2ff]/60 font-bold">
+            Transient Shaping HUD
+          </span>
+          {/* Stem toggles */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => toggleStem('B', 'vocals')}
+              className={clsx(
+                stemBtnBase,
+                stems.vocals
+                  ? 'text-[#bf00ff] border-[#bf00ff]/70 bg-[#bf00ff]/20 shadow-[0_0_10px_#bf00ff]'
+                  : stemBtnInactive
+              )}
+            >
+              VOC
+            </button>
+            <button
+              onClick={() => toggleStem('B', 'drums')}
+              className={clsx(
+                stemBtnBase,
+                stems.drums
+                  ? 'text-[#00f2ff] border-[#00f2ff]/70 bg-[#00f2ff]/15 shadow-[0_0_8px_#00f2ff]'
+                  : stemBtnInactive
+              )}
+            >
+              DRUM
+            </button>
+            <button
+              onClick={() => toggleStem('B', 'inst')}
+              className={clsx(
+                stemBtnBase,
+                stems.inst
+                  ? 'text-[#f59e0b] border-[#f59e0b]/70 bg-[#f59e0b]/15 shadow-[0_0_8px_#f59e0b]'
+                  : stemBtnInactive
+              )}
+            >
+              INST
+            </button>
+          </div>
+          {/* Sub-Generator toggle + Rhythm Engine visual cues */}
+          <div className="flex gap-1 items-center">
+            <button
+              onClick={() => toggleSub('B')}
+              className={clsx(
+                'flex-1 py-1 rounded text-[9px] font-bold uppercase tracking-widest border transition-all select-none touch-none active:scale-95',
+                subGeneratorActive
+                  ? 'text-[#00f2ff] border-[#00f2ff]/60 bg-[#00f2ff]/15 shadow-[0_0_10px_#00f2ff]'
+                  : 'bg-slate-900/60 border-slate-700/50 text-slate-500 hover:text-slate-300'
+              )}
+            >
+              {subGeneratorActive ? '◉ Sub Gen ON' : '○ Sub Generator'}
+            </button>
+            {/* Rhythm Engine visual cue — animated bars when playing */}
+            <div className="flex gap-0.5 items-end px-1">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={clsx(
+                    'w-1 rounded-full transition-all duration-75',
+                    isPlaying ? 'bg-[#00f2ff] animate-pulse' : 'bg-slate-700'
+                  )}
+                  style={{
+                    height: `${8 + i * 3}px`,
+                    animationDelay: `${i * 80}ms`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 8-Pad Performance Grid */}
       <PerformancePads deckId={deckId} />
     </div>

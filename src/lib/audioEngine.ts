@@ -68,6 +68,48 @@ export class SlipModeManager {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Phase 8: Quantum Remix — DSP node type contracts ─────────────────────────
+
+/** All nodes returned by `AudioEngine.createDeckRouting()`. */
+export interface DeckRoutingNodes {
+  /** Bandpass filter for the VOC (vocal) path — 500 Hz – 8 kHz. */
+  vocFilter:   BiquadFilterNode;
+  /** Low-pass filter for the DRUM path — ≤ 500 Hz. */
+  drumFilter:  BiquadFilterNode;
+  /** High-pass filter for the INST path — ≥ 8 kHz. */
+  instFilter:  BiquadFilterNode;
+  /** Gain node controlling VOC path mute/unmute. */
+  vocGain:     GainNode;
+  /** Gain node controlling DRUM path mute/unmute. */
+  drumGain:    GainNode;
+  /** Gain node controlling INST path mute/unmute. */
+  instGain:    GainNode;
+  /** Echo send gain — opens briefly when VOC is muted (Post-Mute Echo Tail). */
+  echoSend:    GainNode;
+  /** Delay line for the echo tail. */
+  echoDelay:   DelayNode;
+  /** Feedback gain node — loops delay output back into input. */
+  echoFeedback: GainNode;
+  /** Echo return gain — feeds delay output into the summing bus. */
+  echoReturn:  GainNode;
+  /** Summing output — connect this to the downstream signal chain. */
+  output:      GainNode;
+}
+
+/** Nodes returned by `AudioEngine.createSibilanceTamer()`. */
+export interface SibilanceTamerNodes {
+  input:  BiquadFilterNode;
+  output: DynamicsCompressorNode;
+}
+
+/** Nodes returned by `AudioEngine.createSubGenerator()`. */
+export interface SubGeneratorNodes {
+  input:  BiquadFilterNode;
+  output: GainNode;
+}
+
 export class AudioEngine {
   private static instance: AudioEngine;
   public context: AudioContext;
@@ -357,5 +399,159 @@ export class AudioEngine {
    */
   public getBezierWorker(): Worker | null {
     return this.bezierWorker;
+  }
+
+  // ── Phase 8: Quantum Remix DSP ────────────────────────────────────────────
+
+  /**
+   * Creates 3 parallel phase-locked biquad crossover paths for virtual stems:
+   *   VOC  (bandpass  500 Hz – 8 kHz  — vocal presence range)
+   *   DRUM (low-pass  ≤ 500 Hz        — kick/snare fundamentals)
+   *   INST (high-pass ≥ 8 kHz         — air/presence/instruments)
+   *
+   * Each path has an independent GainNode for muting and a shared Post-Mute
+   * Echo Tail on the VOC path that briefly opens when vocals are silenced.
+   *
+   * Signal flow (per deck):
+   *   input ─┬─ vocFilter  ─ vocGain  ─┐
+   *           ├─ drumFilter ─ drumGain ─┤─ output
+   *           └─ instFilter ─ instGain ─┘
+   *   vocGain ──── echoSend ─ echoDelay ─ echoFeedback (loop) ─ echoReturn ─ output
+   */
+  public createDeckRouting(): DeckRoutingNodes {
+    const ctx = this.context;
+
+    // ── Crossover filters ──────────────────────────────────────────────────
+    const vocFilter = ctx.createBiquadFilter();
+    vocFilter.type = 'bandpass';
+    vocFilter.frequency.value = 2000;  // centre of 500 Hz – 8 kHz
+    vocFilter.Q.value = 0.7;           // −3 dB points at ~500 Hz and ~8 kHz
+
+    const drumLpf = ctx.createBiquadFilter();
+    drumLpf.type = 'lowpass';
+    drumLpf.frequency.value = 500;
+    drumLpf.Q.value = 0.7;
+
+    const instHpf = ctx.createBiquadFilter();
+    instHpf.type = 'highpass';
+    instHpf.frequency.value = 8000;
+    instHpf.Q.value = 0.7;
+
+    // ── Per-stem gain nodes ────────────────────────────────────────────────
+    const vocGain  = ctx.createGain();
+    const drumGain = ctx.createGain();
+    const instGain = ctx.createGain();
+
+    // ── Summing output ─────────────────────────────────────────────────────
+    const output = ctx.createGain();
+    output.gain.value = 1;
+
+    // ── Post-Mute Echo Tail (VOC path only) ───────────────────────────────
+    const echoSend     = ctx.createGain();
+    echoSend.gain.value = 0;            // closed by default
+
+    const echoDelay    = ctx.createDelay(2.0);
+    echoDelay.delayTime.value = 0.375;  // dotted-eighth at 120 BPM
+
+    const echoFeedback = ctx.createGain();
+    echoFeedback.gain.value = 0.35;
+
+    const echoReturn   = ctx.createGain();
+    echoReturn.gain.value = 0.6;
+
+    // ── Wire signal graph ─────────────────────────────────────────────────
+    vocFilter.connect(vocGain);
+    drumLpf.connect(drumGain);
+    instHpf.connect(instGain);
+
+    vocGain.connect(output);
+    drumGain.connect(output);
+    instGain.connect(output);
+
+    // Echo tail: voc signal → echoSend → delay → feedback loop → echoReturn → output
+    vocGain.connect(echoSend);
+    echoSend.connect(echoDelay);
+    echoDelay.connect(echoFeedback);
+    echoFeedback.connect(echoDelay);    // feedback loop
+    echoDelay.connect(echoReturn);
+    echoReturn.connect(output);
+
+    return {
+      vocFilter,
+      drumFilter: drumLpf,
+      instFilter: instHpf,
+      vocGain,
+      drumGain,
+      instGain,
+      echoSend,
+      echoDelay,
+      echoFeedback,
+      echoReturn,
+      output,
+    };
+  }
+
+  /**
+   * Creates a Sibilance Tamer (de-esser / dynamic EQ) for Deck A.
+   * Circuit:  input → sibilanceFilter (peaking, 7 kHz) → compressor → output
+   * The peaking filter boosts the detector band; the compressor reacts to
+   * the boosted signal and reduces gain at that frequency.
+   */
+  public createSibilanceTamer(): SibilanceTamerNodes {
+    const ctx = this.context;
+
+    // Peaking filter centred at 7 kHz — targets harsh sibilance
+    const sibilanceFilter = ctx.createBiquadFilter();
+    sibilanceFilter.type   = 'peaking';
+    sibilanceFilter.frequency.value = 7000;
+    sibilanceFilter.Q.value         = 3;
+    sibilanceFilter.gain.value      = 0; // flat until activated
+
+    // Dynamic compressor reacts quickly to sibilant transients
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -20;
+    compressor.knee.value      = 6;
+    compressor.ratio.value     = 8;
+    compressor.attack.value    = 0.001;  // 1 ms — catches fast sibilants
+    compressor.release.value   = 0.08;   // 80 ms release
+
+    sibilanceFilter.connect(compressor);
+
+    return { input: sibilanceFilter, output: compressor };
+  }
+
+  /**
+   * Creates a Sub-Generator (low-harmonic exciter) for Deck B.
+   * Circuit:  input → subLpf → waveshaper (soft-clip) → subGain → output
+   * The LPF isolates the sub-bass; the waveshaper adds low-order harmonics
+   * (2nd & 3rd) that are perceived as added body on smaller speakers.
+   */
+  public createSubGenerator(): SubGeneratorNodes {
+    const ctx = this.context;
+
+    // Isolate sub-bass below 120 Hz
+    const subLpf = ctx.createBiquadFilter();
+    subLpf.type            = 'lowpass';
+    subLpf.frequency.value = 120;
+    subLpf.Q.value         = 0.7;
+
+    // Waveshaper: soft-clip generates 2nd/3rd harmonics
+    const shaper = ctx.createWaveShaper();
+    const curve  = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const x = (i * 2) / 255 - 1;
+      curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+    }
+    shaper.curve     = curve;
+    shaper.oversample = '2x';
+
+    // Output gain — kept modest so it blends as enrichment
+    const subGain = ctx.createGain();
+    subGain.gain.value = 0; // inactive until toggled
+
+    subLpf.connect(shaper);
+    shaper.connect(subGain);
+
+    return { input: subLpf, output: subGain };
   }
 }
