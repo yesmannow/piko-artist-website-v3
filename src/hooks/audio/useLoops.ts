@@ -22,12 +22,19 @@ export function useLoops(
   bpm?: number
 ) {
   const [loop, setLoop] = useState<TrackLoop | null>(null);
+  const [prevTrackKey, setPrevTrackKey] = useState(trackKey);
   const loopEngineRef = useRef<LoopEngine>(new LoopEngine());
+
+  // Respond to trackKey changes synchronously during render
+  if (trackKey !== prevTrackKey) {
+    setPrevTrackKey(trackKey);
+    setLoop(null);
+  }
 
   // Update player and BPM when they change
   useEffect(() => {
     if (player) {
-      loopEngineRef.current.setPlayer(player as any);
+      loopEngineRef.current.setPlayer(player as Parameters<LoopEngine['setPlayer']>[0]);
     }
     if (bpm) {
       loopEngineRef.current.setBPM(bpm);
@@ -36,11 +43,10 @@ export function useLoops(
 
   // Load loop from Dexie when track changes
   useEffect(() => {
-    if (!trackKey) {
-      setLoop(null);
-      loopEngineRef.current.clearLoop();
-      return;
-    }
+    // Always clear engine on track change
+    loopEngineRef.current.clearLoop();
+
+    if (!trackKey) return;
 
     const loadLoop = async () => {
       try {

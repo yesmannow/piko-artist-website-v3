@@ -3,6 +3,8 @@
  *
  * Local-first track insights storage for AI-powered match suggestions.
  * Stores BPM, key, energy analysis results with version tracking.
+ *
+ * Phase V3: AcoustID metadata intelligence — verified track info.
  */
 
 import Dexie, { type EntityTable } from 'dexie';
@@ -40,12 +42,26 @@ export interface BeatGridData {
 }
 
 /**
+ * Phase V3: AcoustID-verified metadata intelligence
+ * Stores verified track info from the AcoustID fingerprinting service
+ */
+export interface AcoustIDMetadata {
+  trackId: string;            // Primary key — matches TrackInsights.trackId
+  verifiedTitle: string;      // Title from AcoustID
+  verifiedArtist: string;     // Artist from AcoustID
+  acoustid_id: string;        // AcoustID fingerprint ID
+  confidenceScore: number;    // Match confidence (0.0 to 1.0)
+  verifiedAt: number;         // Timestamp of verification
+}
+
+/**
  * Studio database class
  * Uses Dexie for IndexedDB with TypeScript support
  */
 export class StudioDatabase extends Dexie {
   insights!: EntityTable<TrackInsights, 'trackId'>;
   beatgrids!: EntityTable<BeatGridData, 'trackKey'>;
+  metadata!: EntityTable<AcoustIDMetadata, 'trackId'>;
 
   constructor() {
     super('pikoStudio');
@@ -59,6 +75,13 @@ export class StudioDatabase extends Dexie {
     this.version(2).stores({
       insights: 'trackId, key, bpm, energy, analyzedAt',
       beatgrids: 'trackKey, bpm, confidence, detectedAt',
+    });
+
+    // Version 3: Phase V3 - AcoustID metadata intelligence
+    this.version(3).stores({
+      insights: 'trackId, key, bpm, energy, analyzedAt',
+      beatgrids: 'trackKey, bpm, confidence, detectedAt',
+      metadata: 'trackId, acoustid_id, confidenceScore, verifiedAt',
     });
   }
 }
@@ -301,3 +324,26 @@ export async function bulkSaveMatchScores(
     console.error('[StudioDB] Failed to bulk save match scores:', error);
   }
 }
+
+/**
+ * Phase V3: Metadata Intelligence Functions
+ */
+
+export async function getVerifiedMetadata(trackId: string): Promise<AcoustIDMetadata | undefined> {
+  try {
+    return await studioDb.metadata.get(trackId);
+  } catch (error) {
+    console.error('[StudioDB] Failed to get metadata:', error);
+    return undefined;
+  }
+}
+
+export async function saveVerifiedMetadata(metadata: AcoustIDMetadata): Promise<void> {
+  try {
+    await studioDb.metadata.put(metadata);
+  } catch (error) {
+    console.error('[StudioDB] Failed to save metadata:', error);
+    throw error;
+  }
+}
+

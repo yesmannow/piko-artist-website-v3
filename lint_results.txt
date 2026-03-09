@@ -1,0 +1,290 @@
+
+C:\dev\piko-artist-website-v3\src\app\(site)\contact\page.tsx
+  139:16  warning  Function 'ContactPage' has too many lines (843). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\app\(site)\music\page.tsx
+  280:20  warning  Define a constant instead of duplicating this literal 5 times  sonarjs/no-duplicate-string
+
+C:\dev\piko-artist-website-v3\src\app\api\ai\recommend\route.ts
+  9:8  warning  Async function 'POST' has a complexity of 17. Maximum allowed is 15  complexity
+
+C:\dev\piko-artist-website-v3\src\app\api\studio\analyze-track\route.ts
+  12:8  warning  Async function 'POST' has a complexity of 17. Maximum allowed is 15  complexity
+
+C:\dev\piko-artist-website-v3\src\app\studio\TrackLibrary.tsx
+  21:8   warning  Function 'TrackLibrary' has too many lines (190). Maximum allowed is 150                 max-lines-per-function
+  30:10  warning  'activeTab' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  30:21  warning  'setActiveTab' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  58:17  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  59:17  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\app\studio\WaveformCanvas.tsx
+  18:3  warning  'isPlaying' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\app\studio\useWebAudio.ts
+  59:8  warning  Function 'useWebAudio' has too many lines (243). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\app\sw.ts
+  145:16  warning  Refactor this function to reduce its Cognitive Complexity from 29 to the 20 allowed  sonarjs/cognitive-complexity
+  172:11  warning  Blocks are nested too deeply (5). Maximum allowed is 4                               max-depth
+  190:11  warning  Blocks are nested too deeply (5). Maximum allowed is 4                               max-depth
+  192:13  warning  Blocks are nested too deeply (6). Maximum allowed is 4                               max-depth
+
+C:\dev\piko-artist-website-v3\src\audio\waveform\computePeaks.ts
+  27:8   warning  Function 'computePeaks' has a complexity of 17. Maximum allowed is 15                complexity
+  27:17  warning  Refactor this function to reduce its Cognitive Complexity from 38 to the 20 allowed  sonarjs/cognitive-complexity
+
+C:\dev\piko-artist-website-v3\src\components\HomeBookingTerminal.tsx
+  23:8  warning  Function 'HomeBookingTerminal' has too many lines (158). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\ImmersivePlayerOverlay.tsx
+  258:8  warning  Function 'ImmersivePlayerOverlay' has too many lines (476). Maximum allowed is 150  max-lines-per-function
+  258:8  warning  Function 'ImmersivePlayerOverlay' has a complexity of 31. Maximum allowed is 15     complexity
+
+C:\dev\piko-artist-website-v3\src\components\PersistentPlayer.tsx
+  10:8  warning  Function 'PersistentPlayer' has too many lines (232). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\ScrollRestorationManager.tsx
+   21:8   warning  Function 'ScrollRestorationManager' has too many lines (155). Maximum allowed is 150  max-lines-per-function
+  139:35  warning  Refactor this function to reduce its Cognitive Complexity from 29 to the 20 allowed   sonarjs/cognitive-complexity
+  139:35  warning  Arrow function has a complexity of 16. Maximum allowed is 15                          complexity
+
+C:\dev\piko-artist-website-v3\src\components\TrackList.tsx
+   73:1  warning  Function 'TrackCard' has too many lines (197). Maximum allowed is 150  max-lines-per-function
+  285:8  warning  Function 'TrackList' has too many lines (215). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\studio\core\DeckFXRack.tsx
+  30:8   warning  Function 'DeckFXRack' has too many lines (206). Maximum allowed is 150                                                                                                                                                                                                       max-lines-per-function
+  70:45  warning  The ref value 'buildupAnimRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'buildupAnimRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+C:\dev\piko-artist-website-v3\src\components\studio\deck\Deck.tsx
+  59:8  warning  Function 'Deck' has too many lines (343). Maximum allowed is 150  max-lines-per-function
+  59:8  warning  Function 'Deck' has a complexity of 52. Maximum allowed is 15     complexity
+
+C:\dev\piko-artist-website-v3\src\components\studio\deck\Deck3DToggle.tsx
+  10:10  warning  'useStudioStore' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\components\studio\deck\DeckGrid.tsx
+   47:1  warning  Function 'ChannelStrip' has too many lines (187). Maximum allowed is 150  max-lines-per-function
+  268:8  warning  Function 'DeckGrid' has too many lines (202). Maximum allowed is 150      max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\studio\deck\DeckWaveformWS.tsx
+   39:8   warning  Function 'DeckWaveformWS' has too many lines (193). Maximum allowed is 150  max-lines-per-function
+  101:70  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\components\studio\fx\XYPad.tsx
+  12:25  warning  'deckId' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\components\studio\layout\StudioGrid.tsx
+  63:8  warning  Function 'StudioGrid' has too many lines (208). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\studio\layout\StudioLayout.tsx
+  25:8  warning  Function 'StudioLayout' has too many lines (207). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\studio\layout\StudioPanels.tsx
+  43:8  warning  Function 'StudioPanels' has a complexity of 23. Maximum allowed is 15  complexity
+
+C:\dev\piko-artist-website-v3\src\components\studio\library\TrackLibrary.tsx
+  38:8  warning  Function 'TrackLibrary' has too many lines (478). Maximum allowed is 150  max-lines-per-function
+  38:8  warning  Function 'TrackLibrary' has a complexity of 26. Maximum allowed is 15     complexity
+
+C:\dev\piko-artist-website-v3\src\components\studio\library\TrackListing.tsx
+  57:8   warning  Function 'TrackListing' has too many lines (286). Maximum allowed is 150             max-lines-per-function
+  57:8   warning  Function 'TrackListing' has a complexity of 52. Maximum allowed is 15                complexity
+  57:17  warning  Refactor this function to reduce its Cognitive Complexity from 37 to the 20 allowed  sonarjs/cognitive-complexity
+
+C:\dev\piko-artist-website-v3\src\components\studio\mixer\QuantizeControl.tsx
+  27:8   warning  Function 'QuantizeControl' has too many lines (252). Maximum allowed is 150                 max-lines-per-function
+  27:8   warning  Function 'QuantizeControl' has a complexity of 24. Maximum allowed is 15                    complexity
+  28:10  warning  'showStrength' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  28:24  warning  'setShowStrength' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  49:12  warning  Define a constant instead of duplicating this literal 8 times                               sonarjs/no-duplicate-string
+  73:20  warning  Define a constant instead of duplicating this literal 5 times                               sonarjs/no-duplicate-string
+
+C:\dev\piko-artist-website-v3\src\components\studio\mixer\SyncControl.tsx
+   28:8   warning  Function 'SyncControl' has too many lines (305). Maximum allowed is 150              max-lines-per-function
+   28:8   warning  Function 'SyncControl' has a complexity of 43. Maximum allowed is 15                 complexity
+   28:17  warning  Refactor this function to reduce its Cognitive Complexity from 32 to the 20 allowed  sonarjs/cognitive-complexity
+   52:53  warning  Define a constant instead of duplicating this literal 6 times                        sonarjs/no-duplicate-string
+   66:27  warning  Define a constant instead of duplicating this literal 5 times                        sonarjs/no-duplicate-string
+   93:22  warning  Define a constant instead of duplicating this literal 7 times                        sonarjs/no-duplicate-string
+  102:55  warning  Define a constant instead of duplicating this literal 5 times                        sonarjs/no-duplicate-string
+
+C:\dev\piko-artist-website-v3\src\components\studio\modals\ExportModal.tsx
+  28:8  warning  Function 'ExportModal' has too many lines (192). Maximum allowed is 150  max-lines-per-function
+  28:8  warning  Function 'ExportModal' has a complexity of 23. Maximum allowed is 15     complexity
+
+C:\dev\piko-artist-website-v3\src\components\studio\pads\BeatJumpPads.tsx
+  24:32  warning  'deckId' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  28:34  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\components\studio\pads\PadVisualizer.tsx
+  36:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\dev\piko-artist-website-v3\src\components\studio\pads\PadVisualizer.tsx:36:5
+  34 |
+  35 |     const pulseId = Date.now();
+> 36 |     setPulses((prev) => [...prev, pulseId]);
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  37 |
+  38 |     // Remove pulse after animation
+  39 |     const timer = setTimeout(() => {  react-hooks/set-state-in-effect
+
+C:\dev\piko-artist-website-v3\src\components\studio\pads\SlicerPads.tsx
+  26:38  warning  'trackKey' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\components\studio\stems\StemPerformancePads.tsx
+  71:8  warning  Function 'StemPerformancePads' has too many lines (207). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\components\studio\stems\StemRack.tsx
+  106:6   warning  React Hook useCallback has an unnecessary dependency: 'getStemMuteState'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  126:6   warning  React Hook useCallback has an unnecessary dependency: 'getStemMuteState'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  156:34  warning  Arrow function has a complexity of 21. Maximum allowed is 15                                                                complexity
+
+C:\dev\piko-artist-website-v3\src\components\studio\visuals\JogPlatter3D.tsx
+   30:8   warning  Function 'JogPlatter3D' has too many lines (185). Maximum allowed is 150  max-lines-per-function
+  123:37  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  138:37  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\components\studio\waveforms\WaveformMini.tsx
+   73:8   warning  Function 'WaveformMini' has too many lines (338). Maximum allowed is 150             max-lines-per-function
+  190:38  warning  Refactor this function to reduce its Cognitive Complexity from 27 to the 20 allowed  sonarjs/cognitive-complexity
+  190:38  warning  Async arrow function has a complexity of 19. Maximum allowed is 15                   complexity
+  286:15  warning  Blocks are nested too deeply (5). Maximum allowed is 4                               max-depth
+
+C:\dev\piko-artist-website-v3\src\components\ui\controls\Fader.tsx
+  1:10  warning  'useRef' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\components\ui\controls\Knob.tsx
+  16:8  warning  Function 'Knob' has too many lines (185). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\context\AudioContext.tsx
+   37:8  warning  Function 'AudioProvider' has too many lines (287). Maximum allowed is 150                                                                                                                                                     max-lines-per-function
+   89:9  warning  The 'togglePlay' function makes the dependencies of useMemo Hook (at line 335) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'togglePlay' in its own useCallback() Hook  react-hooks/exhaustive-deps
+  209:9  warning  The 'seek' function makes the dependencies of useMemo Hook (at line 335) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'seek' in its own useCallback() Hook              react-hooks/exhaustive-deps
+  234:9  warning  The 'toggleMute' function makes the dependencies of useMemo Hook (at line 335) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'toggleMute' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\dev\piko-artist-website-v3\src\features\insights\analyzeTrack.ts
+  211:11  warning  'sampleRate' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useAudioEngine.ts
+  183:9   warning  'crossFadeToDispose' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  207:31  warning  Arrow function has too many lines (774). Maximum allowed is 150                                                                                                                                                                                                                                                                                                                    max-lines-per-function
+  223:9   warning  'userMuteState' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  429:6   warning  React Hook useCallback has missing dependencies: 'compressor', 'crossFade', 'delayFeedbackRef', 'delayNode', 'delaySend', 'dryFxGain', 'engine.deckEngines', 'engine.isReady', 'engine.recorderStream', 'fxMerge', 'isInitialized', 'isInitializing', 'limiter', 'masterBus', 'postFxBus', 'reverbDecayRef', and 'reverbNode'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  794:6   warning  React Hook useCallback has a missing dependency: 'reverbNode'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+  803:72  warning  Refactor this function to reduce its Cognitive Complexity from 21 to the 20 allowed                                                                                                                                                                                                                                                                                                sonarjs/cognitive-complexity
+  962:71  warning  React Hook useCallback has a missing dependency: 'recorderStream'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                react-hooks/exhaustive-deps
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useHotCues.ts
+  28:48  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  35:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useHotCues.ts:35:7
+  33 |   useEffect(() => {
+  34 |     if (!trackKey) {
+> 35 |       setCues([]);
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  36 |       cueEngineRef.current.clearAll();
+  37 |       return;
+  38 |     }  react-hooks/set-state-in-effect
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useLoops.ts
+  30:49  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  40:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useLoops.ts:40:7
+  38 |   useEffect(() => {
+  39 |     if (!trackKey) {
+> 40 |       setLoop(null);
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  41 |       loopEngineRef.current.clearLoop();
+  42 |       return;
+  43 |     }  react-hooks/set-state-in-effect
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useMixRecorder.ts
+  56:8  warning  Function 'useMixRecorder' has too many lines (157). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useSlicer.ts
+  25:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\hooks\audio\useTempoSync.ts
+    8:33  warning  'useMemo' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
+   17:3   warning  'getEffectiveBPM' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+   18:3   warning  'isInSync' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+   20:3   warning  'isWithinTempoRange' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+  218:7   warning  'currentTimeA' is defined but never used. Allowed unused args must match /^_/u             @typescript-eslint/no-unused-vars
+  219:7   warning  'currentTimeB' is defined but never used. Allowed unused args must match /^_/u             @typescript-eslint/no-unused-vars
+  232:13  warning  'slaveBeatGrid' is assigned a value but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+  233:13  warning  'masterBeatGrid' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\hooks\device\useDeviceOrientation.ts
+  62:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\hooks\device\useHaptic.ts
+  16:86  warning  Refactor this function to reduce its Cognitive Complexity from 26 to the 20 allowed  sonarjs/cognitive-complexity
+  46:13  warning  Blocks are nested too deeply (5). Maximum allowed is 4                               max-depth
+  54:13  warning  Blocks are nested too deeply (5). Maximum allowed is 4                               max-depth
+
+C:\dev\piko-artist-website-v3\src\hooks\device\useKeyboardControls.ts
+  111:28  warning  Arrow function has a complexity of 19. Maximum allowed is 15  complexity
+
+C:\dev\piko-artist-website-v3\src\hooks\tracks\useSmartTrackAnalysis.ts
+  218:97  warning  Async arrow function has a complexity of 18. Maximum allowed is 15  complexity
+
+C:\dev\piko-artist-website-v3\src\hooks\tracks\useTrackInsights.ts
+  7:23  warning  'useMemo' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\dev\piko-artist-website-v3\src\server\email\emailContent.ts
+   92:1  warning  Function 'buildHubHtmlSections' has a complexity of 17. Maximum allowed is 15  complexity
+  134:1  warning  Function 'buildHubTextSections' has a complexity of 17. Maximum allowed is 15  complexity
+
+C:\dev\piko-artist-website-v3\src\store\useStudioStore.ts
+  127:25  warning  Arrow function has too many lines (187). Maximum allowed is 150  max-lines-per-function
+
+C:\dev\piko-artist-website-v3\src\workers\analysis.worker.ts
+    4:3   warning  'EssentiaVector' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+    5:3   warning  'RhythmResult' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+    6:3   warning  'KeyResult' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+   22:46  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   96:77  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   97:79  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  115:91  warning  Refactor this function to reduce its Cognitive Complexity from 23 to the 20 allowed  sonarjs/cognitive-complexity
+  115:91  warning  Async arrow function has a complexity of 28. Maximum allowed is 15                   complexity
+  127:79  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  128:81  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\workers\essentia.worker.ts
+   13:3   warning  'RhythmResult' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+   14:3   warning  'KeyResult' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+   15:3   warning  'RmsObjectResult' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   16:3   warning  'RmsResult' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+   47:43  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  102:81  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  103:83  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+
+C:\dev\piko-artist-website-v3\src\workers\stem.worker.ts
+  54:46  warning  Refactor this function to reduce its Cognitive Complexity from 28 to the 20 allowed  sonarjs/cognitive-complexity
+  54:46  warning  Async arrow function has a complexity of 23. Maximum allowed is 15                   complexity
+
+Γ£û 132 problems (3 errors, 129 warnings)
+

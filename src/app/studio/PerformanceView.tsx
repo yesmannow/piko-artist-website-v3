@@ -1,13 +1,12 @@
-'use client';
-
 import { useState, useCallback } from 'react';
-import type { DeckId } from './useWebAudio';
-import type { TrackMeta, StemKey } from './tracks';
-import { getStemUrl } from './tracks';
-import { DeckPanel } from './DeckPanel';
-import { CenterMixer } from './CenterMixer';
+import { motion } from 'framer-motion';
 import { TrackLibrary } from './TrackLibrary';
-import { useWebAudio } from './useWebAudio';
+import { CenterMixer } from './CenterMixer';
+import { DeckPanel } from './DeckPanel';
+import { useWebAudio, type DeckId } from './useWebAudio';
+import { type TrackMeta, type StemKey, getStemUrl } from './tracks';
+import { generateFingerprint, lookupMetadata } from '@/lib/acoustid';
+import { saveVerifiedMetadata } from '@/db/studioDb';
 
 export function PerformanceView() {
   const audio = useWebAudio();
@@ -17,21 +16,34 @@ export function PerformanceView() {
   const [bufferB, setBufferB] = useState<AudioBuffer | null>(null);
   const [volA, setVolA] = useState(0.8);
   const [volB, setVolB] = useState(0.8);
+  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
 
   const loadTrack = useCallback(async (deckId: DeckId, track: TrackMeta) => {
     if (deckId === 'A') setTrackA(track);
     else setTrackB(track);
 
-    await audio.loadTrack(deckId, track.url);
+    await audio.loadTrack(deckId, track);
 
-    // We need to grab the buffer after decode — fetch and decode directly for canvas display
+    // AcoustID Intelligence: Automated fingerprinting on load
     const resp = await fetch(track.url);
     const ab = await resp.arrayBuffer();
     const ctx = new AudioContext();
     const buf = await ctx.decodeAudioData(ab);
     ctx.close();
+
     if (deckId === 'A') setBufferA(buf);
     else setBufferB(buf);
+
+    // Metadata Intelligence lookup
+    const { duration, fingerprint } = await generateFingerprint(buf);
+    const verified = await lookupMetadata(duration, fingerprint);
+    if (verified) {
+      await saveVerifiedMetadata({
+        trackId: track.id,
+        ...verified,
+        verifiedAt: Date.now(),
+      });
+    }
   }, [audio]);
 
   const loadStems = useCallback(async (deckId: DeckId) => {
@@ -46,22 +58,24 @@ export function PerformanceView() {
     await audio.loadStems(deckId, stemUrls);
   }, [audio, trackA, trackB]);
 
-  const [queue, setQueue] = useState<TrackMeta[]>([]);
-
   const addToQueue = useCallback((track: TrackMeta) => {
-    setQueue(prev => [...prev, track]);
-    // Optional: add a toast or visual feedback
+    console.log('Add to queue:', track.title);
   }, []);
 
   const deckAState = audio.state.deckA;
   const deckBState = audio.state.deckB;
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Mixer area */}
-      <div className="flex gap-2 px-3 py-3 flex-shrink-0" style={{ minHeight: 0 }}>
+    <div className="flex flex-col h-full bg-[#0a0a0c] overflow-hidden">
+      {/* Decks Row */}
+      <div className="flex gap-4 p-4 flex-1 items-stretch min-h-0 bg-[#0a0a0c]">
         {/* Deck A */}
-        <div className="flex-1" style={{ minWidth: 0 }}>
+        <motion.div 
+          className="flex-1" 
+          style={{ minWidth: 0, transformOrigin: 'left center' }}
+          animate={{ scale: isLibraryCollapsed ? 1.05 : 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        >
           <DeckPanel
             deckId="A"
             track={trackA}
@@ -81,18 +95,24 @@ export function PerformanceView() {
             onLoadStems={() => loadStems('A')}
             volume={volA}
           />
-        </div>
+        </motion.div>
 
         {/* Center Mixer */}
         <div style={{ width: 140, flexShrink: 0 }}>
           <CenterMixer
             crossfade={audio.state.crossfade}
             onCrossfadeChange={audio.setCrossfade}
+            isHarmonicMatch={audio.state.isHarmonicMatch}
           />
         </div>
 
         {/* Deck B */}
-        <div className="flex-1" style={{ minWidth: 0 }}>
+        <motion.div 
+          className="flex-1" 
+          style={{ minWidth: 0, transformOrigin: 'right center' }}
+          animate={{ scale: isLibraryCollapsed ? 1.05 : 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        >
           <DeckPanel
             deckId="B"
             track={trackB}
@@ -112,16 +132,24 @@ export function PerformanceView() {
             onLoadStems={() => loadStems('B')}
             volume={volB}
           />
-        </div>
+        </motion.div>
       </div>
 
       {/* Library */}
-      <TrackLibrary
-        loadedA={trackA}
-        loadedB={trackB}
-        onLoadTrack={loadTrack}
-        onAddToQueue={addToQueue}
-      />
+      <div 
+        className="transition-all duration-500 ease-vault overflow-hidden border-t border-white/5"
+        style={{ height: isLibraryCollapsed ? '48px' : '40%' }}
+      >
+        <TrackLibrary
+          loadedA={trackA}
+          loadedB={trackB}
+          onLoadTrack={loadTrack}
+          onAddToQueue={addToQueue}
+          isCollapsed={isLibraryCollapsed}
+          onToggleCollapse={() => setIsLibraryCollapsed(!isLibraryCollapsed)}
+        />
+      </div>
     </div>
   );
 }
+

@@ -1,24 +1,50 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { TRACKS, type TrackMeta } from './tracks';
 import type { DeckId } from './useWebAudio';
+import { isVerified } from '@/lib/acoustid';
+import { getVerifiedMetadata, type AcoustIDMetadata } from '@/db/studioDb';
 
 interface TrackLibraryProps {
   loadedA: TrackMeta | null;
   loadedB: TrackMeta | null;
   onLoadTrack: (deckId: DeckId, track: TrackMeta) => void;
   onAddToQueue?: (track: TrackMeta) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 type SortKey = 'title' | 'duration' | 'bpm' | 'key';
 
-export function TrackLibrary({ loadedA, loadedB, onLoadTrack, onAddToQueue }: TrackLibraryProps) {
+export function TrackLibrary({ 
+  loadedA, 
+  loadedB, 
+  onLoadTrack, 
+  onAddToQueue,
+  isCollapsed,
+  onToggleCollapse
+}: TrackLibraryProps) {
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'playlists'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [verifiedMeta, setVerifiedMeta] = useState<Record<string, AcoustIDMetadata>>({});
+
+  // Fetch verified metadata for tracks in view
+  useEffect(() => {
+    let active = true;
+    const fetchMeta = async () => {
+      const metas: Record<string, AcoustIDMetadata> = {};
+      for (const track of TRACKS) {
+        const meta = await getVerifiedMetadata(track.id);
+        if (meta && active) metas[track.id] = meta;
+      }
+      if (active) setVerifiedMeta(metas);
+    };
+    fetchMeta();
+    return () => { active = false; };
+  }, []);
 
   const sortedTracks = useMemo(() => {
     const filtered = TRACKS.filter(t =>
@@ -29,16 +55,19 @@ export function TrackLibrary({ loadedA, loadedB, onLoadTrack, onAddToQueue }: Tr
     );
 
     return filtered.sort((a, b) => {
-      let valA: any = a[sortKey === 'title' ? 'title' : sortKey];
-      let valB: any = b[sortKey === 'title' ? 'title' : sortKey];
+      const field = sortKey === 'title' ? 'title' : sortKey;
+      const valA = a[field];
+      const valB = b[field];
 
-      if (sortKey === 'bpm') {
-        valA = Number(valA);
-        valB = Number(valB);
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
       }
 
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+
+      if (strA < strB) return sortOrder === 'asc' ? -1 : 1;
+      if (strA > strB) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
   }, [search, sortKey, sortOrder]);
@@ -57,12 +86,20 @@ export function TrackLibrary({ loadedA, loadedB, onLoadTrack, onAddToQueue }: Tr
       {/* Top bar */}
       <div className="flex items-center gap-4 px-4 py-2 border-b border-white/5 h-12 flex-shrink-0">
         <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={onToggleCollapse}
           className="p-1 hover:bg-white/5 rounded transition-colors"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${isCollapsed ? '' : 'rotate-180'}`}>
+          <motion.svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            animate={{ rotate: isCollapsed ? 0 : 180 }}
+          >
             <path d="M18 15l-6-6-6 6" />
-          </svg>
+          </motion.svg>
         </button>
         
         <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">Library</span>
@@ -107,6 +144,8 @@ export function TrackLibrary({ loadedA, loadedB, onLoadTrack, onAddToQueue }: Tr
             {sortedTracks.map((track) => {
               const isActiveA = loadedA?.id === track.id;
               const isActiveB = loadedB?.id === track.id;
+              const meta = verifiedMeta[track.id];
+              const verified = meta && isVerified(meta.confidenceScore);
               
               return (
                 <div 
@@ -115,12 +154,23 @@ export function TrackLibrary({ loadedA, loadedB, onLoadTrack, onAddToQueue }: Tr
                   onClick={() => onLoadTrack('A', track)}
                 >
                   <div 
-                    className="track-card-artwork"
+                    className="track-card-artwork relative"
                     style={{ backgroundImage: `url(${track.artwork || '/images/default-track.jpg'})` }}
-                  />
+                  >
+                    {verified && (
+                      <div className="absolute top-1 right-1 bg-[var(--vault-neon-blue)]/90 text-black text-[7px] font-bold px-1 rounded flex items-center gap-0.5">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                        </svg>
+                        <span>VERIFIED</span>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="track-card-content">
-                    <span className="text-sm font-bold truncate leading-tight">{track.title}</span>
+                    <span className="text-sm font-bold truncate leading-tight flex items-center gap-2">
+                      {track.title}
+                    </span>
                     <span className="text-xs opacity-50 truncate">{track.artist}</span>
                     <div className="track-card-stats text-xs font-semibold">
                       <span style={{ color: '#00f5d4' }} className="mr-1">{track.bpm} BPM</span>
@@ -128,8 +178,17 @@ export function TrackLibrary({ loadedA, loadedB, onLoadTrack, onAddToQueue }: Tr
                       <span className="mx-1">{track.key}</span>
                       <span className="opacity-40">/</span>
                       <span className="ml-1">{track.duration}</span>
+                      {meta && (
+                        <>
+                          <span className="opacity-40 mx-1">/</span>
+                          <span className="text-[9px] text-[var(--vault-neon-blue)]">
+                            {Math.round(meta.confidenceScore * 100)}% Match
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
+
 
                   <div className="track-card-actions">
                     <button 

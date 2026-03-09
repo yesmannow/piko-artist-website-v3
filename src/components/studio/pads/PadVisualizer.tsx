@@ -27,19 +27,21 @@ const MODE_COLORS = {
 export function PadVisualizer({ deckId, activePad, mode = 'hotCue' }: PadVisualizerProps) {
   const [pulses, setPulses] = useState<number[]>([]);
 
-  // Add pulse effect when pad is activated
-   
   useEffect(() => {
     if (activePad === null || activePad === undefined) return;
 
+    // Use a microtask to avoid synchronous setState in effect commit phase
     const pulseId = Date.now();
-    setPulses((prev) => [...prev, pulseId]);
+    const triggerPulse = () => {
+      setPulses((prev) => [...prev, pulseId]);
+      
+      const timer = setTimeout(() => {
+        setPulses((prev) => prev.filter((id) => id !== pulseId));
+      }, 600);
+      return timer;
+    };
 
-    // Remove pulse after animation
-    const timer = setTimeout(() => {
-      setPulses((prev) => prev.filter((id) => id !== pulseId));
-    }, 600);
-
+    const timer = triggerPulse();
     return () => clearTimeout(timer);
   }, [activePad]);
 

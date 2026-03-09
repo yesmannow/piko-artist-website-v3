@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useCallback, useState } from 'react';
-import type { StemKey } from './tracks';
+import { isHarmonicMatch as checkHarmonicMatch } from '@/lib/camelot';
+import type { StemKey, TrackMeta } from './tracks';
 
 export type DeckId = 'A' | 'B';
 
@@ -19,6 +20,7 @@ interface StemNodes {
   source: AudioBufferSourceNode | null;
   gain: GainNode;
   muted: boolean;
+  __buffer?: AudioBuffer; 
 }
 
 interface DeckState {
@@ -30,12 +32,14 @@ interface DeckState {
   stems: Partial<Record<StemKey, StemNodes>>;
   hasStemsLoaded: boolean;
   usingStemsMode: boolean;
+  camelotKey: string | null;
 }
 
 export interface WebAudioState {
   deckA: DeckState;
   deckB: DeckState;
   crossfade: number; // 0 = full A, 1 = full B
+  isHarmonicMatch: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -49,18 +53,19 @@ const DEFAULT_DECK: DeckState = {
   stems: {},
   hasStemsLoaded: false,
   usingStemsMode: false,
+  camelotKey: null,
 };
 
 export function useWebAudio() {
   const ctxRef = useRef<AudioContext | null>(null);
   const nodesRef = useRef<{ A: DeckNodes | null; B: DeckNodes | null }>({ A: null, B: null });
   const crossfadeRef = useRef(0.5);
-  const rafRef = useRef<number | null>(null);
 
   const [state, setState] = useState<WebAudioState>({
     deckA: { ...DEFAULT_DECK },
     deckB: { ...DEFAULT_DECK },
     crossfade: 0.5,
+    isHarmonicMatch: false,
     isLoading: false,
     error: null,
   });
@@ -129,12 +134,56 @@ export function useWebAudio() {
     return ctx.decodeAudioData(arrayBuffer);
   }, [getCtx]);
 
+  /** Update Fusion FX based on crossfader position */
+  const updateFusionFX = useCallback((cf: number) => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    const nodes = nodesRef.current;
+    
+    // Crossfader Fusion™ Logic:
+    // Outgoing Deck A (if moving A->B, CF > 0.4)
+    // Incoming Deck B (if moving A->B, CF > 0.4)
+    // Low Shelf -6dB for Drums/Bass, +2dB Boost for Vocals
+    
+    const applyFusion = (deckId: DeckId, active: boolean) => {
+      const dNodes = nodes[deckId];
+      if (!dNodes) return;
+      
+      const targetLow = active ? -6 : 0;
+      dNodes.eqLow.gain.setTargetAtTime(targetLow, ctx.currentTime, 0.1);
+      
+      // Also apply to stems if loaded
+      const stateKey = deckId === 'A' ? 'deckA' : 'deckB';
+      const deckState = state[stateKey];
+      if (deckState.hasStemsLoaded) {
+        // Boost vocals +2dB (1.25 gain)
+        const vStem = deckState.stems.vocals;
+        if (vStem) {
+          vStem.gain.gain.setTargetAtTime(active ? 1.25 : 1.0, ctx.currentTime, 0.1);
+        }
+        // Cut drums/bass -6dB (0.5 gain)
+        ['drums', 'bass'].forEach(s => {
+          const stem = deckState.stems[s as StemKey];
+          if (stem) {
+            stem.gain.gain.setTargetAtTime(active ? 0.5 : 1.0, ctx.currentTime, 0.1);
+          }
+        });
+      }
+    };
+
+    // If CF > 0.4, Deck A is "outgoing"
+    applyFusion('A', cf > 0.4);
+    // If CF < 0.6, Deck B is "incoming" (but only if we are actually mixing)
+    // Actually, usually you want the incoming deck to have bass cut until the swap
+    applyFusion('B', cf < 0.6);
+  }, [state]);
+
   /** Load a track into a deck */
-  const loadTrack = useCallback(async (deckId: DeckId, url: string) => {
+  const loadTrack = useCallback(async (deckId: DeckId, track: TrackMeta) => {
     init();
     setState(s => ({ ...s, isLoading: true, error: null }));
     try {
-      const buffer = await decodeUrl(url);
+      const buffer = await decodeUrl(track.url);
       const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
       // Stop existing source
       const nodes = nodesRef.current[deckId];
@@ -143,16 +192,24 @@ export function useWebAudio() {
         nodes.source.disconnect();
         nodes.source = null;
       }
-      setState(s => ({
-        ...s,
-        isLoading: false,
-        [deckKey]: {
-          ...DEFAULT_DECK,
-          buffer,
-          stems: s[deckKey].stems,
-          hasStemsLoaded: s[deckKey].hasStemsLoaded,
-        },
-      }));
+      setState(s => {
+        const otherDeckKey = deckId === 'A' ? 'deckB' : 'deckA';
+        const otherKey = s[otherDeckKey].camelotKey;
+        const harmonMatch = track.key && otherKey ? checkHarmonicMatch(track.key, otherKey) : false;
+        
+        return {
+          ...s,
+          isLoading: false,
+          isHarmonicMatch: harmonMatch,
+          [deckKey]: {
+            ...DEFAULT_DECK,
+            buffer,
+            camelotKey: track.key,
+            stems: s[deckKey].stems,
+            hasStemsLoaded: s[deckKey].hasStemsLoaded,
+          },
+        };
+      });
     } catch (e) {
       setState(s => ({ ...s, isLoading: false, error: String(e) }));
     }
@@ -215,8 +272,12 @@ export function useWebAudio() {
     const nodes = nodesRef.current;
     if (nodes.A) nodes.A.gainCross.gain.value = 1 - value;
     if (nodes.B) nodes.B.gainCross.gain.value = value;
+    
+    updateFusionFX(value);
+    
     setState(s => ({ ...s, crossfade: value }));
-  }, []);
+  }, [updateFusionFX]);
+
 
   /** Set volume 0–1 for a deck */
   const setVolume = useCallback((deckId: DeckId, value: number) => {
@@ -252,9 +313,7 @@ export function useWebAudio() {
       const gainNode = ctx.createGain();
       gainNode.gain.value = 1;
       gainNode.connect(nodes.gainVol);
-      stemNodes[stem] = { source: null, gain: gainNode, muted: false };
-      // Store buffer on the node for later use
-      (gainNode as any).__buffer = buffer;
+      stemNodes[stem] = { source: null, gain: gainNode, muted: false, __buffer: buffer };
     }));
 
     setState(s => ({
@@ -288,9 +347,8 @@ export function useWebAudio() {
   }, []);
 
   /** Get current playback time for a deck */
-  const getPlaybackTime = useCallback((deckId: DeckId): number => {
+  const getPlaybackTime = useCallback((_deckId: DeckId): number => {
     const ctx = ctxRef.current;
-    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
     // We need to read state directly for this — expose a ref-based approach
     return ctx ? ctx.currentTime : 0;
   }, []);

@@ -20,41 +20,41 @@ export function useHotCues(
   player?: unknown // Tone.Player
 ) {
   const [cues, setCues] = useState<TrackCue[]>([]);
+  const [prevTrackKey, setPrevTrackKey] = useState(trackKey);
   const cueEngineRef = useRef<CueEngine>(new CueEngine());
+
+  // Synchronous state reset for UI responsiveness
+  if (trackKey !== prevTrackKey) {
+    setPrevTrackKey(trackKey);
+    setCues([]);
+  }
 
   // Update player reference when it changes
   useEffect(() => {
     if (player) {
-      cueEngineRef.current.setPlayer(player as any);
+      // Cast to unknown then to specific or just bypass with specific interface if needed
+      cueEngineRef.current.setPlayer(player as Parameters<CueEngine['setPlayer']>[0]);
     }
   }, [player]);
 
-  // Load cues from Dexie when track changes
+  // Load cues and sync engine
   useEffect(() => {
-    if (!trackKey) {
-      setCues([]);
-      cueEngineRef.current.clearAll();
-      return;
-    }
+    // Always clear engine on track change
+    cueEngineRef.current.clearAll();
+
+    if (!trackKey) return;
 
     const loadCues = async () => {
       try {
         const trackCues = await db.trackCues.get(trackKey);
         if (trackCues?.cues) {
           setCues(trackCues.cues);
-
-          // Load cues into engine
-          cueEngineRef.current.clearAll();
           trackCues.cues.forEach((cue) => {
-            cueEngineRef.current.setCue(cue.slot + 1, cue.timeSec); // slot 0-7 -> cue 1-8
+            cueEngineRef.current.setCue(cue.slot + 1, cue.timeSec);
           });
-        } else {
-          setCues([]);
-          cueEngineRef.current.clearAll();
         }
       } catch (error) {
         console.error('[useHotCues] Failed to load cues:', error);
-        setCues([]);
       }
     };
 
