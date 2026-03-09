@@ -6,7 +6,8 @@ import type {
   AnalysisResult,
 } from './essentia.types';
 
-// Inlined to avoid relative-import failures in worker context
+// Inlined rather than imported via `@/lib/utils/audioMath` because webpack worker
+// bundling can fail to resolve path-aliased imports in type:module workers.
 const freqToMidi = (freq: number): number => 12 * Math.log2(freq / 440) + 69;
 
 const hasEssentiaApi = (candidate: unknown): candidate is EssentiaApi =>
@@ -98,9 +99,10 @@ const initEssentia = async (): Promise<void> => {
   console.log('[analysis.worker] CDN module init success');
 };
 
-// Begin initialisation immediately so the first real message pays no extra latency
+// Begin initialisation immediately so the first real message pays no extra latency.
+// If init fails, `essentia` stays null and the onmessage handler returns mock data instead.
 const initPromise: Promise<void> = initEssentia().catch((err) => {
-  console.error('[analysis.worker] Essentia init failed — will use mock fallback:', err);
+  console.error('[analysis.worker] Essentia init failed — mock analysis will be used:', err);
 });
 
 globalThis.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32Array }>) => {

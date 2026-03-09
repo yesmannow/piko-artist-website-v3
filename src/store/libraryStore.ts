@@ -4,6 +4,7 @@ import { trackManifest } from '@/lib/audio/trackManifest';
 import { TRACK_IMAGE_POOL } from '@/lib/studioTrackImages';
 import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 import { generateFingerprint, lookupMetadata } from '@/lib/acoustid';
+import { PLACEHOLDER_BPM, PLACEHOLDER_KEY } from '@/lib/constants/analysisPlaceholders';
 import toast from 'react-hot-toast';
 
 interface LibraryState {
@@ -60,29 +61,38 @@ export const useLibraryStore = create<LibraryState>((set) => ({
 
     try {
       const now = Date.now();
-      const seedRows: Omit<Track, 'id'>[] = trackManifest.map((track, idx) => {
-        const title = track.name.replace(/\.[^/.]+$/, '');
-        const randomImage = TRACK_IMAGE_POOL[idx % TRACK_IMAGE_POOL.length];
+      const successRows: Track[] = [];
 
-        return {
-          title,
-          artist: 'Pre-existing Track',
-          // Prefer manifest-provided values; fall back to sensible placeholders
-          bpm: track.bpm ?? '124',
-          key: track.key ?? '8A',
-          duration: '00:00',
-          energy: 'Medium',
-          hasVocal: false,
-          audioUrl: track.url,
-          coverArt: randomImage,
-          status: 'ready' as const,
-          createdAt: now - idx, // ensure stable insertion order
-        };
-      });
+      for (let idx = 0; idx < trackManifest.length; idx++) {
+        const track = trackManifest[idx];
+        try {
+          const title = track.name.replace(/\.[^/.]+$/, '');
+          const randomImage = TRACK_IMAGE_POOL[idx % TRACK_IMAGE_POOL.length];
 
-      await db.tracks.bulkAdd(seedRows as Track[]);
+          const row: Omit<Track, 'id'> = {
+            title,
+            artist: 'Pre-existing Track',
+            // Prefer manifest-provided values; fall back to placeholder constants
+            bpm: track.bpm ?? PLACEHOLDER_BPM,
+            key: track.key ?? PLACEHOLDER_KEY,
+            duration: '00:00',
+            energy: 'Medium',
+            hasVocal: false,
+            audioUrl: track.url,
+            coverArt: randomImage,
+            status: 'ready' as const,
+            createdAt: now - idx, // ensure stable insertion order
+          };
 
-      // Refresh store state from DB so UI shows all tracks immediately
+          const id = await db.tracks.add(row as Track);
+          successRows.push({ ...row, id } as Track);
+        } catch (trackError) {
+          // Log the failure but continue seeding the remaining tracks
+          console.error(`[seedLibrary] Failed to seed track "${track.name}":`, trackError);
+        }
+      }
+
+      // Refresh store state from DB so UI shows all successfully seeded tracks
       const tracks = await db.tracks.orderBy('createdAt').reverse().toArray();
       set({ tracks });
     } catch (dbError) {

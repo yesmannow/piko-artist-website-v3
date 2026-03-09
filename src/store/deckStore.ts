@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { db, Track } from '@/lib/db';
 import { AudioEngine } from '@/lib/audioEngine';
 import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
+import { PLACEHOLDER_BPM, PLACEHOLDER_KEY } from '@/lib/constants/analysisPlaceholders';
 
 export interface DeckState {
   track: Track | null;
@@ -76,10 +77,10 @@ async function runDeferredAnalysis(track: Track, buffer: AudioBuffer): Promise<v
 function needsAnalysis(track: Track): boolean {
   return (
     !track.bpm ||
-    track.bpm === '124' ||
+    track.bpm === PLACEHOLDER_BPM ||
     track.bpm === '0' ||
     !track.key ||
-    track.key === '8A' ||
+    track.key === PLACEHOLDER_KEY ||
     track.key === '??' ||
     track.status !== 'ready'
   );
