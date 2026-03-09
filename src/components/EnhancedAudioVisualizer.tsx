@@ -22,19 +22,16 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
 
   // Extract colors from album art (simplified - using track vibe for now)
   useEffect(() => {
-    const updateColors = () => {
-      if (currentTrack) {
-        // Color palette based on vibe
-        const vibeColors: Record<string, { primary: string; secondary: string }> = {
-          hype: { primary: "#FFD700", secondary: "#FF6600" },
-          chill: { primary: "#00d9ff", secondary: "#00ff99" },
-          storytelling: { primary: "#ff0099", secondary: "#ff6600" },
-          classic: { primary: "#E0E0E0", secondary: "#FFD700" },
-        };
-        setColors(vibeColors[currentTrack.vibe] || vibeColors.hype);
-      }
-    };
-    updateColors();
+    if (currentTrack) {
+      // Color palette based on vibe
+      const vibeColors: Record<string, { primary: string; secondary: string }> = {
+        hype: { primary: "#FFD700", secondary: "#FF6600" },
+        chill: { primary: "#00d9ff", secondary: "#00ff99" },
+        storytelling: { primary: "#ff0099", secondary: "#ff6600" },
+        classic: { primary: "#E0E0E0", secondary: "#FFD700" },
+      };
+      setColors(vibeColors[currentTrack.vibe] || vibeColors.hype);
+    }
   }, [currentTrack]);
 
   // Setup audio analyser

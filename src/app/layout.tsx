@@ -3,7 +3,6 @@ import { Permanent_Marker, Sedgwick_Ave, Anton, Barlow_Condensed, Inter, Lexend 
 import "./globals.css";
 import { ProdRuntimeGuards } from "@/components/ProdRuntimeGuards";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import { Toaster } from "react-hot-toast";
 
 // 1. Graffiti Font (Accents & Logos)
 const permanentMarker = Permanent_Marker({
@@ -56,6 +55,7 @@ const lexend = Lexend({
 export const metadata: Metadata = {
   title: "Piko Artist Studio",
   description: "High-performance holographic DJ mixer and artist platform",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -81,17 +81,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        {/* crossOrigin="use-credentials" bypasses Vercel deployment-protection 401 on preview branches */}
-        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
-      </head>
       <body
         className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased`}
       >
         <ProdRuntimeGuards />
         <ServiceWorkerRegistration />
         {children}
-        <Toaster position="bottom-right" />
       </body>
     </html>
   );

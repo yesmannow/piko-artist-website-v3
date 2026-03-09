@@ -1,6 +1,5 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import withSerwistInit from '@serwist/next';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,9 +9,7 @@ const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
   // Serwist does not support Turbopack in dev yet; disable outside production.
-  disable: process.env.NODE_ENV === 'development',
-  // Increase the maximum file size to cache for large WASM files
-  maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // Ensure large WASM files are cached
+  disable: process.env.NODE_ENV !== 'production',
 });
 
 /** @type {import('next').NextConfig} */
@@ -24,7 +21,7 @@ const nextConfig = {
   // TypeScript will handle exclusions via tsconfig.json
   // ESLint configuration - allow warnings but catch errors
   eslint: {
-    ignoreDuringBuilds: true, // Temporarily disabled - TODO: Fix 28 remaining errors in non-studio files
+    ignoreDuringBuilds: false, // Keep false to catch real errors
     // Warnings won't block build, only errors will
   },
   // Ignore TypeScript errors during build (should be false for production)
@@ -97,16 +94,10 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
-          // COEP/CORP DISABLED for development - these headers block audio loading in Studio
-          // TODO: Re-enable in production with proper CORP headers on all assets
-          // {
-          //   key: 'Cross-Origin-Embedder-Policy',
-          //   value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
-          // },
-          // {
-          //   key: 'Cross-Origin-Resource-Policy',
-          //   value: 'same-origin',
-          // },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp', // Required for SharedArrayBuffer (WASM threads)
+          },
         ],
       },
     ];
@@ -114,15 +105,15 @@ const nextConfig = {
     // YouTube images are automatically proxied through /api/image-proxy for compatibility.
     // All components using YouTube thumbnails have been updated to use the proxy utility.
   },
-  // External packages that should not be bundled (for Node.js sidecar scripts and browser-only packages)
-  serverExternalPackages: ['prolink-connect', 'essentia.js'],
+  experimental: {
+    // Vercel deployment configuration
+  },
+  // External packages that should not be bundled (for Node.js sidecar scripts)
+  serverExternalPackages: ['prolink-connect'],
   // Transpile Tailwind v4 packages and ONNX Runtime for Turbopack compatibility
   transpilePackages: ['@tailwindcss/postcss', '@tailwindcss/node', 'onnxruntime-web'],
   outputFileTracingRoot: __dirname,
-  webpack: (config, { isServer, dev }) => {
-    if (!dev && process.env.VERCEL_ENV === 'production' && process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS === 'true') {
-      throw new Error('Test helpers must not be enabled in production builds. Unset NEXT_PUBLIC_ENABLE_TEST_HELPERS.');
-    }
+  webpack: (config, { isServer }) => {
     // Enable async WebAssembly
     config.experiments = {
       ...config.experiments,
@@ -130,27 +121,11 @@ const nextConfig = {
       layers: true, // Required for some WASM builds
     };
 
-    // Ensure .wasm files are emitted as static assets (never inlined)
+    // Rule to handle .wasm files as assets if not automatically handled
     config.module.rules.push({
       test: /\.wasm$/,
-      type: 'asset/resource',
-      generator: {
-        filename: 'static/wasm/[name][contenthash][ext]',
-      },
+      type: "asset/resource",
     });
-
-    // Copy Essentia WASM to public/wasm for worker-side direct loading fallback
-    const wasmSource = path.resolve(__dirname, 'node_modules/essentia.js/dist/essentia-wasm.web.wasm');
-    const wasmTargetDir = path.resolve(__dirname, 'public/wasm');
-    if (fs.existsSync(wasmSource)) {
-      fs.mkdirSync(wasmTargetDir, { recursive: true });
-      const dest = path.join(wasmTargetDir, 'essentia-wasm.web.wasm');
-      const sourceMTime = fs.statSync(wasmSource).mtimeMs;
-      const needsCopy = !fs.existsSync(dest) || fs.statSync(dest).mtimeMs < sourceMTime;
-      if (needsCopy) {
-        fs.copyFileSync(wasmSource, dest);
-      }
-    }
 
     // Fix for Essentia.js "fs" module resolution in browser
     if (!isServer) {
@@ -167,9 +142,6 @@ const nextConfig = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'src'),
     };
-    if (!dev && !process.env.NEXT_PUBLIC_ENABLE_TEST_HELPERS) {
-      config.resolve.alias['@/utils/testHelpers'] = false;
-    }
     return config;
   },
 };

@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { tracks } from "@/lib/data";
 import { useAudio } from "@/context/AudioContext";
-import { useHaptic } from "@/hooks/device/useHaptic";
+import { useHaptic } from "@/hooks/useHaptic";
 import { useSearchParams } from "next/navigation";
 import {
   Calendar,
@@ -85,30 +85,24 @@ function hashToBars(seed: string, count: number) {
 function Barcode({ seed }: { seed: string }) {
   const bars = useMemo(() => hashToBars(seed, 48), [seed]);
   const total = bars.reduce((a, b) => a + (b === 0 ? 1 : b), 0);
-
-  const rects = useMemo(() => {
-    return bars.reduce<Array<{ key: number; x: number; y: number; width: number; height: number; fill: string }>>((acc, w, i) => {
-      const width = w === 0 ? 1 : w;
-      const xPos = acc.length > 0 ? acc[acc.length - 1].x + acc[acc.length - 1].width : 0;
-
-      acc.push({
-        key: i,
-        x: xPos,
-        y: 0,
-        width,
-        height: 24,
-        fill: i % 3 === 0 ? "rgba(255,215,0,0.85)" : "rgba(224,224,224,0.85)",
-      });
-
-      return acc;
-    }, []);
-  }, [bars]);
-
+  let x = 0;
   return (
     <svg viewBox={`0 0 ${total} 24`} className="w-full h-6" aria-hidden="true">
-      {rects.map((rectProps) => (
-        <rect {...rectProps} key={rectProps.key} />
-      ))}
+      {bars.map((w, i) => {
+        const width = w === 0 ? 1 : w;
+        const rect = (
+          <rect
+            key={i}
+            x={x}
+            y={0}
+            width={width}
+            height={24}
+            fill={i % 3 === 0 ? "rgba(255,215,0,0.85)" : "rgba(224,224,224,0.85)"}
+          />
+        );
+        x += width;
+        return rect;
+      })}
     </svg>
   );
 }
@@ -140,6 +134,8 @@ export default function ContactPage() {
   const { triggerHaptic } = useHaptic();
   const { playTrack } = useAudio();
   const searchParams = useSearchParams();
+  // In Next.js 15, useSearchParams() returns ReadonlyURLSearchParams directly
+  // Access it synchronously (the warnings are dev-mode only)
   const inquiryParam = searchParams.get("inquiry");
 
   const CALENDAR_URL = process.env.NEXT_PUBLIC_BOOKING_CALENDAR_URL || "";
@@ -264,7 +260,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-[#E0E0E0]">
+    <div className="min-h-screen bg-[#050505] text-[#E0E0E0]">
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0">
@@ -366,7 +362,7 @@ export default function ContactPage() {
                         transform: `rotate(${idx % 2 === 0 ? -1.0 : 0.9}deg)`,
                       }}
                     >
-                      <div className="relative w-full h-50 sm:h-55 bg-black/50">
+                      <div className="relative w-full h-[200px] sm:h-[220px] bg-black/50">
                         <Image
                           src={p.src}
                           alt={p.label}
@@ -529,8 +525,8 @@ export default function ContactPage() {
               <div className="p-4 md:p-5 grid grid-cols-2 md:grid-cols-4 gap-3">
                 {PRESS_PHOTOS.map((p) => (
                   <div key={p.src} className="border border-white/10 bg-black/20">
-                    <div className="relative aspect-4/5">
-                      <Image src={p.src} alt={p.label} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
+                    <div className="relative aspect-[4/5]">
+                      <Image src={p.src} alt={p.label} fill className="object-cover" />
                     </div>
                     <div className="p-3 border-t border-white/10 flex items-center justify-between gap-2">
                       <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/70 truncate">
@@ -938,7 +934,7 @@ export default function ContactPage() {
                 <textarea
                   value={form.message}
                   onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
-                  className="w-full px-4 py-3 bg-gray-300 text-black font-mono font-bold tracking-wider border-2 border-black min-h-35 resize-none"
+                  className="w-full px-4 py-3 bg-gray-300 text-black font-mono font-bold tracking-wider border-2 border-black min-h-[140px] resize-none"
                   placeholder="What are you looking for? Include timelines, expectations, deliverables."
                   minLength={10}
                   maxLength={5000}

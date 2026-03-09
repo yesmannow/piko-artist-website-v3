@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Play, ExternalLink } from "lucide-react";
 import { MediaItem } from "@/lib/data";
 import { useAudio } from "@/context/AudioContext";
-import { useHaptic } from "@/hooks/device/useHaptic";
+import { useHaptic } from "@/hooks/useHaptic";
 import { useState, useEffect } from "react";
 
 interface TrackDrawerProps {

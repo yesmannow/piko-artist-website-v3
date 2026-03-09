@@ -5,7 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAudio } from "@/context/AudioContext";
 import { tracks, MediaItem } from "@/lib/data";
-import { useHaptic } from "@/hooks/device/useHaptic";
+import { useHaptic } from "@/hooks/useHaptic";
 import {
   ChevronDown,
   ListMusic,
@@ -47,13 +47,10 @@ function getVibePalette(vibe: Vibe | undefined) {
 }
 
 function useReducedMotionFlag() {
-  const [reduced, setReduced] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
-
+  const [reduced, setReduced] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
@@ -345,7 +342,7 @@ export function ImmersivePlayerOverlay() {
     <AnimatePresence>
       {immersiveOpen && (
         <motion.div
-          className="fixed inset-0 z-200 bg-obsidian-950 text-[#E0E0E0] touch-none select-none"
+          className="fixed inset-0 z-[200] bg-[#050505] text-[#E0E0E0] touch-none select-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -398,9 +395,9 @@ export function ImmersivePlayerOverlay() {
                 style={{ filter: "blur(28px) grayscale(0.25) contrast(1.05) brightness(0.55)" }}
               />
             ) : (
-              <div className={`w-full h-full bg-linear-to-r ${cover}`} />
+              <div className={`w-full h-full bg-gradient-to-r ${cover}`} />
             )}
-            <div className="absolute inset-0 bg-obsidian-950/70" />
+            <div className="absolute inset-0 bg-[#050505]/70" />
 
             {/* Audio-reactive glow/particles (no extra AudioContext) */}
             <AudioReactiveBackdrop enabled={true} vibe={active?.vibe} idle={isIdle} />
@@ -475,7 +472,7 @@ export function ImmersivePlayerOverlay() {
                     <motion.div
                       className="absolute inset-0"
                       animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-                      transition={isPlaying ? { duration: 10, ease: "linear", repeat: Infinity } : { duration: 0.4, ease: "easeOut" }}
+                      transition={isPlaying ? { duration: 10, ease: "linear", repeat: Infinity } : { duration: 0.4 }}
                       style={{
                         transformOrigin: "50% 50%",
                       }}
@@ -511,7 +508,7 @@ export function ImmersivePlayerOverlay() {
                             style={{ filter: "grayscale(0.15) contrast(1.05)" }}
                           />
                         ) : (
-                          <div className={`w-full h-full bg-linear-to-r ${active?.coverArt ?? "from-[#FFD700] to-[#E0E0E0]"}`} />
+                          <div className={`w-full h-full bg-gradient-to-r ${active?.coverArt ?? "from-[#FFD700] to-[#E0E0E0]"}`} />
                         )}
                       </div>
                     </motion.div>
@@ -694,7 +691,7 @@ export function ImmersivePlayerOverlay() {
                     className="px-3 py-2 border-2 border-white/15 bg-black/40 hover:bg-white/10"
                     aria-label="Close queue"
                   >
-                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                    <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
                   </button>
                 </div>
 
@@ -720,11 +717,11 @@ export function ImmersivePlayerOverlay() {
                           aria-current={isActive ? "true" : undefined}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 border border-white/10 bg-black/30 overflow-hidden relative shrink-0">
+                            <div className="w-10 h-10 border border-white/10 bg-black/30 overflow-hidden relative flex-shrink-0">
                               {isImagePath(t.coverArt) ? (
                                 <Image src={t.coverArt} alt="" fill className="object-cover" sizes="40px" />
                               ) : (
-                                <div className={`w-full h-full bg-linear-to-r ${t.coverArt}`} />
+                                <div className={`w-full h-full bg-gradient-to-r ${t.coverArt}`} />
                               )}
                             </div>
                             <div className="min-w-0">

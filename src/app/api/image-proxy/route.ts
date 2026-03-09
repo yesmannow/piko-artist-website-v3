@@ -1,93 +1,70 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
+/**
+ * Image Proxy API Route
+ *
+ * Fetches external images server-side and re-serves them with
+ * Cross-Origin-Resource-Policy headers for COOP/COEP compatibility.
+ *
+ * Usage: /api/image-proxy?url=<encoded-image-url>
+ */
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const imageUrl = searchParams.get('url');
 
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
+  if (!imageUrl) {
+    return NextResponse.json(
+      { error: 'Missing url parameter' },
+      { status: 400 }
+    );
+  }
 
-const decodeTargetUrl = (value: string) => {
-  let decoded = value;
-  for (let i = 0; i < 2; i += 1) {
+  try {
+    // Decode the URL
+    const decodedUrl = decodeURIComponent(imageUrl);
+
+    // Validate URL
     try {
-      const next = decodeURIComponent(decoded);
-      if (next === decoded) break;
-      decoded = next;
+      new URL(decodedUrl);
     } catch {
-      break;
-    }
-  }
-  return decoded;
-};
-
-const getYouTubeFallback = (target: URL) => {
-  const host = target.hostname;
-  if (host !== 'img.youtube.com' && host !== 'i.ytimg.com') return null;
-  if (!target.pathname.endsWith('/maxresdefault.jpg')) return null;
-  const fallback = new URL(target.toString());
-  fallback.pathname = fallback.pathname.replace('/maxresdefault.jpg', '/hqdefault.jpg');
-  return fallback;
-};
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const url = searchParams.get('url');
-
-  if (!url) {
-    return NextResponse.json({ error: 'Missing url query param' }, { status: 400 });
-  }
-
-  let targetUrl: URL;
-  try {
-    const decoded = decodeTargetUrl(url);
-    targetUrl = new URL(decoded);
-  } catch {
-    return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
-  }
-
-  if (!ALLOWED_PROTOCOLS.has(targetUrl.protocol)) {
-    return NextResponse.json({ error: 'Only http/https are allowed' }, { status: 400 });
-  }
-
-  try {
-    let upstream = await fetch(targetUrl.toString(), {
-      method: 'GET',
-      cache: 'no-store',
-      headers: { 'User-Agent': 'piko-image-proxy' },
-    });
-
-    if (!upstream.ok) {
-      const fallback = getYouTubeFallback(targetUrl);
-      if (fallback) {
-        upstream = await fetch(fallback.toString(), {
-          method: 'GET',
-          cache: 'no-store',
-          headers: { 'User-Agent': 'piko-image-proxy' },
-        });
-      }
-    }
-
-    const contentType = upstream.headers.get('content-type') ?? 'application/octet-stream';
-
-    if (!upstream.ok) {
       return NextResponse.json(
-        { error: 'Upstream request failed', status: upstream.status },
-        { status: upstream.status }
+        { error: 'Invalid URL' },
+        { status: 400 }
       );
     }
 
-    const body = await upstream.arrayBuffer();
+    // Fetch the image
+    const response = await fetch(decodedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Piko-Image-Proxy/1.0)',
+      },
+    });
 
-    return new NextResponse(body, {
-      status: upstream.status,
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: `Failed to fetch image: ${response.statusText}` },
+        { status: response.status }
+      );
+    }
+
+    // Get image data
+    const imageBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+
+    // Re-serve with CORP header
+    return new NextResponse(imageBuffer, {
+      status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
-        'Access-Control-Allow-Origin': '*',
         'Cross-Origin-Resource-Policy': 'cross-origin',
+        'Cache-Control': 'public, max-age=31536000, immutable', // Cache for 1 year
       },
     });
   } catch (error) {
-    console.error('[image-proxy] fetch failed', error);
-    return NextResponse.json({ error: 'Proxy request failed' }, { status: 502 });
+    console.error('[ImageProxy] Error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

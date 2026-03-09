@@ -12,14 +12,13 @@ export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
   const prevPathnameRef = useRef<string | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   // Check for reduced motion preference
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+
     const handleChange = (e: MediaQueryListEvent) => {
       setReducedMotion(e.matches);
     };

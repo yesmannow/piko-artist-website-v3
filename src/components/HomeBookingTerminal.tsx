@@ -141,7 +141,6 @@ export function HomeBookingTerminal() {
                           src={p.src}
                           alt={p.label}
                           fill
-                          sizes="160px"
                           className="object-cover"
                           style={{ filter: "contrast(1.15) grayscale(0.15) brightness(0.92)" }}
                         />

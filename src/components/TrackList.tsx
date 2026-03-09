@@ -6,7 +6,8 @@ import { tracks } from "@/lib/data";
 import { Play } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import Image from "next/image";
-import { useHaptic } from "@/hooks/device/useHaptic";
+import { useHaptic } from "@/hooks/useHaptic";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { TrackDrawer } from "@/components/TrackDrawer";
 
 const vibeColors = {
@@ -41,24 +42,23 @@ const CoverArt = ({ coverArt, className }: { coverArt: string; className?: strin
 
   if (isImagePath(coverArt)) {
     return (
-      <div className={`relative overflow-hidden rounded-md border border-white/10 shrink-0 ${className || ""}`}>
+      <div className={`relative overflow-hidden rounded-md border border-white/10 flex-shrink-0 ${className || ""}`}>
         <Image
           src={coverArt}
-          alt="Track Cover"
-          width={40}
-          height={40}
-          className="object-cover w-full h-full"
+          alt="Track cover"
+          fill
+          className="object-cover"
           sizes="(max-width: 768px) 40px, 40px"
           onLoad={() => setIsLoaded(true)}
         />
         {!isLoaded && (
-          <div className="absolute inset-0 bg-white/5 animate-pulse" />
+          <Skeleton className="absolute inset-0" />
         )}
       </div>
     );
   }
   return (
-    <div className={`rounded-md bg-linear-to-r ${coverArt} shrink-0 border border-white/10 ${className || ""}`} />
+    <div className={`rounded-md bg-gradient-to-r ${coverArt} flex-shrink-0 border border-white/10 ${className || ""}`} />
   );
 };
 
@@ -73,8 +73,8 @@ interface TrackCardProps {
 function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
   const { triggerHaptic } = useHaptic();
   const [isLoaded, setIsLoaded] = useState(false);
-  // Random rotation between -1deg and 1deg for pasted-on-wall effect (compute once on mount)
-  const [rotation] = useState(() => (Math.random() * 2 - 1).toFixed(2));
+  // Random rotation between -1deg and 1deg for pasted-on-wall effect
+  const rotation = (Math.random() * 2 - 1).toFixed(2);
 
   // 3D Tilt Physics
   const cardRef = useRef<HTMLButtonElement>(null);
@@ -171,13 +171,13 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
                 onLoad={() => setIsLoaded(true)}
               />
               {!isLoaded && (
-                <div className="absolute inset-0 bg-white/5 animate-pulse" />
+                <Skeleton className="absolute inset-0" />
               )}
             </motion.div>
           </>
         ) : (
           <motion.div
-            className={`w-full h-full bg-linear-to-r ${track.coverArt}`}
+            className={`w-full h-full bg-gradient-to-r ${track.coverArt}`}
             whileHover={{ scale: 1.08, y: -4 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
@@ -185,7 +185,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
         {/* Dark-to-Bright Gradient Overlay on Hover */}
         <motion.div
-          className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"
+          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"
           initial={false}
         />
 
@@ -234,7 +234,7 @@ function TrackCard({ track, index, isActive, onPlay }: TrackCardProps) {
 
         {/* Metadata Tooltip on Hover */}
         <motion.div
-          className="absolute bottom-0 left-0 right-0 p-3 bg-linear-to-t from-black/95 via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-40"
+          className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-40"
           initial={false}
         >
           <div className="text-white">
@@ -314,7 +314,7 @@ export function TrackList({ featuredOnly = false }: TrackListProps) {
                 type="button"
                 onClick={() => setActiveFilter(opt.id)}
                   className={[
-                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-11 touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
+                    "px-4 py-2.5 rounded-full border-2 border-black font-industrial font-bold tracking-wider text-sm transition-all min-h-[44px] touch-manipulation focus:outline-none focus:ring-2 focus:ring-toxic-lime focus:ring-offset-2",
                     isActive
                       ? "border-toxic-lime text-toxic-lime bg-toxic-lime/10 shadow-hard"
                       : "border-black text-foreground/80 hover:text-foreground hover:border-foreground/30 hover:bg-foreground/5",

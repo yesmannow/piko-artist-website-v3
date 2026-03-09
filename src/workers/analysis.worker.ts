@@ -1,199 +1,149 @@
-import type {
-  EssentiaApi,
-  EssentiaVector,
-  RhythmResult,
-  KeyResult,
-  AnalysisResult,
-} from './essentia.types';
+/**
+ * analysis.worker.ts - Web Worker for Essentia.js Audio Analysis
+ * 
+ * Phase VI: Advanced Signal Processing
+ * 
+ * This worker performs computationally intensive Music Information Retrieval (MIR) tasks
+ * in a separate thread to prevent blocking the main UI thread. It handles:
+ * - BPM detection (RhythmExtractor2013)
+ * - Musical key detection (KeyExtractor)
+ * - RMS energy analysis
+ * 
+ * Critical: All Essentia C++ objects must be manually deleted to prevent memory leaks.
+ */
 
-// Inlined rather than imported via `@/lib/utils/audioMath` because webpack worker
-// bundling can fail to resolve path-aliased imports in type:module workers.
-const freqToMidi = (freq: number): number => 12 * Math.log2(freq / 440) + 69;
+import { EssentiaWASM } from 'essentia.js';
 
-const hasEssentiaApi = (candidate: unknown): candidate is EssentiaApi =>
-  !!candidate &&
-  typeof candidate === 'object' &&
-  typeof (candidate as EssentiaApi).arrayToVector === 'function' &&
-  typeof (candidate as EssentiaApi).RhythmExtractor2013 === 'function' &&
-  typeof (candidate as EssentiaApi).KeyExtractor === 'function' &&
-  typeof (candidate as EssentiaApi).RMS === 'function' &&
-  typeof (candidate as EssentiaApi).delete === 'function';
+// Analysis result structure
+export interface AnalysisResult {
+  bpm: number;
+  key: string;
+  energy: number;
+  confidence?: number;
+}
 
-const extractEssentiaApi = (candidate: unknown): EssentiaApi | null => {
-  if (!candidate || typeof candidate !== 'object') return null;
+// Message types for worker communication
+export interface AnalysisMessage {
+  type: 'analyze';
+  audioData: Float32Array;
+  sampleRate: number;
+}
 
-  const record = candidate as Record<string, any>;
+export interface WorkerMessage {
+  type: string;
+  audioData?: Float32Array;
+  sampleRate?: number;
+  [key: string]: unknown;
+}
 
-  // Try various common export patterns for Essentia.js
-  const potentialApis = [
-    record.EssentiaWASM,
-    record.EssentiaJs,
-    record.default,
-    record.default?.EssentiaWASM,
-    record.default?.EssentiaJs,
-    candidate,
-  ];
+// Initialize Essentia instance
+let essentia: EssentiaWASM | null = null;
 
-  for (const api of potentialApis) {
-    if (hasEssentiaApi(api)) return api as EssentiaApi;
+/**
+ * Initialize Essentia.js WASM module
+ */
+async function initEssentia(): Promise<void> {
+  if (!essentia) {
+    const { EssentiaWASM } = await import('essentia.js');
+    essentia = new EssentiaWASM();
+    console.log('[AnalysisWorker] Essentia.js initialized');
+  }
+}
+
+/**
+ * Perform audio analysis using Essentia.js
+ * 
+ * @param audioData - Float32Array of audio samples (mono)
+ * @param sampleRate - Sample rate of the audio (e.g., 44100)
+ * @returns Analysis results
+ */
+function analyzeAudio(audioData: Float32Array, sampleRate: number): AnalysisResult {
+  if (!essentia) {
+    throw new Error('Essentia not initialized');
   }
 
-  return null;
-};
-
-let essentia: EssentiaApi | null = null;
-
-const SEMITONE_FROM_A: Record<string, number> = {
-  C: -9,
-  'C#': -8,
-  Db: -8,
-  D: -7,
-  'D#': -6,
-  Eb: -6,
-  E: -5,
-  F: -4,
-  'F#': -3,
-  Gb: -3,
-  G: -2,
-  'G#': -1,
-  Ab: -1,
-  A: 0,
-  'A#': 1,
-  Bb: 1,
-  B: 2,
-};
-
-const keyToFrequency = (key: string) => {
-  const regex = /^([A-G])([#b]?)/i;
-  const match = regex.exec(key.trim());
-  if (!match) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug('[analysis.worker] keyToFrequency no match', key);
-    }
-    return null;
-  }
-  const note = `${match[1].toUpperCase()}${match[2] || ''}`;
-  const semitone = SEMITONE_FROM_A[note];
-  if (semitone === undefined) return null;
-  return 440 * Math.pow(2, semitone / 12);
-};
-
-const initEssentia = async (): Promise<void> => {
-  // Import from a single, absolute CDN module — no relative paths that could fail in worker context
-  // @ts-expect-error CDN import
-  const mod = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia-wasm.module.js');
-
-  const candidate = mod.EssentiaWASM ?? mod.default?.EssentiaWASM ?? mod.default;
-
-  // Await WASM initialisation if the module exposes a ready promise
-  if (candidate?.ready) {
-    await candidate.ready;
-  }
-
-  const api = extractEssentiaApi(candidate);
-  if (!api) {
-    throw new Error('[analysis.worker] EssentiaWASM API not found in CDN module');
-  }
-
-  essentia = api;
-  console.log('[analysis.worker] CDN module init success');
-};
-
-// Begin initialisation immediately so the first real message pays no extra latency.
-// If init fails, `essentia` stays null and the onmessage handler returns mock data instead.
-const initPromise: Promise<void> = initEssentia().catch((err) => {
-  console.error('[analysis.worker] Essentia init failed — mock analysis will be used:', err);
-});
-
-globalThis.onmessage = async (e: MessageEvent<{ id: string; audioBuffer: Float32Array }>) => {
-  const { id, audioBuffer } = e.data;
-
-  if (process.env.NODE_ENV !== 'production') {
-    console.debug('[analysis.worker] received message', { id, sampleLength: audioBuffer.length });
-  }
+  // Convert Float32Array to Essentia vector
+  // CRITICAL: This creates a C++ object that must be manually deleted
+  const audioVector = essentia.arrayToVector(audioData);
 
   try {
-    // Gate ALL processing behind essentia initialisation
-    await initPromise;
+    // 1. BPM Detection using RhythmExtractor2013
+    // This is the most accurate rhythm extraction algorithm in Essentia
+    const rhythmExtractor = essentia.RhythmExtractor2013(audioVector, sampleRate);
+    const bpm = rhythmExtractor.bpm;
+    const confidence = rhythmExtractor.confidence || 0;
+    
+    // Delete the result object to free C++ memory
+    essentia.delete(rhythmExtractor);
 
-    if (!essentia) {
-      console.warn('[analysis.worker] Essentia unavailable — returning mock analysis');
-      const fakeBpms = [120, 124, 126, 128, 130, 140];
-      const fakeKeys = ['A major', 'C minor', 'D minor', 'G major', 'E minor', 'B minor', 'F# minor'];
+    // 2. Key Detection
+    // Extract the predominant musical key (e.g., "C major", "A minor")
+    const keyExtractor = essentia.KeyExtractor(audioVector, sampleRate);
+    const key = keyExtractor.key || 'Unknown';
+    const scale = keyExtractor.scale || '';
+    const keyString = scale ? `${key} ${scale}` : key;
+    
+    // Delete the key extractor result
+    essentia.delete(keyExtractor);
 
-      globalThis.postMessage({
-        id,
-        success: true,
-        result: {
-          bpm: fakeBpms[Math.floor(Math.random() * fakeBpms.length)],
-          beatGrid: [],
-          key: fakeKeys[Math.floor(Math.random() * fakeKeys.length)],
-          scale: 'major',
-          energy: Math.random() * 0.5 + 0.5,
-          danceability: Math.random() * 0.5 + 0.5,
-        },
+    // 3. RMS Energy Analysis
+    // Provides a measure of the overall energy/loudness of the track
+    const rms = essentia.RMS(audioVector);
+    const energy = rms.rms || 0;
+    
+    // Delete the RMS result
+    essentia.delete(rms);
+
+    // Return analysis results
+    return {
+      bpm: Math.round(bpm),
+      key: keyString,
+      energy: energy,
+      confidence: confidence,
+    };
+  } finally {
+    // CRITICAL: Delete the audio vector to prevent memory leaks
+    // This frees the C++ memory allocated by arrayToVector
+    essentia.delete(audioVector);
+  }
+}
+
+/**
+ * Worker message handler
+ */
+self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
+  const { type, audioData, sampleRate } = event.data;
+
+  if (type === 'analyze') {
+    if (!audioData || !sampleRate) {
+      self.postMessage({
+        type: 'error',
+        error: 'Missing audioData or sampleRate in analyze message',
       });
       return;
     }
 
-    const vectorAudio = essentia.arrayToVector(audioBuffer);
+    try {
+      // Initialize Essentia if not already done
+      await initEssentia();
 
-    // 1. Rhythm & Beat Grid
-    const rhythm = essentia.RhythmExtractor2013(vectorAudio);
+      // Perform analysis
+      const result = analyzeAudio(audioData, sampleRate);
 
-    // 2. Key & Scale
-    const keyData = essentia.KeyExtractor(vectorAudio);
-    const keyFrequencyHz = keyToFrequency(keyData.key ?? '');
-    const keyNoteNumber =
-      keyFrequencyHz && keyFrequencyHz > 0
-        ? Math.round(freqToMidi(keyFrequencyHz))
-        : undefined;
-
-    // 3. Vibe Analysis (Energy/Danceability)
-    const danceabilityResult = essentia.Danceability?.(vectorAudio);
-    const danceability = danceabilityResult?.danceability ?? 0;
-    const rmsValue = essentia.RMS(vectorAudio);
-    const energy = typeof rmsValue === 'number' ? rmsValue : rmsValue?.rms ?? 0;
-
-    // Beat grid as plain array
-    const beatGrid =
-      rhythm.ticks && typeof essentia.vectorToArray === 'function'
-        ? essentia.vectorToArray(rhythm.ticks)
-        : [];
-
-    // Cleanup
-    if (rhythm.ticks) {
-      if (typeof rhythm.ticks.delete === 'function') {
-        rhythm.ticks.delete();
-      } else {
-        essentia.delete(rhythm.ticks);
-      }
+      // Send results back to main thread
+      self.postMessage({
+        type: 'result',
+        result,
+      });
+    } catch (error) {
+      // Send error back to main thread
+      self.postMessage({
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-    if (typeof vectorAudio.delete === 'function') {
-      vectorAudio.delete();
-    } else {
-      essentia.delete(vectorAudio);
-    }
-
-    globalThis.postMessage({
-      id,
-      success: true,
-      result: {
-         bpm: rhythm.bpm ?? 0,
-         beatGrid,
-         key: keyData.key ?? '',
-         scale: keyData.scale ?? '',
-         energy,
-         danceability,
-        keyFrequencyHz: keyFrequencyHz ?? undefined,
-        keyNoteNumber,
-      } satisfies AnalysisResult,
-    });
-  } catch (error) {
-    globalThis.postMessage({
-      id,
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
   }
 };
+
+// Export for TypeScript type checking
+export default null as never;

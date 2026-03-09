@@ -13,16 +13,15 @@ function LiveCameraTimestamp() {
   const [time, setTime] = useState("--:--:--");
 
   useEffect(() => {
-    const initAndUpdate = () => {
-      setMounted(true);
+    setMounted(true);
+
+    const update = () => {
       setTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
     };
 
-    initAndUpdate();
-    const id = globalThis.setInterval(() => {
-      setTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
-    }, 1000);
-    return () => globalThis.clearInterval(id);
+    update();
+    const id = window.setInterval(update, 1000);
+    return () => window.clearInterval(id);
   }, []);
 
   return <span suppressHydrationWarning>{mounted ? time : "--:--:--"}</span>;

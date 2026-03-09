@@ -34,36 +34,6 @@ High-performance artist platform built with **Next.js App Router**: music librar
 - **Node.js**: 20.x (repo pins `20.17.0` in `.node-version`, and `>=20 <21` in `package.json`)
 - **Package manager**: npm (this repo includes `package-lock.json`)
 
-## Development Environment
-
-### Recommended: WSL2 (Windows)
-
-For the most reliable development experience on Windows, use WSL2 Ubuntu:
-
-```bash
-# Open WSL2
-wsl -d Ubuntu
-
-# Run the setup script (installs Node.js and validates builds)
-bash /mnt/c/dev/piko-artist-website-v3/wsl-setup.sh
-
-# Or manually:
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs build-essential
-cd /mnt/c/dev/piko-artist-website-v3
-npm ci
-npm run build
-```
-
-**Why WSL2?** Avoids Windows-specific TypeScript hangs and matches production Linux environments.
-
-### Alternative: Docker
-
-```bash
-docker build -t piko-studio .
-docker run --rm piko-studio
-```
-
 ## Getting started
 
 ```bash
@@ -136,38 +106,13 @@ supabase/
   migrations/               # Optional social queue schema
 ```
 
-## Documentation
-
-### Essential Guides
-
-- **[Architecture](docs/ARCHITECTURE.md)** — System architecture, audio engine, component hierarchy, state management
-- **[Quick Reference](docs/QUICK_REFERENCE.md)** — Keyboard shortcuts, controls, workflow examples
-- **[Developer Onboarding](docs/DEVELOPER_ONBOARDING.md)** — Getting started as a contributor
-- **[How to Add Tracks](docs/how-to-add-tracks.md)** — Track management workflow
-- **[SonarLint Guide](docs/SONARLINT_GUIDE.md)** — Code quality tooling
-
-### Deployment & Operations
-
-- **[R2 CORS Setup](R2_CORS_SETUP.md)** — Cloudflare R2 configuration
-- **[Manual Testing](MANUAL_TEST_INSTRUCTIONS.md)** — Testing checklist
-- **[Audio Engine](AUDIO_ENGINE_README.md)** — Audio engine quick start
-
-### Historical Documentation
-
-Phase completion docs, audit reports, and feature implementation summaries are archived in:
-
-- **[docs/archive/phases/](docs/archive/phases/)** — Phase completion documentation
-- **[docs/archive/audits/](docs/archive/audits/)** — Historical audit reports
-- **[docs/archive/features/](docs/archive/features/)** — Feature implementation docs
-
 ## Deployment
 
 - **Target**: Vercel
 - **Build command**: `npm run build`
 - **Node**: 20.x
-- **Environment**: See "Environment variables" section above
 
-For production deployment guides and troubleshooting, see `docs/archive/deployment/`
+For deeper deployment troubleshooting, see `VERCEL_DEPLOYMENT_AUDIT_GUIDE.md`.
 
 ## License
 
