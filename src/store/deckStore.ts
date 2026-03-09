@@ -18,6 +18,7 @@ interface DeckStore {
   loadTrack: (deckId: 'A' | 'B', track: Track) => Promise<void>;
   togglePlay: (deckId: 'A' | 'B') => void;
   setVolume: (deckId: 'A' | 'B', volume: number) => void;
+  setCurrentTime: (deckId: 'A' | 'B', time: number) => void;
 }
 
 const initialDeckState: DeckState = {
@@ -84,6 +85,13 @@ export const useDeckStore = create<DeckStore>((set) => ({
     const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
     set((state) => ({
       [deckKey]: { ...state[deckKey], volume }
+    }));
+  },
+
+  setCurrentTime: (deckId: 'A' | 'B', time: number) => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: { ...state[deckKey], currentTime: time }
     }));
   }
 }));

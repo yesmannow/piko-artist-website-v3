@@ -3,6 +3,7 @@ import { db, Track } from '@/lib/db';
 import { trackManifest } from '@/lib/audio/trackManifest';
 import { studioTrackImages } from '@/lib/studioTrackImages';
 import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
+import { generateFingerprint, lookupMetadata } from '@/lib/acoustid';
 import toast from 'react-hot-toast';
 
 interface LibraryState {
@@ -158,6 +159,19 @@ export const useLibraryStore = create<LibraryState>((set) => ({
         fileBlob: file,
         createdAt: Date.now(),
       };
+
+      // AcoustID Metadata Enrichment
+      try {
+        const fp = await generateFingerprint(audioBuffer);
+        const meta = await lookupMetadata(fp.duration, fp.fingerprint);
+        if (meta) {
+          newTrack.title = meta.verifiedTitle;
+          newTrack.artist = meta.verifiedArtist;
+          newTrack.acoustidVerified = true;
+        }
+      } catch (fpErr) {
+        console.warn('[AcoustID] Fingerprint lookup skipped:', fpErr);
+      }
 
       const id = await db.tracks.add(newTrack);
       newTrack.id = id;

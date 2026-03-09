@@ -9,6 +9,8 @@ export interface Track {
   duration: string;
   energy: string;
   hasVocal: boolean;
+  vocalSegments?: { start: number; end: number }[];
+  acoustidVerified?: boolean;
   fileBlob?: Blob;
   coverArt?: string;
   audioUrl?: string;

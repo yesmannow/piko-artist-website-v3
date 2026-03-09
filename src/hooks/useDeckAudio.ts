@@ -5,7 +5,7 @@ import { AudioEngine } from '@/lib/audioEngine';
 
 export function useDeckAudio(deckId: 'A' | 'B') {
   const deckState = useDeckStore((state) => deckId === 'A' ? state.deckA : state.deckB);
-  const { togglePlay, setVolume } = useDeckStore();
+  const { togglePlay, setVolume, setCurrentTime: setStoreTime } = useDeckStore();
   
   const mixerState = useMixerStore();
   const eqState = deckId === 'A' ? mixerState.eqA : mixerState.eqB;
@@ -56,7 +56,7 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       if (sourceRef.current) {
         try {
           sourceRef.current.stop();
-        } catch (e) {
+        } catch {
           // Ignore if already stopped
         }
         sourceRef.current.disconnect();
@@ -95,12 +95,14 @@ export function useDeckAudio(deckId: 'A' | 'B') {
           const newTime = currentTimeRef.current + delta * sourceRef.current.playbackRate.value;
           currentTimeRef.current = newTime;
           setCurrentTime(newTime);
+          setStoreTime(deckId, newTime);
           
           if (newTime >= deckState.buffer.duration) {
             togglePlay(deckId);
             pauseTimeRef.current = 0;
             currentTimeRef.current = 0;
             setCurrentTime(0);
+            setStoreTime(deckId, 0);
           } else {
             animationRef.current = requestAnimationFrame(updateTime);
           }
@@ -122,7 +124,7 @@ export function useDeckAudio(deckId: 'A' | 'B') {
     return () => {
       stopAudio();
     };
-  }, [deckState.isPlaying, deckState.buffer, deckId, togglePlay]);
+  }, [deckState.isPlaying, deckState.buffer, deckId, togglePlay, setStoreTime]);
 
   // Reset pause time when a new track is loaded
   useEffect(() => {
