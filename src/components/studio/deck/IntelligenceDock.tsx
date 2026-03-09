@@ -4,10 +4,11 @@
  * IntelligenceDock - 2026 Studio Evolution Phase 1
  *
  * A dedicated sidebar dock with a "Liquid Glass" aesthetic.
- * Features inset shadows, neon-blue (#00f2ff) active glows,
+ * Features deep inset shadows, neon-blue (#00f2ff) active glows,
  * and a rekordbox-inspired industrial hardware feel.
  *
- * Houses the XYPad, StemOverlay, and future intelligence modules.
+ * Houses the XYPad, StemOverlay, DeckFXRack, and Build-up Macro.
+ * No floating overlays — all controls are physically bolted.
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,7 +55,7 @@ export function IntelligenceDock({ deckId, isOpen, onToggle, children }: Intelli
         {isOpen && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 220, opacity: 1 }}
+            animate={{ width: 260, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="relative overflow-hidden flex flex-col"
@@ -66,17 +67,18 @@ export function IntelligenceDock({ deckId, isOpen, onToggle, children }: Intelli
             <div
               className="h-full flex flex-col gap-4 p-3 rounded-lg"
               style={{
-                background: 'linear-gradient(135deg, rgba(10,14,26,0.92) 0%, rgba(6,8,16,0.95) 50%, rgba(10,14,26,0.92) 100%)',
-                border: `1px solid ${neonBlue}18`,
+                background: 'linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(4,5,10,0.98) 50%, rgba(10,14,26,0.95) 100%)',
+                border: `1px solid ${neonBlue}20`,
                 boxShadow: `
-                  inset 0 1px 0 rgba(255,255,255,0.06),
-                  inset 0 -1px 0 rgba(0,0,0,0.3),
-                  inset 2px 0 12px rgba(0,0,0,0.4),
-                  inset -2px 0 12px rgba(0,0,0,0.4),
-                  0 0 20px ${neonBlue}08,
-                  0 12px 40px rgba(0,0,0,0.5)
+                  inset 0 2px 0 rgba(255,255,255,0.04),
+                  inset 0 -2px 0 rgba(0,0,0,0.5),
+                  inset 4px 0 20px rgba(0,0,0,0.6),
+                  inset -4px 0 20px rgba(0,0,0,0.6),
+                  inset 0 4px 16px rgba(0,0,0,0.4),
+                  0 0 24px ${neonBlue}06,
+                  0 16px 48px rgba(0,0,0,0.6)
                 `,
-                backdropFilter: 'blur(16px) saturate(1.4)',
+                backdropFilter: 'blur(20px) saturate(1.6)',
               }}
             >
               {/* Dock Header */}

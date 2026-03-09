@@ -44,6 +44,7 @@ import { StemOverlay } from '../stems/StemOverlay';
 // Phase SE-1: Intelligence Dock
 import { XYPad } from '../fx/XYPad';
 import { IntelligenceDock } from './IntelligenceDock';
+import { DeckFXRack } from '../core/DeckFXRack';
 
 interface DeckProps {
   readonly deckId: 'A' | 'B';
@@ -251,6 +252,8 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                   bpm={currentBpm ?? undefined}
                   isSynced={isSynced}
                   accent={jogAccent}
+                  energy={energy}
+                  analyzing={!deck.isPlaying && energy > 0}
                   loading={!isLoaded}
                   onPointerDown={transport.handleScratchStart}
                   onPointerMove={transport.handleScratchMove}
@@ -401,12 +404,15 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                 {/* Stem Overlay - moved into dock */}
                 {stemModeEnabled && <StemOverlay deckId={deckId} />}
 
-                {/* XY Pad - moved into dock */}
+                {/* XY FX Pad - physically bolted */}
                 <XYPad
                   deckId={deckId}
                   onChange={handleXYPadChange}
                   label="FX PAD"
                 />
+
+                {/* FX Rack with Build-up Macro - bolted into dock */}
+                <DeckFXRack deckId={deckId} />
               </IntelligenceDock>
             )}
           </div>
