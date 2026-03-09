@@ -16,7 +16,6 @@ export class SoftClipper extends Tone.WaveShaper {
       const c = Math.max(-1, Math.min(1, x));
       return 1.5 * c - 0.5 * c * c * c;
     }, 4096);
-    this.name = 'SoftClipper';
   }
 }
 
