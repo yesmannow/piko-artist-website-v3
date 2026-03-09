@@ -217,7 +217,7 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
    */
   const analyzeIfNeeded = useCallback(async (track: Track): Promise<SmartAnalysisResult | null> => {
     // Check if already analyzed
-    if (track.status === 'analyzed' && track.bpm && track.key) {
+    if (track.status === 'ready' && track.bpm && track.key) {
       console.log('[SmartAnalysis] Track already analyzed:', track.title);
 
       // Parse existing analysis data
@@ -244,7 +244,7 @@ export function useSmartTrackAnalysis(): UseSmartTrackAnalysisReturn {
     }
 
     // Track needs analysis
-    if (track.status === 'unanalyzed' || track.status === 'error') {
+    if (track.status === 'pending' || track.status === 'error') {
       console.log('[SmartAnalysis] Track needs analysis:', track.title);
       return await analyzeTrack(track);
     }

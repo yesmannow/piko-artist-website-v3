@@ -69,11 +69,13 @@ export function useLibrarySync(): UseLibrarySyncReturn {
 
       // Step B: Get existing tracks from IndexedDB
       const existingTracks = await db.tracks.toArray();
-      const existingUrls = new Set(existingTracks.map(t => t.url));
+      const existingUrls = new Set(
+        existingTracks.map((t) => t.url).filter((u): u is string => !!u),
+      );
 
       console.log(`[LibrarySync] Found ${existingTracks.length} existing tracks in DB`);
 
-      // Step C: Sync logic - Add new tracks with deterministic artwork
+      // Step C: Sync logic – add new tracks with deterministic artwork
       const newTracks: Omit<Track, 'id'>[] = [];
 
       localTracks.forEach((track: { url: string; title: string; artworkUrl?: string }) => {
@@ -82,21 +84,27 @@ export function useLibrarySync(): UseLibrarySyncReturn {
           return;
         }
 
-        // Parse artist from title (e.g., "Te Perdi" => "Unknown Artist", "Te Perdi")
+        // Parse artist from title (e.g., "Artist - Title")
         const parts = track.title.split(' - ');
         const artist = parts.length >= 2 ? parts[0].trim() : 'Unknown Artist';
         const title = parts.length >= 2 ? parts.slice(1).join(' - ').trim() : track.title;
 
         // Use deterministic artwork from manifest
-        const artwork = track.artworkUrl || '/images/tracks/vinyl-1595847_1280.jpg';
+        const artworkUrl = track.artworkUrl || '/images/tracks/vinyl-1595847_1280.jpg';
 
         newTracks.push({
           url: track.url,
           title,
           artist,
-          artwork,
-          dateAdded: new Date(),
-          status: 'unanalyzed',
+          artworkUrl,
+          status: 'pending',
+          createdAt: Date.now(),
+          // Placeholders filled in once the track is analyzed
+          bpm: '',
+          key: '',
+          duration: '',
+          energy: '',
+          hasVocal: false,
         });
       });
 
