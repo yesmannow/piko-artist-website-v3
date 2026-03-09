@@ -3,7 +3,7 @@ export class AudioEngine {
   public context: AudioContext;
 
   private constructor() {
-    this.context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
 
   public static getInstance(): AudioEngine {

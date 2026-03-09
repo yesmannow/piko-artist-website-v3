@@ -78,6 +78,11 @@ export function Deck({ deckId }: DeckProps) {
     // So deltaTime = deltaAngle / 360 * 1.8
     const timeDelta = (deltaAngle / 360) * 1.8;
     scrubTrack(timeDelta);
+
+    // Subtle haptic feedback when scratching
+    if (Math.abs(deltaAngle) > 2 && navigator.vibrate) {
+      navigator.vibrate(2);
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -146,14 +151,22 @@ export function Deck({ deckId }: DeckProps) {
   return (
     <div 
       className={clsx(
-        "col-span-12 lg:col-span-5 bg-slate-900/60 rounded-xl border p-6 flex flex-col gap-4 transition-colors duration-300",
-        isDragOver ? "border-accent bg-accent/10" : "border-slate-800"
+        "col-span-12 lg:col-span-5 bg-[#0a0a0a] shadow-[inset_0_4px_24px_rgba(0,0,0,0.8)] rounded-xl border p-6 flex flex-col gap-4 transition-colors duration-300 relative overflow-hidden",
+        isDragOver ? "border-accent shadow-[0_0_30px_rgba(0,242,255,0.2)] bg-accent/10" : "border-slate-800/80"
       )}
+      style={track?.coverArt ? {
+        backgroundImage: `url(${track.coverArt})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      } : {}}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="waveform-container relative h-20 bg-black/40 rounded-lg overflow-hidden border border-slate-800/50">
+      {track?.coverArt && (
+        <div className="absolute inset-0 bg-[#0a0a0a]/70 backdrop-blur-2xl pointer-events-none z-0"></div>
+      )}
+      <div className="waveform-container relative z-10 h-20 bg-black/40 rounded-lg overflow-hidden border border-slate-800/50">
         <div className="absolute inset-0 flex items-center justify-center opacity-30">
           <svg height="100%" preserveAspectRatio="none" width="100%">
             <path
@@ -225,7 +238,7 @@ export function Deck({ deckId }: DeckProps) {
           </button>
         </div>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative z-10">
         <div>
           <h3 className="text-accent font-bold text-lg">{title}</h3>
           <div className="flex items-center gap-2">
@@ -245,7 +258,7 @@ export function Deck({ deckId }: DeckProps) {
           <p className="text-slate-500 text-[10px] uppercase tracking-widest">Remaining</p>
         </div>
       </div>
-      <div className="flex justify-between items-center py-4">
+      <div className="flex justify-between items-center py-4 relative z-10">
         {!isRight && (
           <div className="flex flex-col gap-4 items-center">
             <div 
@@ -254,7 +267,7 @@ export function Deck({ deckId }: DeckProps) {
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              className="jog-wheel w-48 h-48 rounded-full border-4 border-slate-800 flex items-center justify-center relative cursor-pointer active:scale-95 transition-transform touch-none"
+              className="jog-wheel w-48 h-48 rounded-full border-4 border-[#0a0a0a] shadow-[inset_0_0_20px_rgba(0,0,0,0.9),0_0_15px_rgba(0,242,255,0.15)] flex items-center justify-center relative cursor-pointer active:scale-95 transition-transform touch-none"
             >
               <div 
                 className="absolute inset-0 rounded-full border border-accent/10"
@@ -263,8 +276,13 @@ export function Deck({ deckId }: DeckProps) {
                 {/* Marker to show rotation */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-accent rounded-full shadow-[0_0_5px_#00f2ff]"></div>
               </div>
-              <div className="w-12 h-12 bg-primary rounded-full border border-slate-700 flex items-center justify-center z-10">
-                {isLoading ? (
+              <div className="w-12 h-12 bg-primary rounded-full border border-slate-700 flex items-center justify-center z-10 overflow-hidden">
+                {track?.coverArt ? (
+                  <div 
+                    className="w-full h-full bg-cover bg-center rounded-full" 
+                    style={{ backgroundImage: `url(${track.coverArt})` }} 
+                  />
+                ) : isLoading ? (
                   <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <div className="w-10 h-10 border-2 border-slate-600 rounded-full"></div>

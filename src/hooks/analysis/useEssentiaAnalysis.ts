@@ -1,126 +1,69 @@
-"use client";
+import { useState, useCallback } from 'react';
 
-/**
- * useEssentiaAnalysis Hook
- *
- * Manages Essentia.js worker lifecycle and provides analysis function
- */
+const KEY_TO_CAMELOT: Record<string, string> = {
+  'C major': '8B', 'G major': '9B', 'D major': '10B', 'A major': '11B', 'E major': '12B',
+  'B major': '1B', 'F# major': '2B', 'Gb major': '2B', 'Db major': '3B', 'C# major': '3B',
+  'Ab major': '4B', 'Eb major': '5B', 'Bb major': '6B', 'F major': '7B',
+  'A minor': '8A', 'E minor': '9A', 'B minor': '10A', 'F# minor': '11A', 'C# minor': '12A',
+  'G# minor': '1A', 'Ab minor': '1A', 'Eb minor': '2A', 'D# minor': '2A', 'Bb minor': '3A',
+  'A# minor': '3A', 'F minor': '4A', 'C minor': '5A', 'G minor': '6A', 'D minor': '7A',
+};
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+export const analyzeAudioBuffer = async (audioBuffer: AudioBuffer) => {
+  return new Promise<any>((resolve, reject) => {
+      const worker = new Worker(
+        new URL('../../workers/analysis.worker.ts', import.meta.url),
+        { type: 'module' }
+      );
+      
+      const numberOfChannels = audioBuffer.numberOfChannels;
+      const length = audioBuffer.length;
+      const leftChannel = audioBuffer.getChannelData(0);
+      const rightChannel = numberOfChannels > 1 ? audioBuffer.getChannelData(1) : leftChannel;
+      const monoData = new Float32Array(length);
+      for (let i = 0; i < length; i++) {
+        monoData[i] = (leftChannel[i] + rightChannel[i]) / 2;
+      }
+      
+      const requestId = Date.now().toString();
+      worker.onmessage = (e) => {
+         if (e.data.id === requestId) {
+           worker.terminate();
+           if (e.data.success) {
+             const res = e.data.result;
+             const camelot = KEY_TO_CAMELOT[res.key?.trim() || ''] || '??';
+             
+             resolve({
+                bpm: Math.round(res.bpm || 0).toString(),
+                key: camelot,
+                confidence: res.danceability || 0,
+                energy: (res.energy > 0.05 ? 'High' : res.energy > 0.02 ? 'Medium' : 'Low'),
+                hasVocal: false
+             });
+           } else {
+             reject(new Error(e.data.error));
+           }
+         }
+      };
+      
+      worker.postMessage({ id: requestId, audioBuffer: monoData }, [monoData.buffer]);
+  });
+};
 
-interface AnalysisResult {
-  bpm: number;
-  key: string;
-  energy: number;
-  danceability?: number;
-  scale?: string;
-  beatGrid?: number[];
-}
-
-interface UseEssentiaAnalysisReturn {
-  analyzeTrack: (audioBuffer: AudioBuffer, trackId: string) => Promise<AnalysisResult | null>;
-  isAnalyzing: boolean;
-  error: string | null;
-}
-
-export function useEssentiaAnalysis(): UseEssentiaAnalysisReturn {
+export function useEssentiaAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const workerRef = useRef<Worker | null>(null);
-
-  // Initialize worker
-  useEffect(() => {
-    if (typeof globalThis.window === 'undefined') return;
-
-    const initWorker = async () => {
-      try {
-        const worker = new Worker(
-          new URL('../../workers/essentia.worker.ts', import.meta.url),
-          { type: 'module' }
-        );
-
-        workerRef.current = worker;
-
-        // Handle worker errors
-        worker.onerror = (e) => {
-          console.error('[useEssentiaAnalysis] Worker error:', e);
-          setError('Worker error occurred');
-          setIsAnalyzing(false);
-        };
-      } catch (err) {
-        console.error('[useEssentiaAnalysis] Failed to create worker:', err);
-        setError('Failed to initialize analysis worker');
-      }
-    };
-
-    void initWorker();
-
-    return () => {
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
+  
+  const analyze = useCallback(async (audioBuffer: AudioBuffer) => {
+    setIsAnalyzing(true);
+    try {
+      const result = await analyzeAudioBuffer(audioBuffer);
+      setIsAnalyzing(false);
+      return result;
+    } catch(e) {
+      setIsAnalyzing(false);
+      throw e;
+    }
   }, []);
-
-  const analyzeTrack = useCallback(
-    async (audioBuffer: AudioBuffer, trackId: string): Promise<AnalysisResult | null> => {
-      if (!workerRef.current) {
-        setError('Worker not initialized');
-        return null;
-      }
-
-      setIsAnalyzing(true);
-      setError(null);
-
-      return new Promise((resolve) => {
-        const worker = workerRef.current!;
-
-        // Handle response
-        const handleMessage = (e: MessageEvent) => {
-          if (e.data.trackId === trackId) {
-            worker.removeEventListener('message', handleMessage);
-            setIsAnalyzing(false);
-
-            if (e.data.error) {
-              setError(e.data.error);
-              resolve(null);
-            } else {
-              resolve({
-                bpm: e.data.bpm,
-                key: e.data.key,
-                energy: e.data.energy,
-                danceability: e.data.danceability,
-              });
-            }
-          }
-        };
-
-        worker.addEventListener('message', handleMessage);
-
-        // Extract channel data and send to worker
-        // We can't transfer AudioBuffer directly, so extract Float32Array
-        const channelData = audioBuffer.getChannelData(0);
-
-        worker.postMessage({
-          audioBuffer: channelData, // Send Float32Array instead
-          trackId,
-          sampleRate: audioBuffer.sampleRate,
-        }, [channelData.buffer]); // Transfer ownership for performance
-
-        // Timeout after 30 seconds
-        setTimeout(() => {
-          worker.removeEventListener('message', handleMessage);
-          setIsAnalyzing(false);
-          setError('Analysis timeout');
-          resolve(null);
-        }, 30000);
-      });
-    },
-    []
-  );
-
-  return {
-    analyzeTrack,
-    isAnalyzing,
-    error,
-  };
+  
+  return { analyze, isAnalyzing };
 }

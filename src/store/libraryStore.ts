@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { db, Track } from '@/lib/db';
+import { trackManifest } from '@/lib/audio/trackManifest';
+import { studioTrackImages } from '@/lib/studioTrackImages';
+import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 import toast from 'react-hot-toast';
 
 interface LibraryState {
@@ -10,21 +13,22 @@ interface LibraryState {
   seedLibrary: () => Promise<void>;
 }
 
-const mockAnalysis = async (_file: File | string) => {
-  // Simulate 1-1.5s analysis time for Essentia.js / Meyda
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 500));
+// Removed mockAnalysis
+
+// Helper to get AudioBuffer
+const getAudioBuffer = async (fileOrUrl: File | string): Promise<AudioBuffer> => {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  let arrayBuffer: ArrayBuffer;
   
-  const bpms = ['120', '124', '126', '128', '130', '140'];
-  const keys = ['8A', '4A', '11B', '2A', '7B', '9A', '5B'];
-  const energies = ['Low', 'Medium', 'High', 'Peak'];
+  if (typeof fileOrUrl === 'string') {
+    const res = await fetch(fileOrUrl);
+    arrayBuffer = await res.arrayBuffer();
+  } else {
+    arrayBuffer = await (fileOrUrl as File).arrayBuffer();
+  }
   
-  return {
-    bpm: bpms[Math.floor(Math.random() * bpms.length)],
-    key: keys[Math.floor(Math.random() * keys.length)],
-    energy: energies[Math.floor(Math.random() * energies.length)],
-    duration: '03:45', // Mocked duration
-    hasVocal: Math.random() > 0.5,
-  };
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  return audioBuffer;
 };
 
 let isSeeding = false;
@@ -33,8 +37,20 @@ export const useLibraryStore = create<LibraryState>((set) => ({
   tracks: [],
   processingTracks: [],
   loadTracks: async () => {
-    const tracks = await db.tracks.orderBy('createdAt').reverse().toArray();
-    set({ tracks });
+    try {
+      const tracks = await db.tracks.orderBy('createdAt').reverse().toArray();
+      set({ tracks });
+    } catch (e: any) {
+      if (e.message && e.message.includes('not found')) {
+        console.warn('Object store not found, wiping DB and recreating...');
+        await db.delete();
+        await db.open();
+        const tracks = await db.tracks.orderBy('createdAt').reverse().toArray();
+        set({ tracks });
+      } else {
+        throw e;
+      }
+    }
   },
   seedLibrary: async () => {
     if (isSeeding) return;
@@ -43,31 +59,38 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     
     isSeeding = true;
 
-    const seedTracks = [
-      { url: '/audio/party.mp3', name: 'party.mp3' },
-      { url: '/audio/los-5.mp3', name: 'los-5.mp3' },
-      { url: '/audio/te-perdi.mp3', name: 'te-perdi.mp3' }
-    ];
+    const seedTracks = trackManifest;
 
-    for (const track of seedTracks) {
-      const tempId = track.name + Date.now();
-      set(state => ({
-        processingTracks: [...state.processingTracks, { id: tempId, name: track.name }]
-      }));
+    try {
+      for (const track of seedTracks) {
+        const tempId = track.name + Date.now();
+        set(state => ({
+          processingTracks: [...state.processingTracks, { id: tempId, name: track.name }]
+        }));
 
       try {
-        const analysis = await mockAnalysis(track.name);
+        const audioBuffer = await getAudioBuffer(track.url);
+        const analysis = await analyzeAudioBuffer(audioBuffer);
+        
+        const mins = Math.floor(audioBuffer.duration / 60);
+        const secs = Math.floor(audioBuffer.duration % 60);
+        const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
         const title = track.name.replace(/\.[^/.]+$/, "");
         const artist = 'Pre-existing Track';
+
+        const randomImage = studioTrackImages[Math.floor(Math.random() * studioTrackImages.length)];
 
         const newTrack: Track = {
           title,
           artist,
           bpm: analysis.bpm,
           key: analysis.key,
-          duration: analysis.duration,
+          duration: durationStr,
           energy: analysis.energy,
           hasVocal: analysis.hasVocal,
+          audioUrl: track.url,
+          coverArt: randomImage,
           createdAt: Date.now(),
         };
 
@@ -84,6 +107,11 @@ export const useLibraryStore = create<LibraryState>((set) => ({
           processingTracks: state.processingTracks.filter(t => t.id !== tempId)
         }));
       }
+    }
+    } catch (dbError) {
+      console.error("Database error during seed, triggering rescue reset:", dbError);
+      await db.delete();
+      window.location.reload();
     }
     isSeeding = false;
   },
@@ -103,9 +131,13 @@ export const useLibraryStore = create<LibraryState>((set) => ({
     }));
 
     try {
-      // Mock Essentia.js / Meyda analysis
-      const analysis = await mockAnalysis(file);
+      const audioBuffer = await getAudioBuffer(file);
+      const analysis = await analyzeAudioBuffer(audioBuffer);
       
+      const mins = Math.floor(audioBuffer.duration / 60);
+      const secs = Math.floor(audioBuffer.duration % 60);
+      const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
       // Try to extract basic info from filename
       let title = file.name.replace(/\.[^/.]+$/, "");
       let artist = 'Unknown Artist';
@@ -120,7 +152,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
         artist,
         bpm: analysis.bpm,
         key: analysis.key,
-        duration: analysis.duration,
+        duration: durationStr,
         energy: analysis.energy,
         hasVocal: analysis.hasVocal,
         fileBlob: file,

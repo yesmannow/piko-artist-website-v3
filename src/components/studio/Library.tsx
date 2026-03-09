@@ -202,10 +202,19 @@ export function Library() {
                   </td>
                   <td className="px-6 py-4 text-sm flex items-center gap-3">
                     <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-slate-700 overflow-hidden relative">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_20%,#000_120%)] z-10"></div>
-                      <div className="w-full h-full bg-slate-800 flex items-center justify-center" style={{ backgroundImage: 'repeating-radial-gradient(#1e293b 0, #1e293b 2px, #0f172a 3px, #0f172a 4px)' }}>
-                        <div className="w-3 h-3 bg-accent rounded-full z-20"></div>
-                      </div>
+                      {track.coverArt ? (
+                        <div 
+                          className="w-full h-full bg-cover bg-center rounded" 
+                          style={{ backgroundImage: `url(${track.coverArt})` }} 
+                        />
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_20%,#000_120%)] z-10"></div>
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center" style={{ backgroundImage: 'repeating-radial-gradient(#1e293b 0, #1e293b 2px, #0f172a 3px, #0f172a 4px)' }}>
+                            <div className="w-3 h-3 bg-accent rounded-full z-20"></div>
+                          </div>
+                        </>
+                      )}
                     </div>
                     <span className="font-medium text-slate-200">
                       {track.title}

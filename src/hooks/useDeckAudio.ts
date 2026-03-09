@@ -56,7 +56,7 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       if (sourceRef.current) {
         try {
           sourceRef.current.stop();
-        } catch {
+        } catch (e) {
           // Ignore if already stopped
         }
         sourceRef.current.disconnect();

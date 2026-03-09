@@ -48,9 +48,11 @@ export const useDeckStore = create<DeckStore>((set) => ({
       let buffer: AudioBuffer;
       if (track.fileBlob) {
         buffer = await engine.loadBuffer(track.fileBlob);
+      } else if (track.audioUrl) {
+        // Load seeded tracks via URL
+        buffer = await engine.loadBuffer(track.audioUrl);
       } else {
-        // Fallback for seeded tracks without Blob
-        buffer = await engine.loadBuffer('https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg');
+        throw new Error("No fileBlob or audioUrl provided for track");
       }
 
       set((state) => ({
