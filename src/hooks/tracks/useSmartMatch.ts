@@ -12,7 +12,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useStore } from '@/store/useStore';
 import { studioDb, type TrackInsights } from '@/db/studioDb';
 import { calculateMatchScore, type MatchBadge } from '@/features/insights/matchScoring';
-import type { Track as TrackListingInterface } from '@/components/studio/library/TrackListing';
+import type { Track } from '@/lib/db';
+
+// Library listing type: extends the core Track with Intelligence-feature identifiers
+// (trackKey = canonical slug, trackId = string alias used by the insights store)
+interface TrackListingInterface extends Track {
+  trackKey?: string;
+  trackId?: string;
+}
 
 export interface SmartMatchResult {
   matchScore: number;       // 0.0–1.0
@@ -114,22 +121,22 @@ export function useSmartMatch(tracks: TrackListingInterface[]) {
     return tracks.map(track => {
       // Build candidate insights from the track
       // First check studioDb insights cache
-      const cachedInsights = insightsMap.get(track.trackKey) || insightsMap.get(track.trackId);
+      const cachedInsights = insightsMap.get(track.trackKey ?? '') || insightsMap.get(track.trackId ?? '');
 
       const candidateInsights: TrackInsights = cachedInsights || {
-        trackId: track.trackKey || track.trackId,
-        bpm: track.bpm || null,
+        trackId: track.trackKey || track.trackId || String(track.id ?? ''),
+        bpm: track.bpm ? Number(track.bpm) : null,
         key: extractKeyForScoring(track.key),
-        energy: track.energy ?? null,
+        energy: track.energy ? Number(track.energy) : null,
         analyzedAt: 0,
         algoVersion: 1,
       };
 
       // If we have inline data but no cached insights, use inline data
       if (!cachedInsights) {
-        candidateInsights.bpm = track.bpm || null;
+        candidateInsights.bpm = track.bpm ? Number(track.bpm) : null;
         candidateInsights.key = extractKeyForScoring(track.key);
-        candidateInsights.energy = track.energy ?? null;
+        candidateInsights.energy = track.energy ? Number(track.energy) : null;
       }
 
       const result = calculateMatchScore(activeDeckInsights, candidateInsights);
