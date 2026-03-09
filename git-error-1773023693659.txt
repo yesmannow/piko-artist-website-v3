@@ -1,0 +1,55 @@
+> git -c user.useConfigOnly=true commit --quiet --allow-empty-message --file -
+[33m[STARTED][39m Backing up original state...
+[32m[COMPLETED][39m Backed up original state in git stash (d0ea4a1)
+[33m[STARTED][39m Running tasks for staged files...
+[33m[STARTED][39m package.json[0;90m — 25 files[0m
+[33m[STARTED][39m *.{ts,tsx}[0;90m — 23 files[0m
+[33m[STARTED][39m *.{js,jsx,mjs}[0;90m — 0 files[0m
+[33m[SKIPPED][39m *.{js,jsx,mjs}[0;90m — no files[0m
+[33m[STARTED][39m eslint --fix --ignore-pattern 'archive/**'
+[31m[FAILED][39m [0;31meslint --fix --ignore-pattern 'archive/**'[0m [0;90m[FAILED][0m
+[31m[FAILED][39m [0;31meslint --fix --ignore-pattern 'archive/**'[0m [0;90m[FAILED][0m
+[32m[COMPLETED][39m Running tasks for staged files...
+[33m[STARTED][39m Applying modifications from tasks...
+[33m[SKIPPED][39m Skipped because of errors from tasks.
+[33m[STARTED][39m Reverting to original state because of errors...
+[32m[COMPLETED][39m Reverting to original state because of errors...
+[33m[STARTED][39m Cleaning up temporary files...
+[32m[COMPLETED][39m Cleaning up temporary files...
+
+[0;31m[0;31m✖[0m eslint --fix --ignore-pattern 'archive/**':[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\components\studio\Deck.tsx[24m[0m
+[0m  [2m14:8[22m   [33mwarning[39m  Function 'Deck' has too many lines (290). Maximum allowed is 150                                                     [2mmax-lines-per-function[22m[0m
+[0m  [2m14:8[22m   [33mwarning[39m  Function 'Deck' has a complexity of 22. Maximum allowed is 15                                                        [2mcomplexity[22m[0m
+[0m  [2m21:10[22m  [33mwarning[39m  'tapTimes' is assigned a value but never used. Allowed unused vars must match /^_/u                                  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m61:5[22m   [31merror[39m    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  [2m@typescript-eslint/ban-ts-comment[22m[0m
+[0m  [2m85:5[22m   [31merror[39m    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  [2m@typescript-eslint/ban-ts-comment[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\components\studio\Library.tsx[24m[0m
+[0m   [2m10:8[22m   [33mwarning[39m  Function 'Library' has too many lines (244). Maximum allowed is 150    [2mmax-lines-per-function[22m[0m
+[0m  [2m175:42[22m  [33mwarning[39m  'idx' is defined but never used. Allowed unused args must match /^_/u  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\components\studio\Mixer.tsx[24m[0m
+[0m  [2m3:10[22m  [33mwarning[39m  'useState' is defined but never used. Allowed unused vars must match /^_/u  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\hooks\useDeckAudio.ts[24m[0m
+[0m  [2m59:18[22m  [33mwarning[39m  'e' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\lib\audioEngine.ts[24m[0m
+[0m  [2m6:59[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\store\deckStore.ts[24m[0m
+[0m  [2m33:53[22m  [33mwarning[39m  'get' is defined but never used. Allowed unused args must match /^_/u  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\store\libraryStore.ts[24m[0m
+[0m  [2m13:29[22m  [33mwarning[39m  'file' is defined but never used. Allowed unused args must match /^_/u  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m32:59[22m  [33mwarning[39m  'get' is defined but never used. Allowed unused args must match /^_/u   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\dev\piko-artist-website-v3\src\workers\stem.worker.ts[24m[0m
+[0m  [2m54:46[22m  [33mwarning[39m  Refactor this function to reduce its Cognitive Complexity from 28 to the 20 allowed  [2msonarjs/cognitive-complexity[22m[0m
+[0m  [2m54:46[22m  [33mwarning[39m  Async arrow function has a complexity of 23. Maximum allowed is 15                   [2mcomplexity[22m[0m
+[0m[0m
+[0m[31m[1m✖ 15 problems (2 errors, 13 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+husky - pre-commit script failed (code 1)

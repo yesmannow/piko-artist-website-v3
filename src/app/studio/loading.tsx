@@ -1,3 +1,5 @@
+"use client";
+
 export default function StudioLoading() {
   return (
     <div className="studio-loading">

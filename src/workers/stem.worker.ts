@@ -4,7 +4,7 @@ import * as ort from "onnxruntime-web";
 import {
   StemWorkerRequestSchema,
   StemWorkerResponseSchema,
-} from "@/utils/stems/stemMessageSchema";
+} from "@/lib/utils/stems/stemMessageSchema";
 import type { Float32ArrayBuffer } from "@/workers/stem.types";
 
 declare const self: DedicatedWorkerGlobalScope;
