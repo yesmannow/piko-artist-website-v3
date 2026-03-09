@@ -24,8 +24,11 @@ interface WaveformAutomationProps {
   activeParam: 'volume' | 'hpf' | 'reverb';
 }
 
-// Stroke colours per parameter — used for both path and bloom shadow so all
-// elements share a consistent tint regardless of the active lane.
+// "Rule of 32" default automation curve for new nodes.
+// 'exponential' controls the interpolation shape used by the Bézier worker
+// (visually curved path on the canvas). Audio gain is always squared by the
+// worker when isVolume=true; here isVolume=false so values stay in 0-1 range.
+const DEFAULT_AUTOMATION_CURVE = 'exponential' as const;
 const PARAM_COLOR: Record<string, string> = {
   volume: '#00f2ff',
   hpf: '#f43f5e',
@@ -169,6 +172,27 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       // Clear the full physical canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // ── Rule of 32: draw phrase-boundary guide lines (always visible) ──
+      if (duration > 0 && track?.bpm && Number(track.bpm) > 0) {
+        const bpmNum = Number(track.bpm);
+        const phraseDuration = (60 / bpmNum) * 32; // 32-beat = 8-bar phrase
+        const phraseCount = Math.ceil(duration / phraseDuration);
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 5]);
+        for (let i = 1; i <= phraseCount; i++) {
+          const x = timeToX(i * phraseDuration, duration);
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
       if (pts.length === 0) {
         rafRef.current = requestAnimationFrame(draw);
         return;
@@ -309,7 +333,7 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       if (clickedIdx !== -1) {
         isDraggingRef.current = clickedIdx;
       } else {
-        const newPts = [...pts, { time, value, curve: 'linear' as const }].sort(
+        const newPts = [...pts, { time, value, curve: DEFAULT_AUTOMATION_CURVE }].sort(
           (a, b) => a.time - b.time,
         );
         pointsRef.current = newPts;
