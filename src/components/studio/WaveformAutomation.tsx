@@ -130,7 +130,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
   );
 
   // ── "Rule of 32" snap logic ────────────────────────────────────────────────
-  // Snaps to the nearest 32-beat phrase boundary.  Hold Shift to bypass.
+  // Snaps to the nearest 32-beat phrase boundary (32 beats = 8 bars in 4/4).
+  // Hold Shift to bypass for free-position adjustments.
   const getSnappedTime = (timeSec: number, bpm?: string, noSnap?: boolean) => {
     if (noSnap || !bpm || Number(bpm) <= 0) return timeSec;
     const beatDuration = 60 / Number(bpm);
@@ -333,7 +334,8 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
       if (clickedIdx !== -1) {
         isDraggingRef.current = clickedIdx;
       } else {
-        const newPts = [...pts, { time, value, curve: DEFAULT_AUTOMATION_CURVE }].sort(
+        // New points default to `exponential` so volume fades sound musical.
+        const newPts = [...pts, { time, value, curve: 'exponential' as const }].sort(
           (a, b) => a.time - b.time,
         );
         pointsRef.current = newPts;
