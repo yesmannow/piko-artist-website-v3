@@ -6,6 +6,8 @@ export interface DeckState {
   track: Track | null;
   isPlaying: boolean;
   currentTime: number;
+  ghostTime: number;   // Slip-mode ghost playhead position
+  rotation: number;    // Jog wheel rotation in degrees
   duration: number;
   buffer: AudioBuffer | null;
   isLoading: boolean;
@@ -13,6 +15,12 @@ export interface DeckState {
   slipMode: boolean;
   cuePoint: number;
   playbackRate: number; // For pitch faders
+}
+
+export interface TelemetryUpdate {
+  currentTime?: number;
+  ghostTime?: number;
+  rotation?: number;
 }
 
 interface DeckStore {
@@ -25,6 +33,7 @@ interface DeckStore {
   toggleSlipMode: (deckId: 'A' | 'B') => void;
   setCuePoint: (deckId: 'A' | 'B', time: number) => void;
   setPlaybackRate: (deckId: 'A' | 'B', rate: number) => void;
+  updateTelemetry: (deckId: 'A' | 'B', telemetry: TelemetryUpdate) => void;
   updateTrackAutomation: (deckId: 'A' | 'B', automation: typeof initialDeckState.track extends { automation?: infer U } ? U : never) => void;
 }
 
@@ -32,6 +41,8 @@ const initialDeckState: DeckState = {
   track: null,
   isPlaying: false,
   currentTime: 0,
+  ghostTime: 0,
+  rotation: 0,
   duration: 0,
   buffer: null,
   isLoading: false,
@@ -123,6 +134,13 @@ export const useDeckStore = create<DeckStore>((set) => ({
     const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
     set((state) => ({
       [deckKey]: { ...state[deckKey], playbackRate: Math.max(0.5, Math.min(2.0, rate)) }
+    }));
+  },
+
+  updateTelemetry: (deckId: 'A' | 'B', telemetry: TelemetryUpdate) => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: { ...state[deckKey], ...telemetry }
     }));
   },
 

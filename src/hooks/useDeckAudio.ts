@@ -30,6 +30,8 @@ export function useDeckAudio(deckId: 'A' | 'B') {
   const lastContextTimeRef = useRef<number>(0);
   const animationRef = useRef<number | null>(null);
   const isCuePlayRef = useRef(false);
+  // Snap-back: position saved when CUE is pressed while playing
+  const snapBackPositionRef = useRef<number | null>(null);
   const playbackRateRef = useRef(1.0);
   const workerRef = useRef<Worker | null>(null);
 
@@ -230,18 +232,28 @@ export function useDeckAudio(deckId: 'A' | 'B') {
           const newTime = currentTimeRef.current + delta * sourceRef.current.playbackRate.value;
           currentTimeRef.current = newTime;
           setCurrentTime(newTime);
-          setStoreTime(deckId, newTime);
+
+          const newGhostTime = deckState.slipMode
+            ? slipManagerRef.current.getGhostPosition(now, 1.0)
+            : newTime;
           if (deckState.slipMode) {
-             setGhostTime(slipManagerRef.current.getGhostPosition(now, 1.0));
+            setGhostTime(newGhostTime);
           }
+
+          // Zero-lag telemetry: write to store without extra React subscription overhead
+          useDeckStore.getState().updateTelemetry(deckId, {
+            currentTime: newTime,
+            ghostTime: newGhostTime,
+          });
           
           if (newTime >= deckState.buffer.duration) {
              if (isCuePlayRef.current) isCuePlayRef.current = false;
+             if (snapBackPositionRef.current !== null) snapBackPositionRef.current = null;
              togglePlay(deckId);
              pauseTimeRef.current = 0;
              currentTimeRef.current = 0;
              setCurrentTime(0);
-             setStoreTime(deckId, 0);
+             useDeckStore.getState().updateTelemetry(deckId, { currentTime: 0, ghostTime: 0 });
           } else {
              if (workerRef.current) {
                workerRef.current.postMessage({
@@ -328,8 +340,8 @@ export function useDeckAudio(deckId: 'A' | 'B') {
     if (!deckState.track || !deckState.buffer) return;
     
     if (deckState.isPlaying && !isCuePlayRef.current) {
-      // It was playing normally. Snap back to cuePoint and stop.
-      togglePlay(deckId);
+      // STUTTER: save pre-press position for snap-back, jump to cuePoint, continue playing
+      snapBackPositionRef.current = currentTimeRef.current;
       
       let targetTime = deckState.cuePoint;
       targetTime = getQuantizedTime(targetTime, deckState.track.bpm ? Number(deckState.track.bpm) : undefined);
@@ -339,10 +351,13 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       setCurrentTime(targetTime);
       setStoreTime(deckId, targetTime);
       
+      // Restart audio from cue point while keeping playback active
+      togglePlay(deckId);
+      setTimeout(() => togglePlay(deckId), 0);
+      
       if (navigator.vibrate) navigator.vibrate(5);
     } else {
-      // Pause or Stutter logic
-      // According to prompt: Start playback instantly from the current cuePoint
+      // CUP mode: while paused, holding CUE plays from cue point
       let targetTime = deckState.cuePoint;
       targetTime = getQuantizedTime(targetTime, deckState.track.bpm ? Number(deckState.track.bpm) : undefined);
       
@@ -359,12 +374,24 @@ export function useDeckAudio(deckId: 'A' | 'B') {
   }, [deckState.track, deckState.buffer, deckState.isPlaying, deckState.cuePoint, togglePlay, deckId, setStoreTime, getQuantizedTime]);
 
   const handleCueUp = useCallback(() => {
-    if (isCuePlayRef.current) {
+    if (snapBackPositionRef.current !== null) {
+      // SNAP-BACK: return to the position that was active before CUE was pressed
+      const snapPos = snapBackPositionRef.current;
+      snapBackPositionRef.current = null;
+      
+      pauseTimeRef.current = snapPos;
+      currentTimeRef.current = snapPos;
+      setCurrentTime(snapPos);
+      setStoreTime(deckId, snapPos);
+      
+      // Restart playing from snap-back position
+      togglePlay(deckId);
+      setTimeout(() => togglePlay(deckId), 0);
+      
+      if (navigator.vibrate) navigator.vibrate(5);
+    } else if (isCuePlayRef.current) {
+      // CUP mode release: stop playback and return to cue point
       isCuePlayRef.current = false;
-      // "Cup" Move check: if they pressed standard play while holding CUE, togglePlay would have flipped state to false.
-      // Wait, standard play button calls `enhancedTogglePlay` which does NOT flip state (it handles Cup Move).
-      // If it's still playing, it means the user DID NOT press Standard Play (or they pressed it, but Cup Move intercepted).
-      // Let's rely on standard CDJ: CUE released = stop playback, return to cuePoint.
       if (deckState.isPlaying) {
          togglePlay(deckId); // stop playing
          let targetTime = deckState.cuePoint;
@@ -401,6 +428,7 @@ export function useDeckAudio(deckId: 'A' | 'B') {
     const engine = AudioEngine.getInstance();
     const ghostPos = slipManagerRef.current.getGhostPosition(engine.context.currentTime, 1.0);
     
+    snapBackPositionRef.current = null;
     pauseTimeRef.current = ghostPos;
     currentTimeRef.current = ghostPos;
     setCurrentTime(ghostPos);

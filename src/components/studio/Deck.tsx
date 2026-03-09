@@ -26,10 +26,18 @@ export function Deck({ deckId }: DeckProps) {
   const [, setTapTimes] = useState<number[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const [rotation, setRotation] = useState(0);
+  // Rotation is sourced from Zustand (updated via updateTelemetry)
+  const rotation = useDeckStore((s) => (deckId === 'A' ? s.deckA : s.deckB).rotation);
   const jogWheelRef = useRef<HTMLDivElement>(null);
   const lastAngleRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
+  // Local ref to track rotation between frames without triggering re-renders during animation
+  const rotationRef = useRef(0);
+
+  // Keep rotationRef in sync with store value for the animation loop
+  useEffect(() => {
+    rotationRef.current = rotation;
+  }, [rotation]);
 
   // Auto-rotation when playing
   useEffect(() => {
@@ -40,7 +48,9 @@ export function Deck({ deckId }: DeckProps) {
       if (isPlaying && !isDraggingRef.current) {
         const dt = time - lastTime;
         // 33 1/3 RPM = 33.333 / 60 * 360 = 200 degrees per second
-        setRotation(prev => (prev + (200 * dt) / 1000) % 360);
+        const newRotation = (rotationRef.current + (200 * dt) / 1000) % 360;
+        rotationRef.current = newRotation;
+        useDeckStore.getState().updateTelemetry(deckId, { rotation: newRotation });
       }
       lastTime = time;
       animationFrame = requestAnimationFrame(animate);
@@ -48,7 +58,7 @@ export function Deck({ deckId }: DeckProps) {
 
     animationFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrame);
-  }, [isPlaying]);
+  }, [isPlaying, deckId]);
 
   const getAngle = (e: React.PointerEvent | PointerEvent) => {
     if (!jogWheelRef.current) return 0;
@@ -76,7 +86,9 @@ export function Deck({ deckId }: DeckProps) {
     if (deltaAngle > 180) deltaAngle -= 360;
     if (deltaAngle < -180) deltaAngle += 360;
 
-    setRotation(prev => (prev + deltaAngle) % 360);
+    const newRotation = (rotationRef.current + deltaAngle) % 360;
+    rotationRef.current = newRotation;
+    useDeckStore.getState().updateTelemetry(deckId, { rotation: newRotation });
     lastAngleRef.current = currentAngle;
 
     // Time delta: 33.333 RPM = 1.8 seconds per revolution.

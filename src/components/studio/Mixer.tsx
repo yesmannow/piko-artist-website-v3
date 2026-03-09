@@ -2,10 +2,10 @@
 
 import { useRef, useCallback, useState } from 'react';
 import { useMixerStore } from '@/store/mixerStore';
-import { useStore } from '@/store/useStore';
 import { clsx } from 'clsx';
 import { FxChainBuilder } from './FxChainBuilder';
 import { ProductionExport } from './ProductionExport';
+import { AudioEngine } from '@/lib/audioEngine';
 
 function EQKnob({ label, value, onChange }: { label: string; value: number; onChange: (val: number) => void }) {
   const isDragging = useRef(false);
@@ -85,19 +85,20 @@ function EQKnob({ label, value, onChange }: { label: string; value: number; onCh
 
 export function Mixer() {
   const { eqA, eqB, crossfader, setEQ, setCrossfader, crossfaderReverse, toggleCrossfaderReverse, quantizeActive, toggleQuantize } = useMixerStore();
-  const setFxRack = useStore((state) => state.setFxRack);
   const [buildUp, setBuildUp] = useState(0);
 
   const handleBuildUpChange = useCallback((val: number) => {
     // Map knob -1..1 to 0..1 for Macro FX
     const normalized = Math.max(0, val);
     setBuildUp(normalized);
-    setFxRack({
-      delayMix: normalized * 0.7,
-      delayFeedback: 0.35 + (normalized * 0.5),
-      filter: 0.5 + (normalized * 0.5) // HPF 0.5 -> 1.0
-    });
-  }, [setFxRack]);
+
+    // Bind directly to the WebAudio AudioEngine macro nodes
+    const engine = AudioEngine.getInstance();
+    // HPF sweep: 0 = 20 Hz (open), 1 = 20000 Hz (fully swept)
+    engine.setMacroFilter(0.5 + normalized * 0.5);
+    // Delay send grows with the build-up; feedback capped for safety
+    engine.setMacroDelay(normalized * 0.7, 0.35 + normalized * 0.5);
+  }, []);
 
 
   const isDraggingCrossfader = useRef(false);
