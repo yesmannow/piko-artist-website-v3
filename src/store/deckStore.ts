@@ -17,6 +17,11 @@ export interface DeckState {
   slipMode: boolean;
   cuePoint: number;
   playbackRate: number; // For pitch faders
+  // Phase 8: Quantum Remix — per-deck stem mute toggles
+  stems: { vocals: boolean; drums: boolean; inst: boolean; };
+  // Phase 8: Asymmetric DSP toggles
+  sibilanceTamerActive: boolean; // Deck A: de-esser / sibilance control
+  subGeneratorActive: boolean;   // Deck B: low-harmonic sub exciter
 }
 
 export interface TelemetryUpdate {
@@ -37,6 +42,10 @@ interface DeckStore {
   setPlaybackRate: (deckId: 'A' | 'B', rate: number) => void;
   updateTelemetry: (deckId: 'A' | 'B', telemetry: TelemetryUpdate) => void;
   updateTrackAutomation: (deckId: 'A' | 'B', automation: typeof initialDeckState.track extends { automation?: infer U } ? U : never) => void;
+  // Phase 8: Quantum Remix actions
+  toggleStem: (deckId: 'A' | 'B', stem: 'vocals' | 'drums' | 'inst') => void;
+  toggleSibilance: (deckId: 'A' | 'B') => void;
+  toggleSub: (deckId: 'A' | 'B') => void;
 }
 
 /**
@@ -100,6 +109,10 @@ const initialDeckState: DeckState = {
   slipMode: false,
   cuePoint: 0,
   playbackRate: 1.0,
+  // Phase 8: Quantum Remix — all stems active by default
+  stems: { vocals: true, drums: true, inst: true },
+  sibilanceTamerActive: false,
+  subGeneratorActive: false,
 };
 
 export const useDeckStore = create<DeckStore>((set) => ({
@@ -220,5 +233,40 @@ export const useDeckStore = create<DeckStore>((set) => ({
         }
       };
     });
-  }
+  },
+
+  // Phase 8: Quantum Remix actions
+
+  toggleStem: (deckId: 'A' | 'B', stem: 'vocals' | 'drums' | 'inst') => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: {
+        ...state[deckKey],
+        stems: {
+          ...state[deckKey].stems,
+          [stem]: !state[deckKey].stems[stem],
+        },
+      },
+    }));
+  },
+
+  toggleSibilance: (deckId: 'A' | 'B') => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: {
+        ...state[deckKey],
+        sibilanceTamerActive: !state[deckKey].sibilanceTamerActive,
+      },
+    }));
+  },
+
+  toggleSub: (deckId: 'A' | 'B') => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: {
+        ...state[deckKey],
+        subGeneratorActive: !state[deckKey].subGeneratorActive,
+      },
+    }));
+  },
 }));

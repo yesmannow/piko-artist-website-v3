@@ -141,7 +141,7 @@ export function Mixer() {
   const crossfaderLeft = `${((crossfader + 1) / 2) * 100}%`;
 
   return (
-    <div className="col-span-12 lg:col-span-2 bg-slate-900/60 rounded-xl border border-slate-800 p-4 flex flex-col items-center gap-6 transition-colors duration-300">
+    <div className="col-span-12 lg:col-span-2 bg-[var(--color-obsidian-900)] backdrop-blur-2xl rounded-xl border border-slate-800/60 p-4 flex flex-col items-center gap-6 transition-colors duration-300 shadow-[inset_0_2px_16px_rgba(0,0,0,0.8)]">
       <div className="grid grid-cols-2 gap-8 w-full">
         <div className="flex flex-col items-center gap-4">
           <EQKnob label="High" value={eqA.high} onChange={(val) => setEQ('A', 'high', val)} />

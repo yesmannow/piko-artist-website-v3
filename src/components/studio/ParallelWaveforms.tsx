@@ -161,20 +161,21 @@ function drawPhraseMarkers(ctx: CanvasRenderingContext2D, w: number, h: number, 
   ctx.restore();
 }
 
-function drawPlayhead(ctx: CanvasRenderingContext2D, w: number, h: number, progress: number) {
+function drawPlayhead(ctx: CanvasRenderingContext2D, w: number, h: number, progress: number, color: string = COLORS.playhead) {
   const playheadX = progress * w;
 
-  // Progress fill
+  // Progress fill — ~7.8% opacity tint (0x14 = 20/255 ≈ 7.8%) using the per-deck accent color
+  const PLAYHEAD_FILL_OPACITY = '14'; // hex 0x14 = 20 decimal ≈ 7.8% of 255
   ctx.save();
-  ctx.fillStyle = 'rgba(0, 242, 255, 0.08)';
+  ctx.fillStyle = `${color}${PLAYHEAD_FILL_OPACITY}`;
   ctx.fillRect(0, 0, playheadX, h);
   ctx.restore();
 
   // Playhead line
   ctx.save();
-  ctx.strokeStyle = COLORS.playhead;
+  ctx.strokeStyle = color;
   ctx.lineWidth = 1.5;
-  ctx.shadowColor = COLORS.playhead;
+  ctx.shadowColor = color;
   ctx.shadowBlur = 12;
   ctx.beginPath();
   ctx.moveTo(playheadX, 0);
@@ -193,14 +194,15 @@ function drawDeckWaveform(
   progress: number,
   bpm: number,
   duration: number,
+  playheadColor: string,
   vocalSegments?: { start: number; end: number }[],
 ) {
   const mid = h / 2;
   const step = w / peaks.length;
   const heightScale = h * 0.42;
 
-  // Background
-  ctx.fillStyle = 'rgba(6, 7, 10, 0.95)';
+  // Background — deep #0a0a0c obsidian
+  ctx.fillStyle = 'rgba(5, 5, 7, 0.97)';
   ctx.fillRect(0, 0, w, h);
 
   // Waveform
@@ -222,7 +224,7 @@ function drawDeckWaveform(
 
   // Playhead
   if (progress > 0) {
-    drawPlayhead(ctx, w, h, progress);
+    drawPlayhead(ctx, w, h, progress, playheadColor);
   }
 }
 
@@ -249,6 +251,7 @@ function renderDeck(
   cache: React.MutableRefObject<PeakCache>,
   dpr: number,
   emptyLabel: string,
+  playheadColor: string,
 ) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -273,7 +276,7 @@ function renderDeck(
   const progress = deck.duration > 0 ? deck.currentTime / deck.duration : 0;
   const bpm = deck.track?.bpm ? Number(deck.track.bpm) : 0;
   const vocalSegments = deck.track?.vocalSegments;
-  drawDeckWaveform(ctx, w, h, cache.current.peaks!, cache.current.freq, progress, bpm, deck.duration, vocalSegments);
+  drawDeckWaveform(ctx, w, h, cache.current.peaks!, cache.current.freq, progress, bpm, deck.duration, playheadColor, vocalSegments);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -322,10 +325,10 @@ export function ParallelWaveforms() {
       const dpr = window.devicePixelRatio || 1;
 
       if (canvasARef.current) {
-        renderDeck(canvasARef.current, state.deckA, peaksCacheA, dpr, 'DECK A — NO TRACK LOADED');
+        renderDeck(canvasARef.current, state.deckA, peaksCacheA, dpr, 'DECK A — NO TRACK LOADED', '#00f2ff');
       }
       if (canvasBRef.current) {
-        renderDeck(canvasBRef.current, state.deckB, peaksCacheB, dpr, 'DECK B — NO TRACK LOADED');
+        renderDeck(canvasBRef.current, state.deckB, peaksCacheB, dpr, 'DECK B — NO TRACK LOADED', '#ff00f2');
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -341,14 +344,14 @@ export function ParallelWaveforms() {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Automation Controls */}
-      <div className="flex gap-2 items-center px-2 py-1 bg-slate-900/50 rounded-lg border border-slate-800/60 font-mono text-xs">
-        <span className="text-white/60 uppercase tracking-widest mr-2">Auto:</span>
+      {/* Automation Controls — Liquid Obsidian glassmorphism */}
+      <div className="flex gap-2 items-center px-2 py-1 bg-[var(--color-obsidian-900)]/80 backdrop-blur-[24px] rounded-lg border border-slate-800/40 font-mono text-xs">
+        <span className="text-white/40 uppercase tracking-widest mr-2">Auto:</span>
         {(['off', 'volume', 'hpf', 'reverb'] as const).map(mode => (
           <button 
             key={mode}
             onClick={() => setAutomationMode(mode)}
-            className={`px-3 py-1 rounded transition-colors ${automationMode === mode ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'}`}
+            className={`px-3 py-1 rounded transition-colors ${automationMode === mode ? 'bg-[#00f2ff]/20 text-[#00f2ff] border border-[#00f2ff]/30' : 'text-slate-400 hover:text-white'}`}
           >
             {mode.toUpperCase()}
           </button>
@@ -357,13 +360,14 @@ export function ParallelWaveforms() {
 
       <div
         ref={containerRef}
-        className="parallel-waveforms sticky top-0 z-30 w-full flex flex-col rounded-xl overflow-hidden border border-slate-800/60"
-        style={{ background: 'rgba(6, 7, 10, 0.95)' }}
+        className="parallel-waveforms sticky top-0 z-30 w-full flex flex-col rounded-xl overflow-hidden border border-slate-800/40 backdrop-blur-[24px]"
+        style={{ background: 'rgba(5, 5, 7, 0.97)' }}
       >
-        {/* Deck A Lane */}
-        <div className="relative">
+        {/* Deck A Lane — Neon Blue (#00f2ff) */}
+        <div className="relative" style={{ borderBottom: '1px solid rgba(0,242,255,0.08)' }}>
           <canvas ref={canvasARef} className="block w-full" style={{ height: 60 }} />
-          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-cyan-400 bg-black/60 rounded z-50 pointer-events-none">
+          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest bg-black/60 rounded z-50 pointer-events-none"
+            style={{ color: '#00f2ff' }}>
             A
           </div>
           {automationMode !== 'off' && containerWidth > 0 && (
@@ -371,13 +375,14 @@ export function ParallelWaveforms() {
           )}
         </div>
 
-        {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+        {/* Separator — dual-color gradient */}
+        <div className="h-px bg-gradient-to-r from-[#00f2ff]/20 via-slate-700/30 to-[#ff00f2]/20" />
 
-        {/* Deck B Lane */}
+        {/* Deck B Lane — Neon Magenta (#ff00f2) */}
         <div className="relative">
           <canvas ref={canvasBRef} className="block w-full" style={{ height: 60 }} />
-          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-purple-400 bg-black/60 rounded z-50 pointer-events-none">
+          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest bg-black/60 rounded z-50 pointer-events-none"
+            style={{ color: '#ff00f2' }}>
             B
           </div>
           {automationMode !== 'off' && containerWidth > 0 && (
