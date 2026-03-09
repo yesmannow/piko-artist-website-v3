@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useStore } from "@/store/useStore";
-import { useStudioStore } from "@/store/useStudioStore";
+import { useMixerStore } from "@/store/mixerStore";
 import { useDeckStore } from "@/store/deckStore";
 
 interface MidiBridgeState {
@@ -13,10 +12,12 @@ interface MidiBridgeState {
 }
 
 const normalize = (value: number) => Math.max(0, Math.min(1, value / 127));
+/** Map 0–1 MIDI normalized value to -1…+1 crossfader range */
+const normToCrossfader = (n: number) => n * 2 - 1;
 
 export function useMidiBridge(): MidiBridgeState {
-  const setDeckVolume = useStore((state) => state.setDeckVolume);
-  const setCrossfader = useStudioStore((state) => state.setCrossfader);
+  const setCrossfader = useMixerStore((state) => state.setCrossfader);
+  const setVolume = useDeckStore((state) => state.setVolume);
   const { setPlaybackRate } = useDeckStore();
 
   const midiAccessRef = useRef<MIDIAccess | null>(null);
@@ -58,9 +59,9 @@ export function useMidiBridge(): MidiBridgeState {
           msbRef.current[cc] = value;
           // Apply coarse value immediately to avoid lag if LSB is missing or delayed
           const normalized = value / 127;
-          if (cc === 1) setCrossfader(normalized);
-          if (cc === 7) setDeckVolume("A", normalized);
-          if (cc === 8) setDeckVolume("B", normalized);
+          if (cc === 1) setCrossfader(normToCrossfader(normalized));
+          if (cc === 7) setVolume("A", normalized);
+          if (cc === 8) setVolume("B", normalized);
         } 
         // 14-bit LSB (32-63)
         else if (cc >= 32 && cc <= 63) {
@@ -68,19 +69,19 @@ export function useMidiBridge(): MidiBridgeState {
           const highResValue = (msb << 7) | value;
           const normalized = highResValue / 16383;
           // Apply high resolution 14-bit (16,384 steps) to eliminate zipper noise
-          if (cc - 32 === 1) setCrossfader(normalized);
-          if (cc - 32 === 7) setDeckVolume("A", normalized);
-          if (cc - 32 === 8) setDeckVolume("B", normalized);
+          if (cc - 32 === 1) setCrossfader(normToCrossfader(normalized));
+          if (cc - 32 === 7) setVolume("A", normalized);
+          if (cc - 32 === 8) setVolume("B", normalized);
         } 
         // Standard 7-bit
         else {
-          if (cc === 1) setCrossfader(normalize(value));
-          if (cc === 7) setDeckVolume("A", normalize(value));
-          if (cc === 8) setDeckVolume("B", normalize(value));
+          if (cc === 1) setCrossfader(normToCrossfader(normalize(value)));
+          if (cc === 7) setVolume("A", normalize(value));
+          if (cc === 8) setVolume("B", normalize(value));
         }
       }
     },
-    [setCrossfader, setDeckVolume, setPlaybackRate]
+    [setCrossfader, setVolume, setPlaybackRate]
   );
 
   const attachInputs = useCallback(() => {

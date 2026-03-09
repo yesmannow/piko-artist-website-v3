@@ -25,6 +25,14 @@ export class AudioEngine {
   public masterOut: Tone.Limiter;
   public stereoWidener: Tone.StereoWidener;
   public masterStreamNode: MediaStreamAudioDestinationNode;
+
+  // SE-1 Build-up macro chain (master HPF + delay send)
+  private macroHPF: BiquadFilterNode;
+  private macroDelayNode: DelayNode;
+  private macroDelayGain: GainNode;   // wet send
+  private macroDryGain: GainNode;     // dry path
+  private macroFeedbackGain: GainNode; // delay feedback loop
+  private macroOutput: GainNode;      // summed output to stereoWidener
   
   // Stems routing (Phase 8 Multi-track)
   public stems: Record<string, MediaStreamAudioDestinationNode>;
@@ -60,6 +68,42 @@ export class AudioEngine {
     
     // Master analyser takes the final output signal before speaker destination
     Tone.connect(this.masterOut, this.masterAnalyser as any);
+
+    // ── SE-1 Build-up Macro Chain ──────────────────────────────────────
+    // Signal path: macroHPF -> macroDryGain \
+    //                       -> macroDelayGain -> macroDelayNode -> macroFeedbackGain (loop back) -> macroOutput -> stereoWidener
+    this.macroHPF = this.context.createBiquadFilter();
+    this.macroHPF.type = 'highpass';
+    this.macroHPF.frequency.value = 20; // Start fully open (20 Hz = flat)
+    this.macroHPF.Q.value = 0.7;
+
+    this.macroDryGain = this.context.createGain();
+    this.macroDryGain.gain.value = 1;
+
+    this.macroDelayGain = this.context.createGain();
+    this.macroDelayGain.gain.value = 0; // Start dry
+
+    this.macroDelayNode = this.context.createDelay(2.0);
+    this.macroDelayNode.delayTime.value = 0.375; // Dotted eighth at 120 BPM
+
+    this.macroFeedbackGain = this.context.createGain();
+    this.macroFeedbackGain.gain.value = 0.35;
+
+    this.macroOutput = this.context.createGain();
+    this.macroOutput.gain.value = 1;
+
+    // Wire macro chain
+    this.macroHPF.connect(this.macroDryGain);
+    this.macroDryGain.connect(this.macroOutput);
+
+    this.macroHPF.connect(this.macroDelayGain);
+    this.macroDelayGain.connect(this.macroDelayNode);
+    this.macroDelayNode.connect(this.macroFeedbackGain);
+    this.macroFeedbackGain.connect(this.macroDelayNode); // feedback loop
+    this.macroDelayNode.connect(this.macroOutput);
+
+    // macroOutput feeds into stereoWidener
+    Tone.connect(this.macroOutput as unknown as any, this.stereoWidener);
     
     // Initialize Stems
     this.stems = {
@@ -71,12 +115,38 @@ export class AudioEngine {
   }
 
   // To easily route tracks to the mastering chain instead of context.destination
+  // Routes through the SE-1 macro HPF chain before stereoWidener
   public connectToMaster(node: AudioNode | Tone.ToneAudioNode) {
     if (node instanceof AudioNode) {
-      Tone.connect(node as unknown as any, this.stereoWidener);
+      node.connect(this.macroHPF);
     } else {
-      node.connect(this.stereoWidener);
+      Tone.connect(node, this.macroHPF as unknown as any);
     }
+  }
+
+  // ── SE-1 Macro Controls ──────────────────────────────────────────────
+
+  /**
+   * Set HPF cutoff for Build-up macro sweep.
+   * @param normalized 0–1 where 0 = 20 Hz (open) and 1 = 20000 Hz (fully swept)
+   */
+  public setMacroFilter(normalized: number): void {
+    const clamped = Math.max(0, Math.min(1, normalized));
+    // Exponential mapping: 20 Hz → 20000 Hz
+    const freq = 20 * Math.pow(1000, clamped);
+    this.macroHPF.frequency.setTargetAtTime(freq, this.context.currentTime, 0.05);
+  }
+
+  /**
+   * Set delay send mix and feedback for Build-up macro.
+   * @param mix       0–1 wet send amount
+   * @param feedback  0–1 feedback fraction (clamped to 0.95 for safety)
+   */
+  public setMacroDelay(mix: number, feedback: number): void {
+    const clampedMix = Math.max(0, Math.min(1, mix));
+    const clampedFb  = Math.max(0, Math.min(0.95, feedback));
+    this.macroDelayGain.gain.setTargetAtTime(clampedMix, this.context.currentTime, 0.05);
+    this.macroFeedbackGain.gain.setTargetAtTime(clampedFb, this.context.currentTime, 0.05);
   }
 
   public static getInstance(): AudioEngine {
