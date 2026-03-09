@@ -6,6 +6,25 @@ import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 import { generateFingerprint, lookupMetadata } from '@/lib/acoustid';
 import { PLACEHOLDER_BPM, PLACEHOLDER_KEY } from '@/lib/constants/analysisPlaceholders';
 import toast from 'react-hot-toast';
+import pikoSeedData from '@/lib/data/piko-seed.json';
+
+/** Shape of each entry in piko-seed.json */
+interface PikoSeedEntry {
+  filename: string;
+  title: string;
+  artist: string;
+  bpm: string;
+  key: string;
+  energy: string;
+  durationEstimate: string;
+  hasVocal: boolean;
+  status: string;
+}
+
+// Build a lookup map keyed by lowercase filename for O(1) metadata resolution
+const pikoSeedMap = new Map(
+  (pikoSeedData as PikoSeedEntry[]).map((entry) => [entry.filename.toLowerCase(), entry])
+);
 
 interface LibraryState {
   tracks: Track[];
@@ -66,21 +85,25 @@ export const useLibraryStore = create<LibraryState>((set) => ({
       for (let idx = 0; idx < trackManifest.length; idx++) {
         const track = trackManifest[idx];
         try {
-          const title = track.name.replace(/\.[^/.]+$/, '');
+          // Resolve rich metadata from piko-seed.json (keyed by normalised filename)
+          const filenameOnly = track.name.split('/').pop() ?? track.name;
+          const seed = pikoSeedMap.get(filenameOnly.toLowerCase());
+
+          const title = seed?.title ?? track.name.replace(/\.[^/.]+$/, '');
           const randomImage = TRACK_IMAGE_POOL[idx % TRACK_IMAGE_POOL.length];
 
           const row: Omit<Track, 'id'> = {
             title,
-            artist: 'Pre-existing Track',
-            // Prefer manifest-provided values; fall back to placeholder constants
-            bpm: track.bpm ?? PLACEHOLDER_BPM,
-            key: track.key ?? PLACEHOLDER_KEY,
-            duration: '00:00',
-            energy: 'Medium',
-            hasVocal: false,
+            artist: seed?.artist ?? 'Piko FG',
+            // Prefer seed-provided values; fall back to manifest then placeholder
+            bpm: seed?.bpm ?? track.bpm ?? PLACEHOLDER_BPM,
+            key: seed?.key ?? track.key ?? PLACEHOLDER_KEY,
+            duration: seed?.durationEstimate ?? '00:00',
+            energy: seed?.energy ?? 'Medium',
+            hasVocal: seed?.hasVocal ?? false,
             audioUrl: track.url,
             coverArt: randomImage,
-            status: 'ready' as const,
+            status: (seed?.status as Track['status']) ?? 'ready',
             createdAt: now - idx, // ensure stable insertion order
           };
 

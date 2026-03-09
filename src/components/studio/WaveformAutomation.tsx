@@ -71,8 +71,10 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
 
   const getSnappedTime = (timeSec: number, bpm?: string) => {
     if (!bpm || Number(bpm) <= 0) return timeSec;
+    // "Rule of 32": snap to 32-beat (8-bar) phrase boundaries
     const beatDuration = 60 / Number(bpm);
-    return Math.round(timeSec / (beatDuration / 4)) * (beatDuration / 4);
+    const phraseDuration = beatDuration * 32;
+    return Math.round(timeSec / phraseDuration) * phraseDuration;
   };
 
   // ── rAF draw loop ──────────────────────────────────────────────────────────
@@ -108,6 +110,27 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
 
       // Clear the full physical canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // ── Rule of 32: draw phrase-boundary guide lines (always visible) ──
+      if (duration > 0 && track?.bpm && Number(track.bpm) > 0) {
+        const bpmNum = Number(track.bpm);
+        const phraseDuration = (60 / bpmNum) * 32; // 32-beat = 8-bar phrase
+        const phraseCount = Math.ceil(duration / phraseDuration);
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 5]);
+        for (let i = 1; i <= phraseCount; i++) {
+          const x = timeToX(i * phraseDuration, duration);
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
 
       if (pts.length === 0) {
         rafRef.current = requestAnimationFrame(draw);
@@ -221,7 +244,7 @@ export function WaveformAutomation({ deckId, width, height, activeParam }: Wavef
           isDraggingRef.current = clickedIdx;
         }
       } else {
-        const newPts = [...pts, { time, value, curve: 'linear' as const }].sort(
+        const newPts = [...pts, { time, value, curve: 'exponential' as const }].sort(
           (a, b) => a.time - b.time,
         );
         pointsRef.current = newPts;
