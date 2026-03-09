@@ -10,6 +10,8 @@ export interface DeckState {
   buffer: AudioBuffer | null;
   isLoading: boolean;
   volume: number;
+  slipMode: boolean;
+  cuePoint: number;
 }
 
 interface DeckStore {
@@ -19,6 +21,8 @@ interface DeckStore {
   togglePlay: (deckId: 'A' | 'B') => void;
   setVolume: (deckId: 'A' | 'B', volume: number) => void;
   setCurrentTime: (deckId: 'A' | 'B', time: number) => void;
+  toggleSlipMode: (deckId: 'A' | 'B') => void;
+  setCuePoint: (deckId: 'A' | 'B', time: number) => void;
 }
 
 const initialDeckState: DeckState = {
@@ -29,6 +33,8 @@ const initialDeckState: DeckState = {
   buffer: null,
   isLoading: false,
   volume: 1,
+  slipMode: false,
+  cuePoint: 0,
 };
 
 export const useDeckStore = create<DeckStore>((set) => ({
@@ -92,6 +98,20 @@ export const useDeckStore = create<DeckStore>((set) => ({
     const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
     set((state) => ({
       [deckKey]: { ...state[deckKey], currentTime: time }
+    }));
+  },
+
+  toggleSlipMode: (deckId: 'A' | 'B') => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: { ...state[deckKey], slipMode: !state[deckKey].slipMode }
+    }));
+  },
+
+  setCuePoint: (deckId: 'A' | 'B', time: number) => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: { ...state[deckKey], cuePoint: time }
     }));
   }
 }));

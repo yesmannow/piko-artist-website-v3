@@ -1,3 +1,21 @@
+export class SlipModeManager {
+  private ghostStartTime: number = 0;
+  private isSlipActive: boolean = false;
+
+  public get isActive() { return this.isSlipActive; }
+  public set isActive(val: boolean) { this.isSlipActive = val; }
+
+  // Called when Play is pressed or Slip is engaged
+  public startGhost(currentTime: number, currentPosition: number) {
+    this.ghostStartTime = currentTime - currentPosition;
+  }
+
+  // Returns where the track "should" be right now
+  public getGhostPosition(currentTime: number, playbackRate: number): number {
+    return (currentTime - this.ghostStartTime) * playbackRate;
+  }
+}
+
 export class AudioEngine {
   private static instance: AudioEngine;
   public context: AudioContext;
@@ -57,10 +75,15 @@ export class AudioEngine {
     };
   }
 
-  public getEqualPowerGains(crossfaderValue: number): { gainA: number; gainB: number } {
+  public getLogarithmicGain(linearValue: number): number {
+    return Math.pow(Math.max(0, Math.min(1, linearValue)), 2);
+  }
+
+  public getEqualPowerGains(crossfaderValue: number, reversed: boolean = false): { gainA: number; gainB: number } {
     // crossfaderValue ranges from -1 (Deck A) to 1 (Deck B)
+    const effectiveValue = reversed ? -crossfaderValue : crossfaderValue;
     // Convert to 0 to 1 range
-    const x = (crossfaderValue + 1) / 2;
+    const x = (effectiveValue + 1) / 2;
     
     // Equal power curve: cos(x * pi/2) for A, sin(x * pi/2) for B
     const gainA = Math.cos(x * 0.5 * Math.PI);

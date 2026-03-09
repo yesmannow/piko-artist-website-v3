@@ -1,7 +1,9 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useMixerStore } from '@/store/mixerStore';
+import { useStore } from '@/store/useStore';
+import { clsx } from 'clsx';
 
 function EQKnob({ label, value, onChange }: { label: string; value: number; onChange: (val: number) => void }) {
   const isDragging = useRef(false);
@@ -80,7 +82,21 @@ function EQKnob({ label, value, onChange }: { label: string; value: number; onCh
 }
 
 export function Mixer() {
-  const { eqA, eqB, crossfader, setEQ, setCrossfader } = useMixerStore();
+  const { eqA, eqB, crossfader, setEQ, setCrossfader, crossfaderReverse, toggleCrossfaderReverse, quantizeActive, toggleQuantize } = useMixerStore();
+  const setFxRack = useStore((state) => state.setFxRack);
+  const [buildUp, setBuildUp] = useState(0);
+
+  const handleBuildUpChange = useCallback((val: number) => {
+    // Map knob -1..1 to 0..1 for Macro FX
+    const normalized = Math.max(0, val);
+    setBuildUp(normalized);
+    setFxRack({
+      delayMix: normalized * 0.7,
+      delayFeedback: 0.35 + (normalized * 0.5),
+      filter: normalized // assuming 0.5 to 1.0 maps to 0 to 1 for filter intensity in FX rack, or we just map it here. Let's use 0.5 + 0.5*val if standard is 0.5. Wait, FxRack uses 0..1 so let's just use normalized for simplicity or exact formula.
+    });
+  }, [setFxRack]);
+
 
   const isDraggingCrossfader = useRef(false);
   const crossfaderRef = useRef<HTMLDivElement>(null);
@@ -167,6 +183,27 @@ export function Mixer() {
           </div>
         </div>
       </div>
+
+      <div className="flex gap-4 w-full px-4 justify-around mt-2">
+        <div className="flex flex-col items-center">
+            <EQKnob label="Build-up" value={buildUp} onChange={handleBuildUpChange} />
+        </div>
+        <div className="flex flex-col gap-2 scale-75 origin-top">
+            <button 
+               onClick={toggleQuantize}
+               className={clsx("px-2 py-1 border rounded text-[10px] font-bold transition-all", quantizeActive ? "bg-accent/20 border-accent/50 text-accent shadow-[0_0_10px_rgba(0,242,255,0.3)]" : "bg-slate-800 border-slate-700 text-slate-500")}
+            >
+               QUANTIZE
+            </button>
+            <button 
+               onClick={toggleCrossfaderReverse}
+               className={clsx("px-2 py-1 border rounded text-[10px] font-bold transition-all", crossfaderReverse ? "bg-purple-500/20 border-purple-500/50 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)]" : "bg-slate-800 border-slate-700 text-slate-500")}
+            >
+               HAMSTER
+            </button>
+        </div>
+      </div>
+
       <div className="w-full px-4 mt-auto">
         <div 
           className="h-8 w-full fader-track rounded-full border border-slate-800 relative cursor-pointer"

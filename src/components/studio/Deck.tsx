@@ -6,6 +6,7 @@ import { useState, useCallback, DragEvent, useRef, useEffect } from 'react';
 import { useDeckStore } from '@/store/deckStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDeckAudio } from '@/hooks/useDeckAudio';
+import { PerformancePads } from './PerformancePads';
 
 interface DeckProps {
   deckId: 'A' | 'B';
@@ -13,9 +14,12 @@ interface DeckProps {
 
 export function Deck({ deckId }: DeckProps) {
   const isRight = deckId === 'B';
-  const { loadTrack } = useDeckStore();
+  const { loadTrack, toggleSlipMode } = useDeckStore();
   const { tracks } = useLibraryStore();
-  const { currentTime, duration, isPlaying, isLoading, track, togglePlay, scrubTrack, endScrub } = useDeckAudio(deckId);
+  const { 
+    currentTime, ghostTime, deckState, duration, isPlaying, isLoading, track, 
+    togglePlay, scrubTrack, endScrub, handleCueDown, handleCueUp 
+  } = useDeckAudio(deckId);
   
   const [currentBpm, setCurrentBpm] = useState(track ? Number(track.bpm) : 120);
   const [, setTapTimes] = useState<number[]>([]);
@@ -193,6 +197,14 @@ export function Deck({ deckId }: DeckProps) {
         </div>
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-accent/80 z-10 shadow-[0_0_8px_#00f2ff]"></div>
         
+        {/* Ghost Playhead Progress */}
+        {deckState.slipMode && duration > 0 && (
+          <div 
+            className="absolute top-0 bottom-0 bg-white/20 z-0 border-r border-[#f43f5e] border-dashed" 
+            style={{ width: `${(ghostTime / duration) * 100}%` }}
+          />
+        )}
+        
         {/* Playhead Progress */}
         {duration > 0 && (
           <div 
@@ -296,22 +308,40 @@ export function Deck({ deckId }: DeckProps) {
             </div>
           </div>
         )}
+        {/* Center Transport Controls */}
         <div className="flex flex-col gap-3">
-          <button className="w-20 h-20 rounded-full bg-slate-800 border-2 border-accent text-accent flex flex-col items-center justify-center font-bold neon-glow hover:bg-slate-700 transition-all">
+          <button 
+            onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); handleCueDown(); }}
+            onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); handleCueUp(); }}
+            onPointerCancel={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); handleCueUp(); }}
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-800 border-2 border-accent text-accent flex flex-col items-center justify-center font-bold shadow-[0_0_15px_rgba(0,242,255,0.2)] hover:bg-slate-700 transition-all select-none touch-none active:scale-95"
+          >
             <span className="text-xs">CUE</span>
           </button>
           <button
             onClick={togglePlay}
             disabled={!track}
             className={clsx(
-              'w-20 h-20 rounded-full flex flex-col items-center justify-center font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              'w-16 h-16 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed select-none touch-none active:scale-95',
               isPlaying
-                ? 'bg-accent text-primary neon-glow hover:scale-105'
+                ? 'bg-accent text-primary shadow-[0_0_20px_rgba(0,242,255,0.5)]'
                 : 'bg-slate-800 border-2 border-slate-600 text-slate-400 hover:border-accent hover:text-accent'
             )}
           >
-            <Play className={clsx('w-8 h-8', isPlaying ? 'fill-primary' : 'fill-slate-400')} />
+            <Play className={clsx('w-6 h-6 sm:w-8 sm:h-8', isPlaying ? 'fill-primary' : 'fill-slate-400')} />
             <span className="text-[10px]">PLAY</span>
+          </button>
+          
+          <button
+            onClick={() => toggleSlipMode(deckId)}
+            className={clsx(
+              'mt-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-widest border border-transparent select-none touch-none active:scale-95',
+              deckState.slipMode
+                 ? 'bg-[#f43f5e]/20 text-[#f43f5e] border-[#f43f5e]/50 shadow-[0_0_15px_rgba(244,63,94,0.3)] animate-pulse'
+                 : 'bg-slate-800 text-slate-500 hover:text-slate-300'
+            )}
+          >
+            SLIP
           </button>
         </div>
         {isRight && (
@@ -347,6 +377,9 @@ export function Deck({ deckId }: DeckProps) {
           </div>
         )}
       </div>
+      
+      {/* 8-Pad Performance Grid */}
+      <PerformancePads deckId={deckId} />
     </div>
   );
 }
