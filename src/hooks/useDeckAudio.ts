@@ -112,21 +112,23 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       eqChainRef.current.output.connect(routing.drumFilter);
       eqChainRef.current.output.connect(routing.instFilter);
 
-      // Routing summing bus → master gain
-      routing.output.connect(gainRef.current);
-
-      // Phase 8: Asymmetric DSP — create the appropriate circuit per deck
+      // Phase 8: Asymmetric DSP — topology differs per deck to avoid signal doubling
       if (deckId === 'A') {
+        // Sibilance Tamer in-series: routing.output → tamer → gainRef
+        // When inactive, the peaking filter (gain=0 dB) is transparent and the
+        // compressor passes audio unmodified — no bypass path needed.
         const tamer = engine.createSibilanceTamer();
         sibilanceTamerRef.current = tamer;
-        // Insert in parallel: EQ output → sibilanceTamer → gain
-        eqChainRef.current.output.connect(tamer.input);
+        routing.output.connect(tamer.input);
         tamer.output.connect(gainRef.current);
       } else {
+        // Sub Generator in-parallel: routing.output → gainRef (dry path, always on)
+        // plus routing.output → subGen → gainRef (wet blend, gain=0 when inactive).
+        // Parallel topology preserves full-spectrum audio while blending sub harmonics.
+        routing.output.connect(gainRef.current);
         const subGen = engine.createSubGenerator();
         subGeneratorRef.current = subGen;
-        // Insert in parallel: EQ output → subGenerator → gain
-        eqChainRef.current.output.connect(subGen.input);
+        routing.output.connect(subGen.input);
         subGen.output.connect(gainRef.current);
       }
 

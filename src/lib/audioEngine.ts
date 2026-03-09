@@ -536,6 +536,10 @@ export class AudioEngine {
     subLpf.Q.value         = 0.7;
 
     // Waveshaper: soft-clip generates 2nd/3rd harmonics
+    // Transfer function: f(x) = (π + k)x / (π + k|x|)  where k=200
+    // This is a rational approximation that saturates gently, producing mainly
+    // even harmonics (2nd, 4th) that add perceived warmth and sub-bass body.
+    // k=200 sets the "drive" amount; larger k = more saturation / more harmonics.
     const shaper = ctx.createWaveShaper();
     const curve  = new Float32Array(256);
     for (let i = 0; i < 256; i++) {
