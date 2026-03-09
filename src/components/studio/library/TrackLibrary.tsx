@@ -25,7 +25,7 @@ import { useLibrarySync } from '@/hooks/tracks/useLibrarySync';
 import { useStudioStore } from '@/store/useStudioStore';
 import { deriveTrackKey } from '@/lib/trackKey'; // Phase S11.2 - Canonical track identity
 import { useSmartTrackAnalysis } from '@/hooks/tracks/useSmartTrackAnalysis';
-import { useStore } from '@/store/useStore';
+import { useSmartMatch } from '@/hooks/tracks/useSmartMatch';
 
 interface TrackLibraryProps {
   readonly isOpen: boolean;
@@ -37,14 +37,13 @@ interface TrackLibraryProps {
 
 export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, panelId }: TrackLibraryProps) {
   const stemsCache = useStudioStore((state) => state.stemsCache);
-  const deckA = useStore((state) => state.deckA);
-  const deckB = useStore((state) => state.deckB);
+  const sortBy = useStudioStore((state) => state.librarySortBy);
+  const setSortBy = useStudioStore((state) => state.setLibrarySortBy);
   const [query, setQuery] = useState('');
   const [genreFilter, setGenreFilter] = useState<string>('all');
   const [moodFilter, setMoodFilter] = useState<string>('all');
   const [bpmMin, setBpmMin] = useState<number>(0);
   const [bpmMax, setBpmMax] = useState<number>(220);
-  const [sortBy, setSortBy] = useState<'dateAdded' | 'bpm' | 'energy'>('dateAdded');
   const [batchAnalyzing, setBatchAnalyzing] = useState(false);
 
   // Phase VII: Sync tracks from R2 to IndexedDB
@@ -110,15 +109,6 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
     return ['all', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
   }, [tracks]);
 
-  // Get active deck's Camelot key for harmonic matching
-  const activeDeckKey = useMemo(() => {
-    const activeDeck = deckA.isPlaying ? deckA : deckB.isPlaying ? deckB : null;
-    if (!activeDeck?.trackData?.key) return null;
-
-    // Extract Camelot notation from key string (e.g., "C major (8B)" -> "8B")
-    const match = activeDeck.trackData.key.match(/\(([0-9]{1,2}[AB])\)/);
-    return match ? match[1] : null;
-  }, [deckA, deckB]);
 
   const filteredTracks = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -139,7 +129,7 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
     } else if (sortBy === 'energy') {
       result.sort((a, b) => (b.energy || 0) - (a.energy || 0));
     }
-    // Default 'dateAdded' is already sorted by reverse date in the query
+    // 'match' and 'dateAdded' sorting handled after smart match enrichment
 
     return result;
   }, [bpmMax, bpmMin, genreFilter, moodFilter, query, tracks, sortBy]);
@@ -188,42 +178,18 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
     console.log('[TrackLibrary] Batch analysis complete');
   };
 
-  // Mark compatible tracks with Perfect Match indicator
+  // Phase 2: Smart Match — compute real-time match scores against active deck
+  const { tracksWithMatch, hasActiveDeck } = useSmartMatch(filteredTracks);
+
+  // Sort by match if selected
   const tracksWithCompatibility = useMemo(() => {
-    if (!activeDeckKey) return filteredTracks;
-
-    return filteredTracks.map(track => {
-      if (!track.key) return track;
-
-      // Extract Camelot notation from key string
-      const camelotMatch = track.key.match(/\(([0-9]{1,2}[AB])\)/);
-      if (!camelotMatch) return track;
-
-      const trackCamelot = camelotMatch[1];
-      const match = activeDeckKey.match(/^(\d+)([AB])$/);
-      if (!match) return track;
-
-      const [, numStr, letter] = match;
-      const num = parseInt(numStr, 10);
-      const oppositeLetter = letter === 'A' ? 'B' : 'A';
-
-      // Calculate compatible keys
-      const prevNum = num === 1 ? 12 : num - 1;
-      const nextNum = num === 12 ? 1 : num + 1;
-
-      const compatibleKeys = new Set([
-        activeDeckKey,                    // Same key
-        `${num}${oppositeLetter}`,        // Relative major/minor
-        `${prevNum}${letter}`,            // -1 on wheel
-        `${nextNum}${letter}`,            // +1 on wheel
-      ]);
-
-      return {
-        ...track,
-        isCompatible: compatibleKeys.has(trackCamelot),
-      };
-    });
-  }, [filteredTracks, activeDeckKey]);
+    if (sortBy === 'match' && hasActiveDeck) {
+      return [...tracksWithMatch].sort(
+        (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0)
+      );
+    }
+    return tracksWithMatch;
+  }, [tracksWithMatch, sortBy, hasActiveDeck]);
 
   // Close on Escape key
   useEffect(() => {
@@ -332,6 +298,18 @@ export function TrackLibrary({ isOpen, onClose, onTrackLoaded, inline = false, p
               }`}
             >
               Energy
+            </button>
+            <button
+              onClick={() => setSortBy('match')}
+              className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors ${
+                sortBy === 'match'
+                  ? 'bg-cyan-400/20 border border-cyan-400 text-cyan-400'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+              }`}
+              disabled={!hasActiveDeck}
+              title={hasActiveDeck ? 'Sort by match score' : 'Load a track to enable match sorting'}
+            >
+              Match
             </button>
           </div>
           <button

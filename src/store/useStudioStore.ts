@@ -61,6 +61,7 @@ interface StudioState {
   onboardingSeen: boolean;
   useGridLayout?: boolean; // Phase V: Toggle between grid and legacy layout
   layoutMode: 'Performance' | 'Library-Heavy'; // New state for layout mode
+  librarySortBy: 'dateAdded' | 'bpm' | 'energy' | 'match'; // Phase 2: Library sort preference
 
   deckA: DeckState;
   deckB: DeckState;
@@ -96,6 +97,7 @@ interface StudioState {
   nextOnboardingStep: () => void;
   skipOnboarding: () => void;
   setLayoutMode: (mode: 'Performance' | 'Library-Heavy') => void; // New action for setting layout mode
+  setLibrarySortBy: (sortBy: 'dateAdded' | 'bpm' | 'energy' | 'match') => void; // Phase 2: Set library sort
 }
 
 const initialDeckState: DeckState = {
@@ -156,6 +158,7 @@ export const useStudioStore = create<StudioState>()(
     deckA: { ...initialDeckState },
     deckB: { ...initialDeckState },
     layoutMode: 'Performance', // Initial layout mode
+    librarySortBy: 'dateAdded' as const, // Phase 2: Default sort by recent
 
     setCrossfader: (pos) =>
       set(() => {
@@ -327,5 +330,6 @@ export const useStudioStore = create<StudioState>()(
       }),
     skipOnboarding: () => set({ onboardingStep: 'done', onboardingSeen: true }),
     setLayoutMode: (mode) => set({ layoutMode: mode }), // Action for setting layout mode
+    setLibrarySortBy: (sortBy) => set({ librarySortBy: sortBy }), // Phase 2: Library sort action
   }))
 );

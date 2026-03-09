@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { StudioTopBar } from './StudioTopBar';
+import { CommandBar } from '@/components/studio/navigation/CommandBar';
 import { PerformanceView } from './PerformanceView';
 import { TRACKS, type TrackMeta } from './tracks';
 import './studio.css';
@@ -86,7 +86,7 @@ export function DjStudio() {
 
   return (
     <div className="studio-root">
-      <StudioTopBar
+      <CommandBar
         activeView={activeView}
         onViewChange={setActiveView}
         bpm={masterBpm}

@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Deck Component (Refactored - Phase S3)
+ * Deck Component (Refactored - 2026 Studio Evolution Phase 1)
  *
  * Displays track information, transport controls, and deck status
  * Now using extracted hooks and presentational components
  * Phase 1: Added Performance Pads integration
+ * Phase SE-1: Intelligence Dock sidebar with Liquid Glass aesthetic
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -39,6 +40,10 @@ import { DeckTransportControls } from './DeckTransportControls';
 // Phase 1: Performance Pads
 import { PerformancePadGrid } from '../pads/PerformancePadGrid';
 import { StemOverlay } from '../stems/StemOverlay';
+
+// Phase SE-1: Intelligence Dock
+import { XYPad } from '../fx/XYPad';
+import { IntelligenceDock } from './IntelligenceDock';
 
 interface DeckProps {
   readonly deckId: 'A' | 'B';
@@ -80,6 +85,7 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [deckReady, setDeckReady] = useState(false);
+  const [dockOpen, setDockOpen] = useState(true);
   const deckRef = useRef<HTMLDivElement | null>(null);
   const deckReadyRef = useRef(false);
 
@@ -96,6 +102,13 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
   const fallbackBpm = trackData ? trackData.bpm : undefined;
   const isFocused = focusedDeckId === deckId;
   const showInlineStemControls = stems.hasStems && !stemModeEnabled;
+
+  // Phase SE-1: XYPad FX handler
+  const setDeckFX = useStore((state) => state.setDeckFX);
+  const handleXYPadChange = useCallback((x: number, y: number) => {
+    setDeckFX(deckId, 'filter', x);
+    setDeckFX(deckId, 'reverb', y);
+  }, [deckId, setDeckFX]);
 
   // Deck ready detection
   useEffect(() => {
@@ -216,12 +229,13 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
             onSplitStems={stems.handleSplitStems}
             onToggleKeyLock={() => setKeyLock(deckId, !isKeyLockActive)}
           />
-          {stemModeEnabled && <StemOverlay deckId={deckId} />}
         </div>
 
-        {/* Deck Body */}
+        {/* Deck Body + Intelligence Dock */}
         {trackData ? (
-          <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
+          <div className="flex-1 flex gap-4">
+            {/* Main Deck Content */}
+            <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-6">
             <div className="flex items-center justify-center gap-4">
               {/* Phase IX.5: Energy Indicator */}
               {complexityMode === 'pro' && (
@@ -375,6 +389,26 @@ export function Deck({ deckId, showMiniWaveform = true, complexityMode = 'pro' }
                 </div>
               )}
             </div>
+          </div>
+
+            {/* Phase SE-1: Intelligence Dock Sidebar */}
+            {complexityMode === 'pro' && (
+              <IntelligenceDock
+                deckId={deckId}
+                isOpen={dockOpen}
+                onToggle={() => setDockOpen(!dockOpen)}
+              >
+                {/* Stem Overlay - moved into dock */}
+                {stemModeEnabled && <StemOverlay deckId={deckId} />}
+
+                {/* XY Pad - moved into dock */}
+                <XYPad
+                  deckId={deckId}
+                  onChange={handleXYPadChange}
+                  label="FX PAD"
+                />
+              </IntelligenceDock>
+            )}
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-6">

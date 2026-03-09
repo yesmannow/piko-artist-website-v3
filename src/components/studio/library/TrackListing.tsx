@@ -7,14 +7,16 @@
  * Shows visual loader (pulsing waveform) during local load
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioEngine } from '@/hooks/audio/useAudioEngine';
 import { useStore } from '@/store/useStore';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Loader2 } from 'lucide-react';
 import { MatchBadge as MatchBadgeComponent } from './MatchBadge';
+import { FusionPreview } from './FusionPreview';
+import { notifyAISuggestion } from '@/components/studio/ui/AIToast';
 import type { MatchBadge } from '@/features/insights/matchScoring';
 
 export interface Track {
@@ -35,6 +37,8 @@ export interface Track {
   isCompatible?: boolean; // Phase IX.5: Harmonic matching indicator
   matchBadge?: MatchBadge; // Phase S8: Match quality
   matchTooltip?: string; // Phase S8: Match explanation
+  matchScore?: number; // Phase 2: 0.0-1.0 raw match score
+  matchPercent?: number; // Phase 2: 0-100 integer match percent
   stems?: {
     full?: string;
     vocals?: string;
@@ -53,6 +57,9 @@ interface TrackListingProps {
 export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnalyze }: TrackListingProps) {
   const [loadingDeck, setLoadingDeck] = useState<'A' | 'B' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showFusion, setShowFusion] = useState(false);
+  const fusionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastFiredRef = useRef(false);
   const { loadTrack } = useAudioEngine();
   const { setDeckTrack, deckA, deckB } = useStore();
   const setStems = useStudioStore((state) => state.setStems);
@@ -74,7 +81,7 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
     return `/audio/tracks/${safeFile}`;
   };
 
-  const handleLoadTrack = async (deck: 'A' | 'B') => {
+  const handleLoadTrack = useCallback(async (deck: 'A' | 'B') => {
     setLoadingDeck(deck);
 
     try {
@@ -117,7 +124,8 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
     } finally {
       setLoadingDeck(null);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track.trackKey, track.bpm, track.title, loadTrack, setDeckTrack, setStems, markStemsReady, onTrackLoaded]);
 
   const isLoadedA = deckA.trackData?.title === track.title;
   const isLoadedB = deckB.trackData?.title === track.title;
@@ -146,9 +154,51 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
     setIsDragging(false);
   };
 
+  // Phase 2: Fusion Preview on hover for high-match tracks
+  const handleMouseEnter = useCallback(() => {
+    if (track.matchPercent && track.matchPercent > 90) {
+      fusionTimerRef.current = setTimeout(() => {
+        setShowFusion(true);
+        // Fire AIToast suggestion (only once per hover session)
+        if (!toastFiredRef.current) {
+          toastFiredRef.current = true;
+          notifyAISuggestion({
+            message: `"${track.title}" is a ${track.matchPercent}% match — perfect for mixing!`,
+            action: () => {
+              // Load into the non-active deck
+              const targetDeck = deckA.isPlaying ? 'B' : 'A';
+              handleLoadTrack(targetDeck);
+            },
+            actionLabel: `Load ${deckA.isPlaying ? 'B' : 'A'}`,
+          });
+        }
+      }, 600); // Delay to avoid triggering on flyover
+    }
+  }, [track.matchPercent, track.title, deckA.isPlaying, handleLoadTrack]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fusionTimerRef.current) {
+      clearTimeout(fusionTimerRef.current);
+      fusionTimerRef.current = null;
+    }
+    setShowFusion(false);
+    toastFiredRef.current = false;
+  }, []);
+
+  // Phase 2: Match percentage color
+  const matchPercentColor = track.matchPercent
+    ? track.matchPercent >= 85
+      ? 'text-green-400'
+      : track.matchPercent >= 70
+        ? 'text-blue-400'
+        : track.matchPercent >= 55
+          ? 'text-yellow-400'
+          : 'text-white/40'
+    : '';
+
   return (
     <div
-      className={`glass-panel p-4 rounded-lg border transition-all ${
+      className={`glass-panel p-4 rounded-lg border transition-all relative ${
         track.isCompatible
           ? 'border-lime-400 shadow-[0_0_20px_rgba(190,242,100,0.3)]' // Cyber Lime glow
           : 'border-white/10'
@@ -157,7 +207,21 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
       draggable={true}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
+      {/* Phase 2: Fusion Preview Overlay */}
+      <AnimatePresence>
+        {showFusion && track.matchPercent && track.matchPercent > 90 && (
+          <FusionPreview
+            matchPercent={track.matchPercent}
+            bpm={track.bpm}
+            activeBpm={deckA.isPlaying ? (deckA.trackData?.bpm || 128) : (deckB.trackData?.bpm || 128)}
+            trackKey={track.key}
+            activeKey={deckA.isPlaying ? deckA.trackData?.key : deckB.trackData?.key}
+          />
+        )}
+      </AnimatePresence>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -201,6 +265,14 @@ export function TrackListing({ track, onTrackLoaded, stemsReady = false, onAnaly
             tooltip={track.matchTooltip}
             className="mr-2"
           />
+        )}
+        {track.matchPercent !== undefined && track.matchPercent >= 55 && (
+          <span
+            className={`font-mono font-bold text-sm ${matchPercentColor}`}
+            title={track.matchTooltip || 'Match score'}
+          >
+            {track.matchPercent}%
+          </span>
         )}
         <div className="flex items-center gap-2">
           <span className="text-white/60">BPM:</span>

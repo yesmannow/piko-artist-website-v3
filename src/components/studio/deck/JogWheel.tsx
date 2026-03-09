@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 import { beatsToSeconds } from "@/lib/utils/audioMath";
 
 interface JogWheelProps {
@@ -13,6 +14,7 @@ interface JogWheelProps {
   readonly isSynced?: boolean;
   readonly accent?: string;
   readonly energy?: number;
+  readonly analyzing?: boolean; // Phase SE-1: Show analyzing ring
   readonly loading?: boolean;
   readonly playDirection?: 'forward' | 'reverse'; // Phase 4: Reverse playback support
   readonly onPointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
@@ -186,6 +188,105 @@ const InteractiveWrapper = ({
   return <>{children}</>;
 };
 
+// Phase SE-1: Canvas-based 'Analyzing...' energy ring
+const EnergyAnalyzingRing = ({ energy, isPlaying }: { energy: number; isPlaying: boolean }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+  const phaseRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = 240;
+    canvas.width = size;
+    canvas.height = size;
+
+    const center = size / 2;
+    const radius = center - 8;
+    const neonBlue = '#00f2ff';
+    const clampedEnergy = Math.max(0, Math.min(1, energy));
+
+    // Speed scales with energy: low energy = slow pulse, high energy = fast
+    const pulseSpeed = 0.012 + clampedEnergy * 0.04;
+    // Glow intensity scales with energy
+    const baseAlpha = 0.15 + clampedEnergy * 0.55;
+    const glowSpread = 3 + clampedEnergy * 8;
+
+    const draw = () => {
+      phaseRef.current += pulseSpeed;
+      const pulse = 0.5 + 0.5 * Math.sin(phaseRef.current);
+
+      ctx.clearRect(0, 0, size, size);
+
+      // Outer energy ring
+      const alpha = baseAlpha * (0.6 + pulse * 0.4);
+      const lineWidth = 2.5 + clampedEnergy * 2 + pulse * 1.5;
+
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0, 242, 255, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = lineWidth;
+      ctx.shadowColor = neonBlue;
+      ctx.shadowBlur = glowSpread * (0.7 + pulse * 0.3);
+      ctx.stroke();
+
+      // Inner subtle ring
+      ctx.beginPath();
+      ctx.arc(center, center, radius - 6, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0, 242, 255, ${(alpha * 0.2).toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.shadowBlur = 2;
+      ctx.stroke();
+
+      // Energy arc segment (sweeps based on energy)
+      if (clampedEnergy > 0.05) {
+        const arcLength = Math.PI * 2 * clampedEnergy;
+        const rotation = phaseRef.current * 0.3;
+
+        ctx.beginPath();
+        ctx.arc(center, center, radius - 3, rotation, rotation + arcLength);
+        ctx.strokeStyle = `rgba(0, 242, 255, ${(alpha * 0.7).toFixed(3)})`;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = neonBlue;
+        ctx.shadowBlur = glowSpread * 1.5;
+        ctx.stroke();
+      }
+
+      // Reset shadow
+      ctx.shadowBlur = 0;
+
+      // "Analyzing..." label when not playing
+      if (!isPlaying && clampedEnergy > 0) {
+        const textAlpha = 0.4 + pulse * 0.3;
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = `rgba(0, 242, 255, ${textAlpha.toFixed(3)})`;
+        ctx.fillText('ANALYZING', center, center - radius + 18);
+      }
+
+      animRef.current = requestAnimationFrame(draw);
+    };
+
+    animRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animRef.current);
+    };
+  }, [energy, isPlaying]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ width: '100%', height: '100%' }}
+    />
+  );
+};
+
 // Phase 4: Extract progress rings
 const ProgressRings = ({
   ringGradientId,
@@ -296,6 +397,7 @@ export function JogWheel({
   isSynced = false,
   accent = "#22d3ee",
   energy = 0,
+  analyzing,
   loading = false,
   playDirection = 'forward', // Phase 4: Default to forward
   onPointerDown,
@@ -305,6 +407,8 @@ export function JogWheel({
   onClick,
   disabled = false,
 }: Readonly<JogWheelProps>) {
+  // Phase SE-1: Auto-detect analyzing state from energy
+  const showAnalyzingRing = analyzing ?? (energy > 0);
   const { circumference, dash, ringGradientId, glowIntensity, bpmText, rotationSeconds, beatFlashDuration } =
     calculateJogWheelValues(progress, energy, bpm, title, accent);
   const glowColor = accent;
@@ -349,6 +453,11 @@ export function JogWheel({
         }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       />
+
+      {/* Phase SE-1: Canvas-based Energy Analyzing Ring */}
+      {showAnalyzingRing && (
+        <EnergyAnalyzingRing energy={energy} isPlaying={isPlaying} />
+      )}
 
       <ProgressRings
         ringGradientId={ringGradientId}

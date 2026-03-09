@@ -20,6 +20,8 @@ export interface TrackInsights {
   algoVersion: number;       // Algorithm version for cache invalidation
   failed?: boolean;          // True if analysis failed (distinguishes null from missing)
   firstBeatOffsetSec?: number | null; // Phase S9: First beat offset for beatgrid alignment
+  cachedMatchScore?: number; // Phase 2: Last computed match score (for sorting)
+  cachedMatchBadge?: string; // Phase 2: Last computed match badge
 }
 
 /**
@@ -273,5 +275,29 @@ export async function clearAllBeatGrids(): Promise<void> {
   } catch (error) {
     console.error('[StudioDB] Failed to clear beatgrids:', error);
     throw error;
+  }
+}
+
+/**
+ * Phase 2: Bulk save match scores for library sorting
+ * @param scores Array of { trackId, matchScore, matchBadge }
+ */
+export async function bulkSaveMatchScores(
+  scores: Array<{ trackId: string; matchScore: number; matchBadge: string | null }>
+): Promise<void> {
+  try {
+    await studioDb.transaction('rw', studioDb.insights, async () => {
+      for (const { trackId, matchScore, matchBadge } of scores) {
+        const existing = await studioDb.insights.get(trackId);
+        if (existing) {
+          await studioDb.insights.update(trackId, {
+            cachedMatchScore: matchScore,
+            cachedMatchBadge: matchBadge ?? undefined,
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('[StudioDB] Failed to bulk save match scores:', error);
   }
 }
