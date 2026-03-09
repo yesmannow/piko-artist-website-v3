@@ -4,6 +4,8 @@ import { useRef, useCallback, useState } from 'react';
 import { useMixerStore } from '@/store/mixerStore';
 import { useStore } from '@/store/useStore';
 import { clsx } from 'clsx';
+import { FxChainBuilder } from './FxChainBuilder';
+import { ProductionExport } from './ProductionExport';
 
 function EQKnob({ label, value, onChange }: { label: string; value: number; onChange: (val: number) => void }) {
   const isDragging = useRef(false);
@@ -93,7 +95,7 @@ export function Mixer() {
     setFxRack({
       delayMix: normalized * 0.7,
       delayFeedback: 0.35 + (normalized * 0.5),
-      filter: normalized // assuming 0.5 to 1.0 maps to 0 to 1 for filter intensity in FX rack, or we just map it here. Let's use 0.5 + 0.5*val if standard is 0.5. Wait, FxRack uses 0..1 so let's just use normalized for simplicity or exact formula.
+      filter: 0.5 + (normalized * 0.5) // HPF 0.5 -> 1.0
     });
   }, [setFxRack]);
 
@@ -144,11 +146,17 @@ export function Mixer() {
           <EQKnob label="High" value={eqA.high} onChange={(val) => setEQ('A', 'high', val)} />
           <EQKnob label="Mid" value={eqA.mid} onChange={(val) => setEQ('A', 'mid', val)} />
           <EQKnob label="Low" value={eqA.low} onChange={(val) => setEQ('A', 'low', val)} />
+          <div className="w-full mt-2">
+            <FxChainBuilder deckId="A" />
+          </div>
         </div>
         <div className="flex flex-col items-center gap-4">
           <EQKnob label="High" value={eqB.high} onChange={(val) => setEQ('B', 'high', val)} />
           <EQKnob label="Mid" value={eqB.mid} onChange={(val) => setEQ('B', 'mid', val)} />
           <EQKnob label="Low" value={eqB.low} onChange={(val) => setEQ('B', 'low', val)} />
+          <div className="w-full mt-2">
+            <FxChainBuilder deckId="B" />
+          </div>
         </div>
       </div>
       <div className="flex justify-center gap-6 w-full px-4">
@@ -224,9 +232,11 @@ export function Mixer() {
             Crossfader Fusion™ Active
           </span>
         </div>
-        <p className="text-[8px] uppercase tracking-widest text-center mt-2 text-slate-500">
+        <p className="text-[8px] uppercase tracking-widest text-center mt-2 text-slate-500 mb-4">
           Crossfader
         </p>
+        
+        <ProductionExport />
       </div>
     </div>
   );

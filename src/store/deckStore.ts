@@ -12,6 +12,7 @@ export interface DeckState {
   volume: number;
   slipMode: boolean;
   cuePoint: number;
+  playbackRate: number; // For pitch faders
 }
 
 interface DeckStore {
@@ -23,6 +24,8 @@ interface DeckStore {
   setCurrentTime: (deckId: 'A' | 'B', time: number) => void;
   toggleSlipMode: (deckId: 'A' | 'B') => void;
   setCuePoint: (deckId: 'A' | 'B', time: number) => void;
+  setPlaybackRate: (deckId: 'A' | 'B', rate: number) => void;
+  updateTrackAutomation: (deckId: 'A' | 'B', automation: typeof initialDeckState.track extends { automation?: infer U } ? U : never) => void;
 }
 
 const initialDeckState: DeckState = {
@@ -35,6 +38,7 @@ const initialDeckState: DeckState = {
   volume: 1,
   slipMode: false,
   cuePoint: 0,
+  playbackRate: 1.0,
 };
 
 export const useDeckStore = create<DeckStore>((set) => ({
@@ -113,5 +117,27 @@ export const useDeckStore = create<DeckStore>((set) => ({
     set((state) => ({
       [deckKey]: { ...state[deckKey], cuePoint: time }
     }));
+  },
+
+  setPlaybackRate: (deckId: 'A' | 'B', rate: number) => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => ({
+      [deckKey]: { ...state[deckKey], playbackRate: Math.max(0.5, Math.min(2.0, rate)) }
+    }));
+  },
+
+  updateTrackAutomation: (deckId: 'A' | 'B', automation: typeof initialDeckState.track extends { automation?: infer U } ? U : never) => {
+    const deckKey = deckId === 'A' ? 'deckA' : 'deckB';
+    set((state) => {
+      const currentTrack = state[deckKey].track;
+      if (!currentTrack) return state;
+      return {
+        ...state,
+        [deckKey]: {
+          ...state[deckKey],
+          track: { ...currentTrack, automation }
+        }
+      };
+    });
   }
 }));

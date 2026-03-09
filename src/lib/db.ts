@@ -1,5 +1,10 @@
 import Dexie, { Table } from 'dexie';
 
+export interface TrackAutomation {
+  param: 'volume' | 'hpf' | 'reverb';
+  points: { time: number; value: number; curve: 'linear' | 'exponential' }[];
+}
+
 export interface Track {
   id?: number;
   title: string;
@@ -18,6 +23,7 @@ export interface Track {
   createdAt: number;
   url?: string;
   analysisData?: any;
+  automation?: TrackAutomation[];
 }
 
 // ── Hot-cue schema ──────────────────────────────────────────────────────────

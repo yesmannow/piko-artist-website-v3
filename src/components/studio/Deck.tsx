@@ -7,6 +7,7 @@ import { useDeckStore } from '@/store/deckStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDeckAudio } from '@/hooks/useDeckAudio';
 import { PerformancePads } from './PerformancePads';
+import { JogWheel3D } from './JogWheel3D';
 
 interface DeckProps {
   deckId: 'A' | 'B';
@@ -281,30 +282,13 @@ export function Deck({ deckId }: DeckProps) {
               onPointerCancel={handlePointerUp}
               className="jog-wheel w-48 h-48 rounded-full border-4 border-[#0a0a0a] shadow-[inset_0_0_20px_rgba(0,0,0,0.9),0_0_15px_rgba(0,242,255,0.15)] flex items-center justify-center relative cursor-pointer active:scale-95 transition-transform touch-none"
             >
-              <div 
-                className="absolute inset-0 rounded-full border border-accent/10"
-                style={{ transform: `rotate(${rotation}deg)` }}
-              >
-                {/* Marker to show rotation */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-accent rounded-full shadow-[0_0_5px_#00f2ff]"></div>
-              </div>
-              <div className="w-12 h-12 bg-primary rounded-full border border-slate-700 flex items-center justify-center z-10 overflow-hidden">
-                {track?.coverArt ? (
-                  <div 
-                    className="w-full h-full bg-cover bg-center rounded-full" 
-                    style={{ backgroundImage: `url(${track.coverArt})` }} 
-                  />
-                ) : isLoading ? (
-                  <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <div className="w-10 h-10 border-2 border-slate-600 rounded-full"></div>
-                )}
-                {isLoading && (
-                  <div className="absolute -bottom-10 text-[10px] text-accent animate-pulse font-bold tracking-widest uppercase">
-                    Loading...
-                  </div>
-                )}
-              </div>
+              <JogWheel3D 
+                rotation={rotation} 
+                coverArt={track?.coverArt} 
+                isLoading={isLoading} 
+                slipActive={deckState.slipMode}
+                ghostRotation={ghostTime} 
+              />
             </div>
           </div>
         )}
@@ -354,25 +338,13 @@ export function Deck({ deckId }: DeckProps) {
               onPointerCancel={handlePointerUp}
               className="jog-wheel w-48 h-48 rounded-full border-4 border-slate-800 flex items-center justify-center relative cursor-pointer active:scale-95 transition-transform touch-none"
             >
-              <div 
-                className="absolute inset-0 rounded-full border border-accent/10"
-                style={{ transform: `rotate(${rotation}deg)` }}
-              >
-                {/* Marker to show rotation */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-accent rounded-full shadow-[0_0_5px_#00f2ff]"></div>
-              </div>
-              <div className="w-12 h-12 bg-primary rounded-full border border-slate-700 flex items-center justify-center z-10">
-                {isLoading ? (
-                  <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <div className="w-10 h-10 border-2 border-slate-600 rounded-full"></div>
-                )}
-                {isLoading && (
-                  <div className="absolute -bottom-10 text-[10px] text-accent animate-pulse font-bold tracking-widest uppercase">
-                    Loading...
-                  </div>
-                )}
-              </div>
+              <JogWheel3D 
+                rotation={rotation} 
+                coverArt={track?.coverArt} 
+                isLoading={isLoading} 
+                slipActive={deckState.slipMode}
+                ghostRotation={ghostTime} 
+              />
             </div>
           </div>
         )}

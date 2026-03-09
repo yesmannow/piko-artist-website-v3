@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db, Track } from '@/lib/db';
 import { trackManifest } from '@/lib/audio/trackManifest';
-import { studioTrackImages } from '@/lib/studioTrackImages';
+import { TRACK_IMAGE_POOL } from '@/lib/studioTrackImages';
 import { analyzeAudioBuffer } from '@/hooks/analysis/useEssentiaAnalysis';
 import { generateFingerprint, lookupMetadata } from '@/lib/acoustid';
 import toast from 'react-hot-toast';
@@ -80,7 +80,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
         const title = track.name.replace(/\.[^/.]+$/, "");
         const artist = 'Pre-existing Track';
 
-        const randomImage = studioTrackImages[Math.floor(Math.random() * studioTrackImages.length)];
+        const randomImage = TRACK_IMAGE_POOL[Math.floor(Math.random() * TRACK_IMAGE_POOL.length)];
 
         const newTrack: Track = {
           title,

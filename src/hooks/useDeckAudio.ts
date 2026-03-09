@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import * as Tone from 'tone';
 import { useDeckStore } from '@/store/deckStore';
 import { useMixerStore } from '@/store/mixerStore';
 import { AudioEngine, SlipModeManager } from '@/lib/audioEngine';
+import { ScheduleEvent } from '@/workers/automationWorker';
 
 export function useDeckAudio(deckId: 'A' | 'B') {
   const deckState = useDeckStore((state) => deckId === 'A' ? state.deckA : state.deckB);
@@ -16,6 +18,11 @@ export function useDeckAudio(deckId: 'A' | 'B') {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const eqChainRef = useRef<ReturnType<AudioEngine['createEQChain']> | null>(null);
+  
+  const deckFx = deckId === 'A' ? mixerState.fxA : mixerState.fxB;
+  const fxNodesRef = useRef<Tone.ToneAudioNode[]>([]);
+  const prevActiveFxIdsRef = useRef('');
+
   const slipManagerRef = useRef<SlipModeManager>(new SlipModeManager());
   
   const pauseTimeRef = useRef<number>(0);
@@ -23,6 +30,13 @@ export function useDeckAudio(deckId: 'A' | 'B') {
   const lastContextTimeRef = useRef<number>(0);
   const animationRef = useRef<number | null>(null);
   const isCuePlayRef = useRef(false);
+  const playbackRateRef = useRef(1.0);
+  const workerRef = useRef<Worker | null>(null);
+
+  // Keep playbackRateRef synced without triggering effects that depend on it
+  useEffect(() => {
+    playbackRateRef.current = deckState.playbackRate;
+  }, [deckState.playbackRate]);
   
   const [currentTime, setCurrentTime] = useState(0);
   const [ghostTime, setGhostTime] = useState(0);
@@ -37,15 +51,49 @@ export function useDeckAudio(deckId: 'A' | 'B') {
   }, [quantizeActive]);
 
   useEffect(() => {
+    if (!workerRef.current) {
+      workerRef.current = new Worker(new URL('@/workers/automationWorker', import.meta.url), { type: 'module' });
+      workerRef.current.onmessage = (e) => {
+        if (e.data.type === 'SCHEDULE_EVENTS') {
+          const events = e.data.events;
+          const engine = AudioEngine.getInstance();
+          events.forEach((ev: ScheduleEvent) => {
+            if (ev.param === 'volume' && gainRef.current) {
+               const scheduleTime = engine.context.currentTime + Math.max(0, ev.time - currentTimeRef.current);
+               gainRef.current.gain.linearRampToValueAtTime(
+                 engine.getLogarithmicGain(ev.value) * (deckId === 'A' ? Math.cos(((crossfader + 1)/2) * 0.5 * Math.PI) : Math.sin(((crossfader + 1)/2) * 0.5 * Math.PI)),
+                 scheduleTime
+               );
+            }
+          });
+        }
+      };
+    }
+    return () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
+  }, [crossfader, deckId]);
+
+  useEffect(() => {
+    if (workerRef.current && deckState.track) {
+      workerRef.current.postMessage({
+        type: 'SYNC',
+        currentTime: currentTimeRef.current,
+        automations: deckState.track.automation || []
+      });
+    }
+  }, [deckState.track, deckState.track?.automation]);
+
+  useEffect(() => {
     const engine = AudioEngine.getInstance();
     
     if (!gainRef.current) {
       gainRef.current = engine.context.createGain();
       eqChainRef.current = engine.createEQChain();
       
-      // Connect EQ output to Gain, Gain to destination
-      eqChainRef.current.output.connect(gainRef.current);
-      gainRef.current.connect(engine.context.destination);
+      // Connect Gain to master node
+      engine.connectToMaster(gainRef.current);
     }
 
     if (gainRef.current) {
@@ -67,6 +115,50 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       eqChainRef.current.high.gain.value = mapEQ(eqState.high);
     }
   }, [deckState.volume, crossfader, eqState, deckId, crossfaderReverse]);
+
+  const activeFxIds = useMemo(() => deckFx.filter(f => f.enabled).map(f => f.id).join(','), [deckFx]);
+
+  useEffect(() => {
+    if (!eqChainRef.current || !gainRef.current) return;
+    const engine = AudioEngine.getInstance();
+
+    const activeFx = deckFx.filter(f => f.enabled);
+
+    if (activeFxIds !== prevActiveFxIdsRef.current) {
+        fxNodesRef.current.forEach(node => {
+            node.disconnect();
+            node.dispose();
+        });
+        try { eqChainRef.current.output.disconnect(); } catch {}
+
+        if (activeFx.length === 0) {
+            eqChainRef.current.output.connect(gainRef.current);
+            fxNodesRef.current = [];
+        } else {
+            fxNodesRef.current = activeFx.map(fxDef => engine.createFxNode(fxDef.type, fxDef.params));
+            Tone.connect(eqChainRef.current.output as unknown as any, fxNodesRef.current[0]);
+            for(let i=0; i<fxNodesRef.current.length-1; i++) {
+                fxNodesRef.current[i].connect(fxNodesRef.current[i+1]);
+            }
+            Tone.connect(fxNodesRef.current[fxNodesRef.current.length-1], gainRef.current as unknown as any);
+        }
+        prevActiveFxIdsRef.current = activeFxIds;
+    } else {
+        // Apply smooth parameter updates without rebuilding the audio graph
+        activeFx.forEach((fxDef, idx) => {
+            const node = fxNodesRef.current[idx];
+            if (!node) return;
+            if (fxDef.type === 'filter' && node.name === 'Filter') {
+                const f = node as Tone.Filter;
+                f.frequency.rampTo(fxDef.params.cutoff ? fxDef.params.cutoff * 20000 : 20000, 0.05);
+                f.Q.rampTo(fxDef.params.resonance ? fxDef.params.resonance * 10 : 0, 0.05);
+            } else if (fxDef.type === 'reverb' && node.name === 'Reverb') {
+                const r = node as Tone.Reverb;
+                r.wet.rampTo(fxDef.params.mix || 0.5, 0.05);
+            }
+        });
+    }
+  }, [deckFx, activeFxIds]);
 
   useEffect(() => {
     // Keep internal slip manager sync'd
@@ -124,6 +216,7 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       }
 
       sourceRef.current.start(0, startPos);
+      sourceRef.current.playbackRate.value = playbackRateRef.current || 1.0;
       
       currentTimeRef.current = startPos;
       lastContextTimeRef.current = engine.context.currentTime;
@@ -150,6 +243,13 @@ export function useDeckAudio(deckId: 'A' | 'B') {
              setCurrentTime(0);
              setStoreTime(deckId, 0);
           } else {
+             if (workerRef.current) {
+               workerRef.current.postMessage({
+                 type: 'GET_SCHEDULE',
+                 currentTime: newTime,
+                 lookahead: 0.1
+               });
+             }
              animationRef.current = requestAnimationFrame(updateTime);
           }
         }
@@ -172,6 +272,17 @@ export function useDeckAudio(deckId: 'A' | 'B') {
     };
   }, [deckState.isPlaying, deckState.buffer, deckId, togglePlay, setStoreTime, deckState.slipMode]);
 
+  // Apply pitch fader adjustments live
+  useEffect(() => {
+    if (sourceRef.current && deckState.isPlaying) {
+      sourceRef.current.playbackRate.setTargetAtTime(
+        deckState.playbackRate, 
+        AudioEngine.getInstance().context.currentTime, 
+        0.05
+      );
+    }
+  }, [deckState.playbackRate, deckState.isPlaying]);
+
   // Reset pause time when a new track is loaded
   useEffect(() => {
     pauseTimeRef.current = 0;
@@ -192,25 +303,25 @@ export function useDeckAudio(deckId: 'A' | 'B') {
       setCurrentTime(newTime);
     } else {
       if (sourceRef.current) {
-        const rate = 1.0 + timeDelta * 10; 
+        const rate = deckState.playbackRate + (timeDelta * 10); 
         sourceRef.current.playbackRate.setTargetAtTime(
-          Math.max(0.5, Math.min(2.0, rate)), 
+          Math.max(0.1, Math.min(3.0, rate)), 
           AudioEngine.getInstance().context.currentTime, 
           0.05
         );
       }
     }
-  }, [deckState.buffer, deckState.isPlaying]);
+  }, [deckState.buffer, deckState.isPlaying, deckState.playbackRate]);
 
   const endScrub = useCallback(() => {
     if (sourceRef.current && deckState.isPlaying) {
       sourceRef.current.playbackRate.setTargetAtTime(
-        1.0, 
+        deckState.playbackRate || 1.0, 
         AudioEngine.getInstance().context.currentTime, 
         0.1
       );
     }
-  }, [deckState.isPlaying]);
+  }, [deckState.isPlaying, deckState.playbackRate]);
 
   // CDJ-style tactical transport logic
   const handleCueDown = useCallback(() => {

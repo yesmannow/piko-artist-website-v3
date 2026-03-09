@@ -1,3 +1,5 @@
+import * as Tone from 'tone';
+
 export class SlipModeManager {
   private ghostStartTime: number = 0;
   private isSlipActive: boolean = false;
@@ -19,9 +21,62 @@ export class SlipModeManager {
 export class AudioEngine {
   private static instance: AudioEngine;
   public context: AudioContext;
+  public masterAnalyser: AnalyserNode;
+  public masterOut: Tone.Limiter;
+  public stereoWidener: Tone.StereoWidener;
+  public masterStreamNode: MediaStreamAudioDestinationNode;
+  
+  // Stems routing (Phase 8 Multi-track)
+  public stems: Record<string, MediaStreamAudioDestinationNode>;
 
   private constructor() {
     this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
+    Tone.setContext(this.context);
+    
+    // Create Mastering Chain
+    this.masterOut = new Tone.Limiter(-0.1).toDestination();
+    
+    // Compressor
+    const masterCompressor = new Tone.Compressor({
+      threshold: -24,
+      ratio: 4,
+      attack: 0.003,
+      release: 0.25
+    });
+
+    // Pseudo-Stereo Imager / Mid-Side processing would be complex here, using a widening EQ trick
+    this.stereoWidener = new Tone.StereoWidener(0.5); // Tone has a StereoWidener!
+
+    // Connect Chain: Widener -> Compressor -> Limiter -> Destination
+    this.stereoWidener.connect(masterCompressor);
+    masterCompressor.connect(this.masterOut);
+
+    // Create stream destination for recording
+    this.masterStreamNode = this.context.createMediaStreamDestination();
+    Tone.connect(this.masterOut, this.masterStreamNode as any);
+    
+    this.masterAnalyser = this.context.createAnalyser();
+    this.masterAnalyser.fftSize = 2048; 
+    
+    // Master analyser takes the final output signal before speaker destination
+    Tone.connect(this.masterOut, this.masterAnalyser as any);
+    
+    // Initialize Stems
+    this.stems = {
+      vocals: this.context.createMediaStreamDestination(),
+      drums: this.context.createMediaStreamDestination(),
+      bass: this.context.createMediaStreamDestination(),
+      melody: this.context.createMediaStreamDestination(),
+    };
+  }
+
+  // To easily route tracks to the mastering chain instead of context.destination
+  public connectToMaster(node: AudioNode | Tone.ToneAudioNode) {
+    if (node instanceof AudioNode) {
+      Tone.connect(node as unknown as any, this.stereoWidener);
+    } else {
+      node.connect(this.stereoWidener);
+    }
   }
 
   public static getInstance(): AudioEngine {
@@ -90,5 +145,28 @@ export class AudioEngine {
     const gainB = Math.sin(x * 0.5 * Math.PI);
     
     return { gainA, gainB };
+  }
+
+  // FX Factory
+  public createFxNode(type: 'saturator' | 'filter' | 'reverb', params: any): Tone.ToneAudioNode {
+    switch(type) {
+      case 'saturator':
+        return new Tone.Chebyshev(params.drive ? params.drive * 50 : 1);
+      case 'filter':
+        return new Tone.Filter({
+           type: 'lowpass',
+           rolloff: -48, // 8-pole
+           frequency: params.cutoff ? params.cutoff * 20000 : 20000,
+           Q: params.resonance ? params.resonance * 10 : 0
+        });
+      case 'reverb':
+        return new Tone.Reverb({
+           decay: params.decay ? params.decay * 10 : 1.5,
+           wet: params.mix || 0.5
+        });
+      default:
+        // Fallback pass-through
+        return new Tone.Gain(1);
+    }
   }
 }

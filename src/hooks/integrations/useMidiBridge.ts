@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useStudioStore } from "@/store/useStudioStore";
+import { useDeckStore } from "@/store/deckStore";
 
 interface MidiBridgeState {
   isSupported: boolean;
@@ -16,39 +17,70 @@ const normalize = (value: number) => Math.max(0, Math.min(1, value / 127));
 export function useMidiBridge(): MidiBridgeState {
   const setDeckVolume = useStore((state) => state.setDeckVolume);
   const setCrossfader = useStudioStore((state) => state.setCrossfader);
+  const { setPlaybackRate } = useDeckStore();
 
   const midiAccessRef = useRef<MIDIAccess | null>(null);
   const isInitializedRef = useRef(false);
   const [isSupported, setIsSupported] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const heartbeatTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Track 14-bit MSB values
+  const msbRef = useRef<{ [cc: number]: number }>({});
 
   const handleMidiMessage = useCallback(
     (event: MIDIMessageEvent) => {
       const data = event.data;
       if (!data) return;
-      const [status, cc, value] = data;
+      const [status, data1, data2] = data;
       const command = status & 0xf0;
+      const channel = status & 0x0f;
 
-      if (command !== 0xb0) return; // Only handle Control Change events
-
-      if (cc === 1) {
-        setCrossfader(normalize(value));
+      // Pitch Bend (14-bit native, often used for Tempo/Pitch Faders)
+      if (command === 0xe0) {
+        const pitchValue = (data2 << 7) | data1; // 0 to 16383
+        const normalized = pitchValue / 16383; // 0.0 to 1.0
+        // Pitch mapping from -8% to +8%
+        const rate = Math.max(0.5, Math.min(2.0, 0.92 + (normalized * 0.16)));
+        setPlaybackRate(channel === 0 ? "A" : "B", rate);
         return;
       }
 
-      if (cc === 7) {
-        const volume = normalize(value);
-        setDeckVolume("A", volume);
-        return;
-      }
+      // Control Change
+      if (command === 0xb0) {
+        const cc = data1;
+        const value = data2;
 
-      if (cc === 8) {
-        const volume = normalize(value);
-        setDeckVolume("B", volume);
+        // 14-bit MSB (0-31)
+        if (cc >= 0 && cc <= 31) {
+          msbRef.current[cc] = value;
+          // Apply coarse value immediately to avoid lag if LSB is missing or delayed
+          const normalized = value / 127;
+          if (cc === 1) setCrossfader(normalized);
+          if (cc === 7) setDeckVolume("A", normalized);
+          if (cc === 8) setDeckVolume("B", normalized);
+        } 
+        // 14-bit LSB (32-63)
+        else if (cc >= 32 && cc <= 63) {
+          const msb = msbRef.current[cc - 32] || 0;
+          const highResValue = (msb << 7) | value;
+          const normalized = highResValue / 16383;
+          // Apply high resolution 14-bit (16,384 steps) to eliminate zipper noise
+          if (cc - 32 === 1) setCrossfader(normalized);
+          if (cc - 32 === 7) setDeckVolume("A", normalized);
+          if (cc - 32 === 8) setDeckVolume("B", normalized);
+        } 
+        // Standard 7-bit
+        else {
+          if (cc === 1) setCrossfader(normalize(value));
+          if (cc === 7) setDeckVolume("A", normalize(value));
+          if (cc === 8) setDeckVolume("B", normalize(value));
+        }
       }
     },
-    [setCrossfader, setDeckVolume]
+    [setCrossfader, setDeckVolume, setPlaybackRate]
   );
 
   const attachInputs = useCallback(() => {
@@ -59,6 +91,45 @@ export function useMidiBridge(): MidiBridgeState {
       input.addEventListener("midimessage", handleMidiMessage);
     });
   }, [handleMidiMessage]);
+
+  const connectWebSocket = useCallback(function connect() {
+    if (wsRef.current) return;
+    try {
+      const ws = new WebSocket('ws://localhost:8080'); // Phase hardware WS endpoint
+      ws.onopen = () => {
+        console.log('[MidiBridge] Hardware WebSocket connected');
+        // Heartbeat polling
+        heartbeatTimerRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'heartbeat' }));
+          }
+        }, 3000);
+      };
+      ws.onclose = () => {
+        console.log('[MidiBridge] Hardware WebSocket disconnected');
+        if (heartbeatTimerRef.current) clearInterval(heartbeatTimerRef.current);
+        wsRef.current = null;
+        // Attempt reconnect later if active
+        if (isActive) {
+          setTimeout(connect, 5000);
+        }
+      };
+      ws.onerror = (err) => {
+        console.warn('[MidiBridge] WebSocket error, checking hardware bridge connection...', err);
+      };
+      wsRef.current = ws;
+    } catch (e) {
+      console.warn('[MidiBridge] Failed to establish hardware bridge', e);
+    }
+  }, [isActive]);
+
+  const disconnectWebSocket = useCallback(() => {
+    if (heartbeatTimerRef.current) clearInterval(heartbeatTimerRef.current);
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+  }, []);
 
   const start = useCallback(async () => {
     if (!isSupported || !navigator.requestMIDIAccess) {
@@ -74,12 +145,13 @@ export function useMidiBridge(): MidiBridgeState {
       attachInputs();
       midiAccessRef.current?.addEventListener("statechange", attachInputs);
       setError(null);
+      connectWebSocket();
     } catch (err) {
       console.error("[MIDI] Failed to start bridge:", err);
       setError(err instanceof Error ? err.message : "Unknown MIDI error");
       setIsActive(false);
     }
-  }, [attachInputs, isSupported]);
+  }, [attachInputs, isSupported, connectWebSocket]);
 
   const stop = useCallback(() => {
     const access = midiAccessRef.current;
@@ -87,7 +159,8 @@ export function useMidiBridge(): MidiBridgeState {
       input.removeEventListener("midimessage", handleMidiMessage);
     });
     access?.removeEventListener("statechange", attachInputs);
-  }, [attachInputs, handleMidiMessage]);
+    disconnectWebSocket();
+  }, [attachInputs, handleMidiMessage, disconnectWebSocket]);
 
   const toggle = useCallback(() => {
     setIsActive((prev) => !prev);

@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useDeckStore, DeckState } from '@/store/deckStore';
+import { WaveformAutomation } from './WaveformAutomation';
 
 // ── RGB Frequency Colors ────────────────────────────────────────────────
 const COLORS = {
@@ -288,6 +289,9 @@ export function ParallelWaveforms() {
   const peaksCacheA = useRef<PeakCache>({ buffer: null, peaks: null, freq: null });
   const peaksCacheB = useRef<PeakCache>({ buffer: null, peaks: null, freq: null });
 
+  const [automationMode, setAutomationMode] = useState<'off' | 'volume' | 'hpf' | 'reverb'>('off');
+  const [containerWidth, setContainerWidth] = useState(0);
+
   const resizeCanvases = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -295,6 +299,8 @@ export function ParallelWaveforms() {
     const dpr = window.devicePixelRatio || 1;
     const w = rect.width;
     const deckH = 60;
+
+    setContainerWidth(w);
 
     for (const canvas of [canvasARef.current, canvasBRef.current]) {
       if (canvas) {
@@ -334,27 +340,49 @@ export function ParallelWaveforms() {
   }, [resizeCanvases]);
 
   return (
-    <div
-      ref={containerRef}
-      className="parallel-waveforms sticky top-0 z-30 w-full flex flex-col rounded-xl overflow-hidden border border-slate-800/60"
-      style={{ background: 'rgba(6, 7, 10, 0.95)' }}
-    >
-      {/* Deck A Lane */}
-      <div className="relative">
-        <canvas ref={canvasARef} className="block w-full" style={{ height: 60 }} />
-        <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-cyan-400 bg-black/60 rounded">
-          A
-        </div>
+    <div className="flex flex-col gap-2">
+      {/* Automation Controls */}
+      <div className="flex gap-2 items-center px-2 py-1 bg-slate-900/50 rounded-lg border border-slate-800/60 font-mono text-xs">
+        <span className="text-white/60 uppercase tracking-widest mr-2">Auto:</span>
+        {(['off', 'volume', 'hpf', 'reverb'] as const).map(mode => (
+          <button 
+            key={mode}
+            onClick={() => setAutomationMode(mode)}
+            className={`px-3 py-1 rounded transition-colors ${automationMode === mode ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'}`}
+          >
+            {mode.toUpperCase()}
+          </button>
+        ))}
       </div>
 
-      {/* Separator */}
-      <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+      <div
+        ref={containerRef}
+        className="parallel-waveforms sticky top-0 z-30 w-full flex flex-col rounded-xl overflow-hidden border border-slate-800/60"
+        style={{ background: 'rgba(6, 7, 10, 0.95)' }}
+      >
+        {/* Deck A Lane */}
+        <div className="relative">
+          <canvas ref={canvasARef} className="block w-full" style={{ height: 60 }} />
+          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-cyan-400 bg-black/60 rounded z-50 pointer-events-none">
+            A
+          </div>
+          {automationMode !== 'off' && containerWidth > 0 && (
+            <WaveformAutomation deckId="A" width={containerWidth} height={60} activeParam={automationMode} />
+          )}
+        </div>
 
-      {/* Deck B Lane */}
-      <div className="relative">
-        <canvas ref={canvasBRef} className="block w-full" style={{ height: 60 }} />
-        <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-purple-400 bg-black/60 rounded">
-          B
+        {/* Separator */}
+        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+
+        {/* Deck B Lane */}
+        <div className="relative">
+          <canvas ref={canvasBRef} className="block w-full" style={{ height: 60 }} />
+          <div className="absolute top-1 left-2 px-1.5 py-0.5 text-[8px] font-bold tracking-widest text-purple-400 bg-black/60 rounded z-50 pointer-events-none">
+            B
+          </div>
+          {automationMode !== 'off' && containerWidth > 0 && (
+            <WaveformAutomation deckId="B" width={containerWidth} height={60} activeParam={automationMode} />
+          )}
         </div>
       </div>
     </div>
