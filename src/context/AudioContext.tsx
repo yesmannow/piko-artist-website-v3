@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback } from "react";
-import { MediaItem, tracks } from "@/lib/data";
+import { MediaItem, tracks as staticTracks } from "@/lib/data";
 
 interface AudioContextType {
   currentTrack: MediaItem | null;
@@ -20,6 +20,8 @@ interface AudioContextType {
   seek: (time: number) => void;
   duration: number;
   stop: () => void;
+  /** Replace the active playlist used by skipNext / skipPrevious. */
+  setPlaylist: (tracks: MediaItem[]) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -33,6 +35,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
+  // Active playlist used by skipNext / skipPrevious (defaults to static audio tracks)
+  const [playlist, setPlaylist] = useState<MediaItem[]>(() =>
+    staticTracks.filter((t) => t.type === "audio")
+  );
 
   const togglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
@@ -71,19 +77,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const skipNext = useCallback(() => {
     if (!currentTrack) return;
-    const audioTracks = tracks.filter((t) => t.type === "audio");
+    const audioTracks = playlist.filter((t) => t.type === "audio");
     const currentIndex = audioTracks.findIndex((t) => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % audioTracks.length;
     playTrack(audioTracks[nextIndex]);
-  }, [currentTrack, playTrack]);
+  }, [currentTrack, playTrack, playlist]);
 
   const skipPrevious = useCallback(() => {
     if (!currentTrack) return;
-    const audioTracks = tracks.filter((t) => t.type === "audio");
+    const audioTracks = playlist.filter((t) => t.type === "audio");
     const currentIndex = audioTracks.findIndex((t) => t.id === currentTrack.id);
     const prevIndex = currentIndex === 0 ? audioTracks.length - 1 : currentIndex - 1;
     playTrack(audioTracks[prevIndex]);
-  }, [currentTrack, playTrack]);
+  }, [currentTrack, playTrack, playlist]);
 
   const seek = (time: number) => {
     if (!audioRef.current) return;
@@ -202,6 +208,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         seek,
         duration,
         stop,
+        setPlaylist,
       }}
     >
       {children}
