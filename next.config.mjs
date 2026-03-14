@@ -33,6 +33,16 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.youtube.com',
       },
+      // Cloudflare R2 public bucket (piko-media)
+      // Supports both *.r2.dev preview URLs and custom public domains.
+      {
+        protocol: 'https',
+        hostname: '*.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.cloudflarestorage.com',
+      },
       // Local development
       {
         protocol: 'http',
