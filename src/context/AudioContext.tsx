@@ -35,37 +35,70 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previousVolumeRef = useRef<number>(1);
+  const fallbackAttemptedRef = useRef<boolean>(false);
   // Active playlist used by skipNext / skipPrevious (defaults to static audio tracks)
   const [playlist, setPlaylist] = useState<MediaItem[]>(() =>
     staticTracks.filter((t) => t.type === "audio")
   );
 
-  const togglePlay = () => {
+  const getFallbackSrc = useCallback((trackId: string) => {
+    const fileId = trackId === "12-05" ? "12_05" : trackId;
+    return `/audio/tracks/${fileId}.mp3`;
+  }, []);
+
+  const attemptFallback = useCallback(() => {
+    if (!audioRef.current || !currentTrack || fallbackAttemptedRef.current) return;
+
+    fallbackAttemptedRef.current = true;
+    const fallbackSrc = getFallbackSrc(currentTrack.id);
+
+    audioRef.current.src = fallbackSrc;
+    audioRef.current.load();
+    audioRef.current.play().catch((error: Error) => {
+      if (error.name === "AbortError") return;
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Fallback playback failed:", error);
+      }
+      setIsPlaying(false);
+    });
+  }, [currentTrack, getFallbackSrc]);
+
+  const togglePlay = useCallback(() => {
     if (!audioRef.current || !currentTrack) return;
 
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch((error: Error) => {
+        if (error.name === "AbortError") return;
+        setIsPlaying(false);
+        attemptFallback();
+      });
     }
     setIsPlaying(!isPlaying);
-  };
+  }, [attemptFallback, currentTrack, isPlaying]);
 
   const playTrack = useCallback((track: MediaItem) => {
     setCurrentTrack(track);
     setIsPlaying(true);
+    setProgress(0);
+    setDuration(0);
+    fallbackAttemptedRef.current = false;
 
     // Load and play the track
     if (audioRef.current) {
       if (track.type === "audio") {
         audioRef.current.src = track.src;
         audioRef.current.load();
-        audioRef.current.play().catch((error) => {
+        audioRef.current.play().catch((error: Error) => {
+          if (error.name === "AbortError") return;
           if (process.env.NODE_ENV === "development") {
             // eslint-disable-next-line no-console
             console.error("Error playing audio:", error);
           }
           setIsPlaying(false);
+          attemptFallback();
         });
       } else {
         // For video tracks, we might need different handling
@@ -73,7 +106,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
       }
     }
-  }, []);
+  }, [attemptFallback]);
 
   const skipNext = useCallback(() => {
     if (!currentTrack) return;
@@ -107,6 +140,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setIsPlaying(false);
     setCurrentTrack(null);
     setProgress(0);
+    setDuration(0);
+    fallbackAttemptedRef.current = false;
   }, []);
 
   // Helper to check if coverArt is an image path
@@ -218,16 +253,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onEnded={() => setIsPlaying(false)}
+        onError={() => {
+          attemptFallback();
+        }}
         onTimeUpdate={(e) => {
           const audio = e.currentTarget;
-          if (audio.duration) {
+          if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
             setProgress((audio.currentTime / audio.duration) * 100);
             setDuration(audio.duration);
           }
         }}
         onLoadedMetadata={(e) => {
           const audio = e.currentTarget;
-          if (audio.duration) {
+          if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
             setDuration(audio.duration);
           }
         }}

@@ -24,7 +24,7 @@ export function FloatingVideoPlayer() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-4"
           data-modal-open="true"
         >
           {/* Backdrop */}
@@ -35,11 +35,11 @@ export function FloatingVideoPlayer() {
 
           {/* Player Container */}
           <motion.div
-            className="relative z-10 w-full max-w-5xl mx-4"
+            className="relative z-10 w-full max-w-5xl mx-2 md:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* YouTube Embed */}
-            <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl z-10">
+            <div className="relative w-full aspect-video max-h-[82vh] bg-black rounded-lg overflow-hidden shadow-2xl z-10">
               <iframe
                 src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                 title={video.title}
@@ -50,13 +50,6 @@ export function FloatingVideoPlayer() {
                 referrerPolicy="no-referrer-when-downgrade"
                 loading="lazy"
               />
-            </div>
-
-            {/* Video Title */}
-            <div className="mt-4 text-center">
-              <h3 className="font-tag text-xl md:text-2xl text-white">
-                {video.title}
-              </h3>
             </div>
 
             {/* Control Buttons */}

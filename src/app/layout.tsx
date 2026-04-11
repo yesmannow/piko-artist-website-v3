@@ -10,7 +10,6 @@ import { FloatingVideoPlayer } from "@/components/FloatingVideoPlayer";
 import { PageTransition } from "@/components/PageTransition";
 import { MobileNav } from "@/components/MobileNav";
 import { TacticalBar } from "@/components/navigation/TacticalBar";
-import { InstallApp } from "@/components/InstallApp";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ScrollRestorationManager } from "@/components/ScrollRestorationManager";
@@ -108,7 +107,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${permanentMarker.variable} ${sedgwickAve.variable} ${anton.variable} ${barlowCondensed.variable} ${inter.variable} ${lexend.variable} bg-background text-foreground antialiased pt-20 md:pt-24`}
       >
@@ -127,7 +126,6 @@ export default function RootLayout({
             <PersistentPlayer />
             <MobileNav />
             <TacticalBar />
-            <InstallApp />
             <InstallPrompt />
           </VideoProvider>
         </AudioProvider>

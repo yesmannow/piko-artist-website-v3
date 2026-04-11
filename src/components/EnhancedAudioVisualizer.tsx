@@ -7,6 +7,9 @@ interface EnhancedAudioVisualizerProps {
   height?: number;
 }
 
+let sharedAudioContext: AudioContext | null = null;
+const sourceNodeByElement = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+
 /**
  * EnhancedAudioVisualizer - Real-time frequency bars that dance to the beat
  * Uses Web Audio API AnalyserNode for frequency data
@@ -44,15 +47,32 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Create audio context and analyser
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Reuse a shared context/source node to avoid duplicate media-source wiring errors.
+    const win = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextClass = win.AudioContext ?? win.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!sharedAudioContext) {
+      sharedAudioContext = new AudioContextClass();
+    }
+    const audioContext = sharedAudioContext;
+
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 256; // More bars
     analyser.smoothingTimeConstant = 0.8;
 
-    const source = audioContext.createMediaElementSource(audio);
+    let source = sourceNodeByElement.get(audio);
+    if (!source) {
+      source = audioContext.createMediaElementSource(audio);
+      sourceNodeByElement.set(audio, source);
+    }
+
+    const silentSink = audioContext.createGain();
+    silentSink.gain.value = 0;
+
     source.connect(analyser);
-    analyser.connect(audioContext.destination);
+    analyser.connect(silentSink);
+    silentSink.connect(audioContext.destination);
 
     analyserRef.current = analyser;
 
@@ -145,11 +165,17 @@ export function EnhancedAudioVisualizer({ height = 40 }: EnhancedAudioVisualizer
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      source.disconnect();
       analyser.disconnect();
-      audioContext.close();
+      silentSink.disconnect();
     };
   }, [audioRef, isPlaying, colors, height]);
+
+  useEffect(() => {
+    if (!isPlaying || !sharedAudioContext) return;
+    if (sharedAudioContext.state === "suspended") {
+      void sharedAudioContext.resume();
+    }
+  }, [isPlaying]);
 
   if (!currentTrack || !isPlaying) {
     return null;

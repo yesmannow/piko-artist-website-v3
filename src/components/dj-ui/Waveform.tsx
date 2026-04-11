@@ -74,7 +74,15 @@ export function Waveform({
 
     // Cleanup
     return () => {
-      wavesurfer.destroy();
+      const wavesurferInstance = wavesurferRef.current;
+      wavesurferRef.current = null;
+      if (!wavesurferInstance) return;
+
+      try {
+        wavesurferInstance.destroy();
+      } catch (error) {
+        console.warn("WaveSurfer destroy interrupted", error);
+      }
     };
   }, [audioUrl, onSeek, height]);
 
@@ -108,4 +116,3 @@ export function Waveform({
     </div>
   );
 }
-

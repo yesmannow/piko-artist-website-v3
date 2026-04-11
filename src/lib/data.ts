@@ -395,7 +395,7 @@ export const tracks: MediaItem[] = [
     title: "12-05",
     artist: "Piko",
     type: 'audio',
-    src: `${R2_AUDIO_TRACK_BASE_URL}002._Seek_Up.mp3`,
+    src: `${R2_AUDIO_TRACK_BASE_URL}12_05.mp3`,
     coverArt: "/images/tracks/dj-2581269_1280.jpg",
     vibe: "classic"
   }

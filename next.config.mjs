@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV !== 'production',
 });
 
 /** @type {import('next').NextConfig} */
@@ -90,15 +91,12 @@ const nextConfig = {
   experimental: {
     // Vercel deployment configuration
   },
-  outputFileTracingRoot: __dirname,
-  webpack: (config, { isServer }) => {
-    // Resolve path aliases
-    config.resolve.alias = {
-      ...config.resolve.alias,
+  turbopack: {
+    resolveAlias: {
       '@': path.resolve(__dirname, 'src'),
-    };
-    return config;
+    },
   },
+  outputFileTracingRoot: __dirname,
 };
 
 export default withSerwist(nextConfig);

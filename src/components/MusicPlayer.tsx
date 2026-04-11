@@ -50,6 +50,9 @@ function useTrackDuration(track: MediaItem): number {
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      // Cancel any in-flight metadata fetch to avoid AbortError rejections
+      audio.src = "";
+      audio.load();
     };
   }, [track.src, track.type]);
 
@@ -638,8 +641,16 @@ export function MusicPlayer({ tracks }: { tracks: MediaItem[] }) {
     playTrack(track);
   };
 
-  const handlePlayPause = () => {
+  const handleHeroPlayPause = () => {
     triggerHaptic();
+
+    if (!featuredTrack) return;
+
+    if (!currentTrack || currentTrack.id !== featuredTrack.id) {
+      playTrack(featuredTrack);
+      return;
+    }
+
     togglePlay();
   };
 
@@ -693,8 +704,8 @@ export function MusicPlayer({ tracks }: { tracks: MediaItem[] }) {
           <TrackHero
             track={featuredTrack}
             isPlaying={isPlaying && currentTrack?.id === featuredTrack?.id}
-            onPlay={handlePlayPause}
-            onPause={handlePlayPause}
+            onPlay={handleHeroPlayPause}
+            onPause={handleHeroPlayPause}
             onNext={() => {
               triggerHaptic();
               skipNext();

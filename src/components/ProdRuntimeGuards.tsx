@@ -32,6 +32,10 @@ export function ProdRuntimeGuards() {
 
     // Unhandled rejection handler
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Route changes and media source swaps can intentionally abort in-flight media promises.
+      // Skip logging these expected AbortError cases to reduce noise.
+      if (event.reason?.name === "AbortError") return;
+
       console.error("[UNHANDLED_REJECTION]", {
         reason: event.reason,
         error: event.reason instanceof Error ? {

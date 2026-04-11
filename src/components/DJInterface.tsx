@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { DJDeck, DJDeckRef } from "./DJDeck";
@@ -80,6 +79,9 @@ export function DJInterface() {
 
   // Sidebar collapse state
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
+  const [showFxRack, setShowFxRack] = useState(true);
+  const [showMicInput, setShowMicInput] = useState(true);
+  const [showVoiceTags, setShowVoiceTags] = useState(true);
 
   // Mixer state
   const [crossfader, setCrossfader] = useState(0.5);
@@ -1867,8 +1869,57 @@ export function DJInterface() {
           )}
         </OverlayShell>
 
+        {/* Section toggles (decks + center mixer stay permanently visible) */}
+        <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+          <button
+            onClick={() => {
+              triggerHaptic();
+              setShowFxRack((prev) => !prev);
+            }}
+            className={`px-3 py-2 rounded border text-xs font-barlow uppercase tracking-wider transition-all ${
+              showFxRack
+                ? "border-[#00ff00] text-[#00ff00] bg-[#00ff00]/10"
+                : "border-gray-700 text-gray-400 hover:border-gray-500"
+            }`}
+            aria-expanded={showFxRack}
+            aria-label="Toggle FX rack section"
+          >
+            {showFxRack ? "Hide FX Rack" : "Show FX Rack"}
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic();
+              setShowMicInput((prev) => !prev);
+            }}
+            className={`px-3 py-2 rounded border text-xs font-barlow uppercase tracking-wider transition-all ${
+              showMicInput
+                ? "border-[#00ff00] text-[#00ff00] bg-[#00ff00]/10"
+                : "border-gray-700 text-gray-400 hover:border-gray-500"
+            }`}
+            aria-expanded={showMicInput}
+            aria-label="Toggle mic monitor section"
+          >
+            {showMicInput ? "Hide Mic" : "Show Mic"}
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic();
+              setShowVoiceTags((prev) => !prev);
+            }}
+            className={`px-3 py-2 rounded border text-xs font-barlow uppercase tracking-wider transition-all ${
+              showVoiceTags
+                ? "border-[#00ff00] text-[#00ff00] bg-[#00ff00]/10"
+                : "border-gray-700 text-gray-400 hover:border-gray-500"
+            }`}
+            aria-expanded={showVoiceTags}
+            aria-label="Toggle voice tag section"
+          >
+            {showVoiceTags ? "Hide Voice Tags" : "Show Voice Tags"}
+          </button>
+        </div>
+
         {/* FX Rack */}
-        <div data-tour="fx-unit">
+        {showFxRack && <div data-tour="fx-unit">
         <FXUnit
           // Session Recorder props
           audioContext={audioContextRef.current}
@@ -1987,7 +2038,7 @@ export function DJInterface() {
           onEchoTimeChangeB={setEchoTimeB}
           onEchoFeedbackChangeB={setEchoFeedbackB}
         />
-        </div>
+        </div>}
 
           {/* Main Console */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -2143,15 +2194,15 @@ export function DJInterface() {
         </div>
 
           {/* Mic Input - Monitor Only */}
-          <div className="mt-6 lg:mt-8">
+          {showMicInput && <div className="mt-6 lg:mt-8">
             <MicInput
               audioContext={audioContextRef.current || undefined}
               masterGainNode={masterGainRef.current || undefined}
             />
-          </div>
+          </div>}
 
           {/* Voice Tag Panel - Moved outside grid */}
-          <div className="mt-6 lg:mt-8" data-tour="voice-tags">
+          {showVoiceTags && <div className="mt-6 lg:mt-8" data-tour="voice-tags">
             <VoiceTagPanel
               micEnabled={voiceTag.micEnabled}
               isRecording={voiceTag.isRecording}
@@ -2169,7 +2220,7 @@ export function DJInterface() {
               onClearTag={voiceTag.clearTag}
               onTagVolumeChange={handleTagVolumeChange}
             />
-          </div>
+          </div>}
         </div>
       </div>
     </div>

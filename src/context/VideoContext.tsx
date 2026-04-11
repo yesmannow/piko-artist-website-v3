@@ -21,20 +21,26 @@ export function VideoProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   // Track if music was playing before video opened, so we can resume it
   const wasMusicPlayingRef = useRef(false);
+  // Stable refs to avoid stale closures in the pathname effect
+  const isPlayingRef = useRef(isPlaying);
+  const togglePlayRef = useRef(togglePlay);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { togglePlayRef.current = togglePlay; }, [togglePlay]);
 
-  // Close video on route change to prevent overlays persisting
+  // Close video on route change to prevent overlays persisting.
+  // Depends only on pathname so the effect won't fire on every audio state update.
   useEffect(() => {
     if (currentVideoId) {
       // Resume music if it was playing before video opened
-      if (wasMusicPlayingRef.current && !isPlaying) {
-        togglePlay();
+      if (wasMusicPlayingRef.current && !isPlayingRef.current) {
+        togglePlayRef.current();
       }
       wasMusicPlayingRef.current = false;
       setCurrentVideoId(null);
       setIsMinimized(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, isPlaying, togglePlay]); // Only depend on pathname to avoid infinite loops
+  }, [pathname]); // intentionally reads isPlaying/togglePlay through stable refs
 
   const playVideo = (id: string) => {
     // Pause any currently playing music and remember its state

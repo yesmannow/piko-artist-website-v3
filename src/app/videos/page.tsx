@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
 import Image from "next/image";
 import { tracks, MediaItem } from "@/lib/data";
-import { X, Play } from "lucide-react";
+import { Play } from "lucide-react";
+import { useVideo } from "@/context/VideoContext";
 
 // Thumbnail component with fallback strategy
 function VideoThumbnail({ videoId, title, className }: { videoId: string; title: string; className?: string }) {
@@ -37,17 +37,13 @@ function VideoThumbnail({ videoId, title, className }: { videoId: string; title:
   const fallbackIndex = videoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % trackImages.length;
   const fallbackImage = trackImages[fallbackIndex];
 
-  const [imgSrc, setImgSrc] = useState(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
+  const [imgSrc, setImgSrc] = useState(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
   const [errorCount, setErrorCount] = useState(0);
 
   const handleError = () => {
     if (errorCount === 0) {
-      // First fallback: try hqdefault
+      // Fallback: use local track image
       setErrorCount(1);
-      setImgSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
-    } else if (errorCount === 1) {
-      // Second fallback: use track image
-      setErrorCount(2);
       setImgSrc(fallbackImage);
     }
   };
@@ -165,73 +161,10 @@ function FeaturedVideoHero({ video, onPlay }: { video: MediaItem; onPlay: (id: s
   );
 }
 
-// Video Modal Component
-function VideoModal({ videoId, onClose }: { videoId: string | null; onClose: () => void }) {
-  const pathname = usePathname();
-
-  // Close modal on route change
-  useEffect(() => {
-    if (videoId) {
-      onClose();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  // Close on ESC key
-  useEffect(() => {
-    if (!videoId) return;
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [videoId, onClose]);
-
-  if (!videoId) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
-      data-modal-open="true"
-      onClick={(e) => {
-        // Close on backdrop click
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 p-2 bg-zinc-800 rounded-full hover:bg-white hover:text-black transition-colors z-10"
-        aria-label="Close video"
-      >
-        <X className="w-6 h-6" />
-      </button>
-
-      <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-zinc-800">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
-          className="w-full h-full"
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Video player"
-          loading="lazy"
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function VideosPage() {
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"ALL" | "HYPE" | "CHILL" | "STORYTELLING" | "CLASSIC">("ALL");
-  const pathname = usePathname();
   const lenis = useLenis();
+  const { playVideo } = useVideo();
 
   // Derived data - defensive checks
   const videos = useMemo(() => {
@@ -257,17 +190,9 @@ export default function VideosPage() {
     return gridVideos.filter(v => v.vibe?.toUpperCase() === filter);
   }, [gridVideos, filter]);
 
-  // Close modal on route change
+  // Scroll sanity: reset scroll on mount and unmount
   useEffect(() => {
-    if (selectedVideoId) {
-      setSelectedVideoId(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  // Scroll sanity: reset scroll on route change and unmount
-  useEffect(() => {
-    // Reset scroll immediately on mount/route change
+    // Reset scroll immediately on mount
     if (lenis) {
       try {
         lenis.stop();
@@ -289,7 +214,7 @@ export default function VideosPage() {
         window.scrollTo(0, 0);
       }
     };
-  }, [pathname, lenis]);
+  }, [lenis]);
 
   // Empty state
   if (videos.length === 0) {
@@ -330,10 +255,7 @@ export default function VideosPage() {
 
         {/* Featured Video Hero */}
         {featuredVideo && (
-          <FeaturedVideoHero
-            video={featuredVideo}
-            onPlay={setSelectedVideoId}
-          />
+          <FeaturedVideoHero video={featuredVideo} onPlay={playVideo} />
         )}
 
         {/* Filter Bar */}
@@ -364,7 +286,7 @@ export default function VideosPage() {
               <VideoCard
                 key={video.id}
                 video={video}
-                onPlay={setSelectedVideoId}
+                onPlay={playVideo}
               />
             ))}
           </div>
@@ -373,12 +295,6 @@ export default function VideosPage() {
             No videos found for this filter.
           </div>
         )}
-
-        {/* Video Modal */}
-        <VideoModal
-          videoId={selectedVideoId}
-          onClose={() => setSelectedVideoId(null)}
-        />
       </div>
     </div>
   );
