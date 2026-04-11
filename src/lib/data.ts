@@ -8,7 +8,7 @@ export interface MediaItem {
   vibe: 'chill' | 'hype' | 'storytelling' | 'classic';
 }
 
-const R2_AUDIO_TRACK_BASE_URL = "https://pub-9d6c022e6cbf422ea4fcac0a116cbfce.r2.dev/audio/tracks/";
+const R2_AUDIO_TRACK_BASE_URL = "https://pub-9d6c022e6cbf422ea4fcac0a116cbfce.r2.dev/audio/";
 
 export const tracks: MediaItem[] = [
   // --- YOUTUBE VIDEOS (Curated) ---

@@ -43,7 +43,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const getFallbackSrc = useCallback((trackId: string) => {
     const fileId = trackId === "12-05" ? "12_05" : trackId;
-    return `/audio/tracks/${fileId}.mp3`;
+    return `https://pub-9d6c022e6cbf422ea4fcac0a116cbfce.r2.dev/audio/${fileId}.mp3`;
   }, []);
 
   const attemptFallback = useCallback(() => {
@@ -284,4 +284,3 @@ export function useAudio() {
   }
   return context;
 }
-
