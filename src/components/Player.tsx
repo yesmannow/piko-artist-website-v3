@@ -34,8 +34,10 @@ export function Player() {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const visualizerRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState("0:00");
@@ -49,21 +51,33 @@ export function Player() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Select a random track on initialization
   useEffect(() => {
-    if (!currentTrack && tracks.length > 0) {
-      const randomIndex = Math.floor(Math.random() * tracks.length);
-      const selectedTrack = tracks[randomIndex];
-      if (selectedTrack) {
-        setCurrentTrack(selectedTrack);
-        setIsLoading(false);
-        setDuration("3:45"); // Mock duration
-      }
+    if (!isMounted || currentTrack || tracks.length === 0) {
+      return;
     }
-  }, [currentTrack]);
+
+    const randomIndex = Math.floor(Math.random() * tracks.length);
+    const selectedTrack = tracks[randomIndex];
+    if (selectedTrack) {
+      setCurrentTrack(selectedTrack);
+      setIsLoading(false);
+      setDuration("3:45"); // Mock duration
+    }
+  }, [currentTrack, isMounted]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!isMounted || !containerRef.current) return;
+
+    interface WaveSurferBackend {
+      ac?: AudioContext;
+    }
+
+    let isDisposed = false;
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -80,34 +94,31 @@ export function Player() {
 
     wavesurferRef.current = wavesurfer;
 
-    // Try to set up Web Audio API visualizer
     wavesurfer.on("ready", () => {
+      if (isDisposed) {
+        return;
+      }
+
       setIsLoading(false);
       setDuration(formatTime(wavesurfer.getDuration()));
 
-      // Get the backend's audio context if available
-      interface WaveSurferBackend {
-        ac?: AudioContext;
-      }
       const backend = (wavesurfer as unknown as { backend?: WaveSurferBackend }).backend;
-      if (backend && backend.ac) {
+      if (backend?.ac && !sourceRef.current) {
         const audioContext = backend.ac;
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
         analyserRef.current = analyser;
 
-        // Try to connect to the audio source
         try {
-          const source = audioContext.createMediaElementSource(wavesurfer.getMediaElement());
-          source.connect(analyser);
+          const mediaElement = wavesurfer.getMediaElement();
+          sourceRef.current = audioContext.createMediaElementSource(mediaElement);
+          sourceRef.current.connect(analyser);
           analyser.connect(audioContext.destination);
         } catch {
-          // If connection fails (already connected), use gain node
-          const gainNode = audioContext.createGain();
-          const source = audioContext.createMediaElementSource(wavesurfer.getMediaElement());
-          source.connect(gainNode);
-          gainNode.connect(analyser);
-          gainNode.connect(audioContext.destination);
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.warn("Audio source already connected, skipping setup.");
+          }
         }
       }
     });
@@ -122,9 +133,23 @@ export function Player() {
     });
 
     return () => {
+      isDisposed = true;
+
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+
+      sourceRef.current?.disconnect();
+      sourceRef.current = null;
+
+      analyserRef.current?.disconnect();
+      analyserRef.current = null;
+
+      wavesurferRef.current = null;
       wavesurfer.destroy();
     };
-  }, []);
+  }, [isMounted]);
 
   // Audio Visualizer Animation
   useEffect(() => {
@@ -178,6 +203,10 @@ export function Player() {
       wavesurferRef.current.playPause();
     }
   };
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <div className="relative w-full p-4 md:p-8 rounded-lg border-2 border-neon-pink/30 shadow-lg shadow-neon-pink/20 overflow-hidden">

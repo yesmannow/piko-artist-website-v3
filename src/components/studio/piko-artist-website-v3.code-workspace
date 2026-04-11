@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../pro-dj-mixer-main"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}

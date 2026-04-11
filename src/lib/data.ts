@@ -8,6 +8,8 @@ export interface MediaItem {
   vibe: 'chill' | 'hype' | 'storytelling' | 'classic';
 }
 
+const R2_AUDIO_TRACK_BASE_URL = "https://pub-9d6c022e6cbf422ea4fcac0a116cbfce.r2.dev/audio/";
+
 export const tracks: MediaItem[] = [
   // --- YOUTUBE VIDEOS (Curated) ---
   {
@@ -162,7 +164,7 @@ export const tracks: MediaItem[] = [
     title: "Déjate Llevar",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/dejate-llevar.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Dejate%20Llevar.mp3`,
     coverArt: "/images/tracks/abstract-1846847_1280.jpg",
     vibe: "chill"
   },
@@ -171,7 +173,7 @@ export const tracks: MediaItem[] = [
     title: "Entre Humos",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/entre-humos.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Entre%20Humos.mp3`,
     coverArt: "/images/tracks/architecture-3189972_1280.jpg",
     vibe: "chill"
   },
@@ -180,7 +182,7 @@ export const tracks: MediaItem[] = [
     title: "Ganja",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/ganja.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Ganja.mp3`,
     coverArt: "/images/tracks/aurora-borealis-9267515_1280.jpg",
     vibe: "chill"
   },
@@ -189,7 +191,7 @@ export const tracks: MediaItem[] = [
     title: "Amor Sincero",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/amor-sincero.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Amor%20Sincero.mp3`,
     coverArt: "/images/tracks/background-1833056_1280.jpg",
     vibe: "chill"
   },
@@ -198,7 +200,7 @@ export const tracks: MediaItem[] = [
     title: "Amores Perdidos",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/amores-perdidos.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Amores%20Perdidos.mp3`,
     coverArt: "/images/tracks/bicycle-3045580_1280.jpg",
     vibe: "chill"
   },
@@ -207,7 +209,7 @@ export const tracks: MediaItem[] = [
     title: "Bungalow",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/bungalow.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Bungalow.mp3`,
     coverArt: "/images/tracks/dj-2581269_1280.jpg",
     vibe: "chill"
   },
@@ -216,7 +218,7 @@ export const tracks: MediaItem[] = [
     title: "Corazón Y Mente",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/corazon-y-mente.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Corazon%20Y%20Mente.mp3`,
     coverArt: "/images/tracks/gong-8255081_1280.jpg",
     vibe: "chill"
   },
@@ -225,7 +227,7 @@ export const tracks: MediaItem[] = [
     title: "Crussin",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/crussin.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Crussin.mp3`,
     coverArt: "/images/tracks/graffiti-1476119_1280.jpg",
     vibe: "chill"
   },
@@ -234,7 +236,7 @@ export const tracks: MediaItem[] = [
     title: "Jardín De Rosas",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/jardin-de-rosas.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Jardin%20De%20Rosas.mp3`,
     coverArt: "/images/tracks/graffiti-3750912_1280.jpg",
     vibe: "chill"
   },
@@ -243,7 +245,7 @@ export const tracks: MediaItem[] = [
     title: "Noches Enteras",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/noches-enteras.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Noches%20Enteras.mp3`,
     coverArt: "/images/tracks/hamburg-2718329_1280.jpg",
     vibe: "chill"
   },
@@ -252,7 +254,7 @@ export const tracks: MediaItem[] = [
     title: "Sentimientos",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/sentimientos.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Sentimientos.mp3`,
     coverArt: "/images/tracks/love-2724141_1280.png",
     vibe: "chill"
   },
@@ -261,7 +263,7 @@ export const tracks: MediaItem[] = [
     title: "Sin Rencores",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/sin-rencores.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Sin%20Rencores.mp3`,
     coverArt: "/images/tracks/skateboard-447147_1280.jpg",
     vibe: "chill"
   },
@@ -270,7 +272,7 @@ export const tracks: MediaItem[] = [
     title: "Te Perdí",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/te-perdi.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Te%20Perdi.mp3`,
     coverArt: "/images/tracks/skull-and-crossbones-414207_1280.jpg",
     vibe: "chill"
   },
@@ -279,7 +281,7 @@ export const tracks: MediaItem[] = [
     title: "Te Prometo",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/te-prometo.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Te%20Prometo.mp3`,
     coverArt: "/images/tracks/starry-sky-1655503_1280.jpg",
     vibe: "chill"
   },
@@ -288,7 +290,7 @@ export const tracks: MediaItem[] = [
     title: "Un Día Más",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/un-dia-mas.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Un%20Dia%20Mas.mp3`,
     coverArt: "/images/tracks/street-art-1499524_1280.jpg",
     vibe: "chill"
   },
@@ -299,7 +301,7 @@ export const tracks: MediaItem[] = [
     title: "Gunster",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/gunster.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Gunster.mp3`,
     coverArt: "/images/tracks/tube-7260586_1280.jpg",
     vibe: "hype"
   },
@@ -308,7 +310,7 @@ export const tracks: MediaItem[] = [
     title: "El Don",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/el-don.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}El%20Don.mp3`,
     coverArt: "/images/tracks/vinyl-1595847_1280.jpg",
     vibe: "hype"
   },
@@ -317,7 +319,7 @@ export const tracks: MediaItem[] = [
     title: "F-7",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/f-7.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}F-7.mp3`,
     coverArt: "/images/tracks/wall-2583885_1280.jpg",
     vibe: "hype"
   },
@@ -326,7 +328,7 @@ export const tracks: MediaItem[] = [
     title: "Los 5",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/los-5.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Los%205.mp3`,
     coverArt: "/images/tracks/wallpaper-5928106_1280.png",
     vibe: "hype"
   },
@@ -335,7 +337,7 @@ export const tracks: MediaItem[] = [
     title: "Party",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/party.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Party.mp3`,
     coverArt: "/images/tracks/woman-3633737_1280.jpg",
     vibe: "hype"
   },
@@ -346,7 +348,7 @@ export const tracks: MediaItem[] = [
     title: "Fallé",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/falle.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Falle.mp3`,
     coverArt: "/images/tracks/abstract-1846847_1280.jpg",
     vibe: "storytelling"
   },
@@ -355,7 +357,7 @@ export const tracks: MediaItem[] = [
     title: "I'm Sorry",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/im-sorry.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Im%20Sorry.mp3`,
     coverArt: "/images/tracks/architecture-3189972_1280.jpg",
     vibe: "storytelling"
   },
@@ -364,7 +366,7 @@ export const tracks: MediaItem[] = [
     title: "Me Cuentan",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/me-cuentan.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Me%20Cuentan.mp3`,
     coverArt: "/images/tracks/aurora-borealis-9267515_1280.jpg",
     vibe: "storytelling"
   },
@@ -373,7 +375,7 @@ export const tracks: MediaItem[] = [
     title: "Quejas",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/quejas.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Quejas.mp3`,
     coverArt: "/images/tracks/background-1833056_1280.jpg",
     vibe: "storytelling"
   },
@@ -384,7 +386,7 @@ export const tracks: MediaItem[] = [
     title: "Tortas De Jamón",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/tortas-de-jamon.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}Tortas%20De%20Jamon.mp3`,
     coverArt: "/images/tracks/bicycle-3045580_1280.jpg",
     vibe: "classic"
   },
@@ -393,7 +395,7 @@ export const tracks: MediaItem[] = [
     title: "12-05",
     artist: "Piko",
     type: 'audio',
-    src: "/audio/tracks/12_05.mp3",
+    src: `${R2_AUDIO_TRACK_BASE_URL}002._Seek_Up.mp3`,
     coverArt: "/images/tracks/dj-2581269_1280.jpg",
     vibe: "classic"
   }
