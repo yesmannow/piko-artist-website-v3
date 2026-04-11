@@ -76,12 +76,16 @@ export function Waveform({
     return () => {
       const wavesurferInstance = wavesurferRef.current;
       wavesurferRef.current = null;
+      setIsReady(false);
+
       if (!wavesurferInstance) return;
 
       try {
         wavesurferInstance.destroy();
       } catch (error) {
-        console.warn("WaveSurfer destroy interrupted", error);
+        if ((error as Error).name !== "AbortError") {
+          console.error("WaveSurfer destruction error:", error);
+        }
       }
     };
   }, [audioUrl, onSeek, height]);
